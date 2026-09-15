@@ -6,6 +6,9 @@ function EditProfile() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [bio, setBio] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [avatar, setAvatar] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -26,6 +29,7 @@ function EditProfile() {
       setUsername(response.data.username);
       setEmail(response.data.email);
       setBio(response.data.bio || '');
+      setAvatarUrl(response.data.avatar_url || null);
       setLoading(false);
     })
     .catch((err) => {
@@ -35,17 +39,34 @@ function EditProfile() {
     });
   }, []);
 
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0] || null;
+    setAvatar(file);
+    setAvatarPreview(file ? URL.createObjectURL(file) : null);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('email', email);
+    formData.append('bio', bio);
+    if (avatar) {
+      formData.append('avatar', avatar);
+    }
+
     axios.put('http://localhost:3000/profile',
-      { username, email, bio },
+      formData,
       { headers: { Authorization: `Bearer ${token}` } }
     )
-    .then(() => {
+    .then((response) => {
       setSuccess('Profile updated successfully!');
+      setAvatarUrl(response.data.avatar_url || null);
+      setAvatar(null);
+      setAvatarPreview(null);
     })
     .catch((err) => {
       console.error(err);
@@ -60,6 +81,25 @@ function EditProfile() {
       <h2>Edit Profile</h2>
       <form onSubmit={handleSubmit}>
         <div>
+          {(avatarPreview || avatarUrl) ? (
+            <img
+              src={avatarPreview || `http://localhost:3000${avatarUrl}`}
+              alt="Avatar"
+              style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
+            />
+          ) : (
+            <div style={{
+              width: '100px', height: '100px', borderRadius: '50%',
+              backgroundColor: '#ddd', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', color: '#888', fontSize: '12px'
+            }}>
+              No Avatar
+            </div>
+          )}
+          <label>Profile Picture: </label>
+          <input type="file" accept="image/*" onChange={handleAvatarChange} />
+        </div>
+        <div style={{ marginTop: '10px' }}>
           <label>Username: </label>
           <input
             type="text"

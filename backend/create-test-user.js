@@ -1,5 +1,6 @@
 // Creates (or resets the password of) a known test user for local testing.
 // Usage: node create-test-user.js
+require('dotenv').config();
 const bcrypt = require('bcrypt');
 const db = require('./db');
 

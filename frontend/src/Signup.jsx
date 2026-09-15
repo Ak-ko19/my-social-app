@@ -10,13 +10,28 @@ function Signup() {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
 
+    if (!username.trim() || !email.trim() || !password) {
+      setError('Username, email, and password are all required');
+      return;
+    }
+    if (!emailRegex.test(email.trim())) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
     axios.post('http://localhost:3000/signup', {
-      username: username,
-      email: email,
+      username: username.trim(),
+      email: email.trim(),
       password: password
     })
     .then(() => {
@@ -27,7 +42,7 @@ function Signup() {
     })
     .catch((err) => {
       console.error(err);
-      setError('Signup failed. Email or username may already be taken.');
+      setError(err.response?.data || 'Signup failed. Email or username may already be taken.');
     });
   };
 
