@@ -1,4 +1,6 @@
 const db = require('../db');
+const { sendServerError } = require('../utils/sendError');
+const { getPagination } = require('../utils/pagination');
 
 async function createPost(req, res) {
   try {
@@ -13,45 +15,42 @@ async function createPost(req, res) {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    res.status(500).send('Create post failed: ' + err.message);
+    sendServerError(res, err, 'Create post failed. Please try again later.');
   }
 }
 
 async function getPosts(req, res) {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPagination(req, { defaultLimit: 10, maxLimit: 50 });
 
+    // Fetch one extra row instead of running a separate COUNT(*) -- a
+    // full-table count gets slower as the table grows and every request
+    // was paying for it. hasMore is all a feed UI actually needs.
     const result = await db.query(`
       SELECT posts.id, posts.content, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url
       FROM posts
       JOIN users ON posts.user_id = users.id
       ORDER BY posts.created_at DESC
       LIMIT $1 OFFSET $2
-    `, [limit, offset]);
+    `, [limit + 1, offset]);
 
-    const countResult = await db.query('SELECT COUNT(*) FROM posts');
-    const totalPosts = parseInt(countResult.rows[0].count);
-    const totalPages = Math.ceil(totalPosts / limit);
+    const hasMore = result.rows.length > limit;
+    const posts = hasMore ? result.rows.slice(0, limit) : result.rows;
 
     res.json({
-      posts: result.rows,
+      posts,
       currentPage: page,
-      totalPages: totalPages,
-      totalPosts: totalPosts
+      hasMore
     });
   } catch (err) {
-    res.status(500).send('Fetch posts failed: ' + err.message);
+    sendServerError(res, err, 'Fetch posts failed. Please try again later.');
   }
 }
 
 async function getFeed(req, res) {
   try {
     const userId = req.userId;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPagination(req, { defaultLimit: 10, maxLimit: 50 });
 
     const feedQuery = `
       SELECT posts.*, users.username, users.avatar_url
@@ -94,7 +93,7 @@ async function getPost(req, res) {
     }
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).send('Fetch post failed: ' + err.message);
+    sendServerError(res, err, 'Fetch post failed. Please try again later.');
   }
 }
 
@@ -117,7 +116,7 @@ async function updatePost(req, res) {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).send('Update post failed: ' + err.message);
+    sendServerError(res, err, 'Update post failed. Please try again later.');
   }
 }
 
@@ -136,7 +135,7 @@ async function deletePost(req, res) {
     await db.query('DELETE FROM posts WHERE id = $1', [req.params.id]);
     res.send('Post deleted successfully');
   } catch (err) {
-    res.status(500).send('Delete post failed: ' + err.message);
+    sendServerError(res, err, 'Delete post failed. Please try again later.');
   }
 }
 

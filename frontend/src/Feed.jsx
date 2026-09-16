@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api, { API_BASE_URL } from './api';
 import { useNavigate } from 'react-router-dom';
 
 function Feed() {
@@ -18,7 +18,7 @@ function Feed() {
   const currentUserId = parseInt(localStorage.getItem('userId'));
 
   const loadFeed = () => {
-    axios.get('http://localhost:3000/feed', {
+    api.get('/feed', {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((response) => {
@@ -33,7 +33,7 @@ function Feed() {
   };
 
   const loadUnreadCount = () => {
-    axios.get('http://localhost:3000/notifications/unread-count', {
+    api.get('/notifications/unread-count', {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((response) => setUnreadCount(response.data.unreadCount))
@@ -50,7 +50,7 @@ function Feed() {
   }, []);
 
   const handleLike = (postId) => {
-    axios.post(`http://localhost:3000/posts/${postId}/like`, {}, {
+    api.post(`/posts/${postId}/like`, {}, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(() => {
@@ -64,7 +64,7 @@ function Feed() {
   };
 
   const handleUnlike = (postId) => {
-    axios.delete(`http://localhost:3000/posts/${postId}/like`, {
+    api.delete(`/posts/${postId}/like`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(() => {
@@ -78,7 +78,7 @@ function Feed() {
   };
 
   const handleFollow = (userId) => {
-    axios.post(`http://localhost:3000/users/${userId}/follow`, {}, {
+    api.post(`/users/${userId}/follow`, {}, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(() => alert('Followed!'))
@@ -86,7 +86,7 @@ function Feed() {
   };
 
   const handleUnfollow = (userId) => {
-    axios.delete(`http://localhost:3000/users/${userId}/follow`, {
+    api.delete(`/users/${userId}/follow`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(() => alert('Unfollowed!'))
@@ -98,7 +98,7 @@ function Feed() {
     setCommentsVisible({ ...commentsVisible, [postId]: !isVisible });
 
     if (!isVisible) {
-      axios.get(`http://localhost:3000/posts/${postId}/comments`)
+      api.get(`/posts/${postId}/comments`)
       .then((response) => {
         setComments({ ...comments, [postId]: response.data });
       })
@@ -110,13 +110,13 @@ function Feed() {
     const content = commentInputs[postId];
     if (!content) return;
 
-    axios.post(`http://localhost:3000/posts/${postId}/comments`,
+    api.post(`/posts/${postId}/comments`,
       { content: content },
       { headers: { Authorization: `Bearer ${token}` } }
     )
     .then(() => {
       setCommentInputs({ ...commentInputs, [postId]: '' });
-      axios.get(`http://localhost:3000/posts/${postId}/comments`)
+      api.get(`/posts/${postId}/comments`)
       .then((response) => {
         setComments({ ...comments, [postId]: response.data });
       });
@@ -137,14 +137,14 @@ function Feed() {
   const handleCommentEditSave = (postId, commentId) => {
     if (!editCommentText.trim()) return;
 
-    axios.put(`http://localhost:3000/comments/${commentId}`,
+    api.put(`/comments/${commentId}`,
       { content: editCommentText },
       { headers: { Authorization: `Bearer ${token}` } }
     )
     .then(() => {
       setEditingCommentId(null);
       setEditCommentText('');
-      axios.get(`http://localhost:3000/posts/${postId}/comments`)
+      api.get(`/posts/${postId}/comments`)
       .then((response) => {
         setComments({ ...comments, [postId]: response.data });
       });
@@ -178,7 +178,7 @@ function Feed() {
       {posts.map((post) => (
         <div key={post.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '15px' }}>
           <img
-            src={post.avatar_url ? `http://localhost:3000${post.avatar_url}` : undefined}
+            src={post.avatar_url ? `${API_BASE_URL}${post.avatar_url}` : undefined}
             alt=""
             hidden={!post.avatar_url}
             style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '8px' }}
@@ -193,7 +193,7 @@ function Feed() {
           <p>{post.content}</p>
           {post.image_url && (
             <img
-              src={`http://localhost:3000${post.image_url}`}
+              src={`${API_BASE_URL}${post.image_url}`}
               alt="Post attachment"
               style={{ maxWidth: '100%', maxHeight: '300px', display: 'block', marginBottom: '10px' }}
             />

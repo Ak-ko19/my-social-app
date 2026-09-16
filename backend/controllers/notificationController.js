@@ -1,10 +1,10 @@
 const db = require('../db');
+const { sendServerError } = require('../utils/sendError');
+const { getPagination } = require('../utils/pagination');
 
 async function getNotifications(req, res) {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPagination(req, { defaultLimit: 20, maxLimit: 50 });
 
     const result = await db.query(`
       SELECT
@@ -22,7 +22,7 @@ async function getNotifications(req, res) {
 
     res.status(200).json({ page, limit, notifications: result.rows });
   } catch (err) {
-    res.status(500).send('Fetch notifications failed: ' + err.message);
+    sendServerError(res, err, 'Fetch notifications failed. Please try again later.');
   }
 }
 
@@ -34,7 +34,7 @@ async function getUnreadCount(req, res) {
     );
     res.status(200).json({ unreadCount: parseInt(result.rows[0].count) });
   } catch (err) {
-    res.status(500).send('Fetch unread count failed: ' + err.message);
+    sendServerError(res, err, 'Fetch unread count failed. Please try again later.');
   }
 }
 
@@ -52,7 +52,7 @@ async function markAsRead(req, res) {
     }
     res.status(200).json(result.rows[0]);
   } catch (err) {
-    res.status(500).send('Mark as read failed: ' + err.message);
+    sendServerError(res, err, 'Mark as read failed. Please try again later.');
   }
 }
 
@@ -64,7 +64,7 @@ async function markAllAsRead(req, res) {
     );
     res.status(200).send('All notifications marked as read');
   } catch (err) {
-    res.status(500).send('Mark all as read failed: ' + err.message);
+    sendServerError(res, err, 'Mark all as read failed. Please try again later.');
   }
 }
 

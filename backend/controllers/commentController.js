@@ -1,4 +1,5 @@
 const db = require('../db');
+const { sendServerError } = require('../utils/sendError');
 
 async function createComment(req, res) {
   try {
@@ -26,7 +27,7 @@ async function createComment(req, res) {
     }
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    res.status(500).send('Create comment failed: ' + err.message);
+    sendServerError(res, err, 'Create comment failed. Please try again later.');
   }
 }
 
@@ -44,7 +45,7 @@ async function getComments(req, res) {
     `, [req.params.id]);
     res.json(result.rows);
   } catch (err) {
-    res.status(500).send('Fetch comments failed: ' + err.message);
+    sendServerError(res, err, 'Fetch comments failed. Please try again later.');
   }
 }
 
@@ -70,7 +71,7 @@ async function updateComment(req, res) {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).send('Update comment failed: ' + err.message);
+    sendServerError(res, err, 'Update comment failed. Please try again later.');
   }
 }
 
@@ -89,7 +90,7 @@ async function deleteComment(req, res) {
     await db.query('DELETE FROM comments WHERE id = $1', [req.params.id]);
     res.send('Comment deleted successfully');
   } catch (err) {
-    res.status(500).send('Delete comment failed: ' + err.message);
+    sendServerError(res, err, 'Delete comment failed. Please try again later.');
   }
 }
 

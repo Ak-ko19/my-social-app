@@ -1,4 +1,6 @@
 const db = require('../db');
+const { sendServerError } = require('../utils/sendError');
+const { getPagination } = require('../utils/pagination');
 
 async function searchUsers(req, res) {
   try {
@@ -12,7 +14,7 @@ async function searchUsers(req, res) {
     );
     res.status(200).json(result.rows);
   } catch (err) {
-    res.status(500).send('Search users failed: ' + err.message);
+    sendServerError(res, err, 'Search users failed. Please try again later.');
   }
 }
 
@@ -22,9 +24,7 @@ async function searchPosts(req, res) {
     if (!q) {
       return res.status(400).send('Search query is required');
     }
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPagination(req, { defaultLimit: 10, maxLimit: 50 });
 
     const result = await db.query(`
       SELECT posts.id, posts.content, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url
@@ -37,7 +37,7 @@ async function searchPosts(req, res) {
 
     res.status(200).json({ page, limit, posts: result.rows });
   } catch (err) {
-    res.status(500).send('Search posts failed: ' + err.message);
+    sendServerError(res, err, 'Search posts failed. Please try again later.');
   }
 }
 

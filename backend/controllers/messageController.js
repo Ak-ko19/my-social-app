@@ -1,4 +1,6 @@
 const db = require('../db');
+const { sendServerError } = require('../utils/sendError');
+const { getPagination } = require('../utils/pagination');
 
 async function sendMessage(req, res) {
   try {
@@ -26,7 +28,7 @@ async function sendMessage(req, res) {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    res.status(500).send('Send message failed: ' + err.message);
+    sendServerError(res, err, 'Send message failed. Please try again later.');
   }
 }
 
@@ -69,7 +71,7 @@ async function getConversations(req, res) {
 
     res.status(200).json(conversations);
   } catch (err) {
-    res.status(500).send('Fetch conversations failed: ' + err.message);
+    sendServerError(res, err, 'Fetch conversations failed. Please try again later.');
   }
 }
 
@@ -80,9 +82,7 @@ async function getConversation(req, res) {
       return res.status(400).send('Invalid user ID');
     }
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPagination(req, { defaultLimit: 50, maxLimit: 100 });
 
     const result = await db.query(`
       SELECT * FROM messages
@@ -93,7 +93,7 @@ async function getConversation(req, res) {
 
     res.status(200).json({ page, limit, messages: result.rows });
   } catch (err) {
-    res.status(500).send('Fetch conversation failed: ' + err.message);
+    sendServerError(res, err, 'Fetch conversation failed. Please try again later.');
   }
 }
 
@@ -110,7 +110,7 @@ async function markConversationRead(req, res) {
     );
     res.status(200).send('Conversation marked as read');
   } catch (err) {
-    res.status(500).send('Mark conversation as read failed: ' + err.message);
+    sendServerError(res, err, 'Mark conversation as read failed. Please try again later.');
   }
 }
 

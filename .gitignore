@@ -1,0 +1,14 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.sw?
+
+# Env files (backend/ and frontend/ have their own, this covers the root)
+.env
+.env.local

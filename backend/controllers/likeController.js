@@ -1,4 +1,5 @@
 const db = require('../db');
+const { sendServerError } = require('../utils/sendError');
 
 async function likePost(req, res) {
   try {
@@ -29,7 +30,7 @@ async function likePost(req, res) {
     }
     res.status(201).send('Post liked successfully');
   } catch (err) {
-    res.status(500).send('Like post failed: ' + err.message);
+    sendServerError(res, err, 'Like post failed. Please try again later.');
   }
 }
 
@@ -47,7 +48,7 @@ async function unlikePost(req, res) {
     }
     res.send('Post unliked successfully');
   } catch (err) {
-    res.status(500).send('Unlike post failed: ' + err.message);
+    sendServerError(res, err, 'Unlike post failed. Please try again later.');
   }
 }
 
@@ -62,7 +63,7 @@ async function getLikes(req, res) {
     );
     res.json({ postId: req.params.id, likeCount: parseInt(countResult.rows[0].count) });
   } catch (err) {
-    res.status(500).send('Fetch likes failed: ' + err.message);
+    sendServerError(res, err, 'Fetch likes failed. Please try again later.');
   }
 }
 

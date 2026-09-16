@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api, { API_BASE_URL } from './api';
 import { useNavigate } from 'react-router-dom';
 
 function Search() {
@@ -22,8 +22,8 @@ function Search() {
     }
 
     Promise.all([
-      axios.get('http://localhost:3000/search/users', { params: { q: query.trim() } }),
-      axios.get('http://localhost:3000/search/posts', { params: { q: query.trim() } })
+      api.get('/search/users', { params: { q: query.trim() } }),
+      api.get('/search/posts', { params: { q: query.trim() } })
     ])
     .then(([usersRes, postsRes]) => {
       setUsers(usersRes.data);
@@ -60,7 +60,7 @@ function Search() {
           {users.map((u) => (
             <div key={u.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
               <img
-                src={u.avatar_url ? `http://localhost:3000${u.avatar_url}` : undefined}
+                src={u.avatar_url ? `${API_BASE_URL}${u.avatar_url}` : undefined}
                 alt=""
                 hidden={!u.avatar_url}
                 style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '8px' }}
@@ -81,7 +81,7 @@ function Search() {
               <p>{p.content}</p>
               {p.image_url && (
                 <img
-                  src={`http://localhost:3000${p.image_url}`}
+                  src={`${API_BASE_URL}${p.image_url}`}
                   alt="Post attachment"
                   style={{ maxWidth: '100%', maxHeight: '200px', display: 'block' }}
                 />

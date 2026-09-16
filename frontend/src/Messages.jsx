@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api, { API_BASE_URL } from './api';
 import { useNavigate } from 'react-router-dom';
 
 function Messages() {
@@ -16,7 +16,7 @@ function Messages() {
       return;
     }
 
-    axios.get('http://localhost:3000/conversations', {
+    api.get('/conversations', {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((response) => {
@@ -53,7 +53,7 @@ function Messages() {
           }}
         >
           <img
-            src={c.avatarUrl ? `http://localhost:3000${c.avatarUrl}` : undefined}
+            src={c.avatarUrl ? `${API_BASE_URL}${c.avatarUrl}` : undefined}
             alt=""
             hidden={!c.avatarUrl}
             style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '8px' }}

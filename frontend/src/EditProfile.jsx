@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api, { API_BASE_URL } from './api';
 import { useNavigate } from 'react-router-dom';
 
 function EditProfile() {
@@ -22,7 +22,7 @@ function EditProfile() {
       return;
     }
 
-    axios.get('http://localhost:3000/profile/me', {
+    api.get('/profile/me', {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((response) => {
@@ -58,7 +58,7 @@ function EditProfile() {
       formData.append('avatar', avatar);
     }
 
-    axios.put('http://localhost:3000/profile',
+    api.put('/profile',
       formData,
       { headers: { Authorization: `Bearer ${token}` } }
     )
@@ -83,7 +83,7 @@ function EditProfile() {
         <div>
           {(avatarPreview || avatarUrl) ? (
             <img
-              src={avatarPreview || `http://localhost:3000${avatarUrl}`}
+              src={avatarPreview || `${API_BASE_URL}${avatarUrl}`}
               alt="Avatar"
               style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
             />

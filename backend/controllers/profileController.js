@@ -1,4 +1,5 @@
 const db = require('../db');
+const { sendServerError } = require('../utils/sendError');
 
 async function getMyProfile(req, res) {
   try {
@@ -10,14 +11,15 @@ async function getMyProfile(req, res) {
 
     res.status(200).json(result.rows[0]);
   } catch (err) {
-    res.status(500).send('Error fetching profile: ' + err.message);
+    sendServerError(res, err, 'Error fetching profile. Please try again later.');
   }
 }
 
 async function getProfile(req, res) {
   try {
     const { id } = req.params;
-    const result = await db.query('SELECT id, username, email, bio, avatar_url, created_at FROM users WHERE id = $1', [id]);
+    // Public profile endpoint (no auth) — deliberately excludes email; see getMyProfile for the owner-only view.
+    const result = await db.query('SELECT id, username, bio, avatar_url, created_at FROM users WHERE id = $1', [id]);
 
     if (result.rows.length === 0) {
       return res.status(404).send('User not found');
@@ -25,7 +27,7 @@ async function getProfile(req, res) {
 
     res.status(200).json(result.rows[0]);
   } catch (err) {
-    res.status(500).send('Error fetching profile: ' + err.message);
+    sendServerError(res, err, 'Error fetching profile. Please try again later.');
   }
 }
 
@@ -45,7 +47,7 @@ async function updateProfile(req, res) {
     if (err.code === '23505') {
       return res.status(400).send('Email or username already exists');
     }
-    res.status(500).send('Update profile failed: ' + err.message);
+    sendServerError(res, err, 'Update profile failed. Please try again later.');
   }
 }
 

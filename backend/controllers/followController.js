@@ -1,4 +1,5 @@
 const db = require('../db');
+const { sendServerError } = require('../utils/sendError');
 
 async function followUser(req, res) {
   try {
@@ -34,7 +35,7 @@ async function followUser(req, res) {
     );
     res.status(201).send('User followed successfully');
   } catch (err) {
-    res.status(500).send('Follow failed: ' + err.message);
+    sendServerError(res, err, 'Follow failed. Please try again later.');
   }
 }
 
@@ -53,7 +54,7 @@ async function unfollowUser(req, res) {
     }
     res.send('User unfollowed successfully');
   } catch (err) {
-    res.status(500).send('Unfollow failed: ' + err.message);
+    sendServerError(res, err, 'Unfollow failed. Please try again later.');
   }
 }
 
@@ -63,14 +64,14 @@ async function getFollowers(req, res) {
       return res.status(400).send('Invalid user ID');
     }
     const result = await db.query(`
-      SELECT users.id, users.username, users.email
+      SELECT users.id, users.username, users.avatar_url
       FROM follows
       JOIN users ON follows.follower_id = users.id
       WHERE follows.following_id = $1
     `, [req.params.id]);
     res.json(result.rows);
   } catch (err) {
-    res.status(500).send('Fetch followers failed: ' + err.message);
+    sendServerError(res, err, 'Fetch followers failed. Please try again later.');
   }
 }
 
@@ -80,14 +81,14 @@ async function getFollowing(req, res) {
       return res.status(400).send('Invalid user ID');
     }
     const result = await db.query(`
-      SELECT users.id, users.username, users.email
+      SELECT users.id, users.username, users.avatar_url
       FROM follows
       JOIN users ON follows.following_id = users.id
       WHERE follows.follower_id = $1
     `, [req.params.id]);
     res.json(result.rows);
   } catch (err) {
-    res.status(500).send('Fetch following failed: ' + err.message);
+    sendServerError(res, err, 'Fetch following failed. Please try again later.');
   }
 }
 
@@ -110,7 +111,7 @@ async function getFollowCounts(req, res) {
       followingCount: parseInt(followingResult.rows[0].count)
     });
   } catch (err) {
-    res.status(500).send('Fetch follow counts failed: ' + err.message);
+    sendServerError(res, err, 'Fetch follow counts failed. Please try again later.');
   }
 }
 

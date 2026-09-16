@@ -184,6 +184,176 @@ environment variable setup on the hosting platform).
 
 ---
 
+## Production-Readiness Audit & Hardening (2026-09-16)
+
+**Goal:** Before deploying, a full review of Security, Code Quality, and
+Database Performance was run across the whole codebase (all backend
+controllers/routes/middleware, the frontend API layer, and the live
+PostgreSQL schema/indexes). Every Critical, High, Medium, and Low finding
+was fixed and individually verified against the running app + real
+database — not just reviewed on paper. This section is the permanent record
+of what was found and what was done about it, so any AI assistant (or you)
+can see the current security/perf posture without re-auditing from scratch.
+
+### 🔴 Critical (all fixed)
+
+1. **Public PII exposure** — `GET /profile/:id` and the followers/following
+   endpoints returned every user's email address to anyone, unauthenticated.
+   **Fix:** those endpoints no longer select `email`; only `GET /profile/me`
+   (the owner's own profile) returns it.
+   Files: `backend/controllers/profileController.js`, `followController.js`.
+
+2. **Missing database indexes** — core query paths (feed, comments,
+   messages, notifications, followers, password-reset lookup) had no
+   supporting indexes beyond primary keys, forcing full table scans that
+   get worse as the app grows. **Fix:** `backend/migrations/001_add_performance_indexes.sql`
+   adds 11 indexes (`CREATE INDEX CONCURRENTLY`, safe for a live DB) across
+   `posts`, `comments`, `messages`, `notifications`, `follows`, `users`,
+   including two that speed up the `ON DELETE CASCADE` paths on
+   `notifications`. Verified via `EXPLAIN` that every target query is
+   structurally able to use its new index.
+
+3. **Frontend hardcoded `http://localhost:3000` in ~30 places** — the app
+   could not be pointed at any deployed backend. **Fix:** added
+   `frontend/src/api.js`, a single axios instance reading
+   `VITE_API_URL` (falls back to localhost for dev); every API call and
+   image URL across all 11 page components now goes through it. Set
+   `VITE_API_URL` in the hosting platform's env config at deploy time.
+
+### 🟠 High (all fixed)
+
+4. **No rate limiting on auth endpoints** — brute force / credential
+   stuffing was unrestricted. **Fix:** `backend/middleware/rateLimiter.js`
+   (`express-rate-limit`): login 5 *failed* attempts/15min (successes don't
+   count, so legitimate users are never locked out by their own history),
+   signup 10/hour, forgot-password 5/15min, reset-password 10/15min.
+
+5. **Login user enumeration** — "User not found" vs "Incorrect password"
+   let an attacker discover which emails have accounts. **Fix:** both cases
+   now return the same `401 "Invalid email or password"`, and `bcrypt.compare`
+   always runs (against a dummy hash for non-existent users) so response
+   timing doesn't leak it either. `backend/controllers/authController.js`.
+
+6. **Upload extension/content spoofing** — the stored file extension came
+   from the client-supplied filename, and only the (spoofable)
+   `Content-Type` header was checked. An attacker could upload
+   `x.html` claiming `image/png` and get it served back as executable
+   HTML — stored XSS. **Fix:** `backend/middleware/upload.js` now derives
+   the extension only from a fixed MIME allowlist (never the client
+   filename), and verifies the actual file bytes (magic-byte signature)
+   match the claimed type, deleting anything that doesn't match.
+
+7. **Plaintext password-reset tokens** — a DB leak would hand out usable
+   reset tokens directly. **Fix:** tokens are SHA-256 hashed before
+   storage (the same principle as never storing plaintext passwords); the
+   plaintext token is still what's emailed/logged, only the DB copy is
+   hashed. `backend/controllers/authController.js`.
+
+### 🟡 Medium (all fixed, 2 decisions explicitly deferred by the user)
+
+8. **Missing security headers** — added `helmet()` in `server.js`, with an
+   explicit `crossOriginResourcePolicy: 'cross-origin'` override so it
+   doesn't break `/uploads` images being loaded from the frontend's
+   different origin.
+
+9. **CORS wide open** — restricted to an `ALLOWED_ORIGINS` env var
+   (comma-separated, defaults to `http://localhost:5173`). Set this to your
+   real frontend domain(s) at deploy time.
+
+10. **Internal error messages leaked to clients** — every controller's
+    `catch` block sent raw `err.message` (Postgres error text, schema
+    details) back to the client. **Fix:** `backend/utils/sendError.js`
+    logs the full error server-side and sends a generic message to the
+    client; applied across all 9 controllers (33 call sites).
+
+11. **No upper bound on `?limit=`** — a client could request
+    `?limit=999999`. **Fix:** `backend/utils/pagination.js`, a shared
+    `getPagination()` helper (clamps limit to a per-endpoint max, clamps
+    negative/invalid page to 1), applied to `getPosts`, `getFeed`,
+    `getConversation`, `getNotifications`, `searchPosts`.
+
+12. **`getPosts` ran a full `COUNT(*)` on every request** — gets slower as
+    the table grows, and nothing in the frontend used the total-count
+    fields. **Fix:** fetches `limit + 1` rows and returns a `hasMore` flag
+    instead of `totalPages`/`totalPosts` — no COUNT query at all.
+
+13. **`ILIKE '%q%'` search couldn't use an index** (leading wildcard).
+    **Fix:** `backend/migrations/002_add_trigram_search_indexes.sql` adds
+    the `pg_trgm` extension and GIN trigram indexes on `users.username` and
+    `posts.content`. Verified via `EXPLAIN` that both search queries now
+    use `Bitmap Index Scan` on the trigram index.
+
+14. **JWT stored in `localStorage`** — *decision, not a bug fix.* Switching
+    to httpOnly cookies would need CSRF middleware and doesn't carry over
+    cleanly to the React Native app planned for later (bearer tokens do).
+    **Decided: leave as-is** — the XSS surface that made this risky is
+    smaller now (upload content is validated, no `dangerouslySetInnerHTML`
+    anywhere). Revisit if the app's XSS attack surface grows.
+
+15. **FK `ON DELETE NO ACTION`** from `posts`/`comments`/`messages`/
+    `notifications` to `users` — no delete-account feature exists yet, so
+    there's nothing to break today, but the cascade/anonymize/restrict
+    policy needs a real product decision before that feature is built.
+    **Decided: deferred** until account deletion is actually planned —
+    don't assume CASCADE by default when that day comes.
+
+### 🟢 Low (all fixed)
+
+16. **`create-test-user.js`** had hardcoded test credentials in the backend
+    root. **Fix:** moved to `backend/scripts/create-test-user.js` and added
+    a guard that refuses to run when `NODE_ENV=production`.
+
+17. **Password policy was 6-char minimum only.** **Fix:** bumped to
+    NIST 800-63B guidance — 8-char minimum, no forced complexity rules
+    (those push people toward predictable patterns), and a 72-char maximum
+    (bcrypt silently truncates and ignores anything past 72 bytes, so a
+    longer password would appear accepted while not actually mattering).
+    Applied in both `authController.js` and the matching frontend checks in
+    `Signup.jsx`/`ResetPassword.jsx`.
+
+18. **`db.js` hardcoded `user`/`database`** — only the password was
+    externalized. **Fix:** `DB_USER`, `DB_HOST`, `DB_NAME`, `DB_PORT` are
+    now all read from env vars (with the same defaults as before, so local
+    dev is unaffected).
+
+19. **No root-level `.gitignore`** — added one covering OS files, editor
+    configs, and a root `.env`.
+
+### New files this audit added
+```
+backend/migrations/001_add_performance_indexes.sql
+backend/migrations/002_add_trigram_search_indexes.sql
+backend/middleware/rateLimiter.js
+backend/utils/sendError.js
+backend/utils/pagination.js
+backend/scripts/create-test-user.js   (moved from backend root)
+frontend/src/api.js
+.gitignore                            (repo root)
+```
+
+### New environment variables (see `backend/.env.example` / `frontend/.env.example`)
+- `ALLOWED_ORIGINS` — comma-separated list of origins allowed to call the API
+- `DB_USER`, `DB_HOST`, `DB_NAME`, `DB_PORT` — now all overridable (password already was)
+- `VITE_API_URL` (frontend) — the backend's base URL; **must be set to the real backend URL at deploy time**, or the frontend will try to call `localhost:3000`
+
+### Applying the new migrations on another environment (e.g. staging/prod)
+The two SQL files in `backend/migrations/` were written to be run directly
+against Postgres (`CREATE INDEX CONCURRENTLY`, safe on a live DB with
+traffic). Run them in order with `psql` or any Postgres client:
+```
+psql -U postgres -d social_app_db -f backend/migrations/001_add_performance_indexes.sql
+psql -U postgres -d social_app_db -f backend/migrations/002_add_trigram_search_indexes.sql
+```
+
+### Still open before public launch (not part of this audit's scope)
+- Deploy step itself (TASK 6 above) — still not started.
+- Real email delivery for password reset (currently logs the link to the
+  console — see TASK 2's "Later upgrade" note).
+- The two deferred Medium decisions above (JWT storage location, FK cascade
+  policy) once their triggering conditions are actually met.
+
+---
+
 ## How to use this file
 
 - Keep this file (and CLAUDE.md) in your project root or somewhere safe.

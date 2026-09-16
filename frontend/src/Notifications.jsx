@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api, { API_BASE_URL } from './api';
 import { useNavigate } from 'react-router-dom';
 
 function notificationText(n) {
@@ -18,7 +18,7 @@ function Notifications() {
   const token = localStorage.getItem('token');
 
   const loadNotifications = () => {
-    axios.get('http://localhost:3000/notifications', {
+    api.get('/notifications', {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((response) => {
@@ -41,7 +41,7 @@ function Notifications() {
   }, []);
 
   const markAsRead = (id) => {
-    axios.put(`http://localhost:3000/notifications/${id}/read`, {}, {
+    api.put(`/notifications/${id}/read`, {}, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(() => {
@@ -51,7 +51,7 @@ function Notifications() {
   };
 
   const markAllAsRead = () => {
-    axios.put('http://localhost:3000/notifications/read-all', {}, {
+    api.put('/notifications/read-all', {}, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(() => {
@@ -85,7 +85,7 @@ function Notifications() {
           }}
         >
           <img
-            src={n.actor_avatar_url ? `http://localhost:3000${n.actor_avatar_url}` : undefined}
+            src={n.actor_avatar_url ? `${API_BASE_URL}${n.actor_avatar_url}` : undefined}
             alt=""
             hidden={!n.actor_avatar_url}
             style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '8px' }}

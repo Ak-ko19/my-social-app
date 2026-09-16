@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { useParams, useNavigate } from 'react-router-dom';
 
 function Conversation() {
@@ -14,13 +14,13 @@ function Conversation() {
   const currentUserId = parseInt(localStorage.getItem('userId'));
 
   const loadConversation = () => {
-    axios.get(`http://localhost:3000/messages/${userId}`, {
+    api.get(`/messages/${userId}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((response) => {
       setMessages(response.data.messages);
       setLoading(false);
-      axios.put(`http://localhost:3000/messages/${userId}/read`, {}, {
+      api.put(`/messages/${userId}/read`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       }).catch((err) => console.error(err));
     })
@@ -43,7 +43,7 @@ function Conversation() {
     e.preventDefault();
     if (!content.trim()) return;
 
-    axios.post('http://localhost:3000/messages',
+    api.post('/messages',
       { receiverId: userId, content },
       { headers: { Authorization: `Bearer ${token}` } }
     )

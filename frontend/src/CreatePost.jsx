@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from './api';
 import { useNavigate } from 'react-router-dom';
 
 function CreatePost() {
@@ -32,7 +32,7 @@ function CreatePost() {
       formData.append('image', image);
     }
 
-    axios.post('http://localhost:3000/posts',
+    api.post('/posts',
       formData,
       { headers: { Authorization: `Bearer ${token}` } }
     )

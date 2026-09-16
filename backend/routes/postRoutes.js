@@ -4,7 +4,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const upload = require('../middleware/upload');
 const postController = require('../controllers/postController');
 
-router.post('/posts', authMiddleware, upload.single('image'), postController.createPost);
+router.post('/posts', authMiddleware, upload.single('image'), upload.validateImageContent, postController.createPost);
 router.get('/posts', postController.getPosts);
 router.get('/feed', authMiddleware, postController.getFeed);
 router.get('/posts/:id', postController.getPost);

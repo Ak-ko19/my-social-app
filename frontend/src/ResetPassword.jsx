@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from './api';
 import { useParams, useNavigate } from 'react-router-dom';
 
 function ResetPassword() {
@@ -17,12 +17,12 @@ function ResetPassword() {
       setError('New password is required');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (password.length < 8 || password.length > 72) {
+      setError('Password must be between 8 and 72 characters long');
       return;
     }
 
-    axios.post(`http://localhost:3000/reset-password/${token}`, { password })
+    api.post(`/reset-password/${token}`, { password })
     .then(() => {
       setSuccess(true);
       setTimeout(() => {
