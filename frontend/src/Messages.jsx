@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api, { API_BASE_URL } from './api';
+import api, { resolveImageUrl } from './api';
 import { useNavigate } from 'react-router-dom';
 
 function Messages() {
@@ -53,7 +53,7 @@ function Messages() {
           }}
         >
           <img
-            src={c.avatarUrl ? `${API_BASE_URL}${c.avatarUrl}` : undefined}
+            src={resolveImageUrl(c.avatarUrl)}
             alt=""
             hidden={!c.avatarUrl}
             style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '8px' }}

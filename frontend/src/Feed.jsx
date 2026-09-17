@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api, { API_BASE_URL } from './api';
+import api, { resolveImageUrl } from './api';
 import { useNavigate } from 'react-router-dom';
 
 function Feed() {
@@ -178,7 +178,7 @@ function Feed() {
       {posts.map((post) => (
         <div key={post.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '15px' }}>
           <img
-            src={post.avatar_url ? `${API_BASE_URL}${post.avatar_url}` : undefined}
+            src={resolveImageUrl(post.avatar_url)}
             alt=""
             hidden={!post.avatar_url}
             style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '8px' }}
@@ -193,7 +193,7 @@ function Feed() {
           <p>{post.content}</p>
           {post.image_url && (
             <img
-              src={`${API_BASE_URL}${post.image_url}`}
+              src={resolveImageUrl(post.image_url)}
               alt="Post attachment"
               style={{ maxWidth: '100%', maxHeight: '300px', display: 'block', marginBottom: '10px' }}
             />

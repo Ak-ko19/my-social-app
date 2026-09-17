@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import api, { API_BASE_URL } from './api';
+import api, { resolveImageUrl } from './api';
 import { useNavigate } from 'react-router-dom';
 
 function Search() {
@@ -60,7 +60,7 @@ function Search() {
           {users.map((u) => (
             <div key={u.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
               <img
-                src={u.avatar_url ? `${API_BASE_URL}${u.avatar_url}` : undefined}
+                src={resolveImageUrl(u.avatar_url)}
                 alt=""
                 hidden={!u.avatar_url}
                 style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '8px' }}
@@ -81,7 +81,7 @@ function Search() {
               <p>{p.content}</p>
               {p.image_url && (
                 <img
-                  src={`${API_BASE_URL}${p.image_url}`}
+                  src={resolveImageUrl(p.image_url)}
                   alt="Post attachment"
                   style={{ maxWidth: '100%', maxHeight: '200px', display: 'block' }}
                 />

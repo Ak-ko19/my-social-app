@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api, { API_BASE_URL } from './api';
+import api, { resolveImageUrl } from './api';
 import { useNavigate } from 'react-router-dom';
 
 function notificationText(n) {
@@ -85,7 +85,7 @@ function Notifications() {
           }}
         >
           <img
-            src={n.actor_avatar_url ? `${API_BASE_URL}${n.actor_avatar_url}` : undefined}
+            src={resolveImageUrl(n.actor_avatar_url)}
             alt=""
             hidden={!n.actor_avatar_url}
             style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '8px' }}

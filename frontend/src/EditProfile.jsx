@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api, { API_BASE_URL } from './api';
+import api, { resolveImageUrl } from './api';
 import { useNavigate } from 'react-router-dom';
 
 function EditProfile() {
@@ -83,7 +83,7 @@ function EditProfile() {
         <div>
           {(avatarPreview || avatarUrl) ? (
             <img
-              src={avatarPreview || `${API_BASE_URL}${avatarUrl}`}
+              src={avatarPreview || resolveImageUrl(avatarUrl)}
               alt="Avatar"
               style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
             />

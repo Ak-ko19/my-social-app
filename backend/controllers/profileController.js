@@ -37,7 +37,7 @@ async function updateProfile(req, res) {
     if (!username || !email) {
       return res.status(400).send('Username and email are required');
     }
-    const avatarUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const avatarUrl = req.cloudinaryResult ? req.cloudinaryResult.secure_url : null;
     const result = await db.query(
       'UPDATE users SET username = $1, email = $2, bio = $3, avatar_url = COALESCE($4, avatar_url) WHERE id = $5 RETURNING id, username, email, bio, avatar_url, created_at',
       [username, email, bio || null, avatarUrl, req.userId]

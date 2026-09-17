@@ -8,7 +8,7 @@ async function createPost(req, res) {
     if (!content || content.trim() === '') {
       return res.status(400).send('Post content cannot be empty');
     }
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const imageUrl = req.cloudinaryResult ? req.cloudinaryResult.secure_url : null;
     const result = await db.query(
       'INSERT INTO posts (user_id, content, image_url) VALUES ($1, $2, $3) RETURNING *',
       [req.userId, content, imageUrl]
