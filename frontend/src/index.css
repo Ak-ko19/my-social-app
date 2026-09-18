@@ -15,6 +15,87 @@
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
+  /* ============================================================
+   * Semantic design tokens (Feed UI upgrade — Step 1)
+   * Reusable across the whole app, not just the Feed. Components
+   * should consume these instead of hard-coded values. Existing
+   * tokens above (--text, --bg, --border, --accent, --shadow, ...)
+   * are untouched and still used by App.css.
+   * ============================================================ */
+
+  /* Color */
+  --color-primary: var(--accent);
+  --color-primary-hover: #922fe0;
+  --color-secondary: #4b5563;
+  --color-background: var(--bg);
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-text-primary: var(--text-h);
+  --color-text-secondary: var(--text);
+  --color-text-muted: #9a94a3;
+  --color-border: var(--border);
+  --color-error: #dc2626;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-overlay: rgba(8, 6, 13, 0.5);
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Typography */
+  --font-family-base: var(--sans);
+  --font-family-heading: var(--heading);
+  --font-family-mono: var(--mono);
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 32px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.45;
+  --line-height-relaxed: 1.65;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows (elevation scale; --shadow above is kept as-is for App.css) */
+  --shadow-sm: rgba(8, 6, 13, 0.08) 0 1px 2px 0;
+  --shadow-md: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --shadow-lg: rgba(0, 0, 0, 0.15) 0 20px 25px -5px, rgba(0, 0, 0, 0.08) 0 8px 10px -6px;
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 320ms;
+  --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --easing-accelerate: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Z-index layers */
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-overlay: 1200;
+  --z-modal: 1300;
+  --z-toast: 1400;
+  --z-tooltip: 1500;
+
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
   color-scheme: light dark;
@@ -43,6 +124,26 @@
     --social-bg: rgba(47, 48, 58, 0.5);
     --shadow:
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+
+    /* Semantic color tokens — dark theme */
+    --color-primary: var(--accent);
+    --color-primary-hover: #d4a6fd;
+    --color-secondary: #9ca3af;
+    --color-background: var(--bg);
+    --color-surface: #1c1d24;
+    --color-surface-elevated: #22232b;
+    --color-text-primary: var(--text-h);
+    --color-text-secondary: var(--text);
+    --color-text-muted: #6b7280;
+    --color-border: var(--border);
+    --color-error: #f87171;
+    --color-success: #4ade80;
+    --color-warning: #fbbf24;
+    --color-overlay: rgba(0, 0, 0, 0.65);
+
+    --shadow-sm: rgba(0, 0, 0, 0.3) 0 1px 2px 0;
+    --shadow-md: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+    --shadow-lg: rgba(0, 0, 0, 0.5) 0 20px 25px -5px, rgba(0, 0, 0, 0.3) 0 8px 10px -6px;
   }
 
   #social .button-icon {
