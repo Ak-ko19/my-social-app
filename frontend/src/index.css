@@ -1,3 +1,8 @@
+/* Design tokens for the whole app (Feed UI upgrade). The built /assets/*
+   files this stylesheet compiles into are served as immutable, long-cached
+   (see frontend/vercel.json) -- safe because Vite content-hashes every
+   filename, so a change here always produces a new URL rather than
+   mutating a cached one. */
 :root {
   --text: #6b6375;
   --text-h: #08060d;
