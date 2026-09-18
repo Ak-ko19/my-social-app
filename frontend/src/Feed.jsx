@@ -9,6 +9,7 @@ import FeedList from './components/feed/FeedList';
 import FeedSkeleton from './components/feed/FeedSkeleton';
 import FeedEmptyState from './components/feed/FeedEmptyState';
 import FeedErrorState from './components/feed/FeedErrorState';
+import ThemeToggle from './components/common/ThemeToggle';
 import { DURATION_NORMAL, EASE_STANDARD } from './utils/motionTokens';
 import './components/feed/Feed.css';
 
@@ -49,6 +50,8 @@ function Feed() {
           <a href="/messages">Messages</a>
           {' | '}
           <a href="/search">Search</a>
+          {' | '}
+          <ThemeToggle />
         </p>
 
         <AnimatePresence initial={false}>

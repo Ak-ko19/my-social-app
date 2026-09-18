@@ -32,12 +32,25 @@
   --color-surface-elevated: #ffffff;
   --color-text-primary: var(--text-h);
   --color-text-secondary: var(--text);
-  --color-text-muted: #9a94a3;
+  /* Darker than the original #9a94a3 -- that only hit 2.94:1 against
+     --color-surface (measured), below even the relaxed 3:1 large-text/UI
+     minimum, let alone the 4.5:1 normal-text one that applies to something
+     like a post timestamp. This keeps the same hue, just darkened. */
+  --color-text-muted: #746f7a;
   --color-border: var(--border);
   --color-error: #dc2626;
-  --color-success: #16a34a;
-  --color-warning: #d97706;
+  /* Darker than a "brighter" green/amber would be, specifically so these
+     clear 4.5:1 against --color-surface (measured) for when they're used
+     as text, not just fills. */
+  --color-success: #15803d;
+  --color-warning: #b45309;
   --color-overlay: rgba(8, 6, 13, 0.5);
+  /* Text color for content sitting on top of --color-primary (e.g. an
+     active/pressed toggle button's fill). Kept separate from
+     --color-text-primary because it depends on --color-primary's
+     luminance, not the page's base text color -- see the dark-theme
+     block below for why this isn't just "white" in both themes. */
+  --color-on-primary: #ffffff;
 
   /* Spacing */
   --space-xs: 4px;
@@ -98,7 +111,7 @@
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -111,44 +124,62 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+/* Dark theme: applied via an explicit [data-theme] attribute on <html>
+   (set by the inline script in index.html before first paint, and kept in
+   sync by ThemeProvider) rather than only `@media (prefers-color-scheme)`.
+   This is what makes a manual light/dark toggle possible -- the media
+   query alone can only ever follow the OS setting, with no way for the
+   user to override it. System preference is still respected: when the
+   user hasn't made an explicit choice, index.html's script and
+   ThemeProvider both resolve the OS preference into this same attribute,
+   so nothing about *how* dark mode is applied differs from before. */
+:root[data-theme='dark'] {
+  --text: #9ca3af;
+  --text-h: #f3f4f6;
+  --bg: #16171d;
+  --border: #2e303a;
+  --code-bg: #1f2028;
+  --accent: #c084fc;
+  --accent-bg: rgba(192, 132, 252, 0.15);
+  --accent-border: rgba(192, 132, 252, 0.5);
+  --social-bg: rgba(47, 48, 58, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
 
-    /* Semantic color tokens — dark theme */
-    --color-primary: var(--accent);
-    --color-primary-hover: #d4a6fd;
-    --color-secondary: #9ca3af;
-    --color-background: var(--bg);
-    --color-surface: #1c1d24;
-    --color-surface-elevated: #22232b;
-    --color-text-primary: var(--text-h);
-    --color-text-secondary: var(--text);
-    --color-text-muted: #6b7280;
-    --color-border: var(--border);
-    --color-error: #f87171;
-    --color-success: #4ade80;
-    --color-warning: #fbbf24;
-    --color-overlay: rgba(0, 0, 0, 0.65);
+  color-scheme: dark;
 
-    --shadow-sm: rgba(0, 0, 0, 0.3) 0 1px 2px 0;
-    --shadow-md: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-    --shadow-lg: rgba(0, 0, 0, 0.5) 0 20px 25px -5px, rgba(0, 0, 0, 0.3) 0 8px 10px -6px;
-  }
+  /* Semantic color tokens — dark theme */
+  --color-primary: var(--accent);
+  --color-primary-hover: #d4a6fd;
+  --color-secondary: #9ca3af;
+  --color-background: var(--bg);
+  --color-surface: #1c1d24;
+  --color-surface-elevated: #22232b;
+  --color-text-primary: var(--text-h);
+  --color-text-secondary: var(--text);
+  /* Lightened from the original #6b7280 -- that only hit 3.47:1 against
+     --color-surface (measured), below the 4.5:1 normal-text minimum
+     (same issue as light theme's original --color-text-muted). */
+  --color-text-muted: #80899a;
+  --color-border: var(--border);
+  --color-error: #f87171;
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-overlay: rgba(0, 0, 0, 0.65);
+  /* --accent is intentionally lightened in dark mode for visibility against
+     a dark background, which means it's no longer dark enough for white
+     text to sit on top of at an accessible contrast ratio (~2.7:1,
+     measured -- well under the ~4.5:1 minimum). Dark text reads correctly
+     against this lighter purple instead. */
+  --color-on-primary: #16171d;
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+  --shadow-sm: rgba(0, 0, 0, 0.3) 0 1px 2px 0;
+  --shadow-md: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  --shadow-lg: rgba(0, 0, 0, 0.5) 0 20px 25px -5px, rgba(0, 0, 0, 0.3) 0 8px 10px -6px;
+}
+
+[data-theme='dark'] #social .button-icon {
+  filter: invert(1) brightness(2);
 }
 
 body {

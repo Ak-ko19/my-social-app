@@ -2,6 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Runs before any CSS/React loads, so the page paints in the right
+      // theme the first time instead of flashing light then switching to
+      // dark (or vice versa). Mirrors ThemeProvider's own resolution logic
+      // (localStorage choice, else OS preference) -- kept in sync manually
+      // since this has to be a plain inline script, not a module import.
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>frontend</title>

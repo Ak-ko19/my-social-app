@@ -128,7 +128,7 @@
 .feed-btn[aria-pressed='true'] {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {
