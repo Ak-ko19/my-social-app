@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useComments } from '../../hooks/useComments';
 import PostHeader from './PostHeader';
@@ -10,6 +11,12 @@ import CommentSection from './CommentSection';
 // created_at, user_id, username, avatar_url) so it can be reused as-is for
 // Profile/Search/Community/Saved feeds later -- it doesn't know or care
 // which feed it's rendered inside.
+//
+// Memoized: FeedList is virtualized over hundreds of rows, and every
+// `loadMore` append creates a new `posts` array, which would otherwise
+// re-render every already-mounted PostCard even though their own data
+// hasn't changed. `post` keeps a stable reference per item unless that
+// post's own data changes, so a shallow prop comparison is enough here.
 function PostCard({ post }) {
   const { token } = useAuth();
   const comments = useComments(post.id, token);
@@ -32,4 +39,4 @@ function PostCard({ post }) {
   );
 }
 
-export default PostCard;
+export default memo(PostCard);

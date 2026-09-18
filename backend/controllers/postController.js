@@ -63,12 +63,18 @@ async function getFeed(req, res) {
       LIMIT $2 OFFSET $3
     `;
 
-    const result = await db.query(feedQuery, [userId, limit, offset]);
+    // Same "fetch one extra row" trick as getPosts -- avoids a separate
+    // COUNT(*) just to know whether another page exists.
+    const result = await db.query(feedQuery, [userId, limit + 1, offset]);
+
+    const hasMore = result.rows.length > limit;
+    const posts = hasMore ? result.rows.slice(0, limit) : result.rows;
 
     res.status(200).json({
-      page: page,
-      limit: limit,
-      posts: result.rows
+      page,
+      limit,
+      posts,
+      hasMore
     });
   } catch (error) {
     console.error(error);

@@ -13,7 +13,7 @@ import './components/feed/Feed.css';
 function Feed() {
   const navigate = useNavigate();
   const { token } = useAuth();
-  const { posts, loading, error, reload, removePost } = useFeed(token);
+  const { posts, loading, loadingMore, error, hasMore, reload, loadMore, removePost } = useFeed(token);
   const { unreadCount } = useUnreadCount(token);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ function Feed() {
   }
 
   return (
-    <FeedActionsProvider value={{ refreshFeed: reload, removePost }}>
+    <FeedActionsProvider value={{ removePost }}>
       <div style={{ padding: '20px' }}>
         <h2>My Feed</h2>
         <p>
@@ -45,7 +45,14 @@ function Feed() {
         {loading && <FeedSkeleton />}
         {!loading && error && <FeedErrorState message={error} onRetry={reload} />}
         {!loading && !error && posts.length === 0 && <FeedEmptyState />}
-        {!loading && !error && posts.length > 0 && <FeedList posts={posts} />}
+        {!loading && !error && posts.length > 0 && (
+          <FeedList
+            posts={posts}
+            hasMore={hasMore}
+            isLoadingMore={loadingMore}
+            onLoadMore={loadMore}
+          />
+        )}
       </div>
     </FeedActionsProvider>
   );

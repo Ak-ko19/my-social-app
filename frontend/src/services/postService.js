@@ -4,8 +4,10 @@ function authHeaders(token) {
   return { headers: { Authorization: `Bearer ${token}` } };
 }
 
-export function fetchFeed(token) {
-  return api.get('/feed', authHeaders(token)).then((res) => res.data);
+export function fetchFeed(token, { page = 1, limit = 20 } = {}) {
+  return api
+    .get('/feed', { ...authHeaders(token), params: { page, limit } })
+    .then((res) => res.data);
 }
 
 export function likePost(postId, token) {

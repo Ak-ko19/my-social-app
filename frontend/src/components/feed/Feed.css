@@ -3,17 +3,40 @@
    card and its buttons. The page chrome above it (Feed.jsx's own heading and
    nav links) is intentionally left untouched to minimize visual change. */
 
-.feed-list,
 .feed-comment-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+/* Virtualized (Step 3): the list's height is the virtualizer's computed
+   total size, and each row is absolutely positioned via an inline
+   `transform: translateY(...)`. Row spacing is `padding-bottom` rather than
+   `margin-bottom` because ResizeObserver-based measurement (measureElement)
+   includes border-box padding but not margins -- a margin-based gap would
+   make the virtualizer under-measure each row and rows would overlap. */
 .feed-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
+  position: relative;
+  width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.feed-list-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding-bottom: var(--space-md);
+  box-sizing: border-box;
+}
+
+.feed-loading-more {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-md);
+  margin: 0;
 }
 
 .feed-post-card {
