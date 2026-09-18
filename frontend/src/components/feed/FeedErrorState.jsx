@@ -3,7 +3,7 @@ function FeedErrorState({ message, onRetry }) {
     <div className="feed-error-state" role="alert">
       <p>{message}</p>
       {onRetry && (
-        <button type="button" onClick={onRetry} className="feed-btn feed-btn-secondary">
+        <button type="button" onClick={onRetry} className="feed-btn">
           Try again
         </button>
       )}

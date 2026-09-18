@@ -15,7 +15,7 @@ function ThemeToggle() {
     <motion.button
       type="button"
       onClick={toggleTheme}
-      className="feed-btn feed-btn-secondary"
+      className="feed-btn"
       aria-label={`Switch to ${nextTheme} theme`}
       whileTap={reduceMotion ? undefined : { scale: 0.92 }}
       transition={{ duration: DURATION_FAST, ease: EASE_STANDARD }}

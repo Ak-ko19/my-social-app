@@ -25,7 +25,7 @@ function PostHeader({ post, follow }) {
           <button
             type="button"
             onClick={() => navigate(`/messages/${post.user_id}`)}
-            className="feed-btn feed-btn-secondary"
+            className="feed-btn"
           >
             Message
           </button>

@@ -16,7 +16,7 @@ function FollowButton({ follow }) {
         onClick={toggle}
         disabled={pending}
         aria-pressed={isFollowing}
-        className="feed-btn feed-btn-secondary"
+        className="feed-btn"
         whileTap={reduceMotion ? undefined : { scale: 0.92 }}
         transition={{ duration: DURATION_FAST, ease: EASE_STANDARD }}
       >

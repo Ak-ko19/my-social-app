@@ -44,7 +44,7 @@ function CommentSection({ postId, comments }) {
       {list.length > 0 && (
         <ul className="feed-comment-list">
           {list.map((c) => (
-            <li key={c.id} className={`feed-comment-item${c.pending ? ' feed-comment-pending' : ''}`}>
+            <li key={c.id} className={c.pending ? 'feed-comment-pending' : undefined}>
               {editingCommentId === c.id ? (
                 <form
                   className="feed-comment-edit-form"
@@ -62,10 +62,10 @@ function CommentSection({ postId, comments }) {
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
                   />
-                  <button type="submit" className="feed-btn feed-btn-secondary">
+                  <button type="submit" className="feed-btn">
                     Save
                   </button>
-                  <button type="button" onClick={cancelEdit} className="feed-btn feed-btn-secondary">
+                  <button type="button" onClick={cancelEdit} className="feed-btn">
                     Cancel
                   </button>
                 </form>
@@ -115,7 +115,7 @@ function CommentSection({ postId, comments }) {
           placeholder="Write a comment..."
           disabled={submitPending}
         />
-        <button type="submit" className="feed-btn feed-btn-secondary" disabled={submitPending}>
+        <button type="submit" className="feed-btn" disabled={submitPending}>
           {submitPending ? 'Sending…' : 'Send'}
         </button>
       </form>
