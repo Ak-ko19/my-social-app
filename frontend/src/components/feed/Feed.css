@@ -1,0 +1,269 @@
+/* Styles for the Feed component tree (FeedList/PostCard/...). Token-driven
+   per Step 1 -- consistent borders/spacing/radius/focus states on the post
+   card and its buttons. The page chrome above it (Feed.jsx's own heading and
+   nav links) is intentionally left untouched to minimize visual change. */
+
+.feed-list,
+.feed-comment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.feed-post-card {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+}
+
+.feed-post-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.feed-post-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.feed-avatar {
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.feed-username {
+  color: var(--color-text-primary);
+}
+
+.feed-post-content {
+  margin: var(--space-sm) 0;
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.feed-post-media {
+  display: block;
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.feed-post-timestamp {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.feed-post-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.feed-like-actions,
+.feed-follow-actions {
+  display: inline-flex;
+  gap: var(--space-xs);
+}
+
+.feed-btn {
+  font: inherit;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+}
+
+.feed-btn:hover {
+  border-color: var(--color-primary);
+}
+
+.feed-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.feed-btn-link {
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  padding: 0 0 0 var(--space-xs);
+  text-decoration: underline;
+}
+
+.feed-more-menu {
+  position: relative;
+}
+
+.feed-more-summary {
+  list-style: none;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.feed-more-summary::-webkit-details-marker {
+  display: none;
+}
+
+.feed-more-panel {
+  position: absolute;
+  right: 0;
+  z-index: var(--z-dropdown);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-xs);
+  min-width: 140px;
+}
+
+.feed-more-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+  color: var(--color-text-primary);
+}
+
+.feed-more-item:hover {
+  background: var(--color-background);
+}
+
+.feed-more-item-danger {
+  color: var(--color-error);
+}
+
+.feed-comment-section {
+  margin-top: var(--space-sm);
+  padding-left: var(--space-sm);
+  border-left: 2px solid var(--color-border);
+}
+
+.feed-comment-list {
+  margin-bottom: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.feed-comment-text {
+  margin: 0;
+}
+
+.feed-comment-form,
+.feed-comment-edit-form {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.feed-comment-form input,
+.feed-comment-edit-form input {
+  flex: 1 1 160px;
+  font: inherit;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.feed-empty-state,
+.feed-error-state {
+  padding: var(--space-lg);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.feed-error-text {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+}
+
+.feed-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.feed-skeleton-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  background: var(--color-surface);
+}
+
+.feed-skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.feed-skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+}
+
+.feed-skeleton-line {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+  margin-bottom: var(--space-xs);
+}
+
+.feed-skeleton-line-short {
+  width: 40%;
+}
+
+.feed-skeleton-media {
+  height: 160px;
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+  margin-top: var(--space-sm);
+}
+
+.feed-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  .feed-post-header-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+}
