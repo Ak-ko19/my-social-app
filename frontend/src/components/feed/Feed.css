@@ -103,6 +103,10 @@
   border-radius: var(--radius-sm);
   padding: var(--space-xs) var(--space-sm);
   cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--easing-standard),
+    border-color var(--duration-fast) var(--easing-standard),
+    color var(--duration-fast) var(--easing-standard);
 }
 
 .feed-btn:hover {
@@ -112,6 +116,25 @@
 .feed-btn:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+.feed-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Like/Follow are real toggles now (Step 5) -- aria-pressed carries the
+   actual state, and this makes that state visible, not just announced. */
+.feed-btn[aria-pressed='true'] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-btn {
+    transition: none;
+  }
 }
 
 .feed-btn-link {
@@ -180,6 +203,16 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
+}
+
+/* Optimistic comment awaiting server confirmation. */
+.feed-comment-pending {
+  opacity: 0.65;
+}
+
+.feed-comment-status {
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 .feed-comment-text {

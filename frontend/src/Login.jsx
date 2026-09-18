@@ -24,6 +24,7 @@ function Login() {
     .then((response) => {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('userId', response.data.id);
+      localStorage.setItem('username', response.data.username);
       navigate('/feed');
     })
     .catch((err) => {

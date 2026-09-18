@@ -5,10 +5,10 @@ import CommentButton from './CommentButton';
 // backend support (no share/bookmark routes or tables) yet, and adding
 // buttons with no real action would just be dead UI. This layout leaves
 // room to slot them in later without another refactor.
-function PostActions({ postId, commentsExpanded, onToggleComments }) {
+function PostActions({ like, commentsExpanded, onToggleComments }) {
   return (
     <div className="feed-post-actions">
-      <LikeButton postId={postId} />
+      <LikeButton like={like} />
       <CommentButton expanded={commentsExpanded} onToggle={onToggleComments} />
     </div>
   );

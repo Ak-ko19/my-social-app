@@ -5,7 +5,7 @@ import FollowButton from './FollowButton';
 import MoreButton from './MoreButton';
 import { useAuth } from '../../hooks/useAuth';
 
-function PostHeader({ post }) {
+function PostHeader({ post, follow }) {
   const navigate = useNavigate();
   const { userId: currentUserId } = useAuth();
   const isOwner = post.user_id === currentUserId;
@@ -16,7 +16,11 @@ function PostHeader({ post }) {
       <Username>{post.username}</Username>
 
       <div className="feed-post-header-actions">
-        <FollowButton userId={post.user_id} />
+        {/* Hidden on your own posts: you can't follow yourself, and every
+            post here is already from someone you follow (this is the
+            Home feed), so showing it here would only ever be for unfollowing
+            someone else's post. */}
+        {!isOwner && <FollowButton follow={follow} />}
         {!isOwner && (
           <button
             type="button"

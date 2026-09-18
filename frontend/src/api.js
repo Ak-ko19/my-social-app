@@ -9,6 +9,28 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+// Centralized "expired authentication" handling: any 401 from an
+// authenticated endpoint means the token is dead, so clear it and bounce to
+// login rather than letting every mutation hook rediscover that on its own.
+// Login/signup 401s (wrong credentials) are excluded -- those are a normal
+// form validation error for Login.jsx to show, not a session expiring.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const url = error.config?.url || '';
+    const isAuthEndpoint = url.includes('/login') || url.includes('/signup');
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('username');
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login');
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Post/avatar images can be either a Cloudinary URL (already absolute) or a
 // legacy `/uploads/...` path from before the Cloudinary switch (relative to
 // the backend). Passing an absolute URL through API_BASE_URL unchanged keeps

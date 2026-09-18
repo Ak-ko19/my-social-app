@@ -28,7 +28,10 @@ async function likePost(req, res) {
         [postOwnerId, req.userId, 'like', req.params.id]
       );
     }
-    res.status(201).send('Post liked successfully');
+    // Returns the authoritative count so the frontend's optimistic UI can
+    // reconcile instead of just trusting its own local +1/-1 math.
+    const countResult = await db.query('SELECT COUNT(*)::int AS count FROM likes WHERE post_id = $1', [req.params.id]);
+    res.status(201).json({ message: 'Post liked successfully', likeCount: countResult.rows[0].count });
   } catch (err) {
     sendServerError(res, err, 'Like post failed. Please try again later.');
   }
@@ -46,7 +49,8 @@ async function unlikePost(req, res) {
     if (result.rows.length === 0) {
       return res.status(404).send('You have not liked this post');
     }
-    res.send('Post unliked successfully');
+    const countResult = await db.query('SELECT COUNT(*)::int AS count FROM likes WHERE post_id = $1', [req.params.id]);
+    res.json({ message: 'Post unliked successfully', likeCount: countResult.rows[0].count });
   } catch (err) {
     sendServerError(res, err, 'Unlike post failed. Please try again later.');
   }

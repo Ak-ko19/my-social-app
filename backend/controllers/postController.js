@@ -52,8 +52,15 @@ async function getFeed(req, res) {
     const userId = req.userId;
     const { page, limit, offset } = getPagination(req, { defaultLimit: 10, maxLimit: 50 });
 
+    // like_count/liked_by_me/is_following are correlated subqueries rather
+    // than a JOIN+GROUP BY -- simpler to keep correct alongside SELECT
+    // posts.* and cheap given per-post like/follow rows are small. $1 (userId)
+    // is reused from the WHERE clause below, not a new bound parameter.
     const feedQuery = `
-      SELECT posts.*, users.username, users.avatar_url
+      SELECT posts.*, users.username, users.avatar_url,
+        (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
+        EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
+        EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = posts.user_id) AS is_following
       FROM posts
       JOIN users ON posts.user_id = users.id
       WHERE posts.user_id IN (

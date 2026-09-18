@@ -11,11 +11,11 @@ export function fetchFeed(token, { page = 1, limit = 20 } = {}) {
 }
 
 export function likePost(postId, token) {
-  return api.post(`/posts/${postId}/like`, {}, authHeaders(token));
+  return api.post(`/posts/${postId}/like`, {}, authHeaders(token)).then((res) => res.data);
 }
 
 export function unlikePost(postId, token) {
-  return api.delete(`/posts/${postId}/like`, authHeaders(token));
+  return api.delete(`/posts/${postId}/like`, authHeaders(token)).then((res) => res.data);
 }
 
 export function followUser(userId, token) {
@@ -31,11 +31,11 @@ export function fetchComments(postId) {
 }
 
 export function createComment(postId, content, token) {
-  return api.post(`/posts/${postId}/comments`, { content }, authHeaders(token));
+  return api.post(`/posts/${postId}/comments`, { content }, authHeaders(token)).then((res) => res.data);
 }
 
 export function updateComment(commentId, content, token) {
-  return api.put(`/comments/${commentId}`, { content }, authHeaders(token));
+  return api.put(`/comments/${commentId}`, { content }, authHeaders(token)).then((res) => res.data);
 }
 
 export function deletePost(postId, token) {

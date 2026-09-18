@@ -9,9 +9,12 @@ function CommentSection({ postId, comments }) {
     comments: list,
     commentInput,
     setCommentInput,
+    submitPending,
+    submitError,
     editingCommentId,
     editText,
     setEditText,
+    editError,
     submitComment,
     startEdit,
     cancelEdit,
@@ -23,7 +26,7 @@ function CommentSection({ postId, comments }) {
       {list.length > 0 && (
         <ul className="feed-comment-list">
           {list.map((c) => (
-            <li key={c.id} className="feed-comment-item">
+            <li key={c.id} className={`feed-comment-item${c.pending ? ' feed-comment-pending' : ''}`}>
               {editingCommentId === c.id ? (
                 <form
                   className="feed-comment-edit-form"
@@ -51,7 +54,10 @@ function CommentSection({ postId, comments }) {
               ) : (
                 <p className="feed-comment-text">
                   <Username>{c.username}</Username>: {c.content}
-                  {c.user_id === currentUserId && (
+                  {c.pending && <span className="feed-comment-status"> (sending…)</span>}
+                  {/* Editing a not-yet-confirmed comment has no real id to PUT
+                      against, so the edit action is hidden until it's reconciled. */}
+                  {!c.pending && c.user_id === currentUserId && (
                     <button
                       type="button"
                       onClick={() => startEdit(c)}
@@ -65,6 +71,12 @@ function CommentSection({ postId, comments }) {
             </li>
           ))}
         </ul>
+      )}
+
+      {editError && (
+        <p className="feed-error-text" role="alert">
+          {editError}
+        </p>
       )}
 
       <form
@@ -83,11 +95,17 @@ function CommentSection({ postId, comments }) {
           value={commentInput}
           onChange={(e) => setCommentInput(e.target.value)}
           placeholder="Write a comment..."
+          disabled={submitPending}
         />
-        <button type="submit" className="feed-btn feed-btn-secondary">
-          Send
+        <button type="submit" className="feed-btn feed-btn-secondary" disabled={submitPending}>
+          {submitPending ? 'Sending…' : 'Send'}
         </button>
       </form>
+      {submitError && (
+        <p className="feed-error-text" role="alert">
+          {submitError}
+        </p>
+      )}
     </section>
   );
 }
