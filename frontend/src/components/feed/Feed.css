@@ -33,10 +33,7 @@
 }
 
 .feed-loading-more {
-  text-align: center;
-  color: var(--color-text-muted);
-  padding: var(--space-md);
-  margin: 0;
+  margin-top: var(--space-md);
 }
 
 .feed-post-card {
@@ -76,14 +73,6 @@
   color: var(--color-text-secondary);
   white-space: pre-wrap;
   overflow-wrap: break-word;
-}
-
-.feed-post-media {
-  display: block;
-  max-width: 100%;
-  max-height: 300px;
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--space-sm);
 }
 
 .feed-post-timestamp {
@@ -233,11 +222,10 @@
   gap: var(--space-md);
 }
 
+/* PostCardSkeleton mirrors feed-post-card's own border/background/radius/
+   padding so its footprint matches a real card closely. */
 .feed-skeleton-card {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
-  background: var(--color-surface);
+  display: block;
 }
 
 .feed-skeleton-header {
@@ -247,11 +235,16 @@
   margin-bottom: var(--space-sm);
 }
 
+.feed-skeleton-header-spacer {
+  flex: 1 1 auto;
+}
+
 .feed-skeleton-avatar {
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
   background: var(--color-border);
+  flex-shrink: 0;
 }
 
 .feed-skeleton-line {
@@ -261,15 +254,114 @@
   margin-bottom: var(--space-xs);
 }
 
+.feed-skeleton-line-name {
+  width: 96px;
+}
+
 .feed-skeleton-line-short {
-  width: 40%;
+  width: 55%;
+}
+
+.feed-skeleton-line-tiny {
+  width: 25%;
+  height: 9px;
+}
+
+.feed-skeleton-pill {
+  width: 64px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+  flex-shrink: 0;
 }
 
 .feed-skeleton-media {
-  height: 160px;
+  width: 100%;
+  aspect-ratio: 4 / 3;
   border-radius: var(--radius-sm);
   background: var(--color-border);
+  margin: var(--space-sm) 0;
+}
+
+.feed-skeleton-actions {
+  display: flex;
+  gap: var(--space-sm);
   margin-top: var(--space-sm);
+}
+
+/* Subtle pulse, not a spinner -- the skeleton shape itself communicates
+   loading. Disabled under prefers-reduced-motion (still shows the static
+   skeleton, just without the animation). */
+.feed-skeleton-pulse {
+  animation: feed-skeleton-pulse var(--duration-slow) ease-in-out infinite alternate;
+}
+
+@keyframes feed-skeleton-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-skeleton-pulse {
+    animation: none;
+  }
+}
+
+/* Step 4: progressive image loading. The container reserves `aspectRatio`
+   up front (set inline by ProgressiveImage) so its size never depends on
+   whether the image is still loading, has loaded, or failed -- that's what
+   actually prevents layout shift, not the crossfade itself. A fixed frame
+   with object-fit: cover also means every PostCard's height is knowable
+   before the image downloads, so the virtualizer's measureElement rarely
+   needs to correct image-bearing rows after the fact. */
+.feed-progressive-image {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+  margin-bottom: var(--space-sm);
+}
+
+.feed-progressive-image-placeholder,
+.feed-progressive-image-full {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-progressive-image-placeholder {
+  filter: blur(16px);
+  transform: scale(1.1); /* hide the blur's soft edge at the frame border */
+}
+
+.feed-progressive-image-full {
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--easing-standard);
+}
+
+.feed-progressive-image-full.is-loaded {
+  opacity: 1;
+}
+
+.feed-progressive-image-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-progressive-image-full {
+    transition: none;
+  }
 }
 
 .feed-visually-hidden {

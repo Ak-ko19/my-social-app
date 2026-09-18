@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import PostCard from './PostCard';
+import PostCardSkeleton from './PostCardSkeleton';
 
 // Window-scoped virtualization (not a fixed-height inner scroll container)
 // so the Feed keeps using ordinary page/document scrolling -- the simplest
@@ -59,9 +60,10 @@ function FeedList({ posts, hasMore, isLoadingMore, onLoadMore }) {
         })}
       </ul>
       {isLoadingMore && (
-        <p className="feed-loading-more" role="status">
-          Loading more posts…
-        </p>
+        <div className="feed-loading-more" role="status" aria-label="Loading more posts">
+          <PostCardSkeleton />
+          <span className="feed-visually-hidden">Loading more posts…</span>
+        </div>
       )}
     </>
   );

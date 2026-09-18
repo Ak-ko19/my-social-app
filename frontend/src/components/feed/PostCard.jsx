@@ -25,7 +25,7 @@ function PostCard({ post }) {
     <article className="feed-post-card">
       <PostHeader post={post} />
       <PostContent content={post.content} />
-      <PostMedia src={post.image_url} />
+      <PostMedia src={post.image_url} alt={`Image attached to ${post.username}'s post`} />
       <time className="feed-post-timestamp" dateTime={post.created_at}>
         {new Date(post.created_at).toLocaleString()}
       </time>

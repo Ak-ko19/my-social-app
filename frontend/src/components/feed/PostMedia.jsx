@@ -1,9 +1,8 @@
-import { resolveImageUrl } from '../../api';
+import ProgressiveImage from '../common/ProgressiveImage';
 
 function PostMedia({ src, alt = 'Post attachment' }) {
   if (!src) return null;
-
-  return <img className="feed-post-media" src={resolveImageUrl(src)} alt={alt} loading="lazy" />;
+  return <ProgressiveImage src={src} alt={alt} width={640} className="feed-post-media" />;
 }
 
 export default PostMedia;
