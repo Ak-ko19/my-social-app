@@ -1,10 +1,21 @@
+import { motion, useReducedMotion } from 'motion/react';
 import { useAuth } from '../../hooks/useAuth';
 import Username from './Username';
+import { DURATION_NORMAL, EASE_STANDARD } from '../../utils/motionTokens';
 
 // Receives the `comments` bag from useComments (owned by PostCard, shared
 // with the CommentButton toggle) rather than fetching its own data.
+//
+// The open/close transition (PostCard mounts/unmounts this inside an
+// AnimatePresence) only animates opacity + a small y offset, never height.
+// This card lives inside a virtualized row measured by ResizeObserver
+// (Step 3) -- animating height would make that observer fire continuously
+// for the whole animation, reflowing every row below on every frame. With
+// opacity/transform only, the row's real height changes once, instantly,
+// and the observer only has to react a single time.
 function CommentSection({ postId, comments }) {
   const { userId: currentUserId } = useAuth();
+  const reduceMotion = useReducedMotion();
   const {
     comments: list,
     commentInput,
@@ -22,7 +33,14 @@ function CommentSection({ postId, comments }) {
   } = comments;
 
   return (
-    <section className="feed-comment-section" aria-label="Comments">
+    <motion.section
+      className="feed-comment-section"
+      aria-label="Comments"
+      initial={reduceMotion ? false : { opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
+      transition={{ duration: reduceMotion ? 0 : DURATION_NORMAL, ease: EASE_STANDARD }}
+    >
       {list.length > 0 && (
         <ul className="feed-comment-list">
           {list.map((c) => (
@@ -106,7 +124,7 @@ function CommentSection({ postId, comments }) {
           {submitError}
         </p>
       )}
-    </section>
+    </motion.section>
   );
 }
 

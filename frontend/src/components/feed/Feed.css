@@ -374,14 +374,10 @@
   transform: scale(1.1); /* hide the blur's soft edge at the frame border */
 }
 
-.feed-progressive-image-full {
-  opacity: 0;
-  transition: opacity var(--duration-normal) var(--easing-standard);
-}
-
-.feed-progressive-image-full.is-loaded {
-  opacity: 1;
-}
+/* Opacity is driven by Motion (ProgressiveImage.jsx), not CSS, since Step 6
+   -- a leftover CSS transition on the same property here would fight
+   Motion's own frame-by-frame inline-style updates. Reduced-motion is
+   handled there too, via useReducedMotion(). */
 
 .feed-progressive-image-error {
   display: flex;
@@ -389,12 +385,6 @@
   justify-content: center;
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .feed-progressive-image-full {
-    transition: none;
-  }
 }
 
 .feed-visually-hidden {

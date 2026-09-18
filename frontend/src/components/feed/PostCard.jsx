@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { useAuth } from '../../hooks/useAuth';
 import { useComments } from '../../hooks/useComments';
 import { useLikeToggle } from '../../hooks/useLikeToggle';
@@ -50,7 +51,9 @@ function PostCard({ post }) {
         commentsExpanded={comments.visible}
         onToggleComments={comments.toggleVisible}
       />
-      {comments.visible && <CommentSection postId={post.id} comments={comments} />}
+      <AnimatePresence initial={false}>
+        {comments.visible && <CommentSection key="comments" postId={post.id} comments={comments} />}
+      </AnimatePresence>
     </article>
   );
 }
