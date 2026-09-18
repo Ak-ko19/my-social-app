@@ -35,6 +35,13 @@ async function followUser(req, res) {
     );
     res.status(201).send('User followed successfully');
   } catch (err) {
+    // Same reasoning as likeController.likePost: follows has a
+    // UNIQUE(follower_id, following_id) constraint that can catch a
+    // concurrent request the existingFollow check above raced past --
+    // that's the same conflict the check handles, not a real failure.
+    if (err.code === '23505') {
+      return res.status(400).send('You are already following this user');
+    }
     sendServerError(res, err, 'Follow failed. Please try again later.');
   }
 }

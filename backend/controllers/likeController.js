@@ -33,6 +33,16 @@ async function likePost(req, res) {
     const countResult = await db.query('SELECT COUNT(*)::int AS count FROM likes WHERE post_id = $1', [req.params.id]);
     res.status(201).json({ message: 'Post liked successfully', likeCount: countResult.rows[0].count });
   } catch (err) {
+    // A concurrent request (e.g. a double-click across two tabs) can slip
+    // past the existingLike check above before either INSERT commits --
+    // likes has a UNIQUE(post_id, user_id) constraint specifically to catch
+    // that, so the loser here isn't a real failure, just the same conflict
+    // the check above already handles. Same status/message either way, so
+    // the frontend's optimistic UI (which matches on this exact message)
+    // reconciles it the same way regardless of which path caught it.
+    if (err.code === '23505') {
+      return res.status(400).send('You already liked this post');
+    }
     sendServerError(res, err, 'Like post failed. Please try again later.');
   }
 }
