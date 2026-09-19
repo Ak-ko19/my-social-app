@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useAuth } from './hooks/useAuth';
 import { useConversations } from './hooks/useConversations';
+import { usePresenceEvents } from './hooks/usePresenceEvents';
 import ConversationList from './components/messages/ConversationList';
 import ConversationListSkeleton from './components/messages/ConversationListSkeleton';
 import ConversationListEmptyState from './components/messages/ConversationListEmptyState';
@@ -10,16 +11,20 @@ import ConversationListErrorState from './components/messages/ConversationListEr
 import { DURATION_NORMAL, EASE_STANDARD } from './utils/motionTokens';
 import './components/messages/Messages.css';
 
-// Presence (Step 8) doesn't exist yet -- an empty Set here means no row
-// shows an online dot. Once real presence events land, this becomes real
-// state (e.g. from a usePresence() hook) instead of a constant.
-const NO_ONLINE_USERS = new Set();
-
 function Messages() {
   const navigate = useNavigate();
   const { token, userId } = useAuth();
   const { conversations, loading, error, reload } = useConversations(token, userId);
+  const { isOnline } = usePresenceEvents();
   const reduceMotion = useReducedMotion();
+
+  // ConversationList/ConversationListItem just consume a plain Set (their
+  // interface hasn't changed since the presence stub) -- the merge of each
+  // row's own REST-fetched baseline (is_online) with live user_online/
+  // user_offline deltas happens once, here.
+  const onlineUserIds = new Set(
+    conversations.filter((c) => isOnline(c.other_user_id, c.is_online)).map((c) => c.other_user_id)
+  );
 
   useEffect(() => {
     if (!token) {
@@ -63,7 +68,7 @@ function Messages() {
           {inboxState === 'list' && (
             <ConversationList
               conversations={conversations}
-              onlineUserIds={NO_ONLINE_USERS}
+              onlineUserIds={onlineUserIds}
               onOpenConversation={openConversation}
             />
           )}

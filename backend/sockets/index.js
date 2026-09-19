@@ -3,6 +3,7 @@ const db = require('../db');
 const allowedOrigins = require('../config/allowedOrigins');
 const socketAuthMiddleware = require('./socketAuth');
 const messageService = require('../services/messageService');
+const presence = require('./presence');
 
 // message_error's code lets the frontend tell "edit and resend" (validation),
 // "can't be sent here" (not a participant) apart from "retry the same send"
@@ -124,6 +125,33 @@ function initSocket(httpServer) {
       }
     });
 
+    // Broadcasts to everyone else in the conversation (not the sender's own
+    // other devices -- socket.to() excludes the emitting socket, unlike the
+    // io.to() used for new_message above). No corresponding "stopped
+    // typing" event exists on purpose -- the frontend clears its own
+    // indicator on a client-side timeout instead (see
+    // hooks/useTypingIndicator.js), so the server never needs to track or
+    // broadcast when typing stops.
+    socket.on('typing', async (payload) => {
+      try {
+        const conversationId = parseInt(payload?.conversationId, 10);
+        if (isNaN(conversationId)) return;
+        // Same rule as every write in this file: room membership alone is
+        // never trusted as authorization.
+        if (!(await messageService.isParticipant(conversationId, socket.userId))) return;
+        socket.to(`conv_${conversationId}`).emit('user_typing', { conversationId, userId: socket.userId });
+      } catch (err) {
+        console.error(`typing event failed for user ${socket.userId}:`, err.message);
+      }
+    });
+
+    // conversationRoomIds is filled in by the room-join below and read by
+    // the disconnect handler, so a user_offline broadcast can reach the
+    // same rooms user_online was announced to -- socket.rooms can't be
+    // relied on for this by the time 'disconnect' fires (socket.io has
+    // already left the socket from every room before that event runs).
+    let conversationRoomIds = [];
+
     socket.on('disconnect', async (reason) => {
       console.log(`Socket disconnected: userId=${socket.userId} reason=${reason}`);
       try {
@@ -131,15 +159,38 @@ function initSocket(httpServer) {
       } catch (err) {
         console.error(`Failed to update last_seen for user ${socket.userId}:`, err.message);
       }
+
+      // Only announce offline once this was the user's LAST connected
+      // socket (they may still have another tab/device open).
+      if (presence.markOffline(socket.userId, socket.id)) {
+        conversationRoomIds.forEach((conversationId) => {
+          io.to(`conv_${conversationId}`).emit('user_offline', { userId: socket.userId });
+        });
+      }
     });
 
     (async () => {
+      // Tracked immediately (not inside the try below) so presence doesn't
+      // depend on the room-lookup query succeeding.
+      const isFirstConnection = presence.markOnline(socket.userId, socket.id);
+
       try {
         const { rows } = await db.query(
           'SELECT conversation_id FROM conversation_participants WHERE user_id = $1',
           [socket.userId]
         );
-        rows.forEach((row) => socket.join(`conv_${row.conversation_id}`));
+        conversationRoomIds = rows.map((row) => row.conversation_id);
+        conversationRoomIds.forEach((conversationId) => socket.join(`conv_${conversationId}`));
+
+        // Scoped to this user's own conversation rooms rather than a global
+        // broadcast -- only people who actually share a conversation with
+        // them have any reason to know they came online. socket.to() (not
+        // io.to()) so this socket doesn't hear its own "you're online" echo.
+        if (isFirstConnection) {
+          conversationRoomIds.forEach((conversationId) => {
+            socket.to(`conv_${conversationId}`).emit('user_online', { userId: socket.userId });
+          });
+        }
       } catch (err) {
         console.error(`Failed to join conversation rooms for user ${socket.userId}:`, err.message);
       }

@@ -3,6 +3,7 @@ const { sendServerError } = require('../utils/sendError');
 const { encodeCursor, decodeCursor, getLimit } = require('../utils/cursorPagination');
 const messageService = require('../services/messageService');
 const { getIO } = require('../sockets');
+const presence = require('../sockets/presence');
 
 async function getConversations(req, res) {
   try {
@@ -15,6 +16,7 @@ async function getConversations(req, res) {
         other.id AS other_user_id,
         other.username,
         other.avatar_url,
+        other.last_seen,
         lm.content AS last_message,
         lm.created_at AS last_message_at,
         COALESCE(unread.count, 0)::int AS unread_count
@@ -42,7 +44,15 @@ async function getConversations(req, res) {
       ORDER BY COALESCE(lm.created_at, c.created_at) DESC
     `, [req.userId]);
 
-    res.json(result.rows);
+    // Presence is in-memory/per-process (see sockets/presence.js), not a
+    // DB column, so it's annotated onto each row here rather than joined
+    // in SQL.
+    const rows = result.rows.map((row) => ({
+      ...row,
+      is_online: presence.isOnline(row.other_user_id)
+    }));
+
+    res.json(rows);
   } catch (err) {
     sendServerError(res, err, 'Fetch conversations failed. Please try again later.');
   }

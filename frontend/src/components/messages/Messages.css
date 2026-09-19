@@ -363,6 +363,17 @@
   margin-top: var(--space-sm);
 }
 
+.messages-header-status {
+  color: var(--color-text-muted);
+}
+
+.messages-typing-indicator {
+  margin: var(--space-xs) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+}
+
 /* Small rotating-arc spinner (the "sending" status icon, and the
    loading-older indicator) -- no icon library in this project, and a CSS
    border-spin is the simplest dependency-free way to draw one. */

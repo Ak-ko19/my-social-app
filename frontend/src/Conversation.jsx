@@ -1,8 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
+import { useSocket } from './hooks/useSocket';
 import { useConversationMessages } from './hooks/useConversationMessages';
+import { usePresenceEvents } from './hooks/usePresenceEvents';
+import { useTypingIndicator } from './hooks/useTypingIndicator';
 import { fetchConversations } from './services/messageService';
+import { formatRelativeTime } from './utils/formatRelativeTime';
 import Avatar from './components/common/Avatar';
 import MessageBubble from './components/messages/MessageBubble';
 import MessageComposer from './components/messages/MessageComposer';
@@ -30,6 +34,9 @@ function Conversation() {
 
   const { messages, loading, error, loadingOlder, hasMoreOlder, loadOlder, sendMessage, retrySend, reload } =
     useConversationMessages(conversationId, token, userId);
+  const { socket } = useSocket();
+  const { isOnline } = usePresenceEvents();
+  const typingUserIds = useTypingIndicator(conversationId);
 
   const containerRef = useRef(null);
   const isNearBottomRef = useRef(true);
@@ -132,13 +139,40 @@ function Conversation() {
     sendMessage(content);
   };
 
+  const handleTyping = () => {
+    // Best-effort/non-critical, unlike message sending -- no REST fallback
+    // or retry if the socket happens to be down when this fires.
+    if (socket?.connected) {
+      socket.emit('typing', { conversationId: Number(conversationId) });
+    }
+  };
+
+  const otherIsOnline = headerInfo ? isOnline(headerInfo.other_user_id, headerInfo.is_online) : false;
+  const isOtherTyping = headerInfo ? typingUserIds.has(headerInfo.other_user_id) : false;
+
   return (
     <div style={{ padding: '20px' }}>
       <p><a href="/messages">Back to Messages</a></p>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-        {headerInfo && <Avatar src={headerInfo.avatar_url} size={40} alt={`${headerInfo.username}'s profile picture`} />}
-        <h2 style={{ margin: 0 }}>{headerInfo ? headerInfo.username : 'Conversation'}</h2>
+        {headerInfo && (
+          <span className="messages-avatar-wrap">
+            <Avatar src={headerInfo.avatar_url} size={40} alt={`${headerInfo.username}'s profile picture`} />
+            {otherIsOnline && <span className="messages-online-dot" aria-label="Online" />}
+          </span>
+        )}
+        <div>
+          <h2 style={{ margin: 0 }}>{headerInfo ? headerInfo.username : 'Conversation'}</h2>
+          {headerInfo && (
+            <small className="messages-header-status">
+              {otherIsOnline
+                ? 'Active now'
+                : headerInfo.last_seen
+                  ? `Active ${formatRelativeTime(headerInfo.last_seen)} ago`
+                  : null}
+            </small>
+          )}
+        </div>
       </div>
 
       {loading && <MessageThreadSkeleton />}
@@ -166,7 +200,13 @@ function Conversation() {
         </div>
       )}
 
-      <MessageComposer onSend={handleSend} />
+      {isOtherTyping && (
+        <p className="messages-typing-indicator" role="status">
+          {headerInfo?.username || 'Someone'} is typing…
+        </p>
+      )}
+
+      <MessageComposer onSend={handleSend} onTyping={handleTyping} />
     </div>
   );
 }
