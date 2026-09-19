@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { notifyAuthChange } from './hooks/useAuth';
+import { forceLogout } from './hooks/useAuth';
 
 // Falls back to localhost for local dev; set VITE_API_URL in the environment
 // (frontend/.env, or the hosting platform's env config) to point at the
@@ -21,13 +21,7 @@ api.interceptors.response.use(
     const url = error.config?.url || '';
     const isAuthEndpoint = url.includes('/login') || url.includes('/signup');
     if (error.response?.status === 401 && !isAuthEndpoint) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('username');
-      notifyAuthChange();
-      if (window.location.pathname !== '/login') {
-        window.location.assign('/login');
-      }
+      forceLogout();
     }
     return Promise.reject(error);
   }

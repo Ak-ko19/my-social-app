@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import SocketContext from './SocketContext';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth, forceLogout } from '../hooks/useAuth';
 import { API_BASE_URL } from '../api';
 
 // Centralizes the single real-time connection for the whole app (mirrors
@@ -39,7 +39,19 @@ export function SocketProvider({ children }) {
 
     nextSocket.on('connect', () => setConnectionState('connected'));
     nextSocket.on('disconnect', () => setConnectionState('disconnected'));
-    nextSocket.on('connect_error', () => setConnectionState('disconnected'));
+    nextSocket.on('connect_error', (err) => {
+      setConnectionState('disconnected');
+      // socketAuth.js attaches this specifically for a dead/invalid token --
+      // distinct from a network/server-down error, which infinite
+      // reconnection (by design) should keep quietly retrying through.
+      // Without this check, an expired token would otherwise retry forever,
+      // failing the same way every time, with no visible explanation to
+      // the user.
+      if (err.data?.code === 'AUTH_FAILED') {
+        nextSocket.disconnect(); // stop retrying with a token we know is bad
+        forceLogout();
+      }
+    });
     // Fires right as a retry is about to happen, distinct from the harder
     // 'disconnect'/'connect_error' states -- lets a "reconnecting..." UI
     // show specifically while a retry is in flight.

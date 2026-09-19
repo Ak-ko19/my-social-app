@@ -11,6 +11,7 @@ const presence = require('./presence');
 function errorCodeFor(err) {
   if (err instanceof messageService.MessageValidationError) return 'VALIDATION';
   if (err instanceof messageService.NotParticipantError) return 'FORBIDDEN';
+  if (err instanceof messageService.RateLimitError) return 'RATE_LIMITED';
   return 'SERVER_ERROR';
 }
 

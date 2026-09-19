@@ -20,6 +20,20 @@ export function notifyAuthChange() {
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
 }
 
+// Single place that clears a dead session and sends the user back to
+// login -- used by both api.js's 401 interceptor and SocketProvider's
+// AUTH_FAILED handling, so the two can't drift into slightly different
+// "what does logging someone out actually do" behavior.
+export function forceLogout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('username');
+  notifyAuthChange();
+  if (window.location.pathname !== '/login') {
+    window.location.assign('/login');
+  }
+}
+
 // Centralizes the localStorage-based auth read so every component that
 // needs the current user's token/id/name doesn't repeat this lookup.
 // `username` is only present for sessions that logged in after this field

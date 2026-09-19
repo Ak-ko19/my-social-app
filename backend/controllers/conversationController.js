@@ -171,8 +171,10 @@ async function getMessages(req, res) {
       : null;
 
     // Fetched newest-first for the keyset comparison above; reverse to
-    // oldest-first so the client can render straight down the page.
-    res.json({ messages: page.reverse(), nextCursor });
+    // oldest-first so the client can render straight down the page. Any
+    // soft-deleted row keeps its place (id/sender/timestamp) but never
+    // sends its content to the client.
+    res.json({ messages: page.reverse().map(messageService.scrubDeletedContent), nextCursor });
   } catch (err) {
     sendServerError(res, err, 'Fetch messages failed. Please try again later.');
   }
@@ -203,6 +205,9 @@ async function sendMessage(req, res) {
     }
     if (err instanceof messageService.NotParticipantError) {
       return res.status(403).send(err.message);
+    }
+    if (err instanceof messageService.RateLimitError) {
+      return res.status(429).send(err.message);
     }
     sendServerError(res, err, 'Send message failed. Please try again later.');
   }

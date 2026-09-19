@@ -6,6 +6,7 @@
 // for both at once.
 const sanitizeHtml = require('sanitize-html');
 const db = require('../db');
+const { isRateLimited } = require('./rateLimiter');
 
 const MAX_MESSAGE_LENGTH = 5000;
 const MAX_CLIENT_TEMP_ID_LENGTH = 255;
@@ -21,6 +22,13 @@ class NotParticipantError extends Error {
   constructor(message = 'You are not a participant in this conversation') {
     super(message);
     this.name = 'NotParticipantError';
+  }
+}
+
+class RateLimitError extends Error {
+  constructor(message = 'You are sending messages too quickly. Please slow down.') {
+    super(message);
+    this.name = 'RateLimitError';
   }
 }
 
@@ -64,6 +72,13 @@ async function sendMessage({ conversationId, senderId, content, clientTempId }) 
   // re-checks conversation_participants directly.
   if (!(await isParticipant(convId, senderId))) {
     throw new NotParticipantError();
+  }
+
+  // Per (sender, conversation) rather than per-sender globally, so a burst
+  // in one conversation can't be used to argue the limit is unfairly
+  // blocking an unrelated one.
+  if (isRateLimited(senderId, convId)) {
+    throw new RateLimitError();
   }
 
   const result = await db.query(
@@ -150,14 +165,28 @@ async function markRead({ conversationId, userId, upToMessageId }) {
   return { lastReadMessageId: threshold, updatedMessageIds: updated.rows.map((r) => r.id) };
 }
 
+// Soft-deleted messages (deleted_at set) keep their row -- other fields
+// (id, sender_id, created_at, status) still matter for rendering a
+// "message deleted" placeholder in the right place in the thread -- but
+// their content must never reach a client over the wire. There's currently
+// no delete-message action anywhere in this codebase to actually set
+// deleted_at, but every read path scrubs it anyway so that gap can't turn
+// into a content leak the moment one is added.
+function scrubDeletedContent(message) {
+  if (!message.deleted_at) return message;
+  return { ...message, content: null };
+}
+
 module.exports = {
   sendMessage,
   markDelivered,
   markRead,
   isParticipant,
   sanitizeContent,
+  scrubDeletedContent,
   MessageValidationError,
   NotParticipantError,
+  RateLimitError,
   MAX_MESSAGE_LENGTH,
   MAX_CLIENT_TEMP_ID_LENGTH
 };
