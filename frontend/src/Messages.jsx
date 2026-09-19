@@ -32,7 +32,10 @@ function Messages() {
   }
 
   const openConversation = (conversation) => {
-    navigate(`/messages/${conversation.conversation_id}`);
+    // Passed as navigation state so Conversation.jsx has the other
+    // participant's name/avatar to show immediately, without waiting on a
+    // second request just to render its header.
+    navigate(`/messages/${conversation.conversation_id}`, { state: { conversation } });
   };
 
   // Same one-time crossfade pattern as Feed.jsx -- keyed on the coarse

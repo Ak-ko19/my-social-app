@@ -1,105 +1,172 @@
-import { useState, useEffect } from 'react';
-import api from './api';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
+import { useConversationMessages } from './hooks/useConversationMessages';
+import { fetchConversations } from './services/messageService';
+import Avatar from './components/common/Avatar';
+import MessageBubble from './components/messages/MessageBubble';
+import MessageComposer from './components/messages/MessageComposer';
+import MessageThreadSkeleton from './components/messages/MessageThreadSkeleton';
+import ConversationListErrorState from './components/messages/ConversationListErrorState';
+import './components/messages/Messages.css';
+import './components/feed/Feed.css';
+
+const NEAR_BOTTOM_THRESHOLD = 120;
+const NEAR_TOP_THRESHOLD = 80;
 
 function Conversation() {
-  const [messages, setMessages] = useState([]);
-  const [content, setContent] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const { userId } = useParams();
+  const { conversationId } = useParams();
+  const { token, userId } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const token = localStorage.getItem('token');
-  const currentUserId = parseInt(localStorage.getItem('userId'));
+  // The inbox passes the conversation row (avatar/username) via navigation
+  // state for an instant header -- a direct URL visit/refresh has no state,
+  // so fall back to fetching the list once and finding the matching row.
+  // Read fresh each render (not just once) so a conversationId change while
+  // already mounted (navigating chat-to-chat) picks up the new value too.
+  const conversationFromState = location.state?.conversation ?? null;
+  const [headerInfo, setHeaderInfo] = useState(conversationFromState);
 
-  const loadConversation = () => {
-    api.get(`/messages/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then((response) => {
-      setMessages(response.data.messages);
-      setLoading(false);
-      api.put(`/messages/${userId}/read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).catch((err) => console.error(err));
-    })
-    .catch((err) => {
-      console.error(err);
-      setError('Failed to load conversation');
-      setLoading(false);
-    });
-  };
+  const { messages, loading, error, loadingOlder, hasMoreOlder, loadOlder, sendMessage, retrySend, reload } =
+    useConversationMessages(conversationId, token, userId);
+
+  const containerRef = useRef(null);
+  const isNearBottomRef = useRef(true);
+  const pendingScrollAdjustRef = useRef(null);
+  const prevMessageCountRef = useRef(0);
+  const hasDoneInitialScrollRef = useRef(false);
 
   useEffect(() => {
     if (!token) {
       navigate('/login');
-      return;
     }
-    loadConversation();
-  }, [userId]);
+  }, [token, navigate]);
 
-  const handleSend = (e) => {
-    e.preventDefault();
-    if (!content.trim()) return;
+  // Guarded by comparing ids (not just truthiness) so this can't skip
+  // fetching while a stale previous conversation's headerInfo is still
+  // sitting in state during the render right after conversationId changes.
+  useEffect(() => {
+    if (headerInfo?.conversation_id === Number(conversationId) || !token) return;
+    fetchConversations(token)
+      .then((rows) => {
+        const match = rows.find((c) => c.conversation_id === Number(conversationId));
+        if (match) setHeaderInfo(match);
+      })
+      .catch((err) => console.error(err));
+  }, [headerInfo, token, conversationId]);
 
-    api.post('/messages',
-      { receiverId: userId, content },
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-    .then(() => {
-      setContent('');
-      loadConversation();
-    })
-    .catch((err) => {
-      alert(err.response?.data || 'Failed to send message');
-      console.error(err);
+  // A conversationId change (navigating from one chat straight to another
+  // without unmounting) needs the same "first open" header/scroll/
+  // pagination bookkeeping reset a fresh mount would get. Deferred by a
+  // microtask so the setHeaderInfo call runs behind an async boundary
+  // instead of synchronously inside the effect body (same reasoning as
+  // useFeed's loadMore -- see its comment).
+  useEffect(() => {
+    isNearBottomRef.current = true;
+    pendingScrollAdjustRef.current = null;
+    prevMessageCountRef.current = 0;
+    hasDoneInitialScrollRef.current = false;
+    Promise.resolve().then(() => {
+      setHeaderInfo(conversationFromState);
     });
+  }, [conversationId, conversationFromState]);
+
+  const handleScroll = () => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    isNearBottomRef.current = distanceFromBottom < NEAR_BOTTOM_THRESHOLD;
+
+    if (el.scrollTop < NEAR_TOP_THRESHOLD && hasMoreOlder && !loadingOlder) {
+      pendingScrollAdjustRef.current = { scrollHeight: el.scrollHeight, scrollTop: el.scrollTop };
+      loadOlder();
+    }
   };
 
-  if (loading) return <p>Loading conversation...</p>;
-  if (error) return <p>{error}</p>;
+  // Scroll-position bookkeeping runs synchronously after the DOM updates
+  // (before paint) so the user never sees an intermediate, wrongly-scrolled
+  // frame -- three cases, checked in order:
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    // 1. This update was an older-page prepend: keep the content the user
+    // was looking at anchored in place instead of preserving the raw
+    // scrollTop pixel offset (which would otherwise make the view jump).
+    if (pendingScrollAdjustRef.current) {
+      const { scrollHeight: prevHeight, scrollTop: prevTop } = pendingScrollAdjustRef.current;
+      el.scrollTop = prevTop + (el.scrollHeight - prevHeight);
+      pendingScrollAdjustRef.current = null;
+      prevMessageCountRef.current = messages.length;
+      return;
+    }
+
+    // 2. First paint with content -- land at the bottom, same as opening
+    // any chat app.
+    if (!hasDoneInitialScrollRef.current && messages.length > 0) {
+      el.scrollTop = el.scrollHeight;
+      hasDoneInitialScrollRef.current = true;
+      prevMessageCountRef.current = messages.length;
+      return;
+    }
+
+    // 3. A message was appended (incoming or our own optimistic send) --
+    // only follow it to the bottom if the user was already there, so
+    // reading scrollback is never interrupted.
+    if (messages.length > prevMessageCountRef.current && isNearBottomRef.current) {
+      el.scrollTop = el.scrollHeight;
+    }
+    prevMessageCountRef.current = messages.length;
+  }, [messages]);
+
+  if (!token) {
+    return null;
+  }
+
+  const handleSend = (content) => {
+    // Sending is always an intent to be at the bottom, even if the user had
+    // scrolled up to read history.
+    isNearBottomRef.current = true;
+    sendMessage(content);
+  };
 
   return (
     <div style={{ padding: '20px' }}>
-      <h2>Conversation</h2>
       <p><a href="/messages">Back to Messages</a></p>
 
-      <div style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px', minHeight: '200px' }}>
-        {messages.length === 0 && <p>No messages yet. Say hello!</p>}
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            style={{
-              textAlign: m.sender_id === currentUserId ? 'right' : 'left',
-              marginBottom: '8px'
-            }}
-          >
-            <span style={{
-              display: 'inline-block',
-              padding: '6px 10px',
-              borderRadius: '10px',
-              backgroundColor: m.sender_id === currentUserId ? '#daf1da' : '#f0f0f0',
-              maxWidth: '70%'
-            }}>
-              {m.content}
-            </span>
-            <br />
-            <small>{new Date(m.created_at).toLocaleString()}</small>
-          </div>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+        {headerInfo && <Avatar src={headerInfo.avatar_url} size={40} alt={`${headerInfo.username}'s profile picture`} />}
+        <h2 style={{ margin: 0 }}>{headerInfo ? headerInfo.username : 'Conversation'}</h2>
       </div>
 
-      <form onSubmit={handleSend}>
-        <input
-          type="text"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Type a message..."
-          style={{ width: '70%' }}
-        />
-        <button type="submit" style={{ marginLeft: '5px' }}>Send</button>
-      </form>
+      {loading && <MessageThreadSkeleton />}
+
+      {!loading && error && <ConversationListErrorState message={error} onRetry={reload} />}
+
+      {!loading && !error && (
+        <div className="messages-thread" ref={containerRef} onScroll={handleScroll}>
+          {loadingOlder && (
+            <div className="messages-load-older" role="status" aria-label="Loading older messages">
+              <span className="messages-spinner" />
+            </div>
+          )}
+          {messages.length === 0 && (
+            <p className="messages-thread-empty-hint">No messages yet. Say hello!</p>
+          )}
+          {messages.map((message) => (
+            <MessageBubble
+              key={message.id ?? message.client_temp_id}
+              message={message}
+              isOwn={message.sender_id === userId}
+              onRetry={retrySend}
+            />
+          ))}
+        </div>
+      )}
+
+      <MessageComposer onSend={handleSend} />
     </div>
   );
 }

@@ -1,0 +1,65 @@
+// Single/double check-mark icons for the sender's own message status --
+// deliberately plain inline SVG (no icon library in this project). 'sending'
+// renders the shared CSS spinner instead of a checkmark; 'failed' is
+// handled by the bubble itself (a Retry button), not this component.
+function MessageStatusIcon({ status }) {
+  if (status === 'sending') {
+    return <span className="messages-spinner" role="status" aria-label="Sending" />;
+  }
+
+  if (status === 'sent') {
+    return (
+      <svg
+        className="messages-status-icon"
+        viewBox="0 0 16 16"
+        width="14"
+        height="14"
+        aria-label="Sent"
+        role="img"
+      >
+        <path
+          d="M2 8.5 6 12l8-8"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+
+  if (status === 'delivered' || status === 'read') {
+    return (
+      <svg
+        className={`messages-status-icon ${status === 'read' ? 'messages-status-icon-read' : ''}`.trim()}
+        viewBox="0 0 20 16"
+        width="18"
+        height="14"
+        aria-label={status === 'read' ? 'Read' : 'Delivered'}
+        role="img"
+      >
+        <path
+          d="M1 8.5 5 12l8-8"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M7 8.5 11 12l8-8"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+
+  return null;
+}
+
+export default MessageStatusIcon;
