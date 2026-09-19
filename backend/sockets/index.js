@@ -2,12 +2,16 @@ const { Server } = require('socket.io');
 const db = require('../db');
 const allowedOrigins = require('../config/allowedOrigins');
 const socketAuthMiddleware = require('./socketAuth');
-const {
-  insertMessage,
-  isParticipant,
-  MAX_MESSAGE_LENGTH,
-  MAX_CLIENT_TEMP_ID_LENGTH
-} = require('../controllers/conversationController');
+const messageService = require('../services/messageService');
+
+// message_error's code lets the frontend tell "edit and resend" (validation),
+// "can't be sent here" (not a participant) apart from "retry the same send"
+// (transient server/DB failure).
+function errorCodeFor(err) {
+  if (err instanceof messageService.MessageValidationError) return 'VALIDATION';
+  if (err instanceof messageService.NotParticipantError) return 'FORBIDDEN';
+  return 'SERVER_ERROR';
+}
 
 let io = null;
 
@@ -37,55 +41,86 @@ function initSocket(httpServer) {
     // in flight. isParticipant() inside the handler enforces membership
     // independently of whether the room-join query has completed yet.
 
-    // Same validation + persistence as POST /conversations/:id/messages
-    // (conversationController.sendMessage) -- insertMessage() is the single
-    // place a message actually gets written, so both transports stay
-    // identical. ack is an optional callback (socket.emit(event, payload, ack))
-    // the client can use to confirm the send or surface an error immediately,
-    // separately from the 'new_message' broadcast below.
-    socket.on('send_message', async (payload, ack) => {
-      const respond = typeof ack === 'function' ? ack : () => {};
+    // messageService.sendMessage is the single place a message actually gets
+    // written (validated, sanitized, persisted with status='sent') -- the
+    // REST fallback (conversationController.sendMessage) calls the exact
+    // same function, so the two transports can never diverge.
+    socket.on('send_message', async (payload) => {
+      const clientTempId = payload?.clientTempId;
       try {
-        const conversationId = parseInt(payload?.conversationId);
-        if (isNaN(conversationId)) {
-          return respond({ error: 'Invalid conversation ID' });
-        }
-
-        const content = (payload?.content || '').trim();
-        if (!content) {
-          return respond({ error: 'Message content cannot be empty' });
-        }
-        if (content.length > MAX_MESSAGE_LENGTH) {
-          return respond({ error: `Message content must be under ${MAX_MESSAGE_LENGTH} characters` });
-        }
-
-        const clientTempId = payload?.clientTempId;
-        if (clientTempId !== undefined && clientTempId !== null) {
-          if (typeof clientTempId !== 'string' || clientTempId.length > MAX_CLIENT_TEMP_ID_LENGTH) {
-            return respond({ error: `clientTempId must be a string under ${MAX_CLIENT_TEMP_ID_LENGTH} characters` });
-          }
-        }
-
-        if (!(await isParticipant(conversationId, socket.userId))) {
-          return respond({ error: 'You are not a participant in this conversation' });
-        }
-
-        const message = await insertMessage({
-          conversationId,
+        const message = await messageService.sendMessage({
+          conversationId: payload?.conversationId,
           senderId: socket.userId,
-          content,
+          content: payload?.content,
           clientTempId
         });
 
-        // Broadcasts to the whole room, including the sender's own other
-        // connected devices/tabs -- they were joined to conv_<id> on connect
-        // since they're a participant, so this also drives their
-        // optimistic-UI reconciliation via the echoed client_temp_id.
-        io.to(`conv_${conversationId}`).emit('new_message', message);
-        respond({ message });
+        // Persist-then-broadcast: the row above is already committed with
+        // its real DB id before this ever fires. Broadcasts to the whole
+        // room, including the sender's own other connected devices/tabs --
+        // they're already joined to conv_<id> since they're a participant.
+        io.to(`conv_${message.conversation_id}`).emit('new_message', message);
+
+        // Sent to the sending socket specifically (not the room) so it can
+        // reconcile the one optimistic message it's tracking by clientTempId.
+        socket.emit('message_ack', { clientTempId, message });
       } catch (err) {
-        console.error(`send_message failed for user ${socket.userId}:`, err.message);
-        respond({ error: 'Send message failed. Please try again later.' });
+        if (errorCodeFor(err) === 'SERVER_ERROR') {
+          console.error(`send_message failed for user ${socket.userId}:`, err.message);
+        }
+        socket.emit('message_error', { clientTempId, error: err.message, code: errorCodeFor(err) });
+      }
+    });
+
+    // Fired by a recipient's client the moment it actually receives a
+    // new_message event while actively connected -- flips sent -> delivered.
+    socket.on('mark_delivered', async (payload) => {
+      try {
+        const updated = await messageService.markDelivered({
+          conversationId: payload?.conversationId,
+          userId: socket.userId,
+          messageId: payload?.messageId
+        });
+        if (updated) {
+          io.to(`conv_${updated.conversation_id}`).emit('message_status_update', {
+            conversationId: updated.conversation_id,
+            messageIds: [updated.id],
+            status: 'delivered'
+          });
+        }
+      } catch (err) {
+        if (errorCodeFor(err) === 'SERVER_ERROR') {
+          console.error(`mark_delivered failed for user ${socket.userId}:`, err.message);
+        }
+        socket.emit('message_error', { error: err.message, code: errorCodeFor(err) });
+      }
+    });
+
+    // Fired when the recipient opens/views the conversation. messageId is
+    // optional -- omitting it means "mark everything up to the latest
+    // message read", matching PUT /conversations/:id/read's behavior.
+    socket.on('mark_read', async (payload) => {
+      try {
+        const conversationId = payload?.conversationId;
+        const result = await messageService.markRead({
+          conversationId,
+          userId: socket.userId,
+          upToMessageId: payload?.messageId
+        });
+        if (result.lastReadMessageId !== null) {
+          io.to(`conv_${conversationId}`).emit('message_status_update', {
+            conversationId,
+            messageIds: result.updatedMessageIds,
+            lastReadMessageId: result.lastReadMessageId,
+            readerId: socket.userId,
+            status: 'read'
+          });
+        }
+      } catch (err) {
+        if (errorCodeFor(err) === 'SERVER_ERROR') {
+          console.error(`mark_read failed for user ${socket.userId}:`, err.message);
+        }
+        socket.emit('message_error', { error: err.message, code: errorCodeFor(err) });
       }
     });
 

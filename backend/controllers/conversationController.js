@@ -1,30 +1,8 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { encodeCursor, decodeCursor, getLimit } = require('../utils/cursorPagination');
-
-const MAX_MESSAGE_LENGTH = 5000;
-const MAX_CLIENT_TEMP_ID_LENGTH = 255;
-
-async function isParticipant(conversationId, userId) {
-  const result = await db.query(
-    'SELECT 1 FROM conversation_participants WHERE conversation_id = $1 AND user_id = $2',
-    [conversationId, userId]
-  );
-  return result.rows.length > 0;
-}
-
-// Shared by the REST send-message fallback below and the socket 'send_message'
-// handler (sockets/index.js) so a message persists identically no matter
-// which transport it came in on.
-async function insertMessage({ conversationId, senderId, content, clientTempId }) {
-  const result = await db.query(
-    `INSERT INTO messages (conversation_id, sender_id, content, client_temp_id)
-     VALUES ($1, $2, $3, $4)
-     RETURNING *`,
-    [conversationId, senderId, content, clientTempId || null]
-  );
-  return result.rows[0];
-}
+const messageService = require('../services/messageService');
+const { getIO } = require('../sockets');
 
 async function getConversations(req, res) {
   try {
@@ -153,7 +131,7 @@ async function getMessages(req, res) {
       return res.status(400).send('Invalid conversation ID');
     }
 
-    if (!(await isParticipant(conversationId, req.userId))) {
+    if (!(await messageService.isParticipant(conversationId, req.userId))) {
       return res.status(403).send('You are not a participant in this conversation');
     }
 
@@ -192,48 +170,30 @@ async function getMessages(req, res) {
 
 async function sendMessage(req, res) {
   try {
-    const conversationId = parseInt(req.params.id);
-    if (isNaN(conversationId)) {
-      return res.status(400).send('Invalid conversation ID');
-    }
-
-    const content = (req.body.content || '').trim();
-    if (!content) {
-      return res.status(400).send('Message content cannot be empty');
-    }
-    if (content.length > MAX_MESSAGE_LENGTH) {
-      return res.status(400).send(`Message content must be under ${MAX_MESSAGE_LENGTH} characters`);
-    }
-
-    const clientTempId = req.body.clientTempId;
-    if (clientTempId !== undefined && clientTempId !== null) {
-      if (typeof clientTempId !== 'string' || clientTempId.length > MAX_CLIENT_TEMP_ID_LENGTH) {
-        return res.status(400).send(`clientTempId must be a string under ${MAX_CLIENT_TEMP_ID_LENGTH} characters`);
-      }
-    }
-
-    if (!(await isParticipant(conversationId, req.userId))) {
-      return res.status(403).send('You are not a participant in this conversation');
-    }
-
-    const message = await insertMessage({
-      conversationId,
+    const message = await messageService.sendMessage({
+      conversationId: req.params.id,
       senderId: req.userId,
-      content,
-      clientTempId
+      content: req.body.content,
+      clientTempId: req.body.clientTempId
     });
 
     // Still push it to anyone connected via the socket room -- this endpoint
     // exists for when the SENDER's socket is down, but other participants
     // may well still be connected and expect realtime delivery.
     try {
-      require('../sockets').getIO().to(`conv_${conversationId}`).emit('new_message', message);
+      getIO().to(`conv_${message.conversation_id}`).emit('new_message', message);
     } catch (err) {
       console.error('Failed to emit new_message over socket:', err.message);
     }
 
     res.status(201).json(message);
   } catch (err) {
+    if (err instanceof messageService.MessageValidationError) {
+      return res.status(400).send(err.message);
+    }
+    if (err instanceof messageService.NotParticipantError) {
+      return res.status(403).send(err.message);
+    }
     sendServerError(res, err, 'Send message failed. Please try again later.');
   }
 }
@@ -245,32 +205,13 @@ async function markConversationRead(req, res) {
       return res.status(400).send('Invalid conversation ID');
     }
 
-    if (!(await isParticipant(conversationId, req.userId))) {
-      return res.status(403).send('You are not a participant in this conversation');
-    }
-
-    const latest = await db.query(
-      'SELECT MAX(id) AS latest_id FROM messages WHERE conversation_id = $1',
-      [conversationId]
-    );
-    const latestId = latest.rows[0].latest_id;
-
-    if (latestId !== null) {
-      await db.query(
-        'UPDATE conversation_participants SET last_read_message_id = $1 WHERE conversation_id = $2 AND user_id = $3',
-        [latestId, conversationId, req.userId]
-      );
-      // Read receipts: flip every message the OTHER participant sent that
-      // isn't already marked read, up to the message just backfilled above.
-      await db.query(
-        `UPDATE messages SET status = 'read'
-         WHERE conversation_id = $1 AND sender_id != $2 AND status != 'read' AND id <= $3`,
-        [conversationId, req.userId, latestId]
-      );
-    }
+    await messageService.markRead({ conversationId, userId: req.userId, upToMessageId: null });
 
     res.send('Conversation marked as read');
   } catch (err) {
+    if (err instanceof messageService.NotParticipantError) {
+      return res.status(403).send(err.message);
+    }
     sendServerError(res, err, 'Mark conversation as read failed. Please try again later.');
   }
 }
@@ -280,9 +221,5 @@ module.exports = {
   createConversation,
   getMessages,
   sendMessage,
-  markConversationRead,
-  insertMessage,
-  isParticipant,
-  MAX_MESSAGE_LENGTH,
-  MAX_CLIENT_TEMP_ID_LENGTH
+  markConversationRead
 };
