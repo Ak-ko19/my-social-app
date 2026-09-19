@@ -1,0 +1,252 @@
+/* Styles for the messaging inbox (ConversationList/ConversationListItem/...).
+   Token-driven, mirroring components/feed/Feed.css's approach exactly for
+   visual consistency -- same spacing/color/radius/motion tokens, same
+   virtualized-list structure. The page chrome above it (Messages.jsx's own
+   heading and nav links) is intentionally left plain, matching how Feed.jsx
+   treats its own chrome. */
+
+.messages-list {
+  position: relative;
+  width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.messages-list-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  /* Gap between rows via padding, not margin -- same reason as feed-list-item:
+     ResizeObserver-based measurement (measureElement) includes border-box
+     padding but not margins, so a margin-based gap would make the
+     virtualizer under-measure each row. Each row is also its own bordered
+     card (not a joined list with only-the-ends rounded) specifically
+     because virtualization only ever mounts a windowed subset of rows --
+     ":first-child"/":last-child" would target whatever happens to be
+     topmost/bottommost in the DOM at the current scroll offset, not the
+     true first/last conversation. */
+  padding-bottom: var(--space-sm);
+  box-sizing: border-box;
+}
+
+.messages-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  transition: background-color var(--duration-fast) var(--easing-standard);
+}
+
+.messages-row:hover {
+  background: var(--color-background);
+}
+
+.messages-row:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.messages-row-unread {
+  background: var(--accent-bg);
+}
+
+.messages-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+}
+
+.messages-online-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+  border: 2px solid var(--color-surface);
+}
+
+.messages-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.messages-top-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.messages-name {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.messages-time {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.messages-bottom-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.messages-preview {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.messages-row-unread .messages-preview {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.messages-unread-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--space-xs);
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.messages-empty-state,
+.messages-error-state {
+  padding: var(--space-lg);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.messages-btn-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.messages-btn {
+  font: inherit;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+}
+
+.messages-btn:hover {
+  border-color: var(--color-primary);
+}
+
+.messages-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Skeleton -- mirrors feed-skeleton-*'s pulse/shape approach exactly, and
+   the real row's card-per-item shape (see messages-list-item's comment). */
+.messages-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.messages-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.messages-skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.messages-skeleton-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.messages-skeleton-line {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+  margin-bottom: var(--space-xs);
+}
+
+.messages-skeleton-line-name {
+  width: 40%;
+}
+
+.messages-skeleton-line-preview {
+  width: 70%;
+  margin-bottom: 0;
+}
+
+.messages-skeleton-pulse {
+  animation: messages-skeleton-pulse var(--duration-slow) ease-in-out infinite alternate;
+}
+
+@keyframes messages-skeleton-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .messages-skeleton-pulse {
+    animation: none;
+  }
+}
+
+.messages-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

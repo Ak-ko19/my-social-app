@@ -1,69 +1,71 @@
-import { useState, useEffect } from 'react';
-import api, { resolveImageUrl } from './api';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { useAuth } from './hooks/useAuth';
+import { useConversations } from './hooks/useConversations';
+import ConversationList from './components/messages/ConversationList';
+import ConversationListSkeleton from './components/messages/ConversationListSkeleton';
+import ConversationListEmptyState from './components/messages/ConversationListEmptyState';
+import ConversationListErrorState from './components/messages/ConversationListErrorState';
+import { DURATION_NORMAL, EASE_STANDARD } from './utils/motionTokens';
+import './components/messages/Messages.css';
+
+// Presence (Step 8) doesn't exist yet -- an empty Set here means no row
+// shows an online dot. Once real presence events land, this becomes real
+// state (e.g. from a usePresence() hook) instead of a constant.
+const NO_ONLINE_USERS = new Set();
 
 function Messages() {
-  const [conversations, setConversations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const navigate = useNavigate();
-
-  const token = localStorage.getItem('token');
+  const { token, userId } = useAuth();
+  const { conversations, loading, error, reload } = useConversations(token, userId);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (!token) {
       navigate('/login');
-      return;
     }
+  }, [token, navigate]);
 
-    api.get('/conversations', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then((response) => {
-      setConversations(response.data);
-      setLoading(false);
-    })
-    .catch((err) => {
-      console.error(err);
-      setError('Failed to load conversations');
-      setLoading(false);
-    });
-  }, []);
+  if (!token) {
+    return null;
+  }
 
-  if (loading) return <p>Loading conversations...</p>;
-  if (error) return <p>{error}</p>;
+  const openConversation = (conversation) => {
+    navigate(`/messages/${conversation.conversation_id}`);
+  };
+
+  // Same one-time crossfade pattern as Feed.jsx -- keyed on the coarse
+  // loading/error/empty/list state, not on `conversations` itself, so a
+  // live in-place update (new message moving a row to the top) never
+  // re-triggers this transition.
+  const inboxState = loading ? 'loading' : error ? 'error' : conversations.length === 0 ? 'empty' : 'list';
 
   return (
     <div style={{ padding: '20px' }}>
       <h2>Messages</h2>
       <p><a href="/feed">Back to Feed</a></p>
 
-      {conversations.length === 0 && <p>No conversations yet.</p>}
-
-      {conversations.map((c) => (
-        <div
-          key={c.userId}
-          onClick={() => navigate(`/messages/${c.userId}`)}
-          style={{
-            border: '1px solid #ccc',
-            padding: '10px',
-            marginBottom: '10px',
-            cursor: 'pointer',
-            backgroundColor: c.unreadCount > 0 ? '#eef6ff' : '#fff'
-          }}
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={inboxState}
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={reduceMotion ? undefined : { opacity: 0 }}
+          transition={{ duration: reduceMotion ? 0 : DURATION_NORMAL, ease: EASE_STANDARD }}
         >
-          <img
-            src={resolveImageUrl(c.avatarUrl)}
-            alt=""
-            hidden={!c.avatarUrl}
-            style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '8px' }}
-          />
-          <strong>{c.username}</strong>
-          {c.unreadCount > 0 && <span style={{ marginLeft: '8px', color: 'red' }}>({c.unreadCount} new)</span>}
-          <p style={{ margin: '5px 0', color: '#555' }}>{c.lastMessage}</p>
-          <small>{new Date(c.lastMessageAt).toLocaleString()}</small>
-        </div>
-      ))}
+          {inboxState === 'loading' && <ConversationListSkeleton />}
+          {inboxState === 'error' && <ConversationListErrorState message={error} onRetry={reload} />}
+          {inboxState === 'empty' && <ConversationListEmptyState />}
+          {inboxState === 'list' && (
+            <ConversationList
+              conversations={conversations}
+              onlineUserIds={NO_ONLINE_USERS}
+              onOpenConversation={openConversation}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

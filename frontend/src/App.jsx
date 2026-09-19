@@ -24,7 +24,7 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/messages" element={<Messages />} />
-        <Route path="/messages/:userId" element={<Conversation />} />
+        <Route path="/messages/:conversationId" element={<Conversation />} />
         <Route path="/search" element={<Search />} />
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>

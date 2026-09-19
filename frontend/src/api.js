@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { notifyAuthChange } from './hooks/useAuth';
 
 // Falls back to localhost for local dev; set VITE_API_URL in the environment
 // (frontend/.env, or the hosting platform's env config) to point at the
@@ -23,6 +24,7 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
       localStorage.removeItem('username');
+      notifyAuthChange();
       if (window.location.pathname !== '/login') {
         window.location.assign('/login');
       }

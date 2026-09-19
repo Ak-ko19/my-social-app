@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from './api';
 import { useNavigate } from 'react-router-dom';
+import { notifyAuthChange } from './hooks/useAuth';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -25,6 +26,7 @@ function Login() {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('userId', response.data.id);
       localStorage.setItem('username', response.data.username);
+      notifyAuthChange();
       navigate('/feed');
     })
     .catch((err) => {

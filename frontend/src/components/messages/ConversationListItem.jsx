@@ -1,0 +1,66 @@
+import { memo } from 'react';
+import Avatar from '../common/Avatar';
+import { formatRelativeTime } from '../../utils/formatRelativeTime';
+
+// Deliberately a single component rather than split into sub-parts like
+// PostCard/PostHeader/PostContent -- a conversation row has none of
+// PostCard's per-part reuse/complexity (no comments, no media, no separate
+// like/follow mutations), so that split would be premature here.
+//
+// `isOnline` is a plain boolean prop, not a live subscription -- presence
+// (Step 8) doesn't exist yet, so callers pass whatever they have (or
+// nothing, which just hides the dot) rather than this component reaching
+// into a socket itself.
+//
+// Memoized for the same reason as PostCard: ConversationList is virtualized,
+// and a `conversations` array update (e.g. a different row moving to the
+// top on a new message) would otherwise re-render every already-mounted row.
+function ConversationListItem({ conversation, isOnline = false, onClick }) {
+  const {
+    username,
+    avatar_url: avatarUrl,
+    last_message: lastMessage,
+    last_message_at: lastMessageAt,
+    unread_count: unreadCount
+  } = conversation;
+
+  const hasUnread = unreadCount > 0;
+
+  return (
+    <button
+      type="button"
+      className={`messages-row ${hasUnread ? 'messages-row-unread' : ''}`.trim()}
+      onClick={onClick}
+    >
+      <span className="messages-avatar-wrap">
+        <Avatar src={avatarUrl} size={48} alt={`${username}'s profile picture`} />
+        {isOnline && <span className="messages-online-dot" aria-label="Online" />}
+      </span>
+
+      <span className="messages-body">
+        <span className="messages-top-row">
+          <span className="messages-name">{username}</span>
+          {lastMessageAt && (
+            <time
+              className="messages-time"
+              dateTime={lastMessageAt}
+              title={new Date(lastMessageAt).toLocaleString()}
+            >
+              {formatRelativeTime(lastMessageAt)}
+            </time>
+          )}
+        </span>
+        <span className="messages-bottom-row">
+          <span className="messages-preview">{lastMessage || 'Say hello!'}</span>
+          {hasUnread && (
+            <span className="messages-unread-badge" aria-label={`${unreadCount} unread`}>
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+export default memo(ConversationListItem);
