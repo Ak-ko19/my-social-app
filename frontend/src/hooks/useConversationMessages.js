@@ -70,7 +70,16 @@ export function useConversationMessages(conversationId, token, currentUserId) {
       const byKey = new Map(current.map((m) => [localKey(m), m]));
       incoming.forEach((incomingMessage) => {
         if (incomingMessage.client_temp_id) {
-          byKey.delete(`tmp:${incomingMessage.client_temp_id}`);
+          const tmpKey = `tmp:${incomingMessage.client_temp_id}`;
+          const pending = byKey.get(tmpKey);
+          // Only reconcile with OUR OWN still-pending optimistic entry --
+          // clientTempId is attacker/bug-reachable input from whoever sent
+          // incomingMessage, so if it happens to collide with a different
+          // sender's in-flight clientTempId, that unrelated message must
+          // never evict this client's own pending "sending..." bubble.
+          if (pending && pending.sender_id === incomingMessage.sender_id) {
+            byKey.delete(tmpKey);
+          }
         }
         byKey.set(localKey(incomingMessage), incomingMessage);
       });
