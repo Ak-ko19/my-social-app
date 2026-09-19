@@ -1,9 +1,12 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
 const db = require('./db');
+const allowedOrigins = require('./config/allowedOrigins');
+const { initSocket } = require('./sockets');
 
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
@@ -12,7 +15,7 @@ const commentRoutes = require('./routes/commentRoutes');
 const likeRoutes = require('./routes/likeRoutes');
 const followRoutes = require('./routes/followRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
-const messageRoutes = require('./routes/messageRoutes');
+const conversationRoutes = require('./routes/conversationRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 
 const app = express();
@@ -24,10 +27,6 @@ app.use(helmet({
   // helmet's default same-origin CORP would silently block those <img> loads.
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173')
-  .split(',')
-  .map((origin) => origin.trim());
-
 app.use(express.json());
 app.use(cors({
   origin: (origin, callback) => {
@@ -61,7 +60,7 @@ app.use(commentRoutes);
 app.use(likeRoutes);
 app.use(followRoutes);
 app.use(notificationRoutes);
-app.use(messageRoutes);
+app.use(conversationRoutes);
 app.use(searchRoutes);
 
 // Handle multer upload errors (wrong file type, too large) with a clear message
@@ -72,6 +71,9 @@ app.use((err, req, res, next) => {
   next();
 });
 
-app.listen(PORT, () => {
+const httpServer = http.createServer(app);
+initSocket(httpServer);
+
+httpServer.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
