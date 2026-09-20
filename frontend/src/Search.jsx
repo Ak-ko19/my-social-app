@@ -1,6 +1,38 @@
 import { useState } from 'react';
 import api, { resolveImageUrl } from './api';
 import { useNavigate } from 'react-router-dom';
+import { useFollowToggle } from './hooks/useFollowToggle';
+import FollowButton from './components/feed/FollowButton';
+
+// Search's own /search/users results don't include is_following (unlike
+// /feed's posts, which are already scoped to followed users by
+// construction) -- seeding false here is a one-click-off worst case, not a
+// bug: if the searcher already follows this user, useFollowToggle's own
+// "already following" conflict handling (see its own comment) keeps the
+// optimistic true state instead of rolling back, so a stray click just
+// self-corrects instead of actually breaking anything.
+function SearchUserResult({ user, token, onMessage }) {
+  const follow = useFollowToggle(user.id, false, token);
+
+  return (
+    <div style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
+      <img
+        src={resolveImageUrl(user.avatar_url)}
+        alt=""
+        hidden={!user.avatar_url}
+        style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '8px' }}
+      />
+      <strong>{user.username}</strong>
+      {user.bio && <p style={{ margin: '5px 0', color: '#555' }}>{user.bio}</p>}
+      {token && (
+        <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <FollowButton follow={follow} />
+          <button onClick={() => onMessage(user.id)}>Message</button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Search() {
   const [query, setQuery] = useState('');
@@ -58,19 +90,7 @@ function Search() {
           <h3>Users</h3>
           {users.length === 0 && <p>No matching users.</p>}
           {users.map((u) => (
-            <div key={u.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
-              <img
-                src={resolveImageUrl(u.avatar_url)}
-                alt=""
-                hidden={!u.avatar_url}
-                style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '8px' }}
-              />
-              <strong>{u.username}</strong>
-              {u.bio && <p style={{ margin: '5px 0', color: '#555' }}>{u.bio}</p>}
-              {token && (
-                <button onClick={() => navigate(`/messages/${u.id}`)}>Message</button>
-              )}
-            </div>
+            <SearchUserResult key={u.id} user={u} token={token} onMessage={(id) => navigate(`/messages/${id}`)} />
           ))}
 
           <h3>Posts</h3>
