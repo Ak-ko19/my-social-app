@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import VoiceRecorderButton from './VoiceRecorderButton';
 
 // Debounce the "should I check whether to fire typing?" trigger by 300ms
 // (a natural pause between keystrokes), then only actually emit if it's
@@ -13,8 +14,9 @@ const TYPING_EMIT_INTERVAL_MS = 2500;
 // form, this is never disabled while a send is in flight -- optimistic
 // sending is the whole point, so the user can keep sending while earlier
 // messages are still "sending"/retrying.
-function MessageComposer({ onSend, onTyping }) {
+function MessageComposer({ onSend, onSendVoice, onTyping }) {
   const [content, setContent] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
   const debounceTimerRef = useRef(null);
   const lastTypingEmitRef = useRef(0);
 
@@ -48,20 +50,27 @@ function MessageComposer({ onSend, onTyping }) {
 
   return (
     <form className="feed-comment-form messages-composer" onSubmit={handleSubmit}>
-      <label className="feed-visually-hidden" htmlFor="message-composer-input">
-        Write a message
-      </label>
-      <input
-        id="message-composer-input"
-        type="text"
-        value={content}
-        onChange={handleChange}
-        placeholder="Type a message..."
-        autoComplete="off"
-      />
-      <button type="submit" className="feed-btn" disabled={!content.trim()}>
-        Send
-      </button>
+      {!isRecording && (
+        <>
+          <label className="feed-visually-hidden" htmlFor="message-composer-input">
+            Write a message
+          </label>
+          <input
+            id="message-composer-input"
+            type="text"
+            value={content}
+            onChange={handleChange}
+            placeholder="Type a message..."
+            autoComplete="off"
+          />
+        </>
+      )}
+      {onSendVoice && <VoiceRecorderButton onSend={onSendVoice} onRecordingChange={setIsRecording} />}
+      {!isRecording && (
+        <button type="submit" className="feed-btn" disabled={!content.trim()}>
+          Send
+        </button>
+      )}
     </form>
   );
 }

@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSocket } from './useSocket';
-import { fetchMessages, sendMessageRest, markConversationRead } from '../services/messageService';
+import {
+  fetchMessages,
+  sendMessageRest,
+  markConversationRead,
+  deleteMessageRest,
+  sendVoiceMessageRest
+} from '../services/messageService';
 
 const SEND_TIMEOUT_MS = 5000;
 // 'sending'/'failed' are local-only states a server message never carries;
@@ -63,6 +69,11 @@ export function useConversationMessages(conversationId, token, currentUserId) {
   const loadingOlderRef = useRef(false);
   const hasConnectedOnceRef = useRef(false);
   const pendingTimeoutsRef = useRef(new Map()); // clientTempId -> timeoutId
+  // messageId -> the pre-delete message, kept only while a socket delete is
+  // in flight so handleMessageDeleted/handleErrorEvent (separate effects,
+  // async socket events) can confirm or roll back the optimistic delete
+  // applied in deleteMessage below.
+  const pendingDeletesRef = useRef(new Map());
 
   const mergeMessages = useCallback((incoming) => {
     if (!incoming.length) return;
@@ -149,6 +160,7 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     loadingOlderRef.current = false;
     pendingTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
     pendingTimeoutsRef.current.clear();
+    pendingDeletesRef.current.clear();
     // Deferred by a microtask so this reset runs behind an async boundary
     // instead of synchronously inside the effect's call stack (same
     // reasoning as useFeed's loadMore -- see its comment). loadMessages()
@@ -174,6 +186,26 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     return () => socket.off('new_message', handleNewMessage);
   }, [socket, conversationIdNum, mergeMessages]);
 
+  // Live deletes for this conversation -- covers both this client's own
+  // delete (room broadcast includes the sender, doubling as its success
+  // confirmation) and a delete made from another of this user's connected
+  // devices/tabs, or by... well, only the sender can delete, but any other
+  // participant's view still needs to update.
+  useEffect(() => {
+    if (!socket) return;
+    const handleMessageDeleted = ({ conversationId: convId, messageId, deletedAt }) => {
+      if (convId !== conversationIdNum) return;
+      pendingDeletesRef.current.delete(messageId);
+      setMessages((current) =>
+        current.map((m) =>
+          m.id === messageId ? { ...m, deleted_at: deletedAt || new Date().toISOString(), content: null } : m
+        )
+      );
+    };
+    socket.on('message_deleted', handleMessageDeleted);
+    return () => socket.off('message_deleted', handleMessageDeleted);
+  }, [socket, conversationIdNum]);
+
   // Ack/error for this client's own sends -- see attemptSend below for the
   // other half (arming the timeout these clear).
   useEffect(() => {
@@ -182,13 +214,22 @@ export function useConversationMessages(conversationId, token, currentUserId) {
       clearPendingTimeout(clientTempId);
       mergeMessages([message]);
     };
-    const handleErrorEvent = ({ clientTempId, error: errorMessage }) => {
-      if (!clientTempId) return; // not one of our sends (e.g. a mark_read failure)
-      clearPendingTimeout(clientTempId);
-      console.error('send_message failed:', errorMessage);
-      setMessages((current) =>
-        current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, status: 'failed' } : m))
-      );
+    const handleErrorEvent = ({ clientTempId, messageId, error: errorMessage }) => {
+      if (clientTempId) {
+        clearPendingTimeout(clientTempId);
+        console.error('send_message failed:', errorMessage);
+        setMessages((current) =>
+          current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, status: 'failed' } : m))
+        );
+        return;
+      }
+      if (messageId != null && pendingDeletesRef.current.has(messageId)) {
+        const previous = pendingDeletesRef.current.get(messageId);
+        pendingDeletesRef.current.delete(messageId);
+        console.error('delete_message failed:', errorMessage);
+        setMessages((current) => current.map((m) => (m.id === messageId ? previous : m)));
+      }
+      // Otherwise not one of our sends/deletes (e.g. a mark_read failure) -- ignore.
     };
     socket.on('message_ack', handleAck);
     socket.on('message_error', handleErrorEvent);
@@ -324,6 +365,150 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     [mergeMessages, buildOptimisticMessage, attemptSend]
   );
 
+  // Optimistic-then-reconcile, mirroring attemptSend: applies the "deleted"
+  // placeholder locally first, then confirms via whichever transport is
+  // live. Socket-connected: the room broadcast (handleMessageDeleted above)
+  // or a message_error rollback (handleErrorEvent above) resolves it.
+  // Disconnected: falls back to REST immediately, same as attemptSend does
+  // for a fresh send while offline.
+  const deleteMessage = useCallback(
+    (messageId) => {
+      let previous = null;
+      setMessages((current) =>
+        current.map((m) => {
+          if (m.id !== messageId || m.deleted_at) return m; // not found, or already deleted -- no-op
+          previous = m;
+          return { ...m, deleted_at: new Date().toISOString(), content: null };
+        })
+      );
+      if (!previous) return;
+
+      if (connectionState === 'connected' && socket) {
+        pendingDeletesRef.current.set(messageId, previous);
+        socket.emit('delete_message', { conversationId, messageId });
+        return;
+      }
+
+      deleteMessageRest(conversationId, messageId, token)
+        .then((updated) => mergeMessages([updated]))
+        .catch((err) => {
+          console.error(err);
+          setMessages((current) => current.map((m) => (m.id === messageId ? previous : m)));
+        });
+    },
+    [socket, connectionState, conversationId, token, mergeMessages]
+  );
+
+  const buildOptimisticVoiceMessage = useCallback(
+    (clientTempId, blob, durationSeconds, localUrl) => ({
+      id: null,
+      client_temp_id: clientTempId,
+      conversation_id: conversationIdNum,
+      sender_id: currentUserId,
+      content: null,
+      type: 'voice',
+      media_url: localUrl,
+      duration_seconds: durationSeconds ?? null,
+      status: 'sending',
+      created_at: new Date().toISOString(),
+      edited_at: null,
+      deleted_at: null,
+      // Client-only bookkeeping -- never present on a real server row, so
+      // both fields disappear on their own the moment mergeMessages swaps
+      // this optimistic object out for the real one (see attemptVoiceUpload).
+      _voiceBlob: blob, // kept so a failed upload can be retried without re-recording
+      _uploadProgress: 0 // 0-100; MessageBubble itself decides whether/when to actually show it
+    }),
+    [conversationIdNum, currentUserId]
+  );
+
+  // Voice has no socket send path (an audio Blob isn't something you emit
+  // over the socket -- see sendVoiceMessageRest), so this is always REST,
+  // unlike attemptSend's socket-first/REST-fallback split for text. Shared
+  // by sendVoiceMessage (fresh optimistic row) and retryVoiceSend (an
+  // existing 'failed' row going back to 'sending'), same relationship
+  // attemptSend has to sendMessage/retrySend.
+  //
+  // clientTempId now round-trips through the upload (see
+  // sendVoiceMessageRest) and comes back on the saved row, so the
+  // new_message broadcast this sender's own socket receives (they're in the
+  // room too, same as any text send) gets matched and deduplicated by
+  // mergeMessages exactly like a text send's ack -- this function doesn't
+  // need to race that broadcast itself, it just also calls mergeMessages
+  // with the REST response; whichever of the two arrives first evicts the
+  // optimistic row, and the other is a harmless idempotent re-merge of the
+  // same real row.
+  const attemptVoiceUpload = useCallback(
+    (clientTempId, blob, durationSeconds, localUrl) => {
+      sendVoiceMessageRest(conversationId, blob, clientTempId, token, {
+        onUploadProgress: (progressEvent) => {
+          if (!progressEvent.total) return;
+          const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+          setMessages((current) =>
+            current.map((m) =>
+              m.client_temp_id === clientTempId && m.id == null ? { ...m, _uploadProgress: percent } : m
+            )
+          );
+        }
+      })
+        .then((savedMessage) => {
+          // Real Cloudinary URL is in use now (via mergeMessages below) --
+          // the local blob: URL this bubble was playing from is no longer
+          // needed.
+          URL.revokeObjectURL(localUrl);
+          mergeMessages([savedMessage]);
+        })
+        .catch((err) => {
+          console.error(err);
+          // Deliberately NOT revoking localUrl here -- blob and URL both
+          // stay alive so the failed bubble can still play back what was
+          // recorded, and so retryVoiceSend can re-upload the same blob
+          // without asking the user to re-record.
+          setMessages((current) =>
+            current.map((m) =>
+              m.client_temp_id === clientTempId && m.id == null ? { ...m, status: 'failed', _uploadProgress: 0 } : m
+            )
+          );
+        });
+    },
+    [conversationId, token, mergeMessages]
+  );
+
+  const sendVoiceMessage = useCallback(
+    (blob, durationSeconds) => {
+      const clientTempId = makeClientTempId();
+      const localUrl = URL.createObjectURL(blob);
+      mergeMessages([buildOptimisticVoiceMessage(clientTempId, blob, durationSeconds, localUrl)]);
+      attemptVoiceUpload(clientTempId, blob, durationSeconds, localUrl);
+    },
+    [mergeMessages, buildOptimisticVoiceMessage, attemptVoiceUpload]
+  );
+
+  // Mints a NEW clientTempId rather than reusing the failed one, same
+  // reasoning as retrySend: a late-arriving response/broadcast for the
+  // original attempt must not be able to collide with the retry's own row.
+  // Reuses the SAME cached blob (from the failed bubble's _voiceBlob) --
+  // the whole point is the user never has to re-record.
+  const retryVoiceSend = useCallback(
+    (failedClientTempId, blob, durationSeconds) => {
+      setMessages((current) => {
+        const failed = current.find((m) => m.client_temp_id === failedClientTempId && m.id == null);
+        // Revoking here is safe even if this updater runs twice (React
+        // StrictMode) -- revoking an already-revoked/unknown URL is a no-op,
+        // not an error, unlike the actual upload call below which must only
+        // run once.
+        if (failed?.media_url) URL.revokeObjectURL(failed.media_url);
+        return current.filter((m) => !(m.client_temp_id === failedClientTempId && m.id == null));
+      });
+
+      const newClientTempId = makeClientTempId();
+      const localUrl = URL.createObjectURL(blob);
+      mergeMessages([buildOptimisticVoiceMessage(newClientTempId, blob, durationSeconds, localUrl)]);
+      attemptVoiceUpload(newClientTempId, blob, durationSeconds, localUrl);
+    },
+    [mergeMessages, buildOptimisticVoiceMessage, attemptVoiceUpload]
+  );
+
   return {
     messages,
     loading,
@@ -333,6 +518,9 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     loadOlder,
     sendMessage,
     retrySend,
+    sendVoiceMessage,
+    retryVoiceSend,
+    deleteMessage,
     reload: () => loadMessages({ markRead: false })
   };
 }

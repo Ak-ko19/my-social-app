@@ -5,6 +5,7 @@ import { useSocket } from './hooks/useSocket';
 import { useConversationMessages } from './hooks/useConversationMessages';
 import { usePresenceEvents } from './hooks/usePresenceEvents';
 import { useTypingIndicator } from './hooks/useTypingIndicator';
+import { VoicePlaybackProvider } from './context/VoicePlaybackProvider';
 import { fetchConversations } from './services/messageService';
 import { formatRelativeTime } from './utils/formatRelativeTime';
 import Avatar from './components/common/Avatar';
@@ -32,8 +33,20 @@ function Conversation() {
   const conversationFromState = location.state?.conversation ?? null;
   const [headerInfo, setHeaderInfo] = useState(conversationFromState);
 
-  const { messages, loading, error, loadingOlder, hasMoreOlder, loadOlder, sendMessage, retrySend, reload } =
-    useConversationMessages(conversationId, token, userId);
+  const {
+    messages,
+    loading,
+    error,
+    loadingOlder,
+    hasMoreOlder,
+    loadOlder,
+    sendMessage,
+    retrySend,
+    sendVoiceMessage,
+    retryVoiceSend,
+    deleteMessage,
+    reload
+  } = useConversationMessages(conversationId, token, userId);
   const { socket } = useSocket();
   const { isOnline } = usePresenceEvents();
   const typingUserIds = useTypingIndicator(conversationId);
@@ -139,6 +152,11 @@ function Conversation() {
     sendMessage(content);
   };
 
+  const handleSendVoice = (blob, durationSeconds) => {
+    isNearBottomRef.current = true;
+    sendVoiceMessage(blob, durationSeconds);
+  };
+
   const handleTyping = () => {
     // Best-effort/non-critical, unlike message sending -- no REST fallback
     // or retry if the socket happens to be down when this fires.
@@ -189,14 +207,22 @@ function Conversation() {
           {messages.length === 0 && (
             <p className="messages-thread-empty-hint">No messages yet. Say hello!</p>
           )}
-          {messages.map((message) => (
-            <MessageBubble
-              key={message.id ?? message.client_temp_id}
-              message={message}
-              isOwn={message.sender_id === userId}
-              onRetry={retrySend}
-            />
-          ))}
+          {/* Scoped to this one open conversation -- "only one voice message
+              plays at a time across the chat window" means this window, not
+              the whole app, so the coordinator lives here rather than at the
+              app root. */}
+          <VoicePlaybackProvider>
+            {messages.map((message) => (
+              <MessageBubble
+                key={message.id ?? message.client_temp_id}
+                message={message}
+                isOwn={message.sender_id === userId}
+                onRetry={retrySend}
+                onRetryVoice={retryVoiceSend}
+                onDelete={deleteMessage}
+              />
+            ))}
+          </VoicePlaybackProvider>
         </div>
       )}
 
@@ -206,7 +232,7 @@ function Conversation() {
         </p>
       )}
 
-      <MessageComposer onSend={handleSend} onTyping={handleTyping} />
+      <MessageComposer onSend={handleSend} onSendVoice={handleSendVoice} onTyping={handleTyping} />
     </div>
   );
 }

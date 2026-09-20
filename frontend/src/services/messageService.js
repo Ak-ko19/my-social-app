@@ -31,3 +31,40 @@ export function sendMessageRest(conversationId, content, clientTempId, token) {
 export function markConversationRead(conversationId, token) {
   return api.put(`/conversations/${conversationId}/read`, {}, authHeaders(token));
 }
+
+// REST fallback for deleting a message when the socket is disconnected --
+// same backend service function as the socket path, so the response shape
+// (the updated, content-scrubbed message row) matches either way.
+export function deleteMessageRest(conversationId, messageId, token) {
+  return api
+    .delete(`/conversations/${conversationId}/messages/${messageId}`, authHeaders(token))
+    .then((res) => res.data);
+}
+
+// Uploads a recorded voice message (multipart, field name 'audio' -- must
+// match backend/middleware upload chain's uploadAudio.single('audio')).
+// There is no socket path for this: an audio Blob isn't something you emit
+// over the socket, so this is always REST. The backend itself broadcasts
+// new_message once the Cloudinary upload + DB write both succeed, the same
+// event the text send path already listens for.
+//
+// clientTempId travels alongside the file (multer puts it on req.body, same
+// as content/clientTempId already do for the JSON text-send body) and comes
+// back on the saved row/broadcast, so the sender's own optimistic bubble can
+// be matched and deduplicated against that broadcast exactly like a text
+// send's socket ack -- same mechanism, just carried over multipart instead
+// of a socket payload.
+export function sendVoiceMessageRest(conversationId, blob, clientTempId, token, { onUploadProgress } = {}) {
+  const extension = blob.type.includes('mp4') ? 'm4a' : 'webm';
+  const formData = new FormData();
+  formData.append('audio', blob, `voice-message.${extension}`);
+  if (clientTempId) {
+    formData.append('clientTempId', clientTempId);
+  }
+  return api
+    .post(`/conversations/${conversationId}/messages/voice`, formData, {
+      ...authHeaders(token),
+      onUploadProgress
+    })
+    .then((res) => res.data);
+}

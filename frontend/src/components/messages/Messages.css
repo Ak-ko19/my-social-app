@@ -294,10 +294,56 @@
 }
 
 .messages-bubble {
+  position: relative;
   max-width: 70%;
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-lg);
   overflow-wrap: break-word;
+}
+
+/* Hidden until hover/focus so the thread isn't cluttered with a delete icon
+   on every one of the current user's messages at once. */
+.messages-bubble-delete-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--easing-standard);
+}
+
+.messages-bubble:hover .messages-bubble-delete-btn,
+.messages-bubble-delete-btn:focus-visible {
+  opacity: 1;
+}
+
+/* No hover on touch devices -- always show it there instead of hiding the
+   only way to reach it behind a gesture nothing else in this thread uses. */
+@media (pointer: coarse) {
+  .messages-bubble-delete-btn {
+    opacity: 1;
+  }
+}
+
+.messages-bubble-delete-btn:hover {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.messages-bubble-delete-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .messages-bubble-other {
@@ -361,6 +407,268 @@
 
 .messages-composer {
   margin-top: var(--space-sm);
+}
+
+/* ============================================================
+ * Voice recording (VoiceRecorderButton) -- hold-to-record mic button and
+ * its in-place recording UI, plus the voice-bubble player in the thread.
+ * ============================================================ */
+
+.messages-mic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  /* The hold/slide gesture owns touch input here -- without this, mobile
+     Safari/Chrome can still intercept the press as a scroll/zoom gesture
+     before startRecording's own preventDefault gets a chance to run. */
+  touch-action: none;
+  transition:
+    border-color var(--duration-fast) var(--easing-standard),
+    color var(--duration-fast) var(--easing-standard);
+}
+
+.messages-mic-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.messages-mic-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.messages-mic-error {
+  flex-basis: 100%;
+  margin: var(--space-xs) 0 0;
+  color: var(--color-error);
+  font-size: var(--font-size-xs);
+}
+
+.messages-recording-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  transition: border-color var(--duration-fast) var(--easing-standard);
+}
+
+.messages-recording-row-cancelling {
+  border-color: var(--color-error);
+}
+
+.messages-recording-dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-error);
+  animation: messages-recording-pulse 1.2s ease-in-out infinite;
+}
+
+.messages-recording-dot-warning {
+  background: var(--color-warning);
+}
+
+@keyframes messages-recording-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .messages-recording-dot {
+    animation: none;
+  }
+}
+
+.messages-recording-timer {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.messages-recording-timer-warning {
+  color: var(--color-warning);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Bar heights are driven inline (scaleY, from the AnalyserNode's live
+   level -- see useVoiceRecorder) -- this just sets up each bar's box and a
+   short transition so the jump between samples reads as motion, not a snap. */
+.messages-recording-bars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.messages-recording-bar {
+  width: 3px;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  transform-origin: center;
+  transition: transform 90ms linear;
+}
+
+.messages-recording-cancel-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.messages-recording-row-cancelling .messages-recording-cancel-hint {
+  color: var(--color-error);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ============================================================
+ * VoiceMessagePlayer -- custom playback UI for a voice bubble. Uses
+ * currentColor throughout (the play icon, the seek bar's "played" segments,
+ * the spinner) so it automatically matches whichever bubble variant it's
+ * rendered inside -- messages-bubble-own sets color: var(--color-on-primary)
+ * on a var(--color-primary) background, messages-bubble-other sets
+ * var(--color-text-primary) on var(--color-background) -- without this
+ * component needing to know which one that is.
+ * ============================================================ */
+
+.voice-player {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 180px;
+}
+
+.voice-player-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: inherit;
+  opacity: 0.9;
+  cursor: pointer;
+}
+
+.voice-player-toggle:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.voice-player-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.voice-player-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.voice-player-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--radius-full);
+  opacity: 0.8;
+  animation: messages-spin 0.7s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-player-spinner {
+    animation: none;
+  }
+}
+
+.voice-player-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.voice-player-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+  cursor: pointer;
+  /* The drag gesture owns touch input here, not the thread's own scroll --
+     belt-and-suspenders alongside the handlers' own preventDefault calls. */
+  touch-action: none;
+  /* Larger-than-visible hit area for a comfortable drag target on touch,
+     without inflating the visual waveform's own height. */
+  padding: 6px 0;
+  box-sizing: content-box;
+}
+
+.voice-player-bar-disabled {
+  cursor: not-allowed;
+}
+
+.voice-player-bar-segment {
+  flex: 1 1 auto;
+  min-width: 2px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  opacity: 0.35;
+}
+
+.voice-player-bar-segment-played {
+  opacity: 0.95;
+}
+
+.voice-player-time {
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+/* Only rendered once an upload has been in flight for >1s (see
+   MessageBubble's PROGRESS_BAR_DELAY_MS) -- fill width is driven inline
+   from the upload's real onUploadProgress percentage. */
+.messages-bubble-upload-progress {
+  height: 4px;
+  margin-top: var(--space-xs);
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.messages-bubble-upload-progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width var(--duration-fast) var(--easing-standard);
 }
 
 .messages-header-status {

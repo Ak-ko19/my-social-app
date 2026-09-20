@@ -11,6 +11,8 @@ const presence = require('./presence');
 function errorCodeFor(err) {
   if (err instanceof messageService.MessageValidationError) return 'VALIDATION';
   if (err instanceof messageService.NotParticipantError) return 'FORBIDDEN';
+  if (err instanceof messageService.NotMessageOwnerError) return 'FORBIDDEN';
+  if (err instanceof messageService.MessageNotFoundError) return 'NOT_FOUND';
   if (err instanceof messageService.RateLimitError) return 'RATE_LIMITED';
   return 'SERVER_ERROR';
 }
@@ -71,6 +73,39 @@ function initSocket(httpServer) {
           console.error(`send_message failed for user ${socket.userId}:`, err.message);
         }
         socket.emit('message_error', { clientTempId, error: err.message, code: errorCodeFor(err) });
+      }
+    });
+
+    // Same shared-service pattern as send_message: messageService.deleteMessage
+    // is the single place a message actually gets soft-deleted (ownership
+    // check + deleted_at write), so this and the REST fallback
+    // (conversationController.deleteMessage) can never diverge. No separate
+    // ack event -- the messageId is already known client-side (unlike a new
+    // send, nothing needs reconciling by clientTempId), so the room
+    // broadcast below doubles as the deleting client's own confirmation,
+    // and message_error (with messageId) covers the failure case.
+    socket.on('delete_message', async (payload) => {
+      const messageId = payload?.messageId;
+      try {
+        const message = await messageService.deleteMessage({
+          conversationId: payload?.conversationId,
+          messageId,
+          userId: socket.userId
+        });
+
+        // io.to (not socket.to), same reasoning as new_message: the
+        // deleting user's own other connected devices/tabs must also see
+        // the delete, not just other participants.
+        io.to(`conv_${message.conversation_id}`).emit('message_deleted', {
+          conversationId: message.conversation_id,
+          messageId: message.id,
+          deletedAt: message.deleted_at
+        });
+      } catch (err) {
+        if (errorCodeFor(err) === 'SERVER_ERROR') {
+          console.error(`delete_message failed for user ${socket.userId}:`, err.message);
+        }
+        socket.emit('message_error', { messageId, error: err.message, code: errorCodeFor(err) });
       }
     });
 

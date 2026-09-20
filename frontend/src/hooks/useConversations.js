@@ -60,6 +60,7 @@ export function useConversations(token, currentUserId) {
         const updated = {
           ...existing,
           last_message: message.content,
+          last_message_id: message.id,
           last_message_at: message.created_at,
           unread_count: isFromOther ? existing.unread_count + 1 : existing.unread_count
         };
@@ -74,6 +75,28 @@ export function useConversations(token, currentUserId) {
     socket.on('new_message', handleNewMessage);
     return () => socket.off('new_message', handleNewMessage);
   }, [socket, currentUserId, load]);
+
+  // A delete only changes the row's preview text when it deleted the
+  // CURRENT last message -- matched by id, since last_message_id is only
+  // ever set to the newest message's id (either from initial load or
+  // handleNewMessage above). An older message being deleted doesn't affect
+  // what's shown here at all.
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleMessageDeleted = ({ conversationId, messageId }) => {
+      setConversations((current) =>
+        current.map((c) =>
+          c.conversation_id === conversationId && c.last_message_id === messageId
+            ? { ...c, last_message: 'This message was deleted' }
+            : c
+        )
+      );
+    };
+
+    socket.on('message_deleted', handleMessageDeleted);
+    return () => socket.off('message_deleted', handleMessageDeleted);
+  }, [socket]);
 
   return { conversations, loading, error, reload: load };
 }

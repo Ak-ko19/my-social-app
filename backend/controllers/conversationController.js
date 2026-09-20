@@ -17,7 +17,8 @@ async function getConversations(req, res) {
         other.username,
         other.avatar_url,
         other.last_seen,
-        lm.content AS last_message,
+        lm.id AS last_message_id,
+        CASE WHEN lm.deleted_at IS NOT NULL THEN 'This message was deleted' ELSE lm.content END AS last_message,
         lm.created_at AS last_message_at,
         COALESCE(unread.count, 0)::int AS unread_count
       FROM conversation_participants cp
@@ -26,9 +27,13 @@ async function getConversations(req, res) {
         ON other_cp.conversation_id = c.id AND other_cp.user_id != cp.user_id
       JOIN users other ON other.id = other_cp.user_id
       LEFT JOIN LATERAL (
-        SELECT content, created_at
+        -- Deliberately NOT filtering out deleted_at here (unlike the
+        -- unread-count lateral below) -- the true last message is wanted
+        -- even if it was deleted, so its preview can say so below instead
+        -- of silently falling back to an older, no-longer-current message.
+        SELECT id, content, created_at, deleted_at
         FROM messages m
-        WHERE m.conversation_id = c.id AND m.deleted_at IS NULL
+        WHERE m.conversation_id = c.id
         ORDER BY m.created_at DESC, m.id DESC
         LIMIT 1
       ) lm ON true
@@ -213,6 +218,95 @@ async function sendMessage(req, res) {
   }
 }
 
+// By the time this runs, requireConversationParticipant has already
+// rejected a non-participant and uploadToCloudinary has already uploaded
+// the audio and attached req.cloudinaryResult -- if the Cloudinary upload
+// itself failed, its error went to server.js's shared upload-error handler
+// instead, and this handler never runs at all, so there's no path here that
+// creates a DB row for a file that didn't actually make it to Cloudinary.
+async function sendVoiceMessage(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).send('An audio file is required (field name "audio")');
+    }
+
+    const message = await messageService.sendVoiceMessage({
+      conversationId: req.params.id,
+      senderId: req.userId,
+      mediaUrl: req.cloudinaryResult.secure_url,
+      // Cloudinary returns `duration` (seconds, float) for video/audio
+      // resource_type uploads -- messageService.sendVoiceMessage rounds and
+      // validates it.
+      durationSeconds: req.cloudinaryResult.duration,
+      // multer puts every non-file multipart field on req.body, same as the
+      // existing post-image upload (createPost reads req.body.content the
+      // same way alongside its own upload.single('image')).
+      clientTempId: req.body.clientTempId
+    });
+
+    // Same reasoning as the text sendMessage REST path above: this endpoint
+    // exists for a client that can't/doesn't use the socket for the upload
+    // itself, but other participants may still be connected and expect
+    // realtime delivery. type/media_url/duration_seconds are already on the
+    // row (SELECT * in messageService), so the frontend can render it as a
+    // voice bubble without a second fetch.
+    try {
+      getIO().to(`conv_${message.conversation_id}`).emit('new_message', message);
+    } catch (err) {
+      console.error('Failed to emit new_message over socket:', err.message);
+    }
+
+    res.status(201).json(message);
+  } catch (err) {
+    if (err instanceof messageService.MessageValidationError) {
+      return res.status(400).send(err.message);
+    }
+    if (err instanceof messageService.NotParticipantError) {
+      return res.status(403).send(err.message);
+    }
+    if (err instanceof messageService.RateLimitError) {
+      return res.status(429).send(err.message);
+    }
+    sendServerError(res, err, 'Send voice message failed. Please try again later.');
+  }
+}
+
+async function deleteMessage(req, res) {
+  try {
+    const message = await messageService.deleteMessage({
+      conversationId: req.params.id,
+      messageId: req.params.messageId,
+      userId: req.userId
+    });
+
+    // Same reasoning as sendMessage's REST path: this endpoint exists for
+    // when the DELETING user's own socket is down, but other participants
+    // may still be connected and expect the delete in real time.
+    try {
+      getIO().to(`conv_${message.conversation_id}`).emit('message_deleted', {
+        conversationId: message.conversation_id,
+        messageId: message.id,
+        deletedAt: message.deleted_at
+      });
+    } catch (err) {
+      console.error('Failed to emit message_deleted over socket:', err.message);
+    }
+
+    res.status(200).json(messageService.scrubDeletedContent(message));
+  } catch (err) {
+    if (err instanceof messageService.MessageValidationError) {
+      return res.status(400).send(err.message);
+    }
+    if (err instanceof messageService.MessageNotFoundError) {
+      return res.status(404).send(err.message);
+    }
+    if (err instanceof messageService.NotMessageOwnerError) {
+      return res.status(403).send(err.message);
+    }
+    sendServerError(res, err, 'Delete message failed. Please try again later.');
+  }
+}
+
 async function markConversationRead(req, res) {
   try {
     const conversationId = parseInt(req.params.id);
@@ -236,5 +330,7 @@ module.exports = {
   createConversation,
   getMessages,
   sendMessage,
+  sendVoiceMessage,
+  deleteMessage,
   markConversationRead
 };
