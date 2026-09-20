@@ -25,7 +25,7 @@ function LikeButton({ like }) {
         disabled={pending}
         aria-pressed={likedByMe}
         aria-label={likedByMe ? 'Unlike this post' : 'Like this post'}
-        className="feed-btn"
+        className="feed-btn feed-btn-action"
         whileTap={reduceMotion ? undefined : { scale: 0.92 }}
         transition={{ duration: DURATION_FAST, ease: EASE_STANDARD }}
       >

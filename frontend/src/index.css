@@ -35,6 +35,12 @@
   --color-background: var(--bg);
   --color-surface: #ffffff;
   --color-surface-elevated: #ffffff;
+  /* For a secondary/neutral button that needs to read as clickable without
+     a full solid fill (e.g. Like/Comment) -- close to --code-bg's existing
+     warm off-white rather than an unrelated new hue. Identical to
+     --color-surface in light mode's near-neighbor tokens would give it no
+     visible weight, which was the whole problem being fixed. */
+  --color-surface-muted: #f2f1ec;
   --color-text-primary: var(--text-h);
   --color-text-secondary: var(--text);
   /* Darker than the original #9a94a3 -- that only hit 2.94:1 against
@@ -160,6 +166,10 @@
   --color-background: var(--bg);
   --color-surface: #1c1d24;
   --color-surface-elevated: #22232b;
+  /* Reuses the same lift already designed for elevated panels (dropdowns)
+     rather than inventing another dark value -- it's already a
+     deliberately distinct-from-card tone. */
+  --color-surface-muted: var(--color-surface-elevated);
   --color-text-primary: var(--text-h);
   --color-text-secondary: var(--text);
   /* Lightened from the original #6b7280 -- that only hit 3.47:1 against

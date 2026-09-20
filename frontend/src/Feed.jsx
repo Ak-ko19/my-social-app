@@ -39,20 +39,27 @@ function Feed() {
   return (
     <FeedActionsProvider value={{ removePost }}>
       <div style={{ padding: '20px' }}>
-        <h2>My Feed</h2>
-        <p>
-          <a href="/create-post">+ Create New Post</a>
-          {' | '}
-          <a href="/edit-profile">Edit Profile</a>
-          {' | '}
-          <a href="/notifications">Notifications{unreadCount > 0 ? ` (${unreadCount})` : ''}</a>
-          {' | '}
-          <a href="/messages">Messages</a>
-          {' | '}
-          <a href="/search">Search</a>
-          {' | '}
-          <ThemeToggle />
-        </p>
+        <header className="feed-topbar">
+          <h2 className="feed-topbar-title">My Feed</h2>
+          <nav className="feed-topbar-nav" aria-label="Feed navigation">
+            <a href="/create-post" className="feed-btn feed-nav-link">
+              + Create New Post
+            </a>
+            <a href="/edit-profile" className="feed-btn feed-nav-link">
+              Edit Profile
+            </a>
+            <a href="/notifications" className="feed-btn feed-nav-link">
+              Notifications{unreadCount > 0 ? ` (${unreadCount})` : ''}
+            </a>
+            <a href="/messages" className="feed-btn feed-nav-link">
+              Messages
+            </a>
+            <a href="/search" className="feed-btn feed-nav-link">
+              Search
+            </a>
+            <ThemeToggle />
+          </nav>
+        </header>
 
         <AnimatePresence initial={false}>
           <motion.div

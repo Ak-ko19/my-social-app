@@ -9,7 +9,7 @@ function CommentButton({ expanded, onToggle }) {
       type="button"
       onClick={onToggle}
       aria-expanded={expanded}
-      className="feed-btn"
+      className="feed-btn feed-btn-action"
       whileTap={reduceMotion ? undefined : { scale: 0.92 }}
       transition={{ duration: DURATION_FAST, ease: EASE_STANDARD }}
     >

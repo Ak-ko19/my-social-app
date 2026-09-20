@@ -1,7 +1,90 @@
 /* Styles for the Feed component tree (FeedList/PostCard/...). Token-driven
    per Step 1 -- consistent borders/spacing/radius/focus states on the post
-   card and its buttons. The page chrome above it (Feed.jsx's own heading and
-   nav links) is intentionally left untouched to minimize visual change. */
+   card and its buttons. */
+
+/* ============================================================
+ * Page chrome: the top bar (title + nav row) above the post list. Was
+ * previously left as plain, unstyled <a> tags (see git history) --
+ * revisited so the whole page reads as one consistent, finished design
+ * instead of a styled feed sitting under bare-HTML navigation.
+ * ============================================================ */
+
+.feed-topbar {
+  padding-bottom: var(--space-md);
+  margin-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.feed-topbar-title {
+  margin: 0 0 var(--space-sm);
+}
+
+.feed-topbar-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+/* Layered onto .feed-btn (same visual language as every other action in
+   this file) rather than a parallel style -- an <a> just also needs its
+   default underline/link color turned off, which a <button> never had to
+   begin with. */
+.feed-nav-link {
+  text-decoration: none;
+}
+
+/* ============================================================
+ * ThemeToggle -- a real switch (track + sliding thumb), not a button whose
+ * label text just swaps between "Light mode"/"Dark mode".
+ * ============================================================ */
+
+.theme-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--easing-standard);
+}
+
+.theme-switch[aria-checked='true'] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.theme-switch:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.theme-switch-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  transition: transform var(--duration-fast) var(--easing-standard);
+}
+
+.theme-switch[aria-checked='true'] .theme-switch-thumb {
+  transform: translateX(20px);
+  color: var(--color-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-switch,
+  .theme-switch-thumb {
+    transition: none;
+  }
+}
 
 .feed-comment-list {
   list-style: none;
@@ -129,6 +212,20 @@
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: var(--color-on-primary);
+}
+
+/* A plain .feed-btn (1px border, --color-surface background) reads as
+   clickable next to Follow/Message's solid-purple pressed state, but on
+   its own -- e.g. Like/Comment, which are never "pressed" the same way --
+   its border is too low-contrast against the page to register as a button
+   rather than plain text. This variant adds a light fill on top of the
+   same border/radius/padding, without changing .feed-btn itself (Follow/
+   Message keep their exact current look). Higher-specificity
+   [aria-pressed='true'] above still wins over this for a liked post, so
+   Like still turns solid purple when active -- this only affects its
+   unpressed/neutral state. */
+.feed-btn-action {
+  background: var(--color-surface-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
