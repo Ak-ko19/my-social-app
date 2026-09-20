@@ -9,10 +9,22 @@
  * instead of a styled feed sitting under bare-HTML navigation.
  * ============================================================ */
 
+/* A full bordered/filled box (same border+background+radius+padding
+   language as .feed-post-card below), not just a bottom border on its own
+   -- a bare 1px var(--color-border) line with no fill behind it is the
+   exact same too-subtle-to-notice problem .feed-btn-action fixes for
+   Like/Comment, just applied to a whole header instead of a button.
+   Deliberately NOT a full-bleed/negative-margin header (the parent's
+   padding is a hardcoded '20px' inline style in Feed.jsx, not
+   var(--space-md) -- a bleed trick keyed to the wrong value would
+   misalign instead of look edge-to-edge), so this stays a self-contained
+   box within the page's existing padding instead. */
 .feed-topbar {
-  padding-bottom: var(--space-md);
+  padding: var(--space-md);
   margin-bottom: var(--space-md);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
 .feed-topbar-title {
@@ -29,9 +41,11 @@
 /* Layered onto .feed-btn (same visual language as every other action in
    this file) rather than a parallel style -- an <a> just also needs its
    default underline/link color turned off, which a <button> never had to
-   begin with. */
+   begin with. Same background-fill fix as .feed-btn-action, for the same
+   reason: a plain border-only .feed-btn reads as invisible on its own. */
 .feed-nav-link {
   text-decoration: none;
+  background: var(--color-surface-muted);
 }
 
 /* ============================================================
