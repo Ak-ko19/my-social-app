@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './Login';
 import Signup from './Signup';
 import Feed from './Feed';
@@ -10,11 +10,44 @@ import Notifications from './Notifications';
 import Messages from './Messages';
 import Conversation from './Conversation';
 import Search from './Search';
+import PhoneShell from './components/layout/PhoneShell';
+import HomeFeed from './screens/HomeFeed';
+import MenuScreen from './screens/MenuScreen';
+import SettingsScreen from './screens/SettingsScreen';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* New rebrand screens only -- wrapped per-route (not the whole
+            <Routes> tree) so the existing screens below are untouched and
+            keep rendering exactly as before. See PhoneShell.jsx's own
+            comment for why. */}
+        <Route
+          path="/"
+          element={
+            <PhoneShell>
+              <HomeFeed />
+            </PhoneShell>
+          }
+        />
+        <Route
+          path="/menu"
+          element={
+            <PhoneShell>
+              <MenuScreen />
+            </PhoneShell>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <PhoneShell>
+              <SettingsScreen />
+            </PhoneShell>
+          }
+        />
+
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/feed" element={<Feed />} />
@@ -26,7 +59,6 @@ function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/messages/:conversationId" element={<Conversation />} />
         <Route path="/search" element={<Search />} />
-        <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>
   );

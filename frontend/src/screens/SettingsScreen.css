@@ -1,0 +1,121 @@
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.settings-header-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.settings-profile-section {
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.settings-section {
+  margin-top: var(--space-2);
+}
+
+.settings-section-label {
+  padding: 0 var(--space-4) var(--space-1);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+
+.settings-row:hover:not(:disabled) {
+  background: var(--color-subtle-bg);
+}
+
+.settings-row:disabled {
+  cursor: not-allowed;
+}
+
+.settings-row:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.settings-row-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--color-subtle-bg);
+  color: var(--color-text-muted);
+}
+
+.settings-row-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-row-badge {
+  flex-shrink: 0;
+}
+
+.settings-row-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.settings-logout-wrap {
+  padding: var(--space-5) var(--space-4) 0;
+}
+
+.settings-logout-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  /* Vertical padding at --space-4 (not --space-3) so the button clears the
+     44px touch-target minimum: icon/label content is ~18px tall, and
+     12px top+bottom only reached ~42px. */
+  padding: var(--space-4) 0;
+  border: none;
+  border-radius: var(--radius-md);
+  /* Literal hex, not var(--badge-red-bg)/var(--badge-red-fg) -- those are
+     #FEE2E2/#DC2626, close but not the exact #FEF2F2 given for this
+     specific button. Not worth a near-duplicate new token for one
+     deliberately-distinct destructive action. */
+  background: #fef2f2;
+  color: #dc2626;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.settings-logout-button:hover {
+  background: #fee2e2;
+}
+
+.settings-logout-button:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}

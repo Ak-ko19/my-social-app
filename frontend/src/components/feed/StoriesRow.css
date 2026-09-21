@@ -1,0 +1,43 @@
+/* StoriesRow -- lives in components/feed/ alongside the OLD Feed.css-based
+   post-card system, but is itself part of the new rebrand: only
+   components/ui + tokens.css/layout.css, nothing from Feed.css. */
+
+.stories-row {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4) 0 var(--space-4) var(--space-4);
+  background: var(--color-surface);
+  overflow-x: auto;
+  /* Hidden scrollbar, cross-browser. */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge/IE */
+}
+
+.stories-row::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/modern Edge */
+}
+
+.stories-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 0 0 64px;
+}
+
+.stories-plus-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.stories-label {
+  font-size: 10.5px;
+  color: var(--color-text);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 64px;
+}

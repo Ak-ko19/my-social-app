@@ -1,0 +1,259 @@
+/* Shared styles for components/layout/ (PhoneShell, TopAppBar, Logo, ...).
+   One file for the whole folder, same pattern as components/ui/ui.css --
+   imported by multiple component files here (Vite dedupes a CSS module
+   imported more than once, so this is safe), since e.g. Logo needs its
+   styles available whether it's rendered inside TopAppBar or standalone
+   on a screen that doesn't mount TopAppBar. */
+
+.phone-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh; /* dynamic viewport height -- accounts for mobile browser chrome */
+  background: var(--color-bg);
+  position: relative;
+  /* Frames the column on wide desktop viewports, same purpose the old
+     #root's own border-inline already served for its (wider) column. */
+  border-inline: 1px solid var(--color-border);
+  /* The slide-in transition below moves screens in from off-canvas --
+     without this, that translateX would produce a horizontal scrollbar
+     on desktop, past the shell's own edge. */
+  overflow-x: hidden;
+}
+
+/* Simple CSS-only entrance transition for a screen pushed on top of Home
+   (Menu/Settings) -- applied by each screen to its own root element.
+   Pure `animation` (not `transition`) since there's no prior React-managed
+   state to transition FROM: the screen is a brand new DOM node the instant
+   its route matches, so "animate in on mount" is all a basic CSS
+   transition can reasonably do here without a page-transition library. */
+@keyframes screen-slide-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.screen-enter {
+  animation: screen-slide-in 220ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-enter {
+    animation: none;
+  }
+}
+
+.top-app-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  /* 12px vertical (not 16px) so the bar doesn't grow taller once
+     IconButton's touch target goes from 36px to 44px below. */
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* The center-left wordmark; Right's three IconButtons and Left's menu
+   button just sit as flex siblings, no extra class needed on them, so
+   `justify-content: space-between` isn't right here (three groups, not
+   two) -- pushing this to the flex-1 spacer is what puts the logo where
+   space allows and the right-hand icon group flush right. */
+.top-app-bar-spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.ui-logo-dots {
+  display: inline-flex;
+  align-items: center;
+  /* 2px, not a --space-* token: this is the gap inside a 3-dot glyph, not
+     layout spacing between components -- the smallest token (4px) would
+     visibly loosen the mark and change its character. Left as-is
+     deliberately; see the QA report. */
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.ui-logo-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+}
+
+.ui-logo-wordmark {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Without this, a flex item's default min-width:auto keeps it at its
+     full text width no matter how little room TopAppBar has left (four
+     44px IconButtons leave under 120px for the whole logo at 375px) --
+     the ellipsis above would never actually engage, and the row would
+     overflow instead of truncating. */
+  min-width: 0;
+}
+
+/* position: sticky, not fixed, and deliberately so: position:fixed escapes
+   PhoneShell's own 480px column entirely (it's contained only by an
+   ancestor with a transform/filter/contain, none of which PhoneShell has),
+   which would stretch this to the full browser width on desktop while the
+   content above it stays narrow. sticky respects PhoneShell as its normal
+   containing block instead, so it's naturally width-constrained to match,
+   while still pinning to the viewport bottom during scroll once there's
+   enough content to scroll (right now, with only stub/placeholder content
+   on Home, the page may be shorter than the viewport, so this will sit
+   right after that content rather than flush at the bottom -- that's
+   expected, and resolves itself once real feed content fills the page). */
+.bottom-tab-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+.bottom-tab {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.bottom-tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.bottom-tab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.bottom-tab-active {
+  color: var(--color-accent);
+}
+
+.bottom-tab-icon-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.bottom-tab-label {
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.bottom-tab-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-3);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
+
+/* ProfileSummaryRow -- shared by MenuScreen and SettingsScreen. */
+.profile-summary-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  /* Horizontal padding, not 0 -- gives the row's own focus-visible ring
+     room to sit inside its touch target instead of clipping at the
+     screen edge, and pads the tap target closer to the 44px minimum. */
+  padding: var(--space-2) 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  border-radius: var(--radius-md);
+}
+
+.profile-summary-row:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.profile-summary-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.profile-summary-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.profile-summary-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.profile-summary-tagline {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-summary-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+/* AppFooter -- shared by MenuScreen and SettingsScreen. */
+.app-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  /* Bottom padding is 32px (--space-7), not the originally-specified 30px
+     -- 30 isn't on the token scale (24/32 bracket it) and this pass asked
+     for tokens only. See the QA report for this deviation. */
+  padding: var(--space-6) var(--space-4) var(--space-7);
+}
+
+.app-footer-tagline {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+}

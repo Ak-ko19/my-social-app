@@ -1,0 +1,83 @@
+/* Design tokens (rebrand) -- the new single source of truth for color,
+   radii, spacing, font, and shadow, going forward.
+
+   This deliberately coexists with the older token set in ../index.css
+   rather than replacing it in this commit: every existing screen's CSS
+   (Feed.css, Messages.css, ...) still reads that older set (--bg,
+   --color-primary, --space-xs..--space-3xl, etc.), and this step is the
+   token foundation only -- no screen has been migrated onto these new
+   names yet. Each screen moves over to these tokens (and index.css's
+   equivalent rules get removed) as its own later step, not silently here. */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap');
+
+:root {
+  /* Color */
+  --color-bg: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-text: #14151a;
+  --color-text-muted: #8a8f98;
+  --color-border: #edeff2;
+  --color-accent: #4f46e5;
+  --color-accent-2: #0891b2;
+  --color-accent-3: #e11d48;
+  /* Not in the original spec list -- IconButton's background was given as
+     a literal #F1F2F5. Promoted to a token here instead of hardcoding it
+     in ui.css, same reasoning as every other value in this file: one
+     source of truth, reusable anywhere a light neutral fill is needed. */
+  --color-subtle-bg: #f1f2f5;
+
+  /* Pastel icon-badge pairs -- soft background + saturated foreground,
+     one pair per hue. Foregrounds are chosen to read clearly on their own
+     paired background specifically (not guaranteed against any other
+     background), so always use a badge-*-fg color on its own badge-*-bg,
+     never mixed across hues. */
+  --badge-red-bg: #fee2e2;
+  --badge-red-fg: #dc2626;
+  --badge-blue-bg: #dbeafe;
+  --badge-blue-fg: #2563eb;
+  --badge-purple-bg: #ede9fe;
+  --badge-purple-fg: #7c3aed;
+  --badge-green-bg: #dcfce7;
+  --badge-green-fg: #16a34a;
+  --badge-indigo-bg: #e0e7ff;
+  --badge-indigo-fg: #4f46e5;
+  --badge-orange-bg: #ffedd5;
+  --badge-orange-fg: #ea580c;
+  --badge-teal-bg: #ccfbf1;
+  --badge-teal-fg: #0d9488;
+  --badge-amber-bg: #fef3c7;
+  --badge-amber-fg: #d97706;
+  --badge-slate-bg: #f1f5f9;
+  --badge-slate-fg: #475569;
+  --badge-pink-bg: #fce7f3;
+  --badge-pink-fg: #db2777;
+  --badge-yellow-bg: #fef9c3;
+  --badge-yellow-fg: #ca8a04;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Spacing -- multiples of 4, tapering at the larger end (a uniform +4
+     step across exactly 8 stops can't land on both 4 and 40, so this
+     follows the common practice of widening the gap as sizes grow rather
+     than staying linear). */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+
+  /* Font -- Manrope only; no Inter/Roboto/Arial anywhere in the fallback
+     chain, per spec. */
+  --font-sans: 'Manrope', system-ui, -apple-system, sans-serif;
+
+  /* Shadow */
+  --shadow-card: 0 2px 8px rgba(20, 21, 26, 0.06);
+}

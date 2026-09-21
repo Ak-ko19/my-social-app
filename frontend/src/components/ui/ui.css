@@ -1,0 +1,131 @@
+/* Shared styles for the components/ui/ primitives. Static/shared rules only
+   -- per-instance values (Avatar's size/bg/color/ring, Badge's bg/color)
+   are inline styles set by each component, since they vary per usage and
+   can't be plain CSS classes. */
+
+.ui-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-family: var(--font-sans);
+  user-select: none;
+  /* Deliberately NOT overflow:hidden on this outer element -- the badge
+     slot needs to sit partly outside the circle. The photo/initials stay
+     circular via their own border-radius below instead. */
+}
+
+.ui-avatar-image {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+  display: block;
+}
+
+.ui-avatar-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: #fff;
+  border: 2px solid var(--color-surface);
+  box-sizing: border-box;
+}
+
+.ui-icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Bumped from 36px -- below the 44px minimum touch target. This is the
+     one shared component every icon-only button in the app renders
+     through (TopAppBar, Menu/Settings headers, PostCard's More button),
+     so the fix belongs here once, not patched per screen. */
+  width: 44px;
+  height: 44px;
+  /* Never let a tight flex row (TopAppBar at 375px) compress this below
+     the 44px touch target -- flex items shrink by default otherwise. */
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.ui-icon-btn:hover {
+  background: var(--color-border);
+}
+
+.ui-icon-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.ui-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ui-icon-btn-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-3);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  border: 2px solid var(--color-surface);
+  box-sizing: content-box;
+}
+
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.ui-divider {
+  border: none;
+  height: 1px;
+  margin: 0;
+  background: var(--color-border);
+}
+
+.ui-divider-inset {
+  /* Avatar's default size (--space-8, 40px) + one gap (--space-4, 16px) --
+     composed from real scale steps rather than a standalone magic number. */
+  margin-inline-start: calc(var(--space-8) + var(--space-4));
+}
+
+.ui-section-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}

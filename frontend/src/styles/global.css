@@ -1,0 +1,15 @@
+/* Global resets + base typography, built on tokens.css. Loaded after it in
+   main.jsx so these rules can reference its custom properties. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  font-family: var(--font-sans);
+  color: var(--color-text);
+}
