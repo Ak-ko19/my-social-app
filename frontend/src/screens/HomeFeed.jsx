@@ -1,7 +1,20 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { useFeed } from '../hooks/useFeed';
 import TopAppBar from '../components/layout/TopAppBar';
 import StoriesRow from '../components/feed/StoriesRow';
 import PostComposer from '../components/feed/PostComposer';
+import FeedList from '../components/feed/FeedList';
+import FeedSkeleton from '../components/feed/FeedSkeleton';
+import FeedEmptyState from '../components/feed/FeedEmptyState';
+import FeedErrorState from '../components/feed/FeedErrorState';
 import CURRENT_USER from '../data/mockCurrentUser';
+// Self-imported here (not just relying on Feed.jsx having already loaded
+// it elsewhere in the bundle) since this is the first place FeedList/
+// FeedSkeleton/etc. render outside of Feed.jsx itself -- same "own your
+// styles" reasoning as TopAppBar/Logo importing layout.css directly.
+import '../components/feed/Feed.css';
 
 // Placeholder mock data, shaped the way it will eventually come back from
 // a real GET /stories (or similar) -- StoriesRow itself takes this as a
@@ -18,19 +31,40 @@ const MOCK_STORIES = [
   { id: 7, name: 'Gus', initials: 'GU', bg: 'var(--badge-amber-bg)', color: 'var(--badge-amber-fg)', hasStory: false }
 ];
 
-// Placeholder content only -- real feed comes later. TopAppBar/StoriesRow/
-// PostComposer are real (not stubs): they're the first pieces of the
-// actual Home screen, mounted in the order they'll appear in the
-// finished screen.
+// Real feed, same as Feed.jsx (/feed): the same useFeed hook, the same
+// FeedList (real pagination/virtualization) rendering real <PostCard
+// post={p} />, and the same loading/error/empty states -- this screen
+// doesn't reimplement any of that, it's the same real data wired into the
+// new layout shell. Stories/composer stay mock/stubbed exactly as before
+// (no real stories API exists yet); only the post feed below them is real.
 function HomeFeed() {
+  const navigate = useNavigate();
+  const { token } = useAuth();
+  const { posts, loading, loadingMore, error, hasMore, reload, loadMore } = useFeed(token);
+
+  useEffect(() => {
+    if (!token) {
+      navigate('/login');
+    }
+  }, [token, navigate]);
+
+  if (!token) {
+    return null;
+  }
+
+  const feedState = loading ? 'loading' : error ? 'error' : posts.length === 0 ? 'empty' : 'list';
+
   return (
     <div>
       <TopAppBar />
       <StoriesRow stories={MOCK_STORIES} currentUser={CURRENT_USER} />
       <PostComposer currentUser={CURRENT_USER} />
-      <div style={{ padding: 'var(--space-4)' }}>
-        <p style={{ color: 'var(--color-text-muted)' }}>Home screen placeholder.</p>
-      </div>
+      {feedState === 'loading' && <FeedSkeleton />}
+      {feedState === 'error' && <FeedErrorState message={error} onRetry={reload} />}
+      {feedState === 'empty' && <FeedEmptyState />}
+      {feedState === 'list' && (
+        <FeedList posts={posts} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={loadMore} />
+      )}
     </div>
   );
 }
