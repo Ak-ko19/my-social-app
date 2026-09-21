@@ -52,7 +52,7 @@ function Messages() {
   return (
     <div style={{ padding: '20px' }}>
       <h2>Messages</h2>
-      <p><a href="/feed">Back to Feed</a></p>
+      <p><a href="/">Back to Feed</a></p>
 
       <AnimatePresence initial={false}>
         <motion.div

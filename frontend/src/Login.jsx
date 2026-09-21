@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from './api';
 import { useNavigate } from 'react-router-dom';
 import { notifyAuthChange } from './hooks/useAuth';
@@ -8,6 +8,16 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  // Already-logged-in users shouldn't land on the login form -- send them
+  // straight to the real Home screen instead. A plain localStorage read
+  // (not useAuth()) is enough here: this only needs to run once, on
+  // mount, before the form ever renders.
+  useEffect(() => {
+    if (localStorage.getItem('token')) {
+      navigate('/');
+    }
+  }, [navigate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -27,7 +37,7 @@ function Login() {
       localStorage.setItem('userId', response.data.id);
       localStorage.setItem('username', response.data.username);
       notifyAuthChange();
-      navigate('/feed');
+      navigate('/');
     })
     .catch((err) => {
       console.error(err);

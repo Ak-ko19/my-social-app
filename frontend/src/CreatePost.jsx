@@ -37,7 +37,7 @@ function CreatePost() {
       { headers: { Authorization: `Bearer ${token}` } }
     )
     .then(() => {
-      navigate('/feed');
+      navigate('/');
     })
     .catch((err) => {
       console.error(err);
@@ -71,7 +71,7 @@ function CreatePost() {
           <button type="submit">Post</button>
         </div>
       </form>
-      <p><a href="/feed">Back to Feed</a></p>
+      <p><a href="/">Back to Feed</a></p>
     </div>
   );
 }

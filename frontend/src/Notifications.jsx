@@ -67,7 +67,7 @@ function Notifications() {
     <div style={{ padding: '20px' }}>
       <h2>Notifications</h2>
       <p>
-        <a href="/feed">Back to Feed</a>
+        <a href="/">Back to Feed</a>
         {' | '}
         <button onClick={markAllAsRead}>Mark all as read</button>
       </p>

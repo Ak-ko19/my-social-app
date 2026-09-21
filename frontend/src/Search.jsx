@@ -71,7 +71,7 @@ function Search() {
   return (
     <div style={{ padding: '20px' }}>
       <h2>Search</h2>
-      <p><a href="/feed">Back to Feed</a></p>
+      <p><a href="/">Back to Feed</a></p>
 
       <form onSubmit={handleSearch}>
         <input

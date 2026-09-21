@@ -132,7 +132,7 @@ function EditProfile() {
         {success && <p style={{ color: 'green' }}>{success}</p>}
         <button type="submit" style={{ marginTop: '10px' }}>Save Changes</button>
       </form>
-      <p><a href="/feed">Back to Feed</a></p>
+      <p><a href="/">Back to Feed</a></p>
     </div>
   );
 }

@@ -1,7 +1,6 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './Login';
 import Signup from './Signup';
-import Feed from './Feed';
 import CreatePost from './CreatePost';
 import EditProfile from './EditProfile';
 import ForgotPassword from './ForgotPassword';
@@ -50,7 +49,10 @@ function App() {
 
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/feed" element={<Feed />} />
+        {/* Old pre-rebrand feed page, now retired -- "/" is the only home
+            feed route. Redirected (not deleted outright) so old links/
+            bookmarks still land somewhere real instead of a dead route. */}
+        <Route path="/feed" element={<Navigate to="/" replace />} />
         <Route path="/create-post" element={<CreatePost />} />
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
