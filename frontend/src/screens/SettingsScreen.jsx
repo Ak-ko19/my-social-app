@@ -9,6 +9,7 @@ import {
   Bell,
   UserX,
   Globe,
+  Moon,
   Lock,
   Eye,
   Users,
@@ -27,6 +28,7 @@ import {
 import { IconButton, SectionLabel, Badge } from '../components/ui';
 import ProfileSummaryRow from '../components/layout/ProfileSummaryRow';
 import AppFooter from '../components/layout/AppFooter';
+import ThemeToggle from '../components/common/ThemeToggle';
 import CURRENT_USER from '../data/mockCurrentUser';
 import { forceLogout } from '../hooks/useAuth';
 import './SettingsScreen.css';
@@ -45,7 +47,11 @@ const SETTINGS_SECTIONS = [
       { key: 'security', icon: ShieldCheck, title: 'Security & Privacy' },
       { key: 'notifications', icon: Bell, title: 'Notifications', badgeCount: 3, to: '/notifications' },
       { key: 'blocked-users', icon: UserX, title: 'Blocked Users' },
-      { key: 'language-region', icon: Globe, title: 'Language & Region' }
+      { key: 'language-region', icon: Globe, title: 'Language & Region' },
+      // Real, not "coming soon" -- wired to the real ThemeProvider/
+      // ThemeToggle already built for this app, same as Personal
+      // Information/Notifications above.
+      { key: 'dark-mode', icon: Moon, title: 'Dark Mode', toggle: true }
     ]
   },
   {
@@ -101,6 +107,25 @@ function SettingsScreen() {
           {section.rows.map((row) => {
             const Icon = row.icon;
             const isEnabled = Boolean(row.to);
+
+            // A plain <div>, not a <button> like every other row -- the
+            // ThemeToggle inside is already its own focusable
+            // role="switch" button, and a button can't nest inside
+            // another button (invalid HTML, and two overlapping tab
+            // stops for one control).
+            if (row.toggle) {
+              return (
+                <div className="settings-row settings-row-static" key={row.key}>
+                  <span className="settings-row-icon-badge">
+                    <Icon size={17} aria-hidden="true" />
+                  </span>
+                  <span className="settings-row-label">{row.title}</span>
+                  <span className="settings-theme-switch">
+                    <ThemeToggle />
+                  </span>
+                </div>
+              );
+            }
 
             return (
               <button

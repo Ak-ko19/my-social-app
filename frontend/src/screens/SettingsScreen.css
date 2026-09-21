@@ -83,6 +83,38 @@
   color: var(--color-text-muted);
 }
 
+/* The Dark Mode row: not a <button> (its ThemeToggle child already is
+   one), so it doesn't get .settings-row's cursor/hover/focus-visible
+   button treatment -- those all target real interactivity on the row
+   itself, which this row deliberately doesn't have. */
+.settings-row-static {
+  cursor: default;
+}
+
+/* .settings-row:hover:not(:disabled) above is (0,3,0) specificity --
+   .settings-row-static:hover alone is only (0,2,0) and loses to it, so
+   this needs both classes to actually win. */
+.settings-row.settings-row-static:hover {
+  background: none;
+}
+
+/* ThemeToggle/.theme-switch (components/feed/Feed.css) is real, already-
+   built, and shared with old-system screens, so it's reused here as-is
+   rather than rebuilt -- but its CSS reads OLD-system token names
+   (--color-primary, --color-surface-muted, --color-text-secondary,
+   --radius-full) that don't exist in tokens.css. Custom properties
+   cascade to descendants, so redeclaring those exact names here, scoped
+   to just this wrapper, "translates" the switch to this screen's actual
+   tokens without touching Feed.css or affecting the switch anywhere
+   else it's used. */
+.settings-theme-switch {
+  flex-shrink: 0;
+  --color-primary: var(--color-accent);
+  --color-surface-muted: var(--color-subtle-bg);
+  --color-text-secondary: var(--color-text-muted);
+  --radius-full: var(--radius-pill);
+}
+
 .settings-logout-wrap {
   padding: var(--space-5) var(--space-4) 0;
 }

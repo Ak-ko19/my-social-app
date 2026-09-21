@@ -81,3 +81,28 @@
   /* Shadow */
   --shadow-card: 0 2px 8px rgba(20, 21, 26, 0.06);
 }
+
+/* Dark theme for this token set. Was entirely missing until now -- only
+   index.css's OLD token names (--color-surface, --color-text-primary,
+   etc.) had a [data-theme='dark'] override, so toggling dark mode left
+   every new-system screen (Home/Menu/Settings) rendering in light colors
+   regardless. Same attribute/mechanism as index.css's block (see
+   ThemeProvider.jsx), and loads after it (tokens.css after index.css in
+   main.jsx), so for the handful of names both files declare
+   (--color-surface, --color-text-muted, --color-border) this block wins,
+   consistent with the light-mode values above already winning those same
+   collisions. Values are the same dark palette index.css already uses for
+   the equivalent old-system tokens, so old and new screens share one
+   dark theme rather than two different ones. The badge and accent colors
+   are left as-is: they're saturated brand/status chips, not surface
+   tones, and already read fine on a dark card. */
+:root[data-theme='dark'] {
+  --color-bg: #16171d;
+  --color-surface: #1c1d24;
+  --color-text: #f3f4f6;
+  --color-text-muted: #80899a;
+  --color-border: #2e303a;
+  --color-subtle-bg: #22232b;
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
