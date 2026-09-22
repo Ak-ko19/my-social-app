@@ -1,0 +1,43 @@
+.verify-email-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.verify-email-header-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.verify-email-body {
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+}
+
+.verify-email-success {
+  color: #16a34a;
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+}
+
+.verify-email-error {
+  color: var(--color-accent-3);
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+}
+
+.verify-email-btn {
+  padding: var(--space-3) var(--space-5);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}

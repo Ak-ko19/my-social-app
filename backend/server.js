@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const path = require('path');
 const db = require('./db');
 const allowedOrigins = require('./config/allowedOrigins');
+const { globalLimiter } = require('./middleware/rateLimiter');
 const { initSocket } = require('./sockets');
 
 const authRoutes = require('./routes/authRoutes');
@@ -17,6 +18,10 @@ const followRoutes = require('./routes/followRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const conversationRoutes = require('./routes/conversationRoutes');
 const searchRoutes = require('./routes/searchRoutes');
+const blockRoutes = require('./routes/blockRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const bookmarkRoutes = require('./routes/bookmarkRoutes');
+const hashtagRoutes = require('./routes/hashtagRoutes');
 
 const app = express();
 const PORT = 3000;
@@ -41,6 +46,12 @@ app.use(cors({
 }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Applied after static /uploads serving (image loads shouldn't eat into an
+// API rate budget) but before every route below -- each sensitive route's
+// own stricter limiter (loginLimiter, signupLimiter, ...) stacks on top of
+// this floor, it doesn't replace it.
+app.use(globalLimiter);
+
 app.get('/', (req, res) => {
   res.send('Hello! My social media app backend is running!');
 });
@@ -62,6 +73,10 @@ app.use(followRoutes);
 app.use(notificationRoutes);
 app.use(conversationRoutes);
 app.use(searchRoutes);
+app.use(blockRoutes);
+app.use(reportRoutes);
+app.use(bookmarkRoutes);
+app.use(hashtagRoutes);
 
 // Handle multer upload errors (wrong file type, too large) with a clear message
 app.use((err, req, res, next) => {

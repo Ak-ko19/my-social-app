@@ -25,7 +25,22 @@
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>MySocialApp</title>
+
+    <!-- PWA: manifest drives Android/desktop "Add to Home Screen"/install --
+         theme-color/description are read from it too, but declared here
+         as well since some browsers only look at the <meta> tag. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="description" content="A Facebook-style social media app -- feed, messaging, notifications, and more." />
+
+    <!-- iOS Safari does not support the web app manifest for "Add to Home
+         Screen" (icon, standalone display, status bar) -- these are the
+         separate, iOS-specific tags that cover the same ground there. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="MySocialApp" />
   </head>
   <body>
     <div id="root"></div>

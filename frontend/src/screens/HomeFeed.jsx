@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useFeed } from '../hooks/useFeed';
 import TopAppBar from '../components/layout/TopAppBar';
@@ -9,6 +9,7 @@ import FeedList from '../components/feed/FeedList';
 import FeedSkeleton from '../components/feed/FeedSkeleton';
 import FeedEmptyState from '../components/feed/FeedEmptyState';
 import FeedErrorState from '../components/feed/FeedErrorState';
+import EmailVerificationBanner from '../components/common/EmailVerificationBanner';
 import CURRENT_USER from '../data/mockCurrentUser';
 // Self-imported here (not just relying on Feed.jsx having already loaded
 // it elsewhere in the bundle) since this is the first place FeedList/
@@ -39,8 +40,21 @@ const MOCK_STORIES = [
 // (no real stories API exists yet); only the post feed below them is real.
 function HomeFeed() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { token } = useAuth();
-  const { posts, loading, loadingMore, error, hasMore, reload, loadMore } = useFeed(token);
+  const justReactivated = Boolean(location.state?.reactivated);
+  const {
+    posts,
+    loading,
+    loadingMore,
+    error,
+    hasMore,
+    reload,
+    loadMore,
+    removePost,
+    removePostsByUser,
+    updatePostContent
+  } = useFeed(token);
 
   useEffect(() => {
     if (!token) {
@@ -57,13 +71,30 @@ function HomeFeed() {
   return (
     <div>
       <TopAppBar />
+      <EmailVerificationBanner />
+      {justReactivated && (
+        <p
+          role="status"
+          style={{ padding: '12px 16px', margin: 0, background: 'var(--badge-green-bg)', color: 'var(--badge-green-fg)', fontSize: 13 }}
+        >
+          Welcome back! Your account has been reactivated.
+        </p>
+      )}
       <StoriesRow stories={MOCK_STORIES} currentUser={CURRENT_USER} />
       <PostComposer currentUser={CURRENT_USER} />
       {feedState === 'loading' && <FeedSkeleton />}
       {feedState === 'error' && <FeedErrorState message={error} onRetry={reload} />}
       {feedState === 'empty' && <FeedEmptyState />}
       {feedState === 'list' && (
-        <FeedList posts={posts} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={loadMore} />
+        <FeedList
+          posts={posts}
+          hasMore={hasMore}
+          isLoadingMore={loadingMore}
+          onLoadMore={loadMore}
+          onRemovePost={removePost}
+          onRemovePostsByUser={removePostsByUser}
+          onUpdatePost={updatePostContent}
+        />
       )}
     </div>
   );

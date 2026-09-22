@@ -26,3 +26,13 @@ createRoot(document.getElementById('root')).render(
     </ThemeProvider>
   </StrictMode>,
 )
+
+// Production only -- registering in dev would have the service worker
+// intercept and cache Vite's dev-server assets (which change on every hot
+// reload), fighting HMR instead of helping. Registered after 'load' so it
+// never competes with the app's own initial resource fetches.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => console.error('Service worker registration failed:', err));
+  });
+}

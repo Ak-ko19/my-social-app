@@ -60,15 +60,24 @@ create post → like/unlike → comment → follow/unfollow → edit profile.
   other feature and gap is complete, to avoid repeated redeploys.
 
 ## Next Steps (in order)
-1. Input validation — email format check, empty fields check (backend + frontend)
-2. Forgot-password feature
-3. Comment edit feature
-4. (Optional) Refactor backend from single server.js into
-   routes/controllers/middleware/models folders
-5. Future features: image upload, notifications, direct messages (DM), search
-6. Before any GitHub upload: move DB password and JWT_SECRET out of source
-   code into a .env file (currently hardcoded)
-7. Deploy (hosting) — final step, only once everything above is done
+Steps 1–6 below (input validation, forgot-password, comment edit, .env
+secrets) are done — see the "Production-Readiness Audit" and "12-Feature
+Production Batch" sections of PROJECT_DETAILED_GUIDE.md for what's actually
+been built since this list was last updated (image upload, notifications,
+DM/messaging with Socket.io + voice messages, search, dark mode, block/
+report/bookmark/hashtags/mentions/private-accounts/account-management/
+email-verification/rate-limiting/PWA are all live). This file's own
+"Completed Features" list above predates most of that — trust
+PROJECT_DETAILED_GUIDE.md over it.
+
+1. Deploy (hosting) — the only step left. Deliberately saved for last per
+   the working-style rule below, now that everything else is done.
+2. (Optional) Refactor backend from single-file-per-concern into
+   routes/controllers/middleware/models — mostly already the shape (see
+   backend/), revisit only if it's still worth doing once deploy is live.
+3. Real email delivery (Nodemailer/SendGrid/etc.) to replace the
+   console-logged verification/reset links — swap the one function in
+   backend/utils/email.js.
 
 ## Long-Term Vision (reference only, not active development)
 A 52-category "Super App" master list was sketched as a long-term dream

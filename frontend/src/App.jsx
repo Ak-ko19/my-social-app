@@ -13,6 +13,14 @@ import PhoneShell from './components/layout/PhoneShell';
 import HomeFeed from './screens/HomeFeed';
 import MenuScreen from './screens/MenuScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import BlockedUsersScreen from './screens/BlockedUsersScreen';
+import SavedPostsScreen from './screens/SavedPostsScreen';
+import PostDetailScreen from './screens/PostDetailScreen';
+import HashtagFeedScreen from './screens/HashtagFeedScreen';
+import ProfileScreen from './screens/ProfileScreen';
+import FollowRequestsScreen from './screens/FollowRequestsScreen';
+import AccountManagementScreen from './screens/AccountManagementScreen';
+import VerifyEmailScreen from './screens/VerifyEmailScreen';
 
 function App() {
   return (
@@ -43,6 +51,70 @@ function App() {
           element={
             <PhoneShell>
               <SettingsScreen />
+            </PhoneShell>
+          }
+        />
+        <Route
+          path="/settings/blocked-users"
+          element={
+            <PhoneShell>
+              <BlockedUsersScreen />
+            </PhoneShell>
+          }
+        />
+        <Route
+          path="/saved"
+          element={
+            <PhoneShell>
+              <SavedPostsScreen />
+            </PhoneShell>
+          }
+        />
+        <Route
+          path="/posts/:id"
+          element={
+            <PhoneShell>
+              <PostDetailScreen />
+            </PhoneShell>
+          }
+        />
+        <Route
+          path="/hashtag/:tag"
+          element={
+            <PhoneShell>
+              <HashtagFeedScreen />
+            </PhoneShell>
+          }
+        />
+        <Route
+          path="/profile/:id"
+          element={
+            <PhoneShell>
+              <ProfileScreen />
+            </PhoneShell>
+          }
+        />
+        <Route
+          path="/settings/follow-requests"
+          element={
+            <PhoneShell>
+              <FollowRequestsScreen />
+            </PhoneShell>
+          }
+        />
+        <Route
+          path="/settings/account"
+          element={
+            <PhoneShell>
+              <AccountManagementScreen />
+            </PhoneShell>
+          }
+        />
+        <Route
+          path="/verify-email/:token"
+          element={
+            <PhoneShell>
+              <VerifyEmailScreen />
             </PhoneShell>
           }
         />

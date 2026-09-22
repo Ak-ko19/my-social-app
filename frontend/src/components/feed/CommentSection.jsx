@@ -1,6 +1,10 @@
+import { useRef } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useAuth } from '../../hooks/useAuth';
 import Username from './Username';
+import { renderTextWithLinks } from '../../utils/renderTextWithLinks';
+import MentionAutocomplete from './MentionAutocomplete';
+import { useMentionAutocomplete, applyMentionSelection } from '../../hooks/useMentionAutocomplete';
 import { DURATION_NORMAL, EASE_STANDARD } from '../../utils/motionTokens';
 
 // Receives the `comments` bag from useComments (owned by PostCard, shared
@@ -16,6 +20,8 @@ import { DURATION_NORMAL, EASE_STANDARD } from '../../utils/motionTokens';
 function CommentSection({ postId, comments }) {
   const { userId: currentUserId } = useAuth();
   const reduceMotion = useReducedMotion();
+  const commentInputRef = useRef(null);
+  const mention = useMentionAutocomplete();
   const {
     comments: list,
     commentInput,
@@ -71,7 +77,7 @@ function CommentSection({ postId, comments }) {
                 </form>
               ) : (
                 <p className="feed-comment-text">
-                  <Username>{c.username}</Username>: {c.content}
+                  <Username>{c.username}</Username>: {renderTextWithLinks(c.content)}
                   {c.pending && <span className="feed-comment-status"> (sending…)</span>}
                   {/* Editing a not-yet-confirmed comment has no real id to PUT
                       against, so the edit action is hidden until it's reconciled. */}
@@ -109,16 +115,35 @@ function CommentSection({ postId, comments }) {
         </label>
         <input
           id={`comment-input-${postId}`}
+          ref={commentInputRef}
           type="text"
           value={commentInput}
-          onChange={(e) => setCommentInput(e.target.value)}
-          placeholder="Write a comment..."
+          onChange={(e) => {
+            setCommentInput(e.target.value);
+            mention.handleInputChange(e.target.value, e.target.selectionStart);
+          }}
+          placeholder="Write a comment... (@ to mention someone)"
           disabled={submitPending}
         />
         <button type="submit" className="feed-btn" disabled={submitPending}>
           {submitPending ? 'Sending…' : 'Send'}
         </button>
       </form>
+      {mention.active && (
+        <MentionAutocomplete
+          suggestions={mention.suggestions}
+          onSelect={(user) => {
+            const cursorPos = commentInputRef.current?.selectionStart ?? commentInput.length;
+            const { value, cursorPos: nextCursorPos } = applyMentionSelection(commentInput, cursorPos, user.username);
+            setCommentInput(value);
+            mention.reset();
+            requestAnimationFrame(() => {
+              commentInputRef.current?.focus();
+              commentInputRef.current?.setSelectionRange(nextCursorPos, nextCursorPos);
+            });
+          }}
+        />
+      )}
       {submitError && (
         <p className="feed-error-text" role="alert">
           {submitError}

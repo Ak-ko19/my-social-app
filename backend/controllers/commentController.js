@@ -1,5 +1,6 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const mentionService = require('../services/mentionService');
 
 async function createComment(req, res) {
   try {
@@ -25,6 +26,12 @@ async function createComment(req, res) {
         [postOwnerId, req.userId, 'comment', req.params.id, result.rows[0].id]
       );
     }
+    await mentionService.notifyMentions({
+      content,
+      authorId: req.userId,
+      postId: parseInt(req.params.id, 10),
+      commentId: result.rows[0].id
+    });
     res.status(201).json(result.rows[0]);
   } catch (err) {
     sendServerError(res, err, 'Create comment failed. Please try again later.');

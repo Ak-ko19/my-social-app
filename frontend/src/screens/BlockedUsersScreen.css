@@ -1,0 +1,67 @@
+.blocked-users-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.blocked-users-header-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.blocked-users-status {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.blocked-users-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.blocked-users-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.blocked-users-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.blocked-users-unblock-btn {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.blocked-users-unblock-btn:hover:not(:disabled) {
+  background: var(--color-border);
+}
+
+.blocked-users-unblock-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

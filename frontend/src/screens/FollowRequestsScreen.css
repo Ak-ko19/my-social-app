@@ -1,0 +1,75 @@
+.follow-requests-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.follow-requests-header-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.follow-requests-status {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.follow-requests-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.follow-requests-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.follow-requests-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.follow-requests-btn {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.follow-requests-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.follow-requests-btn-deny {
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+}
+
+.follow-requests-btn-deny:hover:not(:disabled) {
+  background: var(--color-border);
+}
+
+.follow-requests-btn-approve {
+  background: var(--color-accent);
+  color: #fff;
+}

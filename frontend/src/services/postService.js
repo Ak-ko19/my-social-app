@@ -41,3 +41,31 @@ export function updateComment(commentId, content, token) {
 export function deletePost(postId, token) {
   return api.delete(`/posts/${postId}`, authHeaders(token));
 }
+
+export function updatePost(postId, content, token) {
+  return api.put(`/posts/${postId}`, { content }, authHeaders(token)).then((res) => res.data);
+}
+
+// Public endpoint (optionalAuth on the backend) -- works for a logged-out
+// viewer following a shared link, not just an authenticated in-app user.
+// Passing no token omits the Authorization header entirely rather than
+// sending "Bearer undefined".
+export function fetchPost(postId, token) {
+  return api.get(`/posts/${postId}`, token ? authHeaders(token) : undefined).then((res) => res.data);
+}
+
+export function fetchFollowCounts(userId) {
+  return api.get(`/users/${userId}/follow-counts`).then((res) => res.data);
+}
+
+export function fetchFollowRequests(token) {
+  return api.get('/follow-requests', authHeaders(token)).then((res) => res.data);
+}
+
+export function approveFollowRequest(followerId, token) {
+  return api.post(`/follow-requests/${followerId}/approve`, {}, authHeaders(token));
+}
+
+export function denyFollowRequest(followerId, token) {
+  return api.delete(`/follow-requests/${followerId}`, authHeaders(token));
+}

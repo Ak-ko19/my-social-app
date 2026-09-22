@@ -6,7 +6,21 @@ function readAuth() {
   const token = localStorage.getItem('token');
   const userId = parseInt(localStorage.getItem('userId'), 10);
   const username = localStorage.getItem('username') || null;
-  return { token, userId, username };
+  // 'true'/'false' string (localStorage only stores strings) -- absent for
+  // sessions that logged in before this field was added, same fallback
+  // pattern `username` already documents below.
+  const emailVerifiedRaw = localStorage.getItem('emailVerified');
+  const emailVerified = emailVerifiedRaw === null ? null : emailVerifiedRaw === 'true';
+  return { token, userId, username, emailVerified };
+}
+
+// Called after login/signup writes emailVerified, and whenever the app
+// learns the real value some other way (e.g. GET /profile/me), so every
+// mounted useAuth() consumer picks it up without needing a full page
+// reload -- same notifyAuthChange mechanism as token/userId/username.
+export function setEmailVerified(value) {
+  localStorage.setItem('emailVerified', String(value));
+  notifyAuthChange();
 }
 
 // Call this right after writing or clearing the token/userId/username keys
@@ -28,6 +42,7 @@ export function forceLogout() {
   localStorage.removeItem('token');
   localStorage.removeItem('userId');
   localStorage.removeItem('username');
+  localStorage.removeItem('emailVerified');
   notifyAuthChange();
   if (window.location.pathname !== '/login') {
     window.location.assign('/login');

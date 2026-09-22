@@ -18,6 +18,14 @@ export function fetchConversations(token) {
   return api.get('/conversations', authHeaders(token)).then((res) => res.data);
 }
 
+// Finds or creates the direct conversation with `userId` -- the backend is
+// idempotent (returns the existing conversation if one's already there), so
+// this is safe to call every time a "Message" button is tapped rather than
+// needing to check first.
+export function createConversation(userId, token) {
+  return api.post('/conversations', { userId }, authHeaders(token)).then((res) => res.data);
+}
+
 // REST fallback for sending a message when the socket is disconnected --
 // persists identically to the socket send_message path (same backend
 // service function), so a caller can't tell which transport was used from

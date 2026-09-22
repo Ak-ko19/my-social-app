@@ -1,0 +1,73 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { fetchPostsByHashtag } from '../services/hashtagService';
+
+const PAGE_LIMIT = 10;
+
+// Same paginated-list shape as useFeed/useSavedPosts, backed by
+// GET /hashtags/:tag/posts. Re-fetches from page 1 whenever `tag` changes
+// (tapping a different hashtag link while already on a hashtag feed).
+export function useHashtagFeed(tag, token) {
+  const [posts, setPosts] = useState([]);
+  const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadedTag, setLoadedTag] = useState(null);
+
+  const pageRef = useRef(1);
+  const requestIdRef = useRef(0);
+  const loadingMoreRef = useRef(false);
+
+  useEffect(() => {
+    const requestId = ++requestIdRef.current;
+    fetchPostsByHashtag(tag, token, { page: 1, limit: PAGE_LIMIT })
+      .then((data) => {
+        if (requestId !== requestIdRef.current) return;
+        pageRef.current = 1;
+        setPosts(data.posts);
+        setHasMore(Boolean(data.hasMore));
+        setError(null);
+        setLoadedTag(tag);
+      })
+      .catch((err) => {
+        if (requestId !== requestIdRef.current) return;
+        console.error(err);
+        setError('Failed to load posts for this hashtag');
+        setLoadedTag(tag);
+      });
+  }, [tag, token]);
+
+  const loading = loadedTag !== tag;
+
+  const loadMore = useCallback(() => {
+    if (loadingMoreRef.current || !hasMore) return;
+    loadingMoreRef.current = true;
+    const requestId = ++requestIdRef.current;
+    const nextPage = pageRef.current + 1;
+
+    Promise.resolve()
+      .then(() => {
+        setLoadingMore(true);
+        return fetchPostsByHashtag(tag, token, { page: nextPage, limit: PAGE_LIMIT });
+      })
+      .then((data) => {
+        if (requestId !== requestIdRef.current) return;
+        pageRef.current = nextPage;
+        setPosts((current) => {
+          const existingIds = new Set(current.map((post) => post.id));
+          const newPosts = data.posts.filter((post) => !existingIds.has(post.id));
+          return [...current, ...newPosts];
+        });
+        setHasMore(Boolean(data.hasMore));
+      })
+      .catch((err) => {
+        if (requestId !== requestIdRef.current) return;
+        console.error(err);
+      })
+      .finally(() => {
+        loadingMoreRef.current = false;
+        if (requestId === requestIdRef.current) setLoadingMore(false);
+      });
+  }, [tag, token, hasMore]);
+
+  return { posts, loading, loadingMore, error, hasMore, loadMore };
+}

@@ -29,6 +29,7 @@ import { IconButton, SectionLabel, Badge } from '../components/ui';
 import ProfileSummaryRow from '../components/layout/ProfileSummaryRow';
 import AppFooter from '../components/layout/AppFooter';
 import ThemeToggle from '../components/common/ThemeToggle';
+import PrivacyToggle from '../components/common/PrivacyToggle';
 import CURRENT_USER from '../data/mockCurrentUser';
 import { forceLogout } from '../hooks/useAuth';
 import './SettingsScreen.css';
@@ -44,9 +45,10 @@ const SETTINGS_SECTIONS = [
     label: 'Account',
     rows: [
       { key: 'personal-info', icon: User, title: 'Personal Information', to: '/edit-profile' },
-      { key: 'security', icon: ShieldCheck, title: 'Security & Privacy' },
+      { key: 'security', icon: ShieldCheck, title: 'Security & Privacy', to: '/settings/account' },
       { key: 'notifications', icon: Bell, title: 'Notifications', badgeCount: 3, to: '/notifications' },
-      { key: 'blocked-users', icon: UserX, title: 'Blocked Users' },
+      { key: 'blocked-users', icon: UserX, title: 'Blocked Users', to: '/settings/blocked-users' },
+      { key: 'follow-requests', icon: Users, title: 'Follow Requests', to: '/settings/follow-requests' },
       { key: 'language-region', icon: Globe, title: 'Language & Region' },
       // Real, not "coming soon" -- wired to the real ThemeProvider/
       // ThemeToggle already built for this app, same as Personal
@@ -57,7 +59,7 @@ const SETTINGS_SECTIONS = [
   {
     label: 'Social',
     rows: [
-      { key: 'privacy-settings', icon: Lock, title: 'Privacy Settings' },
+      { key: 'privacy-settings', icon: Lock, title: 'Private Account', toggle: true, ToggleComponent: PrivacyToggle },
       { key: 'content-visibility', icon: Eye, title: 'Who Can See My Content' },
       { key: 'followers-following', icon: Users, title: 'Followers & Following' },
       { key: 'content-preferences', icon: SlidersHorizontal, title: 'Content Preferences' }
@@ -114,6 +116,7 @@ function SettingsScreen() {
             // another button (invalid HTML, and two overlapping tab
             // stops for one control).
             if (row.toggle) {
+              const ToggleComponent = row.ToggleComponent || ThemeToggle;
               return (
                 <div className="settings-row settings-row-static" key={row.key}>
                   <span className="settings-row-icon-badge">
@@ -121,7 +124,7 @@ function SettingsScreen() {
                   </span>
                   <span className="settings-row-label">{row.title}</span>
                   <span className="settings-theme-switch">
-                    <ThemeToggle />
+                    <ToggleComponent />
                   </span>
                 </div>
               );

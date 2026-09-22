@@ -6,6 +6,15 @@
    on a screen that doesn't mount TopAppBar. */
 
 .phone-shell {
+  /* #root (index.css) is a flex container, so without an explicit width
+     phone-shell sizes itself to its content's intrinsic (shrink-to-fit)
+     width as a flex item, not to the 480px column -- HomeFeed's StoriesRow
+     happens to be wide enough to force it open, which is why this only
+     surfaced on lighter screens (BlockedUsersScreen, SavedPostsScreen) with
+     no content that wide. width: 100% (capped by max-width, still centered
+     by the auto margins) makes every screen using this shell full-width
+     regardless of its own content. */
+  width: 100%;
   max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;

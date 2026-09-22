@@ -102,5 +102,30 @@ export function useFeed(token) {
     setPosts((current) => current.filter((post) => post.id !== postId));
   }, []);
 
-  return { posts, loading, loadingMore, error, hasMore, reload, loadMore, removePost };
+  // Used after blocking a user (PostMenu) -- mutual invisibility means every
+  // post of theirs should disappear from the feed immediately, not just the
+  // one card the block action was taken from.
+  const removePostsByUser = useCallback((userId) => {
+    setPosts((current) => current.filter((post) => post.user_id !== userId));
+  }, []);
+
+  // Used after a successful edit (PostMenu -> PostCard) -- merges the
+  // server's authoritative updated fields into the existing card rather
+  // than refetching the whole feed for a one-field change.
+  const updatePostContent = useCallback((postId, updatedFields) => {
+    setPosts((current) => current.map((post) => (post.id === postId ? { ...post, ...updatedFields } : post)));
+  }, []);
+
+  return {
+    posts,
+    loading,
+    loadingMore,
+    error,
+    hasMore,
+    reload,
+    loadMore,
+    removePost,
+    removePostsByUser,
+    updatePostContent
+  };
 }

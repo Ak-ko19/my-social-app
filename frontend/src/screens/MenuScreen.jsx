@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  Bookmark,
   ChevronLeft,
   ChevronRight,
   Search,
@@ -100,6 +101,23 @@ function MenuScreen() {
           onChange={(e) => setQuery(e.target.value)}
           aria-label="Search features"
         />
+      </div>
+
+      {/* A real quick-access shortcut, same pattern as Facebook's own
+          hamburger menu -- separate from the SUPER_APP_CATEGORIES dream
+          list below, which is a future-roadmap directory, not where an
+          already-built feature like Saved Posts belongs. */}
+      <div className="menu-category-list">
+        <button type="button" className="menu-category-row" onClick={() => navigate('/saved')}>
+          <span className="menu-category-icon-badge" style={{ background: 'var(--badge-indigo-bg)', color: 'var(--badge-indigo-fg)' }}>
+            <Bookmark size={20} aria-hidden="true" />
+          </span>
+          <span className="menu-category-text">
+            <span className="menu-category-title">Saved Posts</span>
+            <span className="menu-category-subtitle">Posts you've bookmarked</span>
+          </span>
+          <ChevronRight size={18} className="menu-category-chevron" aria-hidden="true" />
+        </button>
       </div>
 
       <div className="menu-category-list">

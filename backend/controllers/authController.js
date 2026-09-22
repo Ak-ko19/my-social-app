@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const { sendEmail } = require('../utils/email');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,6 +35,25 @@ function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+// Shared by signup and resendVerification -- generates a fresh token,
+// stores its hash (same reasoning as reset tokens: a DB leak shouldn't hand
+// out a usable link), and "sends" the verification email.
+async function issueVerificationEmail(userId, email) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+  await db.query(
+    'UPDATE users SET verification_token = $1, verification_token_expiry = $2 WHERE id = $3',
+    [hashToken(token), expiry, userId]
+  );
+
+  sendEmail({
+    to: email,
+    subject: 'Verify your MySocialApp email',
+    text: `Verify your email: http://localhost:5173/verify-email/${token}`
+  });
+}
+
 async function signup(req, res) {
   try {
     const username = (req.body.username || '').trim();
@@ -54,12 +74,56 @@ async function signup(req, res) {
       'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email',
       [username, email, hashedPassword]
     );
+    await issueVerificationEmail(result.rows[0].id, result.rows[0].email);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
       return res.status(400).send('Email or username already exists');
     }
     sendServerError(res, err, 'Signup failed. Please try again later.');
+  }
+}
+
+async function verifyEmail(req, res) {
+  try {
+    const { token } = req.params;
+    const result = await db.query(
+      'SELECT id, verification_token_expiry FROM users WHERE verification_token = $1',
+      [hashToken(token)]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).send('Link expired or invalid');
+    }
+
+    const user = result.rows[0];
+    if (!user.verification_token_expiry || new Date(user.verification_token_expiry) < new Date()) {
+      return res.status(400).send('Link expired or invalid');
+    }
+
+    await db.query(
+      'UPDATE users SET email_verified = true, verification_token = NULL, verification_token_expiry = NULL WHERE id = $1',
+      [user.id]
+    );
+    res.status(200).send('Email verified successfully');
+  } catch (err) {
+    sendServerError(res, err, 'Email verification failed. Please try again later.');
+  }
+}
+
+async function resendVerification(req, res) {
+  try {
+    const result = await db.query('SELECT email, email_verified FROM users WHERE id = $1', [req.userId]);
+    if (result.rows.length === 0) {
+      return res.status(404).send('User not found');
+    }
+    if (result.rows[0].email_verified) {
+      return res.status(400).send('Your email is already verified');
+    }
+    await issueVerificationEmail(req.userId, result.rows[0].email);
+    res.status(200).send('Verification email sent');
+  } catch (err) {
+    sendServerError(res, err, 'Resend verification failed. Please try again later.');
   }
 }
 
@@ -80,8 +144,25 @@ async function login(req, res) {
       return res.status(401).send('Invalid email or password');
     }
 
+    // A deactivated account reactivates the moment its owner successfully
+    // logs back in -- that's the entire "how do I undo a deactivation" flow
+    // (no separate reactivate endpoint), so this only runs after the
+    // password has already been verified above.
+    let reactivated = false;
+    if (user.is_deactivated) {
+      await db.query('UPDATE users SET is_deactivated = false, deactivated_at = NULL WHERE id = $1', [user.id]);
+      reactivated = true;
+    }
+
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
-    res.status(200).json({ token, id: user.id, username: user.username, email: user.email });
+    res.status(200).json({
+      token,
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      reactivated,
+      emailVerified: user.email_verified
+    });
   } catch (err) {
     sendServerError(res, err, 'Login failed. Please try again later.');
   }
@@ -109,7 +190,11 @@ async function forgotPassword(req, res) {
       [hashToken(token), expiry, result.rows[0].id]
     );
 
-    console.log(`Reset link: http://localhost:5173/reset-password/${token}`);
+    sendEmail({
+      to: email,
+      subject: 'Reset your MySocialApp password',
+      text: `Reset link: http://localhost:5173/reset-password/${token}`
+    });
     res.status(200).send(genericMessage);
   } catch (err) {
     sendServerError(res, err, 'Forgot password failed. Please try again later.');
@@ -154,4 +239,103 @@ async function resetPassword(req, res) {
   }
 }
 
-module.exports = { signup, login, forgotPassword, resetPassword };
+async function changePassword(req, res) {
+  try {
+    const currentPassword = req.body.currentPassword || '';
+    const newPassword = req.body.newPassword || '';
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).send('Current and new password are required');
+    }
+    if (!isPasswordValid(newPassword)) {
+      return res.status(400).send(`Password must be between ${MIN_PASSWORD_LENGTH} and ${MAX_PASSWORD_LENGTH} characters long`);
+    }
+
+    const result = await db.query('SELECT password FROM users WHERE id = $1', [req.userId]);
+    if (result.rows.length === 0) {
+      return res.status(404).send('User not found');
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, result.rows[0].password);
+    if (!isMatch) {
+      return res.status(401).send('Current password is incorrect');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, req.userId]);
+    res.status(200).send('Password changed successfully');
+  } catch (err) {
+    sendServerError(res, err, 'Change password failed. Please try again later.');
+  }
+}
+
+// Soft-delete: the row and all content stay intact, just hidden (every
+// feed/search/profile query's visibility filter also excludes
+// is_deactivated, same treatment as a block or a private account's
+// content). Reactivates automatically on the next successful login (see
+// login above) -- there's no separate "reactivate" endpoint.
+async function deactivateAccount(req, res) {
+  try {
+    const password = req.body.password || '';
+    if (!password) {
+      return res.status(400).send('Password is required to deactivate your account');
+    }
+
+    const result = await db.query('SELECT password FROM users WHERE id = $1', [req.userId]);
+    if (result.rows.length === 0) {
+      return res.status(404).send('User not found');
+    }
+
+    const isMatch = await bcrypt.compare(password, result.rows[0].password);
+    if (!isMatch) {
+      return res.status(401).send('Incorrect password');
+    }
+
+    await db.query('UPDATE users SET is_deactivated = true, deactivated_at = now() WHERE id = $1', [req.userId]);
+    res.status(200).send('Account deactivated');
+  } catch (err) {
+    sendServerError(res, err, 'Deactivate account failed. Please try again later.');
+  }
+}
+
+// Hard delete: cascades to every table referencing this user (see migration
+// 013_cascade_account_delete) -- posts, comments, likes, follows, blocks,
+// reports, bookmarks, notifications, sent messages, conversation
+// participation. The frontend gates this behind its own type-the-username
+// confirmation (ConfirmDialog's requireTypedConfirmation); the password
+// check here is the real server-side authorization, not just a UX step.
+async function deleteAccount(req, res) {
+  try {
+    const password = req.body.password || '';
+    if (!password) {
+      return res.status(400).send('Password is required to delete your account');
+    }
+
+    const result = await db.query('SELECT password FROM users WHERE id = $1', [req.userId]);
+    if (result.rows.length === 0) {
+      return res.status(404).send('User not found');
+    }
+
+    const isMatch = await bcrypt.compare(password, result.rows[0].password);
+    if (!isMatch) {
+      return res.status(401).send('Incorrect password');
+    }
+
+    await db.query('DELETE FROM users WHERE id = $1', [req.userId]);
+    res.status(200).send('Account deleted');
+  } catch (err) {
+    sendServerError(res, err, 'Delete account failed. Please try again later.');
+  }
+}
+
+module.exports = {
+  signup,
+  login,
+  forgotPassword,
+  resetPassword,
+  changePassword,
+  deactivateAccount,
+  deleteAccount,
+  verifyEmail,
+  resendVerification
+};

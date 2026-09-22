@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import api from './api';
 import { useNavigate } from 'react-router-dom';
+import MentionAutocomplete from './components/feed/MentionAutocomplete';
+import { useMentionAutocomplete, applyMentionSelection } from './hooks/useMentionAutocomplete';
 
 function CreatePost() {
   const [content, setContent] = useState('');
@@ -8,6 +10,26 @@ function CreatePost() {
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const textareaRef = useRef(null);
+  const mention = useMentionAutocomplete();
+
+  const handleContentChange = (e) => {
+    setContent(e.target.value);
+    mention.handleInputChange(e.target.value, e.target.selectionStart);
+  };
+
+  const handleMentionSelect = (user) => {
+    const cursorPos = textareaRef.current?.selectionStart ?? content.length;
+    const { value, cursorPos: nextCursorPos } = applyMentionSelection(content, cursorPos, user.username);
+    setContent(value);
+    mention.reset();
+    // Restore focus + cursor position after React re-renders the textarea
+    // with the new value -- setSelectionRange has to run after that paint.
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+      textareaRef.current?.setSelectionRange(nextCursorPos, nextCursorPos);
+    });
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0] || null;
@@ -50,13 +72,15 @@ function CreatePost() {
       <h2>Create Post</h2>
       <form onSubmit={handleSubmit}>
         <textarea
+          ref={textareaRef}
           value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="What's on your mind?"
+          onChange={handleContentChange}
+          placeholder="What's on your mind? Use @ to mention someone, # for a hashtag"
           rows="5"
           style={{ width: '100%', maxWidth: '400px' }}
           required
         />
+        {mention.active && <MentionAutocomplete suggestions={mention.suggestions} onSelect={handleMentionSelect} />}
         <div style={{ marginTop: '10px' }}>
           <label>Image (optional): </label>
           <input type="file" accept="image/*" onChange={handleImageChange} />

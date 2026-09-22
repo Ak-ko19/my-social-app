@@ -17,7 +17,7 @@ import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
 // jank, not a micro-interaction. Only the occasional "loading more"
 // indicator (which mounts/unmounts far less often than every scroll frame)
 // gets a transition.
-function FeedList({ posts, hasMore, isLoadingMore, onLoadMore }) {
+function FeedList({ posts, hasMore, isLoadingMore, onLoadMore, onRemovePost, onRemovePostsByUser, onUpdatePost }) {
   const listRef = useRef(null);
   const reduceMotion = useReducedMotion();
   // The virtualizer measures from the top of the document; scrollMargin is
@@ -65,7 +65,12 @@ function FeedList({ posts, hasMore, isLoadingMore, onLoadMore }) {
               className="feed-list-item"
               style={{ transform: `translateY(${virtualRow.start - scrollMargin}px)` }}
             >
-              <PostCard post={post} />
+              <PostCard
+                post={post}
+                onRemovePost={onRemovePost}
+                onRemovePostsByUser={onRemovePostsByUser}
+                onUpdatePost={onUpdatePost}
+              />
             </li>
           );
         })}

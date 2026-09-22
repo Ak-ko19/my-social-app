@@ -1,9 +1,10 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const blockService = require('../services/blockService');
 
 async function getMyProfile(req, res) {
   try {
-    const result = await db.query('SELECT id, username, email, bio, avatar_url, created_at FROM users WHERE id = $1', [req.userId]);
+    const result = await db.query('SELECT id, username, email, bio, avatar_url, is_private, email_verified, created_at FROM users WHERE id = $1', [req.userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).send('User not found');
@@ -18,14 +19,51 @@ async function getMyProfile(req, res) {
 async function getProfile(req, res) {
   try {
     const { id } = req.params;
-    // Public profile endpoint (no auth) — deliberately excludes email; see getMyProfile for the owner-only view.
-    const result = await db.query('SELECT id, username, bio, avatar_url, created_at FROM users WHERE id = $1', [id]);
+    // Accepts either a numeric user id or a username -- @mention links
+    // (PostText on the frontend) only ever have the username text to link
+    // with, not the id, so this one endpoint serves both /profile/:id and
+    // a mention's /profile/:username without a second lookup endpoint.
+    const isUsername = isNaN(id);
+    // Public profile endpoint (optionalAuth) — deliberately excludes email; see getMyProfile for the owner-only view.
+    // is_following/is_blocked_by_me let the profile screen render the
+    // right Follow/Unfollow/Block button state without a second request.
+    const viewerId = req.userId ?? null;
+    const result = await db.query(`
+      SELECT id, username, bio, avatar_url, is_private, is_deactivated, created_at,
+        $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = users.id AND status = 'accepted') AS is_following,
+        $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = users.id AND status = 'pending') AS follow_request_pending,
+        $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = users.id) AS is_blocked_by_me
+      FROM users WHERE ${isUsername ? 'LOWER(username) = LOWER($2)' : 'id = $2::int'}
+    `, [viewerId, id]);
 
     if (result.rows.length === 0) {
       return res.status(404).send('User not found');
     }
 
-    res.status(200).json(result.rows[0]);
+    const profile = result.rows[0];
+
+    // A deactivated account's profile is hidden from everyone but the
+    // owner themselves (viewing it while their own JWT is still valid,
+    // right before their next login reactivates it).
+    if (profile.is_deactivated && viewerId !== profile.id) {
+      return res.status(404).send('User not found');
+    }
+
+    // Mutual invisibility: a block hides the profile in both directions,
+    // same as it hides posts (postController.getPost/getPosts) and search
+    // results (searchController) — this is the same underlying rule applied
+    // to one more surface, not a separate policy. Uses profile.id (the
+    // resolved numeric id from the query above), not the raw :id route
+    // param, since that may have been a username -- isBlocked itself
+    // already checks both directions (viewer blocked them, or they blocked
+    // viewer), unlike the query's own is_blocked_by_me field (one direction
+    // only, kept separate since the frontend needs it to render an
+    // Unblock, not just hide the page).
+    if (viewerId && (await blockService.isBlocked(viewerId, profile.id))) {
+      return res.status(404).send('User not found');
+    }
+
+    res.status(200).json(profile);
   } catch (err) {
     sendServerError(res, err, 'Error fetching profile. Please try again later.');
   }
@@ -51,4 +89,19 @@ async function updateProfile(req, res) {
   }
 }
 
-module.exports = { getMyProfile, getProfile, updateProfile };
+async function updatePrivacy(req, res) {
+  try {
+    if (typeof req.body.isPrivate !== 'boolean') {
+      return res.status(400).send('isPrivate must be true or false');
+    }
+    const result = await db.query(
+      'UPDATE users SET is_private = $1 WHERE id = $2 RETURNING id, is_private',
+      [req.body.isPrivate, req.userId]
+    );
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    sendServerError(res, err, 'Update privacy setting failed. Please try again later.');
+  }
+}
+
+module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy };

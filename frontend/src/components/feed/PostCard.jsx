@@ -1,16 +1,20 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { MoreHorizontal, ThumbsUp, MessageCircle, Share2 } from 'lucide-react';
+import { Bookmark, ThumbsUp, MessageCircle, Share2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../hooks/useAuth';
 import { useLikeToggle } from '../../hooks/useLikeToggle';
+import { useBookmarkToggle } from '../../hooks/useBookmarkToggle';
 import { useComments } from '../../hooks/useComments';
 import { resolveImageUrl } from '../../api';
 import { getOptimizedImageUrl } from '../../utils/cloudinaryImage';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
-import { Avatar, VerifiedTick, IconButton } from '../ui';
+import { updatePost } from '../../services/postService';
+import { Avatar, VerifiedTick } from '../ui';
 import ProgressiveImage from '../common/ProgressiveImage';
 import CommentSection from './CommentSection';
+import PostMenu from './PostMenu';
+import PostText from './PostText';
 import './PostCard.css';
 
 // Replaces the old Feed.css-based PostCard IN PLACE -- same external
@@ -26,14 +30,84 @@ import './PostCard.css';
 // shape (checked directly against the posts table: id, user_id, content,
 // created_at, image_url -- nothing else, and no `verified` column on
 // users either). They simply don't render until/unless that data exists,
-// rather than being faked. Shares have no backing at all (no column, no
-// endpoint, no table anywhere in this app) -- omitted from the stats row
-// entirely, and the Share action is genuinely disabled, same treatment as
-// Video/Live in PostComposer.jsx.
-function PostCard({ post }) {
+// rather than being faked. Share has no server-side count to display (no
+// shares table, and none is needed -- sharing a link isn't a trackable
+// server event the way a like/bookmark is), so it's omitted from the stats
+// row but the action itself is real: Web Share API where available,
+// clipboard-copy fallback otherwise (see handleShare below).
+function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost }) {
   const { token, userId, username } = useAuth();
   const like = useLikeToggle(post.id, { likedByMe: post.liked_by_me, likeCount: post.like_count }, token);
+  const bookmark = useBookmarkToggle(post.id, post.bookmarked_by_me, token);
   const comments = useComments(post.id, token, { userId, username });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.content);
+  const [editPending, setEditPending] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [shareFeedback, setShareFeedback] = useState('');
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/posts/${post.id}`;
+    // navigator.share is the native OS share sheet (Android/iOS/desktop
+    // browsers that support it) -- preferred when available since it lets
+    // the user pick an actual destination (Messages, another app, ...)
+    // instead of just landing a URL on their clipboard. A cancelled share
+    // sheet throws an AbortError, which is a normal user action, not a
+    // failure -- silently ignored rather than falling through to the
+    // clipboard fallback (that would paper over an intentional cancel with
+    // an unrequested clipboard write).
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `${post.username} on MySocialApp`, url });
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error(err);
+        }
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareFeedback('Link copied!');
+      setTimeout(() => setShareFeedback(''), 2000);
+    } catch (err) {
+      console.error(err);
+      setShareFeedback('Failed to copy link');
+      setTimeout(() => setShareFeedback(''), 2000);
+    }
+  };
+
+  const startEditing = () => {
+    setEditContent(post.content);
+    setEditError('');
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditError('');
+  };
+
+  const saveEdit = () => {
+    const trimmed = editContent.trim();
+    if (!trimmed) {
+      setEditError('Post content cannot be empty');
+      return;
+    }
+    setEditPending(true);
+    setEditError('');
+    updatePost(post.id, trimmed, token)
+      .then((updated) => {
+        onUpdatePost?.(post.id, { content: updated.content });
+        setIsEditing(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setEditError(err.response?.data || 'Failed to update post');
+      })
+      .finally(() => setEditPending(false));
+  };
 
   // getFeed's query returns like_count (a cheap correlated COUNT) but no
   // equivalent comment_count -- the real count is only known once the
@@ -68,10 +142,35 @@ function PostCard({ post }) {
             {!post.sponsored && post.visibility && <span> · {post.visibility}</span>}
           </div>
         </div>
-        <IconButton icon={MoreHorizontal} aria-label="More options" />
+        <PostMenu post={post} onBlocked={onRemovePostsByUser} onDeleted={onRemovePost} onEdit={startEditing} />
       </header>
 
-      <p className="post-card-body">{post.content}</p>
+      {isEditing ? (
+        <div className="post-card-edit">
+          <textarea
+            className="post-card-edit-textarea"
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            rows={3}
+            autoFocus
+          />
+          {editError && (
+            <p className="post-card-edit-error" role="alert">
+              {editError}
+            </p>
+          )}
+          <div className="post-card-edit-actions">
+            <button type="button" className="post-card-edit-btn post-card-edit-btn-secondary" onClick={cancelEditing} disabled={editPending}>
+              Cancel
+            </button>
+            <button type="button" className="post-card-edit-btn post-card-edit-btn-primary" onClick={saveEdit} disabled={editPending}>
+              {editPending ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <PostText content={post.content} className="post-card-body" />
+      )}
 
       {post.image_url && (
         <ProgressiveImage
@@ -120,9 +219,19 @@ function PostCard({ post }) {
           <MessageCircle size={18} aria-hidden="true" />
           <span>Comment</span>
         </button>
-        <button type="button" className="post-card-action" disabled title="Coming soon" aria-disabled="true">
+        <button type="button" className="post-card-action" onClick={handleShare}>
           <Share2 size={18} aria-hidden="true" />
-          <span>Share</span>
+          <span>{shareFeedback || 'Share'}</span>
+        </button>
+        <button
+          type="button"
+          className={clsx('post-card-action', bookmark.bookmarked && 'post-card-action-active')}
+          onClick={bookmark.toggle}
+          disabled={bookmark.pending}
+          aria-pressed={bookmark.bookmarked}
+        >
+          <Bookmark size={18} aria-hidden="true" fill={bookmark.bookmarked ? 'currentColor' : 'none'} />
+          <span>{bookmark.bookmarked ? 'Saved' : 'Save'}</span>
         </button>
       </div>
 

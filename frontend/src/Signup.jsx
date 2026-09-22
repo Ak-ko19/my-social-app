@@ -78,7 +78,11 @@ function Signup() {
           />
         </div>
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        {success && <p style={{ color: 'green' }}>Signup successful! Redirecting to login...</p>}
+        {success && (
+          <p style={{ color: 'green' }}>
+            Signup successful! Check your email to verify your account. Redirecting to login...
+          </p>
+        )}
         <button type="submit" style={{ marginTop: '10px' }}>Sign Up</button>
       </form>
       <p>Already have an account? <a href="/login">Login</a></p>

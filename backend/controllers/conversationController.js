@@ -2,6 +2,7 @@ const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { encodeCursor, decodeCursor, getLimit } = require('../utils/cursorPagination');
 const messageService = require('../services/messageService');
+const blockService = require('../services/blockService');
 const { getIO } = require('../sockets');
 const presence = require('../sockets/presence');
 
@@ -76,6 +77,10 @@ async function createConversation(req, res) {
     const userCheck = await db.query('SELECT id FROM users WHERE id = $1', [targetUserId]);
     if (userCheck.rows.length === 0) {
       return res.status(404).send('User not found');
+    }
+
+    if (await blockService.isBlocked(req.userId, targetUserId)) {
+      return res.status(403).send('You cannot message this user');
     }
 
     const userAId = Math.min(req.userId, targetUserId);
@@ -211,6 +216,9 @@ async function sendMessage(req, res) {
     if (err instanceof messageService.NotParticipantError) {
       return res.status(403).send(err.message);
     }
+    if (err instanceof messageService.BlockedError) {
+      return res.status(403).send(err.message);
+    }
     if (err instanceof messageService.RateLimitError) {
       return res.status(429).send(err.message);
     }
@@ -262,6 +270,9 @@ async function sendVoiceMessage(req, res) {
       return res.status(400).send(err.message);
     }
     if (err instanceof messageService.NotParticipantError) {
+      return res.status(403).send(err.message);
+    }
+    if (err instanceof messageService.BlockedError) {
       return res.status(403).send(err.message);
     }
     if (err instanceof messageService.RateLimitError) {

@@ -354,6 +354,183 @@ psql -U postgres -d social_app_db -f backend/migrations/002_add_trigram_search_i
 
 ---
 
+## 12-Feature Production Batch (2026-09-22)
+
+**Goal:** Block/report/bookmark/edit-delete/share/hashtags/mentions/
+privacy/account-management/email-verification/rate-limiting/PWA, built as
+full vertical slices (migration → backend → frontend → tested), one at a
+time, in the order below. Every feature was smoke-tested against the real
+DB via curl and clicked through in a real Chrome tab (not just unit-level
+reasoning) before moving to the next.
+
+### New migrations (006–014)
+```
+006_add_blocks                       -- blocks table (bidirectional check in blockService)
+007_fix_comments_post_cascade        -- bug fix: comments.post_id was NO ACTION, blocking DELETE /posts/:id whenever a post had comments
+008_add_reports                      -- reports table (polymorphic target_type/target_id)
+009_add_bookmarks                    -- bookmarks table
+010_add_hashtags                     -- hashtags + post_hashtags join tables
+011_add_privacy                      -- users.is_private, follows.status ('accepted'|'pending')
+012_add_account_status               -- users.is_deactivated, deactivated_at
+013_cascade_account_delete           -- posts/comments/notifications/messages FKs -> ON DELETE CASCADE (see account-deletion-fk-policy decision below)
+014_add_email_verification           -- users.email_verified, verification_token, verification_token_expiry
+```
+Apply with `node backend/scripts/run-migration.js backend/migrations/<file>.up.sql`,
+in numeric order. Two things worth knowing before running these against a
+different environment:
+- `CREATE INDEX CONCURRENTLY` cannot run inside a transaction block, and
+  `run-migration.js` sends a whole file as one query (which node-postgres
+  wraps in an implicit transaction when it contains multiple statements) —
+  001/002's CONCURRENTLY indexes only work via `psql -f` (statement-by-
+  statement), not this script. 014 deliberately uses a plain `CREATE INDEX`
+  instead, inside `BEGIN/COMMIT`, for exactly this reason.
+- 013's decision (cascade, not anonymize) was explicitly deferred back on
+  2026-09-16 and resolved during this batch — see the `account-deletion-
+  fk-policy` memory for the full reasoning.
+
+### 1. Block user
+`blocks` table + `blockService.isBlocked` (bidirectional) used everywhere a
+block needs to gate something: `followController` (can't follow), 
+`messageService.assertNotBlocked` (can't message, re-checked on every send
+so a block placed mid-conversation takes effect immediately), and a
+`NOT EXISTS` clause repeated in every feed/search/hashtag/bookmark query
+(mutual invisibility — same pattern as the codebase's existing per-query
+style, not centralized into one shared SQL fragment). Frontend: `PostMenu`
+(post card "…" menu) + `ConfirmDialog`/`ActionSheet`/`Modal` (new
+`components/ui` primitives every later feature reuses) + Settings →
+Blocked Users.
+
+### 2. Report post/user
+`reports` table (allowlisted `reason`, free-text `details`, `status`
+pending/reviewed — no admin dashboard, per spec). Rate-limited
+(`reportLimiter`, 15/hour). Frontend: `ReportDialog` (reason radio list),
+reachable from `PostMenu` for both "Report post" and "Report {username}".
+
+### 3. Bookmark/Save
+`bookmarks` table, same shape/pattern as `likes`. `bookmarked_by_me` added
+to every post-list query. Frontend: `useBookmarkToggle` (mirrors
+`useLikeToggle`'s optimistic-update shape exactly), a Save button on the
+post card, and a Saved Posts screen (`/saved`, linked from the hamburger
+menu) reusing `FeedList`.
+
+### 4. Post edit/delete UI
+Backend already existed; only the frontend was missing, plus **the comments
+cascade bug (migration 007)** discovered while testing it — `DELETE
+/posts/:id` was silently broken for any post with a comment before this
+batch. `PostMenu` gained Edit/Delete for the post's own author; edit is
+inline (textarea replacing the post body, not a modal).
+
+### 5. Share + post detail page
+`GET /posts/:id` extended with `like_count`/`comment_count`/
+`liked_by_me`/`bookmarked_by_me`, and made reachable at `/posts/:id` — the
+first fully public page in the app (works logged out, via `optionalAuth`).
+Share uses `navigator.share` where available, clipboard-copy fallback
+otherwise.
+
+### 6. Hashtags
+Relational (`hashtags` + `post_hashtags`), not a `tags[]` column — a real
+join lets `GET /hashtags/:tag/posts` run as an indexed join instead of an
+array-contains scan. `hashtagService.syncPostHashtags` re-parses and
+re-links on every create/edit (delete-then-reinsert, not a diff). Frontend:
+`PostText`/`renderTextWithLinks` (shared with mentions) renders `#tag` as a
+link to `/hashtag/:tag`.
+
+### 7. @mentions
+`mentionService.notifyMentions` parses `@username`, resolves to user ids
+(excluding self-mentions and blocked relationships), inserts `type =
+'mention'` notifications — reuses the existing notifications table, no new
+one. **This required building a profile page** (`/profile/:id` or
+`/profile/:username` — the backend accepts either, since a mention only has
+the username) since nothing linked to another user's profile anywhere in
+the app before this. Includes Follow/Message/Block/Report actions. Frontend
+composer autocomplete: `useMentionAutocomplete` (debounced `GET
+/search/users`), wired into both the post composer and comment composer.
+
+**Bug found and fixed:** `ProfileScreen`'s follow button was stuck on
+"Follow" even when the backend correctly returned `is_following: true`,
+because `useFollowToggle`'s `useState` only seeds once, at first mount, and
+the hook was being called before `profile` had loaded (seeding from
+`undefined`). Fixed by extracting the profile UI into a child component
+keyed by `profile.id`, so it only ever mounts once real data exists.
+
+### 8. Privacy toggle (public/private account)
+`users.is_private` + `follows.status` (`accepted`/`pending`). A follow
+request to a private account no longer auto-accepts; the target must
+approve/deny (`GET /follow-requests`, `POST .../approve`, `DELETE
+/follow-requests/:followerId`). Every post-visibility query (feed, public
+posts, post detail, search, hashtag feed, bookmarks) gained the same
+three-way OR: `NOT is_private OR viewer = author OR accepted-follower`.
+Frontend: a real toggle switch in Settings (reusing `ThemeToggle`'s CSS,
+new `PrivacyToggle` component) and a Follow Requests screen.
+
+### 9. Change password / Deactivate / Delete account
+All three require re-entering the current password server-side (not just a
+frontend confirm step). Deactivate is a soft flag (`is_deactivated`) that
+hides the account from every visibility query above, and **reactivates
+automatically on the next successful login** — there's no separate
+reactivate endpoint. Delete is a hard `DELETE FROM users`, relying on
+migration 013's cascade — verified end-to-end (posts/comments/likes/
+hashtag-links all gone after deleting the author). Frontend: `/settings/
+account`, with `ConfirmDialog`'s `requireTypedConfirmation` (type your
+username) gating the delete button specifically.
+
+### 10. Email verification
+`users.email_verified` + hashed `verification_token` (same SHA-256-of-a-
+crypto-random-token pattern as password reset). Signup sends a verification
+"email" (still console.log — see TASK 2's note; centralized into one
+`utils/email.js` function so a real provider is a one-file swap). **Chose
+the banner-only path** from the spec's "gate posting/messaging, or at
+minimum show a banner" — hard-gating felt like too much friction for a
+still-growing MVP with no real email deliverability yet; documented here as
+the deliberate choice, not an oversight.
+
+**Bug found and fixed:** the verify-email page fired its verification
+request twice in dev (React StrictMode double-invokes effects), and the
+second call — token already consumed by the first — overwrote a real
+success with "Link expired or invalid" in the UI. Fixed with a ref guard
+that only lets the effect's request fire once per token.
+
+### 11. Rate limiting
+Added a global floor (`globalLimiter`, 300 req/15min/IP) ahead of every
+route; the feature-specific limiters built alongside features 1–10
+(login/signup/forgot-password/report/follow/account-actions/resend-
+verification) stack on top of it. `Retry-After` (seconds, RFC 9110) is now
+set explicitly on every 429 alongside the existing `RateLimit-*` headers —
+verified with curl that a real 429 carries both.
+
+### 12. PWA support
+`manifest.webmanifest` + a hand-drawn set of PNG icons (192/512/maskable-
+512/apple-touch-180 — generated by `frontend/scripts/generate-pwa-icons.cjs`,
+a from-scratch PNG encoder using only Node's built-in `zlib`, since no
+image-editing tool was available; draws the same three-dot mark as
+`components/layout/Logo.jsx`) + a basic app-shell service worker
+(network-first, falling back to cache, falling back to the shell for
+navigations). iOS gets its own `apple-touch-icon`/`apple-mobile-web-app-*`
+meta tags in `index.html` since Safari doesn't read the manifest for "Add
+to Home Screen". Verified via `vite preview` (prod build) that the manifest
+loads, the service worker registers, and the app shell is actually cached.
+
+### Known limitations / deviations
+- **Anonymous interaction on the public post-detail page**: `/posts/:id`
+  is the first page that renders while logged out, but Like/Bookmark still
+  attempt an authenticated API call if tapped — the existing app-wide 401
+  interceptor (`api.js`) then redirects to `/login`. Not a new bug (the
+  interceptor already behaved this way everywhere), just newly reachable
+  from a logged-out context. Not fixed in this batch — scoped as a UX
+  polish item, not a functional gap.
+- **Email verification is banner-only**, not enforced on posting/messaging
+  (see Feature 10 above) — a deliberate scope decision, not a gap.
+- **GET /feed never included the viewer's own posts** — pre-existing
+  behavior (the query only selects `following_id`, never the viewer's own
+  id), unrelated to this batch, left as-is since fixing it wasn't asked for
+  and touches feed semantics beyond this batch's scope.
+- **No real email provider** — signup/forgot-password/resend-verification
+  all still log the link to the console (see TASK 2's original note); this
+  batch centralized that into `utils/email.js` so swapping in Nodemailer/
+  SendGrid/etc. later is a one-file change.
+
+---
+
 ## How to use this file
 
 - Keep this file (and CLAUDE.md) in your project root or somewhere safe.

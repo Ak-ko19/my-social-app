@@ -7,6 +7,7 @@
 const sanitizeHtml = require('sanitize-html');
 const db = require('../db');
 const { isRateLimited } = require('./rateLimiter');
+const blockService = require('./blockService');
 
 const MAX_MESSAGE_LENGTH = 5000;
 const MAX_CLIENT_TEMP_ID_LENGTH = 255;
@@ -46,6 +47,13 @@ class NotMessageOwnerError extends Error {
   }
 }
 
+class BlockedError extends Error {
+  constructor(message = 'You cannot message this user') {
+    super(message);
+    this.name = 'BlockedError';
+  }
+}
+
 // Chat messages are rendered as plain text everywhere in this app -- rather
 // than trying to allow-list "safe" HTML, strip all markup entirely so
 // <script>/onerror=/etc. can never reach a client that renders it unescaped.
@@ -59,6 +67,28 @@ async function isParticipant(conversationId, userId) {
     [conversationId, userId]
   );
   return result.rows.length > 0;
+}
+
+// Only meaningful for direct (2-participant) conversations, the only kind
+// this app creates today -- same assumption conversationController.
+// getConversations already documents making.
+async function getOtherParticipantId(conversationId, userId) {
+  const result = await db.query(
+    'SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2 LIMIT 1',
+    [conversationId, userId]
+  );
+  return result.rows[0]?.user_id ?? null;
+}
+
+// Re-checked on every send (not just once at conversation-creation time) so
+// a block placed AFTER an existing conversation was created still takes
+// effect immediately -- old messages stay visible, but no new ones can be
+// sent in either direction once either side has blocked the other.
+async function assertNotBlocked(conversationId, senderId) {
+  const otherUserId = await getOtherParticipantId(conversationId, senderId);
+  if (otherUserId && (await blockService.isBlocked(senderId, otherUserId))) {
+    throw new BlockedError();
+  }
 }
 
 // Shared by every send path that accepts one -- an optimistic-UI id the
@@ -85,6 +115,8 @@ async function createMessage({ conversationId, senderId, type, content, mediaUrl
   if (!(await isParticipant(conversationId, senderId))) {
     throw new NotParticipantError();
   }
+
+  await assertNotBlocked(conversationId, senderId);
 
   // Per (sender, conversation) rather than per-sender globally, so a burst
   // in one conversation can't be used to argue the limit is unfairly
@@ -298,6 +330,7 @@ module.exports = {
   RateLimitError,
   MessageNotFoundError,
   NotMessageOwnerError,
+  BlockedError,
   MAX_MESSAGE_LENGTH,
   MAX_CLIENT_TEMP_ID_LENGTH
 };

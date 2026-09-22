@@ -1,0 +1,100 @@
+.profile-screen-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.profile-screen-header-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-screen-status {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.profile-screen-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 var(--space-4) var(--space-6);
+}
+
+.profile-screen-username {
+  margin: var(--space-3) 0 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.profile-screen-bio {
+  margin: var(--space-2) 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  max-width: 320px;
+}
+
+.profile-screen-counts {
+  display: flex;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+  font-size: 13.5px;
+  color: var(--color-text-muted);
+}
+
+.profile-screen-counts strong {
+  color: var(--color-text);
+}
+
+.profile-screen-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  width: 100%;
+  max-width: 320px;
+}
+
+.profile-screen-btn {
+  flex: 1 1 0;
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-screen-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profile-screen-btn-primary {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.profile-screen-btn-secondary {
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+}
+
+.profile-screen-error {
+  margin: var(--space-3) 0 0;
+  font-size: 12.5px;
+  color: var(--color-accent-3);
+}
