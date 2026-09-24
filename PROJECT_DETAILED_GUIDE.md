@@ -606,6 +606,17 @@ built and how to re-verify it.
   loads, so tests never use `.env`'s real SMTP/Cloudinary/DB settings.
 - To activate: push `dev` and check the Actions tab.
 
+### A5 — Keep-alive cron 🟡 (activates after merge to master)
+- `.github/workflows/keepalive.yml` curls `GET /` on the Render backend
+  every 10 minutes, so the free instance never idles into a ~20s cold
+  start.
+- The URL defaults to `https://my-social-app-ecjg.onrender.com/`;
+  override it with the `KEEPALIVE_URL` repo variable.
+- Scheduled workflows only run from the default branch (`master`). Use
+  "Run workflow" in the Actions tab for a manual check.
+- Free-tier budget: one always-on service is about 730 of 750 free
+  Render hours a month.
+
 ---
 
 ## How to use this file

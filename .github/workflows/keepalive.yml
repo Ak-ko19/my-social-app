@@ -1,0 +1,40 @@
+# Keep-alive ping for the Render free-tier backend (ROADMAP A5).
+# Render spins a free web service down after ~15 min without traffic; the
+# next visitor then waits out a cold start (measured 2026-09-24: 23s vs
+# 0.56s warm). Pinging the lightweight GET / (no DB work) every 10 minutes
+# keeps it awake.
+#
+# Notes:
+# - GitHub only runs `schedule` workflows from the DEFAULT branch (master),
+#   so this starts working once it's merged there. `workflow_dispatch`
+#   allows a manual test run from the Actions tab before that.
+# - GitHub may delay scheduled runs by several minutes under load; 10 min
+#   leaves headroom under Render's ~15 min idle cutoff.
+# - One always-on free service uses ~730 of Render's 750 free instance
+#   hours/month -- fine for this one backend, but a second free Render
+#   service would need that budget re-checked.
+# - Override the URL with a repository variable KEEPALIVE_URL (Settings ->
+#   Secrets and variables -> Actions -> Variables) if the backend moves.
+name: Keep-alive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping backend
+        env:
+          URL: ${{ vars.KEEPALIVE_URL || 'https://my-social-app-ecjg.onrender.com/' }}
+        run: |
+          # --retry covers a cold start that's still booting; the reported
+          # time shows whether this ping hit a warm or a cold instance.
+          curl --fail --silent --show-error --max-time 90 \
+               --retry 3 --retry-delay 10 --retry-all-errors \
+               -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" "$URL"

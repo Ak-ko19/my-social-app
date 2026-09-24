@@ -243,12 +243,36 @@ screen, not just the newer ones; tested at common mobile widths
   NEEDS OWNER. Flip to ✅ once the Actions tab shows it green.
 
 ### A5 — Keep-alive cron
-**Status:** ⬜ NOT CHECKED
+**Status:** 🟡 PARTIAL (built + ping verified 2026-09-24; schedule only runs once merged to master — see NEEDS OWNER)
 **Done when:** a scheduled GitHub Actions workflow pings a lightweight
 endpoint (e.g. `GET /`) on the deployed Render backend frequently enough
 to prevent free-tier cold-start spin-down; verified by checking response
 time stays low even after a long idle gap.
-**Notes:** depends on clarifying current Render deploy status first.
+**Notes:**
+- Deploy status checked (2026-09-24): the backend is live at
+  `https://my-social-app-ecjg.onrender.com`. That URL came from the
+  committed `frontend/.env.production`; I read it via `git show` and
+  didn't open any local `.env` files.
+  - Cold hit: `GET /` took 23.2s.
+  - Warm hit right after: 0.56s.
+  - So the spin-down problem is real.
+- `.github/workflows/keepalive.yml` pings `GET /` every 10 minutes.
+  - That endpoint is plain text with no DB query, so the ping stays cheap.
+  - It retries through a cold start and logs the response time, so each
+    run shows whether it hit a warm or cold instance.
+  - It has a manual `workflow_dispatch` trigger too.
+  - The URL can be overridden with a `KEEPALIVE_URL` repo variable.
+    That's a plain Actions variable, not a secret or a new account.
+- Decision: 10 minutes, not 14. GitHub can delay scheduled runs by
+  several minutes, and Render idles after about 15.
+- Budget check: an always-awake free service uses about 730 of Render's
+  750 free hours a month. That's $0 for this one backend. A second free
+  Render service would need a rethink.
+- Verified locally: the YAML parses, and the exact curl command from the
+  workflow returns HTTP 200 against the live backend.
+- Not yet verified: the schedule itself. GitHub only runs `schedule`
+  workflows from the default branch (`master`), so this starts working
+  only after dev → master is merged, which is owner-only. See NEEDS OWNER.
 
 ### A6 — Security & performance audit
 **Status:** ⬜ NOT CHECKED
@@ -423,3 +447,7 @@ running app in one pass, with a written pass/fail report per item.
   tab (or a PR from dev → master) and confirm both CI jobs go green. If
   they do, mark A4 ✅. (Not pushed by Claude: pushing publishes code, and
   the standing instruction was to commit to dev.)
+- A5 keep-alive: after merging dev → master, open Actions → Keep-alive →
+  "Run workflow" once to confirm it goes green. Then, after an idle stretch
+  of 30+ min, check that a visit to the site loads quickly (no ~20s cold
+  start) and that the run logs show sub-second times. If so, mark A5 ✅.
