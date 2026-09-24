@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bookmark,
@@ -28,8 +28,27 @@ import { IconButton } from '../components/ui';
 import ProfileSummaryRow from '../components/layout/ProfileSummaryRow';
 import AppFooter from '../components/layout/AppFooter';
 import SUPER_APP_CATEGORIES from '../data/superAppCategories';
-import CURRENT_USER from '../data/mockCurrentUser';
+import api, { resolveImageUrl } from '../api';
+import { useAuth } from '../hooks/useAuth';
 import './MenuScreen.css';
+
+// No display-name/handle/tagline/verified columns exist on `users` (only
+// username, bio, avatar_url, etc. -- same schema check documented in
+// data/mockCurrentUser.js) -- so the real profile is mapped honestly onto
+// ProfileSummaryRow's shape: username stands in for both name and handle,
+// bio (if any) stands in for tagline, and verified is always false since
+// there's no real field backing that badge. Shown as this safe empty
+// shape until /profile/me resolves, same fallback pattern PostComposer/
+// StoriesRow already use for "no current user yet".
+const EMPTY_USER = {
+  name: '',
+  handle: '',
+  tagline: '',
+  initials: '',
+  bg: 'var(--color-subtle-bg)',
+  color: 'var(--color-text)',
+  verified: false
+};
 
 // Explicit imports + map, not `import * as LucideIcons from 'lucide-react'`
 // with a dynamic LucideIcons[name] lookup -- that was tried first and
@@ -76,6 +95,28 @@ const CATEGORY_ROUTES = {
 function MenuScreen() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const { token } = useAuth();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    if (!token) return;
+    api
+      .get('/profile/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        const profile = res.data;
+        setCurrentUser({
+          name: profile.username,
+          handle: profile.username,
+          tagline: profile.bio || '',
+          initials: (profile.username || '?').slice(0, 2).toUpperCase(),
+          bg: 'var(--badge-indigo-bg)',
+          color: 'var(--badge-indigo-fg)',
+          verified: false,
+          avatarUrl: resolveImageUrl(profile.avatar_url)
+        });
+      })
+      .catch((err) => console.error(err));
+  }, [token]);
 
   const filteredCategories = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -88,7 +129,12 @@ function MenuScreen() {
       <header className="menu-header">
         <IconButton icon={ChevronLeft} aria-label="Back to Home" onClick={() => navigate('/')} />
         <span className="menu-header-eyebrow">Explore MySocialApp</span>
-        <ProfileSummaryRow user={CURRENT_USER} size={52} to="/settings" />
+        <ProfileSummaryRow
+          user={currentUser || EMPTY_USER}
+          src={currentUser?.avatarUrl}
+          size={52}
+          to="/settings"
+        />
       </header>
 
       <div className="menu-search-bar">

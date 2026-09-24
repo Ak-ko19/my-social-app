@@ -1,6 +1,7 @@
 // Shared placeholder "current user" -- used by HomeFeed (Story row / post
-// composer avatar) and MenuScreen (profile row), so the mocked person
-// looks the SAME everywhere instead of each screen inventing its own.
+// composer avatar), so the mocked person looks the SAME everywhere those
+// still use it instead of each screen inventing its own. MenuScreen used
+// to be a consumer too, but now fetches the real /profile/me instead.
 // `handle`/`tagline`/`verified` have no real backing field anywhere in
 // this app's schema (checked directly against the users table: id,
 // username, email, password, created_at, bio, reset_token,

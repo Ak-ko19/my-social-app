@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useFeed } from '../hooks/useFeed';
 import TopAppBar from '../components/layout/TopAppBar';
-import StoriesRow from '../components/feed/StoriesRow';
 import PostComposer from '../components/feed/PostComposer';
 import FeedList from '../components/feed/FeedList';
 import FeedSkeleton from '../components/feed/FeedSkeleton';
@@ -17,27 +16,18 @@ import CURRENT_USER from '../data/mockCurrentUser';
 // styles" reasoning as TopAppBar/Logo importing layout.css directly.
 import '../components/feed/Feed.css';
 
-// Placeholder mock data, shaped the way it will eventually come back from
-// a real GET /stories (or similar) -- StoriesRow itself takes this as a
-// plain prop and doesn't know it's fake, so swapping this for a real
-// useStories()-style hook later is a one-line change here, not a change
-// to StoriesRow.
-const MOCK_STORIES = [
-  { id: 1, name: 'Aiko', initials: 'AI', bg: 'var(--badge-pink-bg)', color: 'var(--badge-pink-fg)', hasStory: true },
-  { id: 2, name: 'Ben', initials: 'BE', bg: 'var(--badge-blue-bg)', color: 'var(--badge-blue-fg)', hasStory: true },
-  { id: 3, name: 'Chidi', initials: 'CH', bg: 'var(--badge-green-bg)', color: 'var(--badge-green-fg)', hasStory: false },
-  { id: 4, name: 'Dana', initials: 'DA', bg: 'var(--badge-purple-bg)', color: 'var(--badge-purple-fg)', hasStory: true },
-  { id: 5, name: 'Eli', initials: 'EL', bg: 'var(--badge-orange-bg)', color: 'var(--badge-orange-fg)', hasStory: false },
-  { id: 6, name: 'Farah', initials: 'FA', bg: 'var(--badge-teal-bg)', color: 'var(--badge-teal-fg)', hasStory: true },
-  { id: 7, name: 'Gus', initials: 'GU', bg: 'var(--badge-amber-bg)', color: 'var(--badge-amber-fg)', hasStory: false }
-];
-
 // Real feed, same as Feed.jsx (/feed): the same useFeed hook, the same
 // FeedList (real pagination/virtualization) rendering real <PostCard
 // post={p} />, and the same loading/error/empty states -- this screen
 // doesn't reimplement any of that, it's the same real data wired into the
-// new layout shell. Stories/composer stay mock/stubbed exactly as before
-// (no real stories API exists yet); only the post feed below them is real.
+// new layout shell. The composer's avatar stays mock/stubbed as before
+// (no real "current user" fetch wired here yet); only the post feed below
+// it is real. There's no Stories row here at all -- it used to render
+// fake hardcoded people (no /stories API exists anywhere in the backend),
+// which would have shown the same made-up 7 "friends" to every real user.
+// components/feed/StoriesRow.jsx itself is untouched and still a clean,
+// purely prop-driven component -- wiring it back in is a one-line change
+// here whenever a real stories feature/endpoint exists, not a rebuild.
 function HomeFeed() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,7 +70,6 @@ function HomeFeed() {
           Welcome back! Your account has been reactivated.
         </p>
       )}
-      <StoriesRow stories={MOCK_STORIES} currentUser={CURRENT_USER} />
       <PostComposer currentUser={CURRENT_USER} />
       {feedState === 'loading' && <FeedSkeleton />}
       {feedState === 'error' && <FeedErrorState message={error} onRetry={reload} />}

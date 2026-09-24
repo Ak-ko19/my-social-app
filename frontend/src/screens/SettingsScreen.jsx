@@ -31,7 +31,8 @@ import AppFooter from '../components/layout/AppFooter';
 import ThemeToggle from '../components/common/ThemeToggle';
 import PrivacyToggle from '../components/common/PrivacyToggle';
 import CURRENT_USER from '../data/mockCurrentUser';
-import { forceLogout } from '../hooks/useAuth';
+import { forceLogout, useAuth } from '../hooks/useAuth';
+import { useUnreadCount } from '../hooks/useUnreadCount';
 import './SettingsScreen.css';
 
 // Explicit icon imports + inline component refs, not a string name +
@@ -46,7 +47,10 @@ const SETTINGS_SECTIONS = [
     rows: [
       { key: 'personal-info', icon: User, title: 'Personal Information', to: '/edit-profile' },
       { key: 'security', icon: ShieldCheck, title: 'Security & Privacy', to: '/settings/account' },
-      { key: 'notifications', icon: Bell, title: 'Notifications', badgeCount: 3, to: '/notifications' },
+      // badgeCount isn't set here -- it's static config, but the
+      // notifications count is live data, so it's injected at render
+      // time below (the one row key this component special-cases).
+      { key: 'notifications', icon: Bell, title: 'Notifications', to: '/notifications' },
       { key: 'blocked-users', icon: UserX, title: 'Blocked Users', to: '/settings/blocked-users' },
       { key: 'follow-requests', icon: Users, title: 'Follow Requests', to: '/settings/follow-requests' },
       { key: 'language-region', icon: Globe, title: 'Language & Region' },
@@ -89,6 +93,8 @@ const SETTINGS_SECTIONS = [
 
 function SettingsScreen() {
   const navigate = useNavigate();
+  const { token } = useAuth();
+  const { unreadCount } = useUnreadCount(token);
 
   return (
     <div className="screen-enter">
@@ -109,6 +115,10 @@ function SettingsScreen() {
           {section.rows.map((row) => {
             const Icon = row.icon;
             const isEnabled = Boolean(row.to);
+            // Notifications is the only row with a live count; every
+            // other row's badgeCount (none currently) would come from
+            // its own static config instead.
+            const badgeCount = row.key === 'notifications' ? unreadCount : row.badgeCount;
 
             // A plain <div>, not a <button> like every other row -- the
             // ThemeToggle inside is already its own focusable
@@ -144,13 +154,13 @@ function SettingsScreen() {
                   <Icon size={17} aria-hidden="true" />
                 </span>
                 <span className="settings-row-label">{row.title}</span>
-                {typeof row.badgeCount === 'number' && (
+                {typeof badgeCount === 'number' && badgeCount > 0 && (
                   <Badge
                     className="settings-row-badge"
                     bg="var(--color-accent-3)"
                     color="#fff"
                   >
-                    {row.badgeCount}
+                    {badgeCount}
                   </Badge>
                 )}
                 <ChevronRight size={18} className="settings-row-chevron" aria-hidden="true" />

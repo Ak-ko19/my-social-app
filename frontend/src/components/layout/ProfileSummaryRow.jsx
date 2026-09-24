@@ -9,7 +9,7 @@ import './layout.css';
 // for. `to` lets each screen pick its own destination (Menu's own row goes
 // to /settings; Settings' own row goes to /edit-profile -- see
 // SettingsScreen.jsx for why).
-function ProfileSummaryRow({ user, size = 52, to, className }) {
+function ProfileSummaryRow({ user, src, size = 52, to, className }) {
   const navigate = useNavigate();
 
   return (
@@ -18,14 +18,15 @@ function ProfileSummaryRow({ user, size = 52, to, className }) {
       className={className ? `profile-summary-row ${className}` : 'profile-summary-row'}
       onClick={() => navigate(to)}
     >
-      <Avatar size={size} initials={user.initials} bg={user.bg} color={user.color} alt="" />
+      <Avatar size={size} src={src} initials={user.initials} bg={user.bg} color={user.color} alt="" />
       <div className="profile-summary-text">
         <div className="profile-summary-name-row">
           <span className="profile-summary-name">{user.name}</span>
           {user.verified && <VerifiedTick size={15} />}
         </div>
         <span className="profile-summary-tagline">
-          @{user.handle} · {user.tagline}
+          @{user.handle}
+          {user.tagline ? ` · ${user.tagline}` : ''}
         </span>
       </div>
       <ChevronRight size={18} className="profile-summary-chevron" aria-hidden="true" />
