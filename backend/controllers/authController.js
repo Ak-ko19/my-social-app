@@ -7,6 +7,11 @@ const { sendEmail } = require('../utils/email');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Base URL of the frontend that verify-email/reset-password links point
+// at -- was hardcoded to localhost, which meant these links only ever
+// worked for someone testing against a local frontend. Set FRONTEND_URL
+// to the real deployed frontend URL in any non-local environment.
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 // NIST 800-63B: require a reasonable minimum length, not forced complexity
 // rules (those push people toward predictable patterns like "Passw0rd!").
@@ -47,10 +52,10 @@ async function issueVerificationEmail(userId, email) {
     [hashToken(token), expiry, userId]
   );
 
-  sendEmail({
+  await sendEmail({
     to: email,
     subject: 'Verify your MySocialApp email',
-    text: `Verify your email: http://localhost:5173/verify-email/${token}`
+    text: `Verify your email: ${FRONTEND_URL}/verify-email/${token}`
   });
 }
 
@@ -190,10 +195,10 @@ async function forgotPassword(req, res) {
       [hashToken(token), expiry, result.rows[0].id]
     );
 
-    sendEmail({
+    await sendEmail({
       to: email,
       subject: 'Reset your MySocialApp password',
-      text: `Reset link: http://localhost:5173/reset-password/${token}`
+      text: `Reset link: ${FRONTEND_URL}/reset-password/${token}`
     });
     res.status(200).send(genericMessage);
   } catch (err) {
