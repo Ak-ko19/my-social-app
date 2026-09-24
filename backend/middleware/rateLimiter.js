@@ -1,6 +1,13 @@
 const rateLimit = require('express-rate-limit');
 
 function createLimiter({ windowMs, max, message, skipSuccessfulRequests = false }) {
+  // Supertest requests in the automated test suite all share one source
+  // "IP", so limits meant to bound a single real client would otherwise
+  // trip across unrelated test cases in the same run. Jest sets
+  // NODE_ENV=test automatically, so this never applies outside tests.
+  if (process.env.NODE_ENV === 'test') {
+    return (req, res, next) => next();
+  }
   return rateLimit({
     windowMs,
     max,

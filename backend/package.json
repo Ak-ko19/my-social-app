@@ -4,12 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --runInBand"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/api/**/*.test.js"
+    ],
+    "globalSetup": "<rootDir>/tests/globalSetup.js",
+    "globalTeardown": "<rootDir>/tests/globalTeardown.js"
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.11.0",
@@ -20,8 +28,13 @@
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.4.0",
+    "nodemailer": "^10.0.10",
     "pg": "^8.23.0",
     "sanitize-html": "^2.17.7",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "jest": "^30.5.2",
+    "supertest": "^7.3.0"
   }
 }

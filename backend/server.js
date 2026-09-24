@@ -3,7 +3,6 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const helmet = require('helmet');
-const path = require('path');
 const db = require('./db');
 const allowedOrigins = require('./config/allowedOrigins');
 const { globalLimiter } = require('./middleware/rateLimiter');
@@ -27,9 +26,13 @@ const app = express();
 const PORT = 3000;
 
 app.use(helmet({
-  // Post/avatar images in /uploads are meant to be loaded cross-origin by
-  // the frontend (a different port in dev, a different domain in prod) --
-  // helmet's default same-origin CORP would silently block those <img> loads.
+  // Post/avatar images used to be served locally under /uploads and needed
+  // to be loaded cross-origin by the frontend (a different port in dev, a
+  // different domain in prod) -- helmet's default same-origin CORP would
+  // have silently blocked those <img> loads. That local /uploads route is
+  // gone now (all image storage moved to Cloudinary, which sets its own
+  // headers), but this stays in case anything else this backend ever
+  // serves directly needs the same cross-origin <img>/<script> loading.
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 app.use(express.json());
@@ -44,12 +47,10 @@ app.use(cors({
     callback(new Error('Not allowed by CORS'));
   }
 }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Applied after static /uploads serving (image loads shouldn't eat into an
-// API rate budget) but before every route below -- each sensitive route's
-// own stricter limiter (loginLimiter, signupLimiter, ...) stacks on top of
-// this floor, it doesn't replace it.
+// Applied before every route below -- each sensitive route's own stricter
+// limiter (loginLimiter, signupLimiter, ...) stacks on top of this floor,
+// it doesn't replace it.
 app.use(globalLimiter);
 
 app.get('/', (req, res) => {
@@ -86,9 +87,18 @@ app.use((err, req, res, next) => {
   next();
 });
 
-const httpServer = http.createServer(app);
-initSocket(httpServer);
+module.exports = app;
 
-httpServer.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Only bind a real port/socket server when this file is run directly
+// (`node server.js`), not when it's require()'d as a module -- the
+// automated test suite requires this file to get `app` for Supertest,
+// which starts its own ephemeral server per request and must not also
+// trigger a real network listener or Socket.io init.
+if (require.main === module) {
+  const httpServer = http.createServer(app);
+  initSocket(httpServer);
+
+  httpServer.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+}

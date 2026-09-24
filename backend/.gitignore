@@ -1,3 +1,6 @@
 node_modules/
 .env
+.env.test
 uploads/
+tests/.pgdata_test_cluster/
+tests/.pgdata_test_cluster.log
