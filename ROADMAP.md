@@ -275,7 +275,7 @@ time stays low even after a long idle gap.
   only after dev → master is merged, which is owner-only. See NEEDS OWNER.
 
 ### A6 — Security & performance audit
-**Status:** ⬜ NOT CHECKED
+**Status:** 🟡 PARTIAL (WIP checkpoint 2026-09-24 — privacy/visibility fixes done; rest of audit remains)
 **Done when:** every route re-checked for an auth/ownership check where
 needed (backend audit on 2026-09-23 found no missing checks, but this is
 a formal re-pass); no N+1 query patterns in feed/comments/notifications;
@@ -283,7 +283,58 @@ DB indexes reviewed against actual query patterns (migrations 001/002
 already added several trigram/perf indexes — confirm still sufficient);
 frontend production bundle size reviewed for accidental bloat (same class
 of issue already caught once in `MenuScreen.jsx`'s icon-import choice).
-**Notes:** _(none yet)_
+**Notes:**
+- WIP checkpoint (2026-09-24). Stopped mid-audit on the owner's request.
+- **Done: route inventory.** Listed all 56 routes with their middleware.
+  `/profile/me` is registered before `/profile/:id`, so there's no route
+  shadowing.
+- **Done: shared visibility helper.**
+  `backend/services/postVisibilityService.js` → `getVisiblePost(postId,
+  viewerId)`. It applies the same rules as GET /posts/:id:
+  - deactivated author → hidden;
+  - a block in either direction → hidden;
+  - private account without an accepted follow → hidden.
+  Hidden means 404, never 403, so a direct link doesn't confirm the
+  post exists.
+- **Done: fixed privacy leaks using that helper.**
+  - Before, anyone could like or comment on a post they're not allowed to
+    see (private account, a block, or a deactivated author), and that
+    also sent the author a notification. `POST /posts/:id/like` and
+    `POST /posts/:id/comments` now 404 in those cases.
+  - `POST /posts/:id/bookmark` checked blocks only; it now also covers
+    private and deactivated accounts.
+  - `GET /posts/:id/comments` and `GET /posts/:id/likes` were public with
+    no check at all. They now use `optionalAuth` plus the helper, and
+    comments also hide commenters the viewer has a block with.
+- **Done: follower/following lists gated.** `GET /users/:id/followers`
+  and `/following` exposed private accounts' lists to anyone, logged in
+  or not.
+  - They now take `optionalAuth`. The lists are visible to the owner,
+    plus accepted followers when the account is private.
+  - Private → 403 "This account is private"; deactivated or blocked → 404.
+  - Counts (`/follow-counts`) stay public, as on Instagram.
+  - The frontend doesn't call these list endpoints, so nothing in the UI
+    changed.
+- Tests: 80/80 pass. I updated 3 assertions in `follow.test.js` that read
+  a private account's follower list anonymously; they now read it as the
+  owner, which is the new intended rule.
+- **Remaining:**
+  - `GET /test-db` echoes raw DB error text to the public. The fix is to
+    log it server-side and return a generic message. I drafted it, but the
+    edit was stopped and is not applied.
+  - Finish the ownership re-check of authed routes. Not yet re-read:
+    notifications mark-read (`user_id` scoping), follow-request
+    approve/deny scoping, conversation read/getMessages participant
+    checks, report, profile update.
+  - Add API tests for the new visibility rules: like/comment/bookmark on
+    a private or blocked post → 404; anonymous comments/likes on a
+    private post → 404; private follower list → 403 for a non-follower.
+  - `useMentionAutocomplete` → `searchUsers()` sends no token, so blocked
+    users can appear in @-suggestions. Carried over from A2.
+  - N+1 review of feed/comments/notifications queries.
+  - DB index review against real query patterns (migrations 001/002).
+  - Frontend bundle review: the build warns about a single chunk over
+    500 kB, so code-splitting routes is a candidate.
 
 ---
 

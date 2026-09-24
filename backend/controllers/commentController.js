@@ -1,6 +1,7 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const mentionService = require('../services/mentionService');
+const { getVisiblePost } = require('../services/postVisibilityService');
 
 async function createComment(req, res) {
   try {
@@ -11,15 +12,16 @@ async function createComment(req, res) {
     if (!content || content.trim() === '') {
       return res.status(400).send('Comment cannot be empty');
     }
-    const postCheck = await db.query('SELECT * FROM posts WHERE id = $1', [req.params.id]);
-    if (postCheck.rows.length === 0) {
+    // Same visibility rules as GET /posts/:id -- see postVisibilityService.
+    const post = await getVisiblePost(req.params.id, req.userId);
+    if (!post) {
       return res.status(404).send('Post not found');
     }
     const result = await db.query(
       'INSERT INTO comments (post_id, user_id, content) VALUES ($1, $2, $3) RETURNING *',
       [req.params.id, req.userId, content]
     );
-    const postOwnerId = postCheck.rows[0].user_id;
+    const postOwnerId = post.user_id;
     if (postOwnerId !== req.userId) {
       await db.query(
         'INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id) VALUES ($1, $2, $3, $4, $5)',
@@ -43,13 +45,26 @@ async function getComments(req, res) {
     if (isNaN(req.params.id)) {
       return res.status(400).send('Invalid post ID');
     }
+    // Same visibility rules as GET /posts/:id -- see postVisibilityService.
+    const post = await getVisiblePost(req.params.id, req.userId);
+    if (!post) {
+      return res.status(404).send('Post not found');
+    }
+    // Also hide individual comments from anyone the viewer has a block with
+    // (either direction), same mutual-invisibility rule as everywhere else.
+    const viewerId = req.userId ?? null;
     const result = await db.query(`
       SELECT comments.id, comments.content, comments.created_at, users.id AS user_id, users.username
       FROM comments
       JOIN users ON comments.user_id = users.id
       WHERE comments.post_id = $1
+        AND ($2::int IS NULL OR NOT EXISTS (
+          SELECT 1 FROM blocks
+          WHERE (blocks.blocker_id = $2 AND blocks.blocked_id = comments.user_id)
+             OR (blocks.blocker_id = comments.user_id AND blocks.blocked_id = $2)
+        ))
       ORDER BY comments.created_at ASC
-    `, [req.params.id]);
+    `, [req.params.id, viewerId]);
     res.json(result.rows);
   } catch (err) {
     sendServerError(res, err, 'Fetch comments failed. Please try again later.');

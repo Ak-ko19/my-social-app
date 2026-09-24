@@ -1,13 +1,15 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const { getVisiblePost } = require('../services/postVisibilityService');
 
 async function likePost(req, res) {
   try {
     if (isNaN(req.params.id)) {
       return res.status(400).send('Invalid post ID');
     }
-    const postCheck = await db.query('SELECT * FROM posts WHERE id = $1', [req.params.id]);
-    if (postCheck.rows.length === 0) {
+    // Same visibility rules as GET /posts/:id -- see postVisibilityService.
+    const post = await getVisiblePost(req.params.id, req.userId);
+    if (!post) {
       return res.status(404).send('Post not found');
     }
     const existingLike = await db.query(
@@ -21,7 +23,7 @@ async function likePost(req, res) {
       'INSERT INTO likes (post_id, user_id) VALUES ($1, $2)',
       [req.params.id, req.userId]
     );
-    const postOwnerId = postCheck.rows[0].user_id;
+    const postOwnerId = post.user_id;
     if (postOwnerId !== req.userId) {
       await db.query(
         'INSERT INTO notifications (user_id, actor_id, type, post_id) VALUES ($1, $2, $3, $4)',
@@ -70,6 +72,11 @@ async function getLikes(req, res) {
   try {
     if (isNaN(req.params.id)) {
       return res.status(400).send('Invalid post ID');
+    }
+    // Same visibility rules as GET /posts/:id -- see postVisibilityService.
+    const post = await getVisiblePost(req.params.id, req.userId);
+    if (!post) {
+      return res.status(404).send('Post not found');
     }
     const countResult = await db.query(
       'SELECT COUNT(*) FROM likes WHERE post_id = $1',

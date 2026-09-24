@@ -2,6 +2,34 @@ const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const blockService = require('../services/blockService');
 
+// Who may see a user's follower/following LISTS (counts stay public, like
+// Instagram): the user themselves, or anyone when the account is public.
+// A private account's lists are limited to accepted followers. Deactivated
+// accounts and blocks (either direction) 404, same as the profile itself.
+// Returns null when allowed, else { status, message }.
+async function connectionsAccessError(targetId, viewerId) {
+  const result = await db.query(
+    `SELECT users.is_private, users.is_deactivated,
+       $2::int IS NOT NULL AND EXISTS(
+         SELECT 1 FROM follows
+         WHERE follows.follower_id = $2 AND follows.following_id = users.id AND follows.status = 'accepted'
+       ) AS viewer_is_follower
+     FROM users WHERE users.id = $1`,
+    [targetId, viewerId ?? null]
+  );
+  if (result.rows.length === 0) return { status: 404, message: 'User not found' };
+  if (viewerId != null && Number(targetId) === viewerId) return null;
+  const target = result.rows[0];
+  if (target.is_deactivated) return { status: 404, message: 'User not found' };
+  if (viewerId != null && (await blockService.isBlocked(viewerId, Number(targetId)))) {
+    return { status: 404, message: 'User not found' };
+  }
+  if (target.is_private && !target.viewer_is_follower) {
+    return { status: 403, message: 'This account is private' };
+  }
+  return null;
+}
+
 async function followUser(req, res) {
   try {
     if (isNaN(req.params.id)) {
@@ -87,6 +115,10 @@ async function getFollowers(req, res) {
     if (isNaN(req.params.id)) {
       return res.status(400).send('Invalid user ID');
     }
+    const denied = await connectionsAccessError(req.params.id, req.userId);
+    if (denied) {
+      return res.status(denied.status).send(denied.message);
+    }
     const result = await db.query(`
       SELECT users.id, users.username, users.avatar_url
       FROM follows
@@ -103,6 +135,10 @@ async function getFollowing(req, res) {
   try {
     if (isNaN(req.params.id)) {
       return res.status(400).send('Invalid user ID');
+    }
+    const denied = await connectionsAccessError(req.params.id, req.userId);
+    if (denied) {
+      return res.status(denied.status).send(denied.message);
     }
     const result = await db.query(`
       SELECT users.id, users.username, users.avatar_url

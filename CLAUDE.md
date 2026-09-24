@@ -69,6 +69,8 @@ The owner is busy and wants no questions.
 - If a task truly needs the owner, move it to NEEDS OWNER
   and continue with the next task.
 - Finish with a short English report (English only, no Burmese).
+- A usage limit or the owner can stop you anytime. Commit small WIP
+  checkpoints often and keep ROADMAP.md notes current.
 
 ## Next Steps (in order)
 Steps 1–6 below (input validation, forgot-password, comment edit, .env

@@ -1,18 +1,16 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
-const blockService = require('../services/blockService');
+const { getVisiblePost } = require('../services/postVisibilityService');
 
 async function bookmarkPost(req, res) {
   try {
     if (isNaN(req.params.id)) {
       return res.status(400).send('Invalid post ID');
     }
-    const postCheck = await db.query('SELECT user_id FROM posts WHERE id = $1', [req.params.id]);
-    if (postCheck.rows.length === 0) {
-      return res.status(404).send('Post not found');
-    }
-    if (await blockService.isBlocked(req.userId, postCheck.rows[0].user_id)) {
+    // Same visibility rules as GET /posts/:id -- see postVisibilityService.
+    const post = await getVisiblePost(req.params.id, req.userId);
+    if (!post) {
       return res.status(404).send('Post not found');
     }
 

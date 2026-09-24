@@ -14,7 +14,8 @@ describe('follow system (incl. private-account requests)', () => {
     expect(res.status).toBe(201);
     expect(res.body.status).toBe('accepted');
 
-    const followers = await request(app).get(`/users/${target.id}/followers`);
+    // Read as the owner: a private account's lists are owner/follower-only.
+      const followers = await request(app).get(`/users/${target.id}/followers`).set('Authorization', `Bearer ${target.token}`);
     expect(followers.body.map((u) => u.id)).toContain(follower.id);
   });
 
@@ -54,7 +55,8 @@ describe('follow system (incl. private-account requests)', () => {
       expect(res.status).toBe(201);
       expect(res.body.status).toBe('pending');
 
-      const followers = await request(app).get(`/users/${target.id}/followers`);
+      // Read as the owner: a private account's lists are owner/follower-only.
+      const followers = await request(app).get(`/users/${target.id}/followers`).set('Authorization', `Bearer ${target.token}`);
       expect(followers.body.map((u) => u.id)).not.toContain(follower.id);
     });
 
@@ -72,7 +74,8 @@ describe('follow system (incl. private-account requests)', () => {
         .set('Authorization', `Bearer ${target.token}`);
       expect(approve.status).toBe(200);
 
-      const followers = await request(app).get(`/users/${target.id}/followers`);
+      // Read as the owner: a private account's lists are owner/follower-only.
+      const followers = await request(app).get(`/users/${target.id}/followers`).set('Authorization', `Bearer ${target.token}`);
       expect(followers.body.map((u) => u.id)).toContain(follower.id);
     });
 
