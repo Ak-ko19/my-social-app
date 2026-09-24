@@ -593,6 +593,19 @@ built and how to re-verify it.
   375/390/430px × light/dark checks for horizontal scroll, clipping,
   tab-bar position, light surfaces in dark mode, and console errors.
 
+### A4 — GitHub Actions CI 🟡 (awaiting first run on GitHub)
+- `.github/workflows/ci.yml` runs on push/PR to `master`, `main` and
+  `dev`.
+  - Backend: `npm test` against a `postgres:17` service container.
+  - Frontend: `npm run lint` + `npm run build`.
+  - No secrets needed.
+- The test harness has two DB modes:
+  - Local (no env var): auto-managed Windows cluster on port 55433.
+  - CI (`TEST_DATABASE_URL` set): schema loaded into that DB.
+- `backend/tests/setupEnv.js` pins test-only env values before the app
+  loads, so tests never use `.env`'s real SMTP/Cloudinary/DB settings.
+- To activate: push `dev` and check the Actions tab.
+
 ---
 
 ## How to use this file

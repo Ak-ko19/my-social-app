@@ -10,6 +10,8 @@ const PG_BIN = 'C:\\Program Files\\PostgreSQL\\17\\bin';
 const DATA_DIR = path.join(__dirname, '.pgdata_test_cluster');
 
 module.exports = async function globalTeardown() {
+  // CI mode (see globalSetup.js): the external database isn't ours to stop.
+  if (process.env.TEST_DATABASE_URL) return;
   try {
     execFileSync(path.join(PG_BIN, 'pg_ctl.exe'), ['-D', DATA_DIR, 'stop', '-m', 'fast'], { stdio: 'ignore' });
   } catch (err) {

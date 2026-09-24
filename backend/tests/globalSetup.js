@@ -22,7 +22,28 @@ function run(bin, args, opts = {}) {
   return execFileSync(path.join(PG_BIN, bin), args, { encoding: 'utf8', ...opts });
 }
 
+// CI mode: when TEST_DATABASE_URL is set (e.g. GitHub Actions' Postgres
+// service container), there's no local cluster to manage -- just rebuild
+// the schema in that database. Wiping `public` first keeps this
+// idempotent. Only ever point this at a disposable test database.
+async function loadSchemaIntoExternalDb(connectionString) {
+  const { Client } = require('pg');
+  const client = new Client({ connectionString });
+  await client.connect();
+  try {
+    await client.query('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;');
+    await client.query(fs.readFileSync(path.join(__dirname, 'fixtures', 'schema.sql'), 'utf8'));
+  } finally {
+    await client.end();
+  }
+}
+
 module.exports = async function globalSetup() {
+  if (process.env.TEST_DATABASE_URL) {
+    await loadSchemaIntoExternalDb(process.env.TEST_DATABASE_URL);
+    return;
+  }
+
   if (!fs.existsSync(path.join(DATA_DIR, 'PG_VERSION'))) {
     run('initdb.exe', ['-D', DATA_DIR, '-U', DB_USER, '--auth=trust', '--no-locale', '--encoding=UTF8']);
   }

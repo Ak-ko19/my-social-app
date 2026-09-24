@@ -206,10 +206,41 @@ screen, not just the newer ones; tested at common mobile widths
   shared with the feed. Candidate for a later polish pass.
 
 ### A4 — GitHub Actions CI
-**Status:** ⬜ NOT CHECKED
+**Status:** 🟡 PARTIAL (built + verified locally 2026-09-24; first GitHub run needs a push — see NEEDS OWNER)
 **Done when:** a workflow in `.github/workflows/` runs the test suite
 (from A1) on every push/PR to `main`; pass/fail status visible on GitHub.
-**Notes:** _(none yet — depends on A1 existing first)_
+**Notes:**
+- `.github/workflows/ci.yml` has two jobs on every push/PR:
+  - **Backend API tests:** the A1 suite against a `postgres:17` service
+    container.
+  - **Frontend:** `npm run lint` + `npm run build`.
+- It needs no GitHub secrets, and a newer push cancels a stale run.
+- Decision: the triggers are `master`, `main` and `dev`, not just `main`.
+  This repo's default branch is actually `master`, so a `main`-only
+  trigger would never fire.
+- Making the suite CI-runnable:
+  - `tests/globalSetup.js` hardcoded Windows Postgres paths. When
+    `TEST_DATABASE_URL` is set, it now loads `fixtures/schema.sql` into
+    that database (wiping `public` first, so reruns are safe) instead of
+    managing the local cluster, and `globalTeardown.js` leaves the
+    database alone.
+  - The local Windows flow is unchanged.
+- Safety fix found along the way: `server.js`'s dotenv was loading the
+  developer's real `backend/.env` into every test run. With the Phase 2
+  Gmail App Password set, each `npm test` would have sent ~100 real
+  signup emails. New `tests/setupEnv.js` (Jest `setupFiles`) pins
+  test-only JWT/email/Cloudinary/DB values first; dotenv never overrides
+  already-set vars.
+- Verified locally:
+  - Normal mode passes 80/80.
+  - CI mode (`TEST_DATABASE_URL` → a separate throwaway DB) passes 80/80
+    twice in a row, and the database server stays running afterwards.
+  - The workflow YAML parses.
+  - `npm ci --dry-run` accepts both lockfiles.
+  - All 385 relative imports match on-disk filename case (Linux is
+    case-sensitive; Windows would hide a mismatch).
+- Not yet verified: an actual run on GitHub, which needs a push. See
+  NEEDS OWNER. Flip to ✅ once the Actions tab shows it green.
 
 ### A5 — Keep-alive cron
 **Status:** ⬜ NOT CHECKED
@@ -388,3 +419,7 @@ running app in one pass, with a written pass/fail report per item.
 - Real multi-user testing, deployment verification — needs you actually
   doing it, not something to automate away.
 - Merging dev into main — a deliberate action only you should trigger.
+- A4 CI first run: `git push -u origin dev`, then open the repo's Actions
+  tab (or a PR from dev → master) and confirm both CI jobs go green. If
+  they do, mark A4 ✅. (Not pushed by Claude: pushing publishes code, and
+  the standing instruction was to commit to dev.)

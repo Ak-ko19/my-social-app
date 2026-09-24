@@ -16,7 +16,10 @@
       "**/tests/api/**/*.test.js"
     ],
     "globalSetup": "<rootDir>/tests/globalSetup.js",
-    "globalTeardown": "<rootDir>/tests/globalTeardown.js"
+    "globalTeardown": "<rootDir>/tests/globalTeardown.js",
+    "setupFiles": [
+      "<rootDir>/tests/setupEnv.js"
+    ]
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
