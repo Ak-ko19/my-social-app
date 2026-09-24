@@ -9,6 +9,8 @@ import { VoicePlaybackProvider } from './context/VoicePlaybackProvider';
 import { fetchConversations } from './services/messageService';
 import { formatRelativeTime } from './utils/formatRelativeTime';
 import Avatar from './components/common/Avatar';
+import { ChevronLeft } from 'lucide-react';
+import { IconButton } from './components/ui';
 import MessageBubble from './components/messages/MessageBubble';
 import MessageComposer from './components/messages/MessageComposer';
 import MessageThreadSkeleton from './components/messages/MessageThreadSkeleton';
@@ -170,18 +172,17 @@ function Conversation() {
   const isOtherTyping = headerInfo ? typingUserIds.has(headerInfo.other_user_id) : false;
 
   return (
-    <div style={{ padding: '20px' }}>
-      <p><a href="/messages">Back to Messages</a></p>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+    <div className="conversation-screen">
+      <header className="screen-header conversation-header">
+        <IconButton icon={ChevronLeft} aria-label="Back to Messages" onClick={() => navigate('/messages')} />
         {headerInfo && (
           <span className="messages-avatar-wrap">
             <Avatar src={headerInfo.avatar_url} size={40} alt={`${headerInfo.username}'s profile picture`} />
             {otherIsOnline && <span className="messages-online-dot" aria-label="Online" />}
           </span>
         )}
-        <div>
-          <h2 style={{ margin: 0 }}>{headerInfo ? headerInfo.username : 'Conversation'}</h2>
+        <div className="conversation-header-text">
+          <h1 className="screen-header-title">{headerInfo ? headerInfo.username : 'Conversation'}</h1>
           {headerInfo && (
             <small className="messages-header-status">
               {otherIsOnline
@@ -192,7 +193,7 @@ function Conversation() {
             </small>
           )}
         </div>
-      </div>
+      </header>
 
       <ConnectionBanner />
 

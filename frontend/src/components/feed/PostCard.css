@@ -3,6 +3,8 @@
    same as StoriesRow/PostComposer. */
 
 .post-card {
+  /* #root (index.css) centers text app-wide; a post reads left-aligned. */
+  text-align: left;
   background: var(--color-surface);
   padding: var(--space-4);
   margin-bottom: var(--space-2);

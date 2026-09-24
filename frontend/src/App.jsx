@@ -26,10 +26,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* New rebrand screens only -- wrapped per-route (not the whole
-            <Routes> tree) so the existing screens below are untouched and
-            keep rendering exactly as before. See PhoneShell.jsx's own
-            comment for why. */}
+        {/* Wrapped per-route (not the whole <Routes> tree) so each route
+            can choose hideTabBar. */}
         <Route
           path="/"
           element={
@@ -119,20 +117,21 @@ function App() {
           }
         />
 
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        {/* Pre-rebrand pages, migrated into the shell in A3. */}
+        <Route path="/login" element={<PhoneShell hideTabBar><Login /></PhoneShell>} />
+        <Route path="/signup" element={<PhoneShell hideTabBar><Signup /></PhoneShell>} />
         {/* Old pre-rebrand feed page, now retired -- "/" is the only home
             feed route. Redirected (not deleted outright) so old links/
             bookmarks still land somewhere real instead of a dead route. */}
         <Route path="/feed" element={<Navigate to="/" replace />} />
-        <Route path="/create-post" element={<CreatePost />} />
-        <Route path="/edit-profile" element={<EditProfile />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/messages/:conversationId" element={<Conversation />} />
-        <Route path="/search" element={<Search />} />
+        <Route path="/create-post" element={<PhoneShell><CreatePost /></PhoneShell>} />
+        <Route path="/edit-profile" element={<PhoneShell><EditProfile /></PhoneShell>} />
+        <Route path="/forgot-password" element={<PhoneShell hideTabBar><ForgotPassword /></PhoneShell>} />
+        <Route path="/reset-password/:token" element={<PhoneShell hideTabBar><ResetPassword /></PhoneShell>} />
+        <Route path="/notifications" element={<PhoneShell><Notifications /></PhoneShell>} />
+        <Route path="/messages" element={<PhoneShell><Messages /></PhoneShell>} />
+        <Route path="/messages/:conversationId" element={<PhoneShell hideTabBar><Conversation /></PhoneShell>} />
+        <Route path="/search" element={<PhoneShell><Search /></PhoneShell>} />
       </Routes>
     </BrowserRouter>
   );

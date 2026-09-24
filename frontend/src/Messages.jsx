@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
+import { IconButton } from './components/ui';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useAuth } from './hooks/useAuth';
 import { useConversations } from './hooks/useConversations';
@@ -51,9 +53,12 @@ function Messages() {
   const inboxState = loading ? 'loading' : error ? 'error' : conversations.length === 0 ? 'empty' : 'list';
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Messages</h2>
-      <p><a href="/">Back to Feed</a></p>
+    <div className="screen-enter">
+      <header className="screen-header">
+        <IconButton icon={ChevronLeft} aria-label="Back to Home" onClick={() => navigate('/')} />
+        <h1 className="screen-header-title">Messages</h1>
+      </header>
+      <div className="screen-body">
       <ConnectionBanner />
 
       <AnimatePresence initial={false}>
@@ -76,6 +81,7 @@ function Messages() {
           )}
         </motion.div>
       </AnimatePresence>
+      </div>
     </div>
   );
 }

@@ -30,7 +30,7 @@ import ProfileSummaryRow from '../components/layout/ProfileSummaryRow';
 import AppFooter from '../components/layout/AppFooter';
 import ThemeToggle from '../components/common/ThemeToggle';
 import PrivacyToggle from '../components/common/PrivacyToggle';
-import CURRENT_USER from '../data/mockCurrentUser';
+import { useCurrentUserSummary } from '../hooks/useCurrentUserSummary';
 import { forceLogout, useAuth } from '../hooks/useAuth';
 import { useUnreadCount } from '../hooks/useUnreadCount';
 import './SettingsScreen.css';
@@ -95,6 +95,7 @@ function SettingsScreen() {
   const navigate = useNavigate();
   const { token } = useAuth();
   const { unreadCount } = useUnreadCount(token);
+  const currentUser = useCurrentUserSummary();
 
   return (
     <div className="screen-enter">
@@ -105,7 +106,7 @@ function SettingsScreen() {
       </header>
 
       <div className="settings-profile-section">
-        <ProfileSummaryRow user={CURRENT_USER} size={54} to="/edit-profile" />
+        <ProfileSummaryRow user={currentUser} src={currentUser.avatarUrl} size={54} to="/edit-profile" />
       </div>
 
       {SETTINGS_SECTIONS.map((section) => (

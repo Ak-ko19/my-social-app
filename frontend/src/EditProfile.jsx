@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import api, { resolveImageUrl } from './api';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
+import { IconButton, Avatar } from './components/ui';
 
 function EditProfile() {
   const [username, setUsername] = useState('');
@@ -74,65 +76,49 @@ function EditProfile() {
     });
   };
 
-  if (loading) return <p>Loading profile...</p>;
+  if (loading) return <p className="screen-status" role="status">Loading profile…</p>;
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Edit Profile</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          {(avatarPreview || avatarUrl) ? (
-            <img
-              src={avatarPreview || resolveImageUrl(avatarUrl)}
-              alt="Avatar"
-              style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
-            />
-          ) : (
-            <div style={{
-              width: '100px', height: '100px', borderRadius: '50%',
-              backgroundColor: '#ddd', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', color: '#888', fontSize: '12px'
-            }}>
-              No Avatar
-            </div>
-          )}
-          <label>Profile Picture: </label>
-          <input type="file" accept="image/*" onChange={handleAvatarChange} />
-        </div>
-        <div style={{ marginTop: '10px' }}>
-          <label>Username: </label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
+    <div className="screen-enter">
+      <header className="screen-header">
+        <IconButton icon={ChevronLeft} aria-label="Back to Settings" onClick={() => navigate('/settings')} />
+        <h1 className="screen-header-title">Edit Profile</h1>
+      </header>
+      <form className="screen-body form-stack" onSubmit={handleSubmit}>
+        <div className="edit-profile-avatar">
+          <Avatar
+            size={96}
+            src={avatarPreview || resolveImageUrl(avatarUrl)}
+            initials={(username || '?').slice(0, 2).toUpperCase()}
+            alt="Avatar"
           />
+          <label className="form-field">
+            <span className="form-label">Profile picture</span>
+            <input className="form-file" type="file" accept="image/*" onChange={handleAvatarChange} />
+          </label>
         </div>
-        <div style={{ marginTop: '10px' }}>
-          <label>Email: </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div style={{ marginTop: '10px' }}>
-          <label>Bio: </label>
-          <br />
+        <label className="form-field">
+          <span className="form-label">Username</span>
+          <input className="form-input" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+        </label>
+        <label className="form-field">
+          <span className="form-label">Email</span>
+          <input className="form-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </label>
+        <label className="form-field">
+          <span className="form-label">Bio</span>
           <textarea
+            className="form-input"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Tell people about yourself..."
             rows="4"
-            style={{ width: '100%', maxWidth: '400px' }}
           />
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {success && <p style={{ color: 'green' }}>{success}</p>}
-        <button type="submit" style={{ marginTop: '10px' }}>Save Changes</button>
+        </label>
+        {error && <p className="form-error" role="alert">{error}</p>}
+        {success && <p className="form-success" role="status">{success}</p>}
+        <button type="submit" className="btn btn-primary btn-block">Save changes</button>
       </form>
-      <p><a href="/">Back to Feed</a></p>
     </div>
   );
 }

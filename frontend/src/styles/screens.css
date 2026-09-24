@@ -1,0 +1,394 @@
+/* Shared building blocks for screens migrated into PhoneShell (A3): the
+   auth forms, CreatePost, EditProfile, Notifications, Messages,
+   Conversation, Search. Same look as the rebrand screens' own per-screen
+   CSS (BlockedUsersScreen.css, AccountManagementScreen.css, ...) but as
+   one reusable set, so ten screens don't each grow a near-identical
+   stylesheet. Uses only tokens.css names, so dark mode comes for free
+   via its [data-theme='dark'] block. */
+
+/* ---------- Header (back button + title), same as the rebrand screens ---------- */
+.screen-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.screen-header-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.screen-body {
+  padding: 0 var(--space-4) var(--space-6);
+}
+
+.screen-status {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.screen-link {
+  color: var(--color-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.screen-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Forms ---------- */
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 15px; /* >= 16px-ish avoids iOS zoom-on-focus being too aggressive */
+}
+
+.form-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.form-input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 0;
+  border-color: transparent;
+}
+
+textarea.form-input {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.form-file {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-text-muted);
+  max-width: 100%;
+}
+
+.form-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-accent-3);
+}
+
+.form-success {
+  margin: 0;
+  font-size: 13px;
+  color: var(--badge-green-fg);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-sm {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.btn-secondary {
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-border);
+}
+
+/* ---------- Auth screens (Login/Signup/Forgot/Reset) ---------- */
+.auth-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: var(--space-7) var(--space-5);
+}
+
+.auth-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-6);
+}
+
+.auth-card {
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.auth-title {
+  margin: 0 0 var(--space-1);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.auth-subtitle {
+  margin: 0 0 var(--space-5);
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.auth-footer {
+  margin: var(--space-5) 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.auth-inline-link {
+  align-self: flex-end;
+  font-size: 13px;
+}
+
+/* ---------- Cards / list rows (Notifications, Search results) ---------- */
+.card-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.card-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.card-row-highlight {
+  box-shadow: inset 3px 0 0 var(--color-accent), var(--shadow-card);
+}
+
+.card-row-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.card-row-meta {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.card-row-quote {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.card-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.section-heading {
+  margin: var(--space-5) 0 var(--space-3);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.image-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}
+
+/* Horizontal search/filter form: input grows, button stays compact. */
+.inline-form {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.inline-form .form-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* EditProfile: avatar preview beside its file picker. */
+.edit-profile-avatar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.edit-profile-avatar .form-field {
+  min-width: 0;
+}
+
+/* Search: post result text links to the post itself, but reads as body text. */
+.search-post-content {
+  margin: var(--space-1) 0 0;
+}
+
+.search-post-link {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.search-post-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Conversation: full-height chat column ----------
+   Header, then the thread filling the remaining height and scrolling on
+   its own, then the composer pinned to the bottom edge. Replaces the old
+   fixed 60vh bordered box (sized for the pre-shell desktop column). */
+.conversation-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.conversation-header {
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.conversation-header-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.conversation-screen .messages-connection-banner {
+  flex-shrink: 0;
+  margin: var(--space-2) var(--space-4) 0;
+}
+
+.conversation-screen .messages-thread {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--color-bg);
+  padding: var(--space-3) var(--space-4);
+}
+
+.conversation-screen .messages-typing-indicator {
+  flex-shrink: 0;
+  margin: 0;
+  padding: var(--space-1) var(--space-4);
+}
+
+.conversation-screen .messages-composer {
+  flex-shrink: 0;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+.conversation-screen .screen-status,
+.conversation-screen .messages-error-state {
+  flex: 1 1 auto;
+}
+
+/* index.css still carries the pre-rebrand globals (#root text-align:center,
+   big letter-spaced h1/h2) -- neutralize them inside the migrated screens
+   rather than touching those globals, which the older Feed/Messages
+   component CSS may still lean on. */
+.auth-card,
+.screen-body,
+.conversation-screen {
+  text-align: left;
+}
+
+.auth-title,
+.screen-header-title,
+.section-heading {
+  font-family: var(--font-sans);
+  letter-spacing: normal;
+  line-height: 1.25;
+}

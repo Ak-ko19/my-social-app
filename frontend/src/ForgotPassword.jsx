@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from './api';
+import Logo from './components/layout/Logo';
 
 function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -27,23 +29,22 @@ function ForgotPassword() {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Forgot Password</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Email: </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {message && <p style={{ color: 'green' }}>{message}</p>}
-        <button type="submit" style={{ marginTop: '10px' }}>Send Reset Link</button>
-      </form>
-      <p><a href="/login">Back to Login</a></p>
+    <div className="auth-screen screen-enter">
+      <div className="auth-logo"><Logo /></div>
+      <div className="auth-card">
+        <h1 className="auth-title">Forgot password</h1>
+        <p className="auth-subtitle">We'll email you a link to reset it.</p>
+        <form className="form-stack" onSubmit={handleSubmit} noValidate>
+          <label className="form-field">
+            <span className="form-label">Email</span>
+            <input className="form-input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </label>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          {message && <p className="form-success" role="status">{message}</p>}
+          <button type="submit" className="btn btn-primary btn-block">Send reset link</button>
+        </form>
+      </div>
+      <p className="auth-footer"><Link to="/login" className="screen-link">Back to login</Link></p>
     </div>
   );
 }

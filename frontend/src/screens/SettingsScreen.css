@@ -151,3 +151,15 @@
   outline: 2px solid #dc2626;
   outline-offset: 2px;
 }
+
+/* Dark mode: the literal light-pink fill above glares on a dark page.
+   Same hue, translucent over the dark surface, lighter red text for
+   contrast. */
+:root[data-theme='dark'] .settings-logout-button {
+  background: rgba(220, 38, 38, 0.16);
+  color: #f87171;
+}
+
+:root[data-theme='dark'] .settings-logout-button:hover {
+  background: rgba(220, 38, 38, 0.26);
+}

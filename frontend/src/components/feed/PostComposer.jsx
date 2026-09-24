@@ -22,7 +22,7 @@ function PostComposer({ currentUser, className }) {
   return (
     <div className={className ? `post-composer ${className}` : 'post-composer'}>
       <div className="post-composer-row">
-        <Avatar size={38} initials={own.initials} bg={own.bg} color={own.color} alt="" />
+        <Avatar size={38} src={own.avatarUrl} initials={own.initials} bg={own.bg} color={own.color} alt="" />
         <button type="button" className="post-composer-trigger" onClick={openComposer}>
           What&apos;s on your mind?
         </button>

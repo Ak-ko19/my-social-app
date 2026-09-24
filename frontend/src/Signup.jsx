@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from './api';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import Logo from './components/layout/Logo';
 
 function Signup() {
   const [username, setUsername] = useState('');
@@ -47,45 +48,34 @@ function Signup() {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Sign Up</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Username: </label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
-        <div style={{ marginTop: '10px' }}>
-          <label>Email: </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div style={{ marginTop: '10px' }}>
-          <label>Password: </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {success && (
-          <p style={{ color: 'green' }}>
-            Signup successful! Check your email to verify your account. Redirecting to login...
-          </p>
-        )}
-        <button type="submit" style={{ marginTop: '10px' }}>Sign Up</button>
-      </form>
-      <p>Already have an account? <a href="/login">Login</a></p>
+    <div className="auth-screen screen-enter">
+      <div className="auth-logo"><Logo /></div>
+      <div className="auth-card">
+        <h1 className="auth-title">Create your account</h1>
+        <p className="auth-subtitle">It only takes a minute.</p>
+        <form className="form-stack" onSubmit={handleSubmit} noValidate>
+          <label className="form-field">
+            <span className="form-label">Username</span>
+            <input className="form-input" type="text" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+          </label>
+          <label className="form-field">
+            <span className="form-label">Email</span>
+            <input className="form-input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </label>
+          <label className="form-field">
+            <span className="form-label">Password</span>
+            <input className="form-input" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </label>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          {success && (
+            <p className="form-success" role="status">
+              Signup successful! Check your email to verify your account. Redirecting to login...
+            </p>
+          )}
+          <button type="submit" className="btn btn-primary btn-block">Sign up</button>
+        </form>
+      </div>
+      <p className="auth-footer">Already have an account? <Link to="/login" className="screen-link">Log in</Link></p>
     </div>
   );
 }

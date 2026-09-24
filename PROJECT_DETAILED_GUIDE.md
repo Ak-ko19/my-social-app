@@ -570,6 +570,29 @@ built and how to re-verify it.
     emulation doesn't close an already-open WebSocket, so it doesn't
     actually test a drop.
 
+### A3 — Visual consistency ✅
+- Every route now renders inside `PhoneShell` (480px mobile column).
+  Pass `hideTabBar` for screens without primary nav: auth forms and the
+  chat thread.
+- Styling for the migrated pages lives in one shared file,
+  `frontend/src/styles/screens.css`, built only on the `styles/tokens.css`
+  names, so dark mode follows automatically. Building blocks:
+  `.screen-header`/`.screen-header-title` (+ `IconButton` back button),
+  `.screen-body`, `.screen-status`, `.form-stack`/`.form-field`/
+  `.form-label`/`.form-input`, `.btn` + `.btn-primary`/`.btn-secondary`/
+  `.btn-sm`/`.btn-block`, `.auth-screen`/`.auth-card`,
+  `.card-list`/`.card-row`, `.conversation-screen`. Reuse these for any
+  new screen instead of adding inline styles.
+- The real current user for Menu/Settings/Home comes from
+  `hooks/useCurrentUserSummary.js` (GET /profile/me). The mock user file
+  is gone.
+- `index.css` still has pre-rebrand globals (`#root` text-align:center,
+  big `h1`/`h2`). New screens neutralize them locally; remove the globals
+  once no older component CSS depends on them.
+- Re-verify: `a3-visual` style check in headless Edge. Every route ×
+  375/390/430px × light/dark checks for horizontal scroll, clipping,
+  tab-bar position, light surfaces in dark mode, and console errors.
+
 ---
 
 ## How to use this file

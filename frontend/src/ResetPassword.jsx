@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from './api';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import Logo from './components/layout/Logo';
 
 function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -36,23 +37,22 @@ function ResetPassword() {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Reset Password</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>New Password: </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {success && <p style={{ color: 'green' }}>Password reset successfully! Redirecting to login...</p>}
-        <button type="submit" style={{ marginTop: '10px' }}>Reset Password</button>
-      </form>
-      <p><a href="/login">Back to Login</a></p>
+    <div className="auth-screen screen-enter">
+      <div className="auth-logo"><Logo /></div>
+      <div className="auth-card">
+        <h1 className="auth-title">Reset password</h1>
+        <p className="auth-subtitle">Choose a new password (8–72 characters).</p>
+        <form className="form-stack" onSubmit={handleSubmit} noValidate>
+          <label className="form-field">
+            <span className="form-label">New password</span>
+            <input className="form-input" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </label>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          {success && <p className="form-success" role="status">Password reset successfully! Redirecting to login...</p>}
+          <button type="submit" className="btn btn-primary btn-block">Reset password</button>
+        </form>
+      </div>
+      <p className="auth-footer"><Link to="/login" className="screen-link">Back to login</Link></p>
     </div>
   );
 }

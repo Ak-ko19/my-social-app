@@ -9,7 +9,7 @@ import FeedSkeleton from '../components/feed/FeedSkeleton';
 import FeedEmptyState from '../components/feed/FeedEmptyState';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import EmailVerificationBanner from '../components/common/EmailVerificationBanner';
-import CURRENT_USER from '../data/mockCurrentUser';
+import { useCurrentUserSummary } from '../hooks/useCurrentUserSummary';
 // Self-imported here (not just relying on Feed.jsx having already loaded
 // it elsewhere in the bundle) since this is the first place FeedList/
 // FeedSkeleton/etc. render outside of Feed.jsx itself -- same "own your
@@ -32,6 +32,7 @@ function HomeFeed() {
   const navigate = useNavigate();
   const location = useLocation();
   const { token } = useAuth();
+  const currentUser = useCurrentUserSummary();
   const justReactivated = Boolean(location.state?.reactivated);
   const {
     posts,
@@ -70,7 +71,7 @@ function HomeFeed() {
           Welcome back! Your account has been reactivated.
         </p>
       )}
-      <PostComposer currentUser={CURRENT_USER} />
+      <PostComposer currentUser={currentUser} />
       {feedState === 'loading' && <FeedSkeleton />}
       {feedState === 'error' && <FeedErrorState message={error} onRetry={reload} />}
       {feedState === 'empty' && <FeedEmptyState />}

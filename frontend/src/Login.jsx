@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from './api';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import Logo from './components/layout/Logo';
 import { notifyAuthChange } from './hooks/useAuth';
 
 function Login() {
@@ -50,32 +51,26 @@ function Login() {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Email: </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div style={{ marginTop: '10px' }}>
-          <label>Password: </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" style={{ marginTop: '10px' }}>Login</button>
-      </form>
-      <p><a href="/forgot-password">Forgot password?</a></p>
-      <p>Don't have an account? <a href="/signup">Sign up</a></p>
+    <div className="auth-screen screen-enter">
+      <div className="auth-logo"><Logo /></div>
+      <div className="auth-card">
+        <h1 className="auth-title">Welcome back</h1>
+        <p className="auth-subtitle">Log in to continue.</p>
+        <form className="form-stack" onSubmit={handleSubmit} noValidate>
+          <label className="form-field">
+            <span className="form-label">Email</span>
+            <input className="form-input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </label>
+          <label className="form-field">
+            <span className="form-label">Password</span>
+            <input className="form-input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </label>
+          <Link to="/forgot-password" className="screen-link auth-inline-link">Forgot password?</Link>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <button type="submit" className="btn btn-primary btn-block">Log in</button>
+        </form>
+      </div>
+      <p className="auth-footer">Don't have an account? <Link to="/signup" className="screen-link">Sign up</Link></p>
     </div>
   );
 }

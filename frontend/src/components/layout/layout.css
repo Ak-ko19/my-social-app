@@ -28,6 +28,11 @@
      without this, that translateX would produce a horizontal scrollbar
      on desktop, past the shell's own edge. */
   overflow-x: hidden;
+  /* Column flex so BottomTabBar (margin-top: auto below) sits at the
+     bottom edge even when a screen's content is shorter than the
+     viewport -- sticky alone only pins it once content overflows. */
+  display: flex;
+  flex-direction: column;
 }
 
 /* Simple CSS-only entrance transition for a screen pushed on top of Home
@@ -132,6 +137,7 @@
 .bottom-tab-bar {
   position: sticky;
   bottom: 0;
+  margin-top: auto;
   z-index: 10;
   display: flex;
   background: var(--color-surface);

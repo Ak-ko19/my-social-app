@@ -143,7 +143,7 @@ rejections or console errors during a normal end-to-end walkthrough.
   already-open WebSocket.
 
 ### A3 — Visual consistency
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-24)
 **Done when:** Login, Signup, ForgotPassword, ResetPassword, CreatePost,
 EditProfile, Notifications, Messages, Conversation, Search are all
 restyled into the PhoneShell/design-token system (currently old raw
@@ -152,7 +152,58 @@ inline-style pages sitting next to the polished rebrand screens);
 `MenuScreen.jsx` was in Phase 1; dark mode verified correct on every
 screen, not just the newer ones; tested at common mobile widths
 (375/390/430px) with no horizontal scroll or clipping.
-**Notes:** _(none yet)_
+**Notes:**
+- All 10 listed screens now render inside PhoneShell, using one shared
+  stylesheet (`styles/screens.css`) built on the rebrand tokens. I chose
+  that over ten near-identical per-screen CSS files. The pages have no
+  inline styles or hardcoded colors left.
+  - Auth screens (Login/Signup/Forgot/Reset) are centered cards with the
+    Logo. The old `<a href>` links are now router `<Link>`s, so clicking
+    them no longer reloads the whole app.
+  - CreatePost/EditProfile/Notifications/Search/Messages have the
+    rebrand header (back button + title) and the shared form, button and
+    card classes.
+  - Conversation is now a full-height chat: header, a thread that
+    scrolls on its own, and the composer pinned to the bottom. This
+    replaces the old fixed `60vh` bordered box.
+- Decision: PhoneShell gained a `hideTabBar` prop. The auth screens and
+  the chat thread hide the bottom nav; every other screen keeps it.
+- Settings' profile row now shows the real logged-in user. I extracted
+  MenuScreen's `/profile/me` fetch into a shared `useCurrentUserSummary`
+  hook, used by Menu, Settings and HomeFeed's composer avatar.
+  `data/mockCurrentUser.js` had no users left, so I deleted it.
+- Fixes found while checking:
+  - The bottom tab bar floated mid-screen on short pages
+    (`position: sticky` only pins once content overflows). The shell is
+    now a flex column and the tab bar uses `margin-top: auto`. This also
+    fixes the existing Blocked Users and Saved screens.
+  - The Settings logout button kept a light-pink fill in dark mode; it
+    now has a dark override.
+  - The initials avatar used a pale badge color that glared on dark; it's
+    now the solid accent.
+  - `index.css`'s pre-rebrand `#root { text-align: center }` and large
+    `h1`/`h2` globals leaked into forms and post cards. Neutralized inside
+    the migrated screens and `.post-card`. I left the globals themselves
+    alone, since older component CSS may still rely on them.
+  - Search's "Message" button navigated to `/messages/<userId>`, but that
+    route takes a conversation id, so it opened the wrong chat or none.
+    It now creates or fetches the direct conversation first (same as
+    ProfileScreen). Verified: clicking it opens the correct chat.
+- Decision: I committed the already-verified Phase 1 frontend changes
+  (uncommitted since 2026-09-23) as their own commit first, so A3's
+  SettingsScreen/MenuScreen/HomeFeed edits didn't bundle them.
+- Verified in headless Edge against the throwaway stack: 20 routes
+  (every authed and public route) × 375/390/430px × light/dark = 120 page
+  checks, 0 failures. Each check covers: no horizontal scroll, no element
+  past the viewport edge, tab bar at the bottom edge on short pages, no
+  large light surface while dark mode is on, correct `data-theme`, and
+  0 console errors. I also reviewed screenshots at 390px in both themes
+  by eye. The A2 walkthrough still passes 22/22; eslint is clean, the
+  build passes, and backend tests are 80/80.
+- Not done (outside the done-when): the Follow/Like buttons inside shared
+  feed components still use the older `feed-btn` look, which is slightly
+  different from the new `btn` classes. I left them because they're
+  shared with the feed. Candidate for a later polish pass.
 
 ### A4 — GitHub Actions CI
 **Status:** ⬜ NOT CHECKED

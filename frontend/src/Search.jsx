@@ -1,6 +1,9 @@
 import { useRef, useState } from 'react';
 import api, { resolveImageUrl } from './api';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
+import { IconButton, Avatar } from './components/ui';
+import { createConversation } from './services/messageService';
 import { useFollowToggle } from './hooks/useFollowToggle';
 import FollowButton from './components/feed/FollowButton';
 
@@ -15,22 +18,19 @@ function SearchUserResult({ user, token, onMessage }) {
   const follow = useFollowToggle(user.id, false, token);
 
   return (
-    <div style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
-      <img
-        src={resolveImageUrl(user.avatar_url)}
-        alt=""
-        hidden={!user.avatar_url}
-        style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '8px' }}
-      />
-      <strong>{user.username}</strong>
-      {user.bio && <p style={{ margin: '5px 0', color: '#555' }}>{user.bio}</p>}
-      {token && (
-        <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <FollowButton follow={follow} />
-          <button onClick={() => onMessage(user.id)}>Message</button>
-        </div>
-      )}
-    </div>
+    <li className="card-row">
+      <Avatar size={40} src={resolveImageUrl(user.avatar_url)} initials={(user.username || '?').slice(0, 2).toUpperCase()} alt="" />
+      <div className="card-row-body">
+        <Link to={`/profile/${user.id}`} className="screen-link">{user.username}</Link>
+        {user.bio && <p className="card-row-quote">{user.bio}</p>}
+        {token && (
+          <div className="card-row-actions">
+            <FollowButton follow={follow} />
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => onMessage(user.id)}>Message</button>
+          </div>
+        )}
+      </div>
+    </li>
   );
 }
 
@@ -46,6 +46,19 @@ function Search() {
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
+
+  // /messages/:conversationId takes a CONVERSATION id -- this used to
+  // navigate to /messages/<userId>, opening the wrong chat (or none).
+  // POST /conversations returns the existing direct conversation if there
+  // already is one, so this is safe to call every time.
+  const openConversation = (userId) => {
+    createConversation(userId, token)
+      .then((conversation) => navigate(`/messages/${conversation.id}`))
+      .catch((err) => {
+        console.error(err);
+        setError(err.response?.data || 'Could not open a conversation. Please try again.');
+      });
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -85,51 +98,58 @@ function Search() {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Search</h2>
-      <p><a href="/">Back to Feed</a></p>
+    <div className="screen-enter">
+      <header className="screen-header">
+        <IconButton icon={ChevronLeft} aria-label="Back to Home" onClick={() => navigate('/')} />
+        <h1 className="screen-header-title">Search</h1>
+      </header>
 
-      <form onSubmit={handleSearch}>
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search users or posts..."
-          style={{ width: '70%' }}
-        />
-        <button type="submit" style={{ marginLeft: '5px' }} disabled={searching}>
-          {searching ? 'Searching…' : 'Search'}
-        </button>
-      </form>
-      {error && <p role="alert" style={{ color: 'red' }}>{error}</p>}
-      {searching && <p role="status">Searching…</p>}
+      <div className="screen-body">
+        <form className="inline-form" onSubmit={handleSearch} role="search">
+          <input
+            type="search"
+            className="form-input"
+            aria-label="Search users or posts"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search users or posts..."
+          />
+          <button type="submit" className="btn btn-primary" disabled={searching}>
+            {searching ? 'Searching…' : 'Search'}
+          </button>
+        </form>
+        {error && <p className="form-error" role="alert" style={{ marginTop: 'var(--space-3)' }}>{error}</p>}
+        {searching && <p className="screen-status" role="status">Searching…</p>}
 
-      {searched && !searching && (
-        <div style={{ marginTop: '20px' }}>
-          <h3>Users</h3>
-          {users.length === 0 && <p>No matching users.</p>}
-          {users.map((u) => (
-            <SearchUserResult key={u.id} user={u} token={token} onMessage={(id) => navigate(`/messages/${id}`)} />
-          ))}
+        {searched && !searching && (
+          <>
+            <h2 className="section-heading">Users</h2>
+            {users.length === 0 && <p className="screen-status">No matching users.</p>}
+            <ul className="card-list">
+              {users.map((u) => (
+                <SearchUserResult key={u.id} user={u} token={token} onMessage={openConversation} />
+              ))}
+            </ul>
 
-          <h3>Posts</h3>
-          {posts.length === 0 && <p>No matching posts.</p>}
-          {posts.map((p) => (
-            <div key={p.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
-              <strong>{p.username}</strong>
-              <p>{p.content}</p>
-              {p.image_url && (
-                <img
-                  src={resolveImageUrl(p.image_url)}
-                  alt="Post attachment"
-                  style={{ maxWidth: '100%', maxHeight: '200px', display: 'block' }}
-                />
-              )}
-              <small>{new Date(p.created_at).toLocaleString()}</small>
-            </div>
-          ))}
-        </div>
-      )}
+            <h2 className="section-heading">Posts</h2>
+            {posts.length === 0 && <p className="screen-status">No matching posts.</p>}
+            <ul className="card-list">
+              {posts.map((p) => (
+                <li key={p.id} className="card-row">
+                  <div className="card-row-body">
+                    <Link to={`/profile/${p.user_id}`} className="screen-link">{p.username}</Link>
+                    <p className="search-post-content">
+                      <Link to={`/posts/${p.id}`} className="search-post-link">{p.content}</Link>
+                    </p>
+                    {p.image_url && <img className="image-preview" src={resolveImageUrl(p.image_url)} alt="Post attachment" />}
+                    <span className="card-row-meta">{new Date(p.created_at).toLocaleString()}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
     </div>
   );
 }
