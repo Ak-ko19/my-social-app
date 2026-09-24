@@ -37,7 +37,7 @@ function EditProfile() {
       setError('Failed to load profile');
       setLoading(false);
     });
-  }, []);
+  }, [token, navigate]);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0] || null;

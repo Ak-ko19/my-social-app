@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { IconButton } from '../components/ui';
 import PostCard from '../components/feed/PostCard';
+import FeedErrorState from '../components/feed/FeedErrorState';
 import { useAuth } from '../hooks/useAuth';
 import { fetchPost } from '../services/postService';
 import '../components/feed/Feed.css';
@@ -23,22 +24,34 @@ function PostDetailScreen() {
   // setState in the effect body -- same "no direct setState in an effect"
   // reasoning as useFeed's fetchInitial.
   const [loadedId, setLoadedId] = useState(null);
+  const [notFound, setNotFound] = useState(false);
+  // Bumped by the retry button to re-run the fetch effect below.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     fetchPost(id, token)
       .then((data) => {
         setPost(data);
         setError('');
+        setNotFound(false);
         setLoadedId(id);
       })
       .catch((err) => {
         console.error(err);
-        setError(err.response?.status === 404 ? 'Post not found' : 'Failed to load post');
+        const isNotFound = err.response?.status === 404;
+        setNotFound(isNotFound);
+        setError(isNotFound ? 'Post not found' : 'Failed to load post');
         setLoadedId(id);
       });
-  }, [id, token]);
+  }, [id, token, attempt]);
 
   const loading = loadedId !== id;
+
+  const retry = () => {
+    setLoadedId(null);
+    setError('');
+    setAttempt((n) => n + 1);
+  };
 
   return (
     <div className="screen-enter">
@@ -48,7 +61,8 @@ function PostDetailScreen() {
       </header>
 
       {loading && <p className="post-detail-status">Loading…</p>}
-      {!loading && error && <p className="post-detail-status">{error}</p>}
+      {!loading && error && notFound && <p className="post-detail-status">{error}</p>}
+      {!loading && error && !notFound && <FeedErrorState message={error} onRetry={retry} />}
       {!loading && !error && post && <PostCard post={post} />}
     </div>
   );

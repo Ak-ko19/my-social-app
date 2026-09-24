@@ -5,7 +5,9 @@ import { IconButton, Avatar } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import { fetchBlockedUsers, unblockUser } from '../services/blockService';
 import { resolveImageUrl } from '../api';
+import FeedErrorState from '../components/feed/FeedErrorState';
 import './BlockedUsersScreen.css';
+import '../components/feed/Feed.css';
 
 function BlockedUsersScreen() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ function BlockedUsersScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [unblockingId, setUnblockingId] = useState(null);
+  const [actionError, setActionError] = useState('');
 
   // No synchronous setState in the effect body itself (loading/error already
   // start at the correct "about to load" defaults) -- same reasoning as
@@ -33,11 +36,23 @@ function BlockedUsersScreen() {
     if (token) load();
   }, [token, load]);
 
+  // Event handler, not an effect, so resetting to the loading state
+  // synchronously here is fine.
+  const retry = () => {
+    setError('');
+    setLoading(true);
+    load();
+  };
+
   const handleUnblock = (userId) => {
     setUnblockingId(userId);
+    setActionError('');
     unblockUser(userId, token)
       .then(() => setBlockedUsers((current) => current.filter((u) => u.id !== userId)))
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setActionError('Failed to unblock user. Please try again.');
+      })
       .finally(() => setUnblockingId(null));
   };
 
@@ -49,7 +64,8 @@ function BlockedUsersScreen() {
       </header>
 
       {loading && <p className="blocked-users-status">Loading…</p>}
-      {!loading && error && <p className="blocked-users-status">{error}</p>}
+      {!loading && error && <FeedErrorState message={error} onRetry={retry} />}
+      {actionError && <p className="blocked-users-status" role="alert">{actionError}</p>}
       {!loading && !error && blockedUsers.length === 0 && (
         <p className="blocked-users-status">You haven't blocked anyone.</p>
       )}

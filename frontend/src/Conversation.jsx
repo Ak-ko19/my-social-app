@@ -13,6 +13,7 @@ import MessageBubble from './components/messages/MessageBubble';
 import MessageComposer from './components/messages/MessageComposer';
 import MessageThreadSkeleton from './components/messages/MessageThreadSkeleton';
 import ConversationListErrorState from './components/messages/ConversationListErrorState';
+import ConnectionBanner from './components/messages/ConnectionBanner';
 import './components/messages/Messages.css';
 import './components/feed/Feed.css';
 
@@ -192,6 +193,8 @@ function Conversation() {
           )}
         </div>
       </div>
+
+      <ConnectionBanner />
 
       {loading && <MessageThreadSkeleton />}
 

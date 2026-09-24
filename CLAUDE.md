@@ -55,9 +55,20 @@ create post → like/unlike → comment → follow/unfollow → edit profile.
   then all frontend.
 - Test each feature (manually or via Thunder Client) before moving on.
 - Always explain clearly what was changed and why.
-- Ask before starting the next feature — don't jump ahead unprompted.
+- Move to the next ROADMAP task per the Autonomy rules below (no asking).
 - Deploy/hosting is deliberately saved for the very last step, after every
   other feature and gap is complete, to avoid repeated redeploys.
+
+## Autonomy rules
+The owner is busy and wants no questions.
+- Never ask for approval or choices. Pick the safest
+  reasonable option and log it in ROADMAP.md notes.
+- Hard limits (never break): no push/merge to main, never
+  touch .env or the production DB, no new external
+  accounts/keys/paid services.
+- If a task truly needs the owner, move it to NEEDS OWNER
+  and continue with the next task.
+- Finish with a short English report (English only, no Burmese).
 
 ## Next Steps (in order)
 Steps 1–6 below (input validation, forgot-password, comment edit, .env

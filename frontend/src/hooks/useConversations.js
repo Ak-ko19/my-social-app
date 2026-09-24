@@ -7,12 +7,13 @@ import { fetchConversations } from '../services/messageService';
 // re-fetching the whole list. Mirrors useFeed's load/reload/stale-response
 // guard shape.
 export function useConversations(token, currentUserId) {
-  const { socket } = useSocket();
+  const { socket, connectionState } = useSocket();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const requestIdRef = useRef(0);
+  const hasConnectedOnceRef = useRef(false);
 
   const load = useCallback(() => {
     if (!token) return;
@@ -37,6 +38,16 @@ export function useConversations(token, currentUserId) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Reconnect resync, same as useConversationMessages: any new_message/
+  // message_deleted events emitted while the socket was down are lost for
+  // good, so refetch the list on every transition back INTO 'connected'
+  // after the first one (the initial load above already covers that).
+  useEffect(() => {
+    if (connectionState !== 'connected') return;
+    if (hasConnectedOnceRef.current) load();
+    hasConnectedOnceRef.current = true;
+  }, [connectionState, load]);
 
   // Live updates: a new_message for a conversation already in the list
   // updates its preview/unread count in place and moves it to the top,

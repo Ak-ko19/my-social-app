@@ -13,7 +13,7 @@ function HashtagFeedScreen() {
   const navigate = useNavigate();
   const { tag } = useParams();
   const { token } = useAuth();
-  const { posts, loading, loadingMore, error, hasMore, loadMore } = useHashtagFeed(tag, token);
+  const { posts, loading, loadingMore, error, hasMore, loadMore, reload } = useHashtagFeed(tag, token);
 
   const state = loading ? 'loading' : error ? 'error' : posts.length === 0 ? 'empty' : 'list';
 
@@ -25,7 +25,7 @@ function HashtagFeedScreen() {
       </header>
 
       {state === 'loading' && <FeedSkeleton />}
-      {state === 'error' && <FeedErrorState message={error} />}
+      {state === 'error' && <FeedErrorState message={error} onRetry={reload} />}
       {state === 'empty' && <p className="hashtag-feed-empty">No posts yet for #{tag}.</p>}
       {state === 'list' && <FeedList posts={posts} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={loadMore} />}
     </div>

@@ -5,7 +5,9 @@ import { IconButton, Avatar } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import { fetchFollowRequests, approveFollowRequest, denyFollowRequest } from '../services/postService';
 import { resolveImageUrl } from '../api';
+import FeedErrorState from '../components/feed/FeedErrorState';
 import './FollowRequestsScreen.css';
+import '../components/feed/Feed.css';
 
 function FollowRequestsScreen() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ function FollowRequestsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actioningId, setActioningId] = useState(null);
+  const [actionError, setActionError] = useState('');
 
   const load = useCallback(() => {
     fetchFollowRequests(token)
@@ -29,19 +32,35 @@ function FollowRequestsScreen() {
     if (token) load();
   }, [token, load]);
 
+  // Event handler, not an effect, so resetting to the loading state
+  // synchronously here is fine.
+  const retry = () => {
+    setError('');
+    setLoading(true);
+    load();
+  };
+
   const handleApprove = (userId) => {
     setActioningId(userId);
+    setActionError('');
     approveFollowRequest(userId, token)
       .then(() => setRequests((current) => current.filter((r) => r.id !== userId)))
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setActionError('Failed to approve request. Please try again.');
+      })
       .finally(() => setActioningId(null));
   };
 
   const handleDeny = (userId) => {
     setActioningId(userId);
+    setActionError('');
     denyFollowRequest(userId, token)
       .then(() => setRequests((current) => current.filter((r) => r.id !== userId)))
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setActionError('Failed to deny request. Please try again.');
+      })
       .finally(() => setActioningId(null));
   };
 
@@ -53,7 +72,8 @@ function FollowRequestsScreen() {
       </header>
 
       {loading && <p className="follow-requests-status">Loading…</p>}
-      {!loading && error && <p className="follow-requests-status">{error}</p>}
+      {!loading && error && <FeedErrorState message={error} onRetry={retry} />}
+      {actionError && <p className="follow-requests-status" role="alert">{actionError}</p>}
       {!loading && !error && requests.length === 0 && (
         <p className="follow-requests-status">No pending follow requests.</p>
       )}

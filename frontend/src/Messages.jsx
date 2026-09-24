@@ -8,6 +8,7 @@ import ConversationList from './components/messages/ConversationList';
 import ConversationListSkeleton from './components/messages/ConversationListSkeleton';
 import ConversationListEmptyState from './components/messages/ConversationListEmptyState';
 import ConversationListErrorState from './components/messages/ConversationListErrorState';
+import ConnectionBanner from './components/messages/ConnectionBanner';
 import { DURATION_NORMAL, EASE_STANDARD } from './utils/motionTokens';
 import './components/messages/Messages.css';
 
@@ -53,6 +54,7 @@ function Messages() {
     <div style={{ padding: '20px' }}>
       <h2>Messages</h2>
       <p><a href="/">Back to Feed</a></p>
+      <ConnectionBanner />
 
       <AnimatePresence initial={false}>
         <motion.div

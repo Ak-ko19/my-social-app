@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Flag, MoreHorizontal, UserX } from 'lucide-react';
 import { Avatar, IconButton, ActionSheet, ConfirmDialog } from '../components/ui';
 import ReportDialog from '../components/feed/ReportDialog';
+import FeedErrorState from '../components/feed/FeedErrorState';
 import { useAuth } from '../hooks/useAuth';
 import { fetchProfile } from '../services/profileService';
 import { fetchFollowCounts, followUser, unfollowUser } from '../services/postService';
@@ -10,6 +11,7 @@ import { blockUser } from '../services/blockService';
 import { createConversation } from '../services/messageService';
 import { resolveImageUrl } from '../api';
 import './ProfileScreen.css';
+import '../components/feed/Feed.css';
 
 // The @mention / hashtag-adjacent "view someone else's profile" page --
 // didn't exist anywhere in the app before mentions needed somewhere to link
@@ -23,6 +25,9 @@ function ProfileScreen() {
   const [profile, setProfile] = useState(null);
   const [counts, setCounts] = useState(null);
   const [error, setError] = useState('');
+  const [notFound, setNotFound] = useState(false);
+  // Bumped by the retry button to re-run the fetch effect below.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     fetchProfile(id, token)
@@ -33,9 +38,17 @@ function ProfileScreen() {
       .then(setCounts)
       .catch((err) => {
         console.error(err);
-        setError(err.response?.status === 404 ? 'User not found' : 'Failed to load profile');
+        const isNotFound = err.response?.status === 404;
+        setNotFound(isNotFound);
+        setError(isNotFound ? 'User not found' : 'Failed to load profile');
       });
-  }, [id, token]);
+  }, [id, token, attempt]);
+
+  const retry = () => {
+    setError('');
+    setNotFound(false);
+    setAttempt((n) => n + 1);
+  };
 
   if (error || !profile) {
     return (
@@ -43,7 +56,11 @@ function ProfileScreen() {
         <header className="profile-screen-header">
           <IconButton icon={ChevronLeft} aria-label="Back" onClick={() => navigate(-1)} />
         </header>
-        <p className="profile-screen-status">{error || 'Loading…'}</p>
+        {error && !notFound ? (
+          <FeedErrorState message={error} onRetry={retry} />
+        ) : (
+          <p className="profile-screen-status">{error || 'Loading…'}</p>
+        )}
       </div>
     );
   }

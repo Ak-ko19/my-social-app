@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api, { resolveImageUrl } from './api';
 import { useNavigate } from 'react-router-dom';
+import FeedErrorState from './components/feed/FeedErrorState';
+import './components/feed/Feed.css';
 
 function notificationText(n) {
   if (n.type === 'like') return 'liked your post';
@@ -16,24 +18,25 @@ function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [actionError, setActionError] = useState('');
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
 
-  const loadNotifications = () => {
+  const loadNotifications = useCallback(() => {
     api.get('/notifications', {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((response) => {
       setNotifications(response.data.notifications);
-      setLoading(false);
+      setError('');
     })
     .catch((err) => {
       console.error(err);
       setError('Failed to load notifications');
-      setLoading(false);
-    });
-  };
+    })
+    .finally(() => setLoading(false));
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
@@ -41,30 +44,52 @@ function Notifications() {
       return;
     }
     loadNotifications();
-  }, []);
+  }, [token, navigate, loadNotifications]);
+
+  const retry = () => {
+    setError('');
+    setLoading(true);
+    loadNotifications();
+  };
 
   const markAsRead = (id) => {
+    setActionError('');
     api.put(`/notifications/${id}/read`, {}, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(() => {
-      setNotifications(notifications.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+      setNotifications((current) => current.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
     })
-    .catch((err) => console.error(err));
+    .catch((err) => {
+      console.error(err);
+      setActionError('Failed to mark as read. Please try again.');
+    });
   };
 
   const markAllAsRead = () => {
+    setActionError('');
     api.put('/notifications/read-all', {}, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(() => {
-      setNotifications(notifications.map((n) => ({ ...n, is_read: true })));
+      setNotifications((current) => current.map((n) => ({ ...n, is_read: true })));
     })
-    .catch((err) => console.error(err));
+    .catch((err) => {
+      console.error(err);
+      setActionError('Failed to mark all as read. Please try again.');
+    });
   };
 
-  if (loading) return <p>Loading notifications...</p>;
-  if (error) return <p>{error}</p>;
+  if (loading) return <p role="status" style={{ padding: '20px' }}>Loading notifications…</p>;
+  if (error) {
+    return (
+      <div style={{ padding: '20px' }}>
+        <h2>Notifications</h2>
+        <p><a href="/">Back to Feed</a></p>
+        <FeedErrorState message={error} onRetry={retry} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '20px' }}>
@@ -72,10 +97,11 @@ function Notifications() {
       <p>
         <a href="/">Back to Feed</a>
         {' | '}
-        <button onClick={markAllAsRead}>Mark all as read</button>
+        <button onClick={markAllAsRead} disabled={notifications.every((n) => n.is_read)}>Mark all as read</button>
       </p>
+      {actionError && <p role="alert" style={{ color: 'red' }}>{actionError}</p>}
 
-      {notifications.length === 0 && <p>No notifications yet.</p>}
+      {notifications.length === 0 && <p role="status">No notifications yet.</p>}
 
       {notifications.map((n) => (
         <div

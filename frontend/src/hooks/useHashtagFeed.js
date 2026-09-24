@@ -17,7 +17,7 @@ export function useHashtagFeed(tag, token) {
   const requestIdRef = useRef(0);
   const loadingMoreRef = useRef(false);
 
-  useEffect(() => {
+  const fetchFirstPage = useCallback(() => {
     const requestId = ++requestIdRef.current;
     fetchPostsByHashtag(tag, token, { page: 1, limit: PAGE_LIMIT })
       .then((data) => {
@@ -36,7 +36,19 @@ export function useHashtagFeed(tag, token) {
       });
   }, [tag, token]);
 
+  useEffect(() => {
+    fetchFirstPage();
+  }, [fetchFirstPage]);
+
   const loading = loadedTag !== tag;
+
+  // For the error state's retry button (an event handler, so the
+  // synchronous reset back into 'loading' is fine here).
+  const reload = useCallback(() => {
+    setLoadedTag(null);
+    setError(null);
+    fetchFirstPage();
+  }, [fetchFirstPage]);
 
   const loadMore = useCallback(() => {
     if (loadingMoreRef.current || !hasMore) return;
@@ -69,5 +81,5 @@ export function useHashtagFeed(tag, token) {
       });
   }, [tag, token, hasMore]);
 
-  return { posts, loading, loadingMore, error, hasMore, loadMore };
+  return { posts, loading, loadingMore, error, hasMore, loadMore, reload };
 }

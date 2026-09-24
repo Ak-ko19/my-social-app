@@ -88,13 +88,49 @@ block, DM, search, bookmarks — happy path plus the key negative cases
   Socket.io when run directly, so Supertest can import `app`.
 
 ### A2 — Reliability
-**Status:** ⬜ NOT CHECKED
+**Status:** 🟡 PARTIAL (code complete + protocol-verified 2026-09-24; in-browser walkthrough pending — see NEEDS OWNER)
 **Done when:** every data-fetching screen has consistent loading/empty/
 error states (Notifications and Messages currently lack some of these
 per the 2026-09-23 audit); Socket.io client reconnects cleanly after a
 network drop (test via devtools offline toggle); no unhandled promise
 rejections or console errors during a normal end-to-end walkthrough.
-**Notes:** _(none yet)_
+**Notes:**
+- Screen states (2026-09-24): every data-fetching screen now has
+  loading + empty + error-with-"Try again". Reused the existing
+  `FeedErrorState` everywhere instead of adding a new component.
+  - Notifications: error state gets a retry button; fixed a stale-closure
+    bug where mark-read/mark-all used an old `notifications` array;
+    mark-read failures now show inline instead of only `console.error`.
+  - Search: added a "Searching…" state (it had none) plus a guard so an
+    older, slower search can't overwrite a newer one.
+  - BlockedUsers / FollowRequests / HashtagFeed / PostDetail / Profile:
+    retry added. PostDetail/Profile show no retry on 404, since retrying
+    "not found" does nothing. Unblock/approve/deny failures now show inline.
+  - Messages already had skeleton/empty/error+retry; left as-is.
+- Socket reconnect: `SocketProvider` already had infinite backoff
+  reconnect, and the open thread already refetched on reconnect. Gap
+  fixed: the inbox list (`useConversations`) never resynced, so messages
+  that arrived during an outage were missing. It now refetches on every
+  reconnect. Added `ConnectionBanner` to Messages + Conversation: it shows
+  "Reconnecting…" after the socket has been down for more than 2s (so the
+  normal first connect never flashes it).
+- Verified at the protocol level: a Node socket.io-client with the same
+  options as `SocketProvider` was run against a local backend on a
+  throwaway DB (isolated test cluster, not the real DB). Killing and
+  restarting the backend gave disconnect → backoff retries → auto
+  reconnect → server re-joined the conversation room → a new message was
+  delivered live. PASS.
+- Lint: fixed the last 2 `exhaustive-deps` warnings (Notifications,
+  EditProfile). `eslint src` is now clean and `vite build` passes.
+- Also fixed (found during A2): Search.jsx called the `optionalAuth`
+  search endpoints with no token, so results were anonymous. Users the
+  viewer blocked still appeared, and followed private accounts' posts
+  were hidden. It now sends the token. `useMentionAutocomplete` →
+  `searchUsers()` has the same no-token pattern; left for A6's audit.
+- Decision logged: the Chrome automation extension wasn't connected, so
+  the devtools-offline + console-clean browser walkthrough couldn't run.
+  I didn't block on it; it's moved to NEEDS OWNER below. Flip A2 to ✅
+  once that passes.
 
 ### A3 — Visual consistency
 **Status:** ⬜ NOT CHECKED
@@ -291,3 +327,12 @@ running app in one pass, with a written pass/fail report per item.
 - Real multi-user testing, deployment verification — needs you actually
   doing it, not something to automate away.
 - Merging dev into main — a deliberate action only you should trigger.
+- A2 browser check (~5 min): with backend + frontend running, open
+  Messages and a conversation. In DevTools → Network, toggle "Offline"
+  for ~10s: the "Connection lost / Reconnecting…" banner should appear.
+  Toggle back online: the banner clears and messages sent from another
+  account during the outage show up in both the inbox and the thread.
+  Then click through feed → post → like/comment → search → notifications
+  → profile with the Console open, and confirm no red errors or
+  "Uncaught (in promise)". If clean, mark A2 ✅. (Needs a real browser;
+  the Claude Chrome extension wasn't connected this session.)

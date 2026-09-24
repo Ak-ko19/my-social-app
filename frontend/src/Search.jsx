@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import api, { resolveImageUrl } from './api';
 import { useNavigate } from 'react-router-dom';
 import { useFollowToggle } from './hooks/useFollowToggle';
@@ -40,6 +40,9 @@ function Search() {
   const [posts, setPosts] = useState([]);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
+  const [searching, setSearching] = useState(false);
+  // Guards against an older, slower search overwriting a newer one's results.
+  const requestIdRef = useRef(0);
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
@@ -53,18 +56,31 @@ function Search() {
       return;
     }
 
+    const requestId = ++requestIdRef.current;
+    setSearching(true);
+
+    // Search is optionalAuth on the backend -- without the token it runs as
+    // an anonymous visitor, so blocked users still appear and followed
+    // private accounts' posts are hidden.
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
     Promise.all([
-      api.get('/search/users', { params: { q: query.trim() } }),
-      api.get('/search/posts', { params: { q: query.trim() } })
+      api.get('/search/users', { params: { q: query.trim() }, headers }),
+      api.get('/search/posts', { params: { q: query.trim() }, headers })
     ])
     .then(([usersRes, postsRes]) => {
+      if (requestId !== requestIdRef.current) return;
       setUsers(usersRes.data);
       setPosts(postsRes.data.posts);
       setSearched(true);
     })
     .catch((err) => {
+      if (requestId !== requestIdRef.current) return;
       console.error(err);
+      setSearched(false); // don't leave a previous query's results under this error
       setError('Search failed. Please try again.');
+    })
+    .finally(() => {
+      if (requestId === requestIdRef.current) setSearching(false);
     });
   };
 
@@ -81,11 +97,14 @@ function Search() {
           placeholder="Search users or posts..."
           style={{ width: '70%' }}
         />
-        <button type="submit" style={{ marginLeft: '5px' }}>Search</button>
+        <button type="submit" style={{ marginLeft: '5px' }} disabled={searching}>
+          {searching ? 'Searching…' : 'Search'}
+        </button>
       </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p role="alert" style={{ color: 'red' }}>{error}</p>}
+      {searching && <p role="status">Searching…</p>}
 
-      {searched && (
+      {searched && !searching && (
         <div style={{ marginTop: '20px' }}>
           <h3>Users</h3>
           {users.length === 0 && <p>No matching users.</p>}
