@@ -531,6 +531,47 @@ loads, the service worker registers, and the app shell is actually cached.
 
 ---
 
+## Section A — Foundation (2026-09-24, tracked in ROADMAP.md)
+
+Status per item lives in ROADMAP.md; this section records *how* each was
+built and how to re-verify it.
+
+### A1 — Automated API tests ✅
+- `cd backend && npm test` runs Jest + Supertest: 80 tests, 10 files in
+  `backend/tests/api/` (auth, profile, posts/feed, likes, comments,
+  follow + private accounts, block, DM, search, bookmarks). ~25s.
+- DB: a real, isolated Postgres 17 cluster in
+  `backend/tests/.pgdata_test_cluster` (port 55433, trust auth,
+  gitignored). `tests/globalSetup.js` creates/starts it and loads
+  `tests/fixtures/schema.sql`; `globalTeardown.js` stops it. Tests never
+  see `.env`'s `DATABASE_URL` (`tests/helpers/setupTestApp.js` mocks
+  `db.js`).
+- Test-only accommodations in app code: `server.js` exports `app` and only
+  listens / starts Socket.io when run directly; rate limiters are no-ops
+  when `NODE_ENV=test`; `__mocks__/sanitize-html.js` replaces an ESM-only
+  dependency Jest can't load.
+- Windows gotchas that made `npm test` hang (fixed): `pg_ctl start` must
+  run with `stdio: 'ignore'`, and the cluster's log file must live
+  outside its data dir.
+
+### A2 — Reliability ✅
+- Every data-fetching screen: loading → empty → error with "Try again"
+  (shared `components/feed/FeedErrorState.jsx`). No retry on 404s.
+- Socket: `SocketProvider` reconnects forever with backoff;
+  `useConversationMessages` and `useConversations` both refetch on every
+  reconnect; `components/messages/ConnectionBanner.jsx` shows
+  "Reconnecting…" after 2s of downtime (Messages + Conversation).
+- Search now sends the auth token (was silently anonymous).
+- Verified in real Edge (headless, Playwright) against a throwaway local
+  stack: 22-step walkthrough, 0 console errors / unhandled rejections;
+  a backend kill → message inserted during the outage → restart showed the
+  banner, then recovered the missed message, then sending worked again.
+  - Why a backend kill instead of DevTools "Offline": Chromium's offline
+    emulation doesn't close an already-open WebSocket, so it doesn't
+    actually test a drop.
+
+---
+
 ## How to use this file
 
 - Keep this file (and CLAUDE.md) in your project root or somewhere safe.

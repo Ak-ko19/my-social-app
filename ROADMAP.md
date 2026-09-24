@@ -88,7 +88,7 @@ block, DM, search, bookmarks — happy path plus the key negative cases
   Socket.io when run directly, so Supertest can import `app`.
 
 ### A2 — Reliability
-**Status:** 🟡 PARTIAL (code complete + protocol-verified 2026-09-24; in-browser walkthrough pending — see NEEDS OWNER)
+**Status:** ✅ VERIFIED (2026-09-24)
 **Done when:** every data-fetching screen has consistent loading/empty/
 error states (Notifications and Messages currently lack some of these
 per the 2026-09-23 audit); Socket.io client reconnects cleanly after a
@@ -127,10 +127,20 @@ rejections or console errors during a normal end-to-end walkthrough.
   viewer blocked still appeared, and followed private accounts' posts
   were hidden. It now sends the token. `useMentionAutocomplete` →
   `searchUsers()` has the same no-token pattern; left for A6's audit.
-- Decision logged: the Chrome automation extension wasn't connected, so
-  the devtools-offline + console-clean browser walkthrough couldn't run.
-  I didn't block on it; it's moved to NEEDS OWNER below. Flip A2 to ✅
-  once that passes.
+- Browser verification (2026-09-24): the Chrome extension still wasn't
+  connected, so I drove the installed Edge headlessly with playwright-core
+  (installed in a scratch dir, not added to the project). This ran against
+  the throwaway local stack (isolated test cluster DB, email/Cloudinary
+  blanked). A 22-step walkthrough of feed, like, post detail, hashtag,
+  profile, search, notifications, blocked, follow-requests, saved, menu,
+  settings, edit-profile, messages and conversation all passed, with 0
+  console errors, page errors or unhandled rejections.
+- Reconnect verified by killing the backend: the banner appeared. A
+  message inserted into the DB during the outage (so it could only
+  arrive via resync) appeared after restart, the banner cleared, and
+  sending worked again. Used a backend kill instead of DevTools
+  "Offline" because Chromium's offline emulation doesn't close an
+  already-open WebSocket.
 
 ### A3 — Visual consistency
 **Status:** ⬜ NOT CHECKED
@@ -327,12 +337,3 @@ running app in one pass, with a written pass/fail report per item.
 - Real multi-user testing, deployment verification — needs you actually
   doing it, not something to automate away.
 - Merging dev into main — a deliberate action only you should trigger.
-- A2 browser check (~5 min): with backend + frontend running, open
-  Messages and a conversation. In DevTools → Network, toggle "Offline"
-  for ~10s: the "Connection lost / Reconnecting…" banner should appear.
-  Toggle back online: the banner clears and messages sent from another
-  account during the outage show up in both the inbox and the thread.
-  Then click through feed → post → like/comment → search → notifications
-  → profile with the Console open, and confirm no red errors or
-  "Uncaught (in promise)". If clean, mark A2 ✅. (Needs a real browser;
-  the Claude Chrome extension wasn't connected this session.)
