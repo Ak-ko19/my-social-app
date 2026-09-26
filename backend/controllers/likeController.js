@@ -1,6 +1,7 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { getVisiblePost } = require('../services/postVisibilityService');
+const reactionService = require('../services/reactionService');
 
 async function likePost(req, res) {
   try {
@@ -32,8 +33,8 @@ async function likePost(req, res) {
     }
     // Returns the authoritative count so the frontend's optimistic UI can
     // reconcile instead of just trusting its own local +1/-1 math.
-    const countResult = await db.query('SELECT COUNT(*)::int AS count FROM likes WHERE post_id = $1', [req.params.id]);
-    res.status(201).json({ message: 'Post liked successfully', likeCount: countResult.rows[0].count });
+    const summary = await reactionService.getReactionSummary(req.params.id);
+    res.status(201).json({ message: 'Post liked successfully', myReaction: 'like', ...summary });
   } catch (err) {
     // A concurrent request (e.g. a double-click across two tabs) can slip
     // past the existingLike check above before either INSERT commits --
@@ -61,10 +62,53 @@ async function unlikePost(req, res) {
     if (result.rows.length === 0) {
       return res.status(404).send('You have not liked this post');
     }
-    const countResult = await db.query('SELECT COUNT(*)::int AS count FROM likes WHERE post_id = $1', [req.params.id]);
-    res.json({ message: 'Post unliked successfully', likeCount: countResult.rows[0].count });
+    const summary = await reactionService.getReactionSummary(req.params.id);
+    res.json({ message: 'Post unliked successfully', myReaction: null, ...summary });
   } catch (err) {
     sendServerError(res, err, 'Unlike post failed. Please try again later.');
+  }
+}
+
+// PUT /posts/:id/reaction { reaction } -- sets OR changes the viewer's
+// reaction (idempotent; unlike POST /like, which 400s if one already
+// exists). Removing a reaction is still DELETE /posts/:id/like.
+// Notifies the author only when a reaction is first added, not on every
+// change, so switching like -> love -> haha doesn't spam them.
+async function setReaction(req, res) {
+  try {
+    if (isNaN(req.params.id)) {
+      return res.status(400).send('Invalid post ID');
+    }
+    const { reaction } = req.body;
+    if (!reactionService.isValidReaction(reaction)) {
+      return res.status(400).send(`reaction must be one of: ${reactionService.REACTIONS.join(', ')}`);
+    }
+    const post = await getVisiblePost(req.params.id, req.userId);
+    if (!post) {
+      return res.status(404).send('Post not found');
+    }
+
+    // xmax = 0 only for a freshly inserted row -- distinguishes 'added'
+    // from 'changed' in one atomic upsert (no check-then-insert race).
+    const result = await db.query(
+      `INSERT INTO likes (post_id, user_id, reaction) VALUES ($1, $2, $3)
+       ON CONFLICT (post_id, user_id) DO UPDATE SET reaction = EXCLUDED.reaction
+       RETURNING (xmax = 0) AS inserted`,
+      [req.params.id, req.userId, reaction]
+    );
+    const inserted = result.rows[0].inserted;
+
+    if (inserted && post.user_id !== req.userId) {
+      await db.query(
+        'INSERT INTO notifications (user_id, actor_id, type, post_id) VALUES ($1, $2, $3, $4)',
+        [post.user_id, req.userId, 'like', req.params.id]
+      );
+    }
+
+    const summary = await reactionService.getReactionSummary(req.params.id);
+    res.status(inserted ? 201 : 200).json({ myReaction: reaction, ...summary });
+  } catch (err) {
+    sendServerError(res, err, 'Reaction failed. Please try again later.');
   }
 }
 
@@ -78,14 +122,11 @@ async function getLikes(req, res) {
     if (!post) {
       return res.status(404).send('Post not found');
     }
-    const countResult = await db.query(
-      'SELECT COUNT(*) FROM likes WHERE post_id = $1',
-      [req.params.id]
-    );
-    res.json({ postId: req.params.id, likeCount: parseInt(countResult.rows[0].count) });
+    const summary = await reactionService.getReactionSummary(req.params.id);
+    res.json({ postId: req.params.id, ...summary });
   } catch (err) {
     sendServerError(res, err, 'Fetch likes failed. Please try again later.');
   }
 }
 
-module.exports = { likePost, unlikePost, getLikes };
+module.exports = { likePost, unlikePost, setReaction, getLikes };

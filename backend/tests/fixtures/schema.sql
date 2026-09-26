@@ -118,6 +118,9 @@ CREATE TABLE likes (
   post_id integer REFERENCES posts(id) ON DELETE CASCADE,
   user_id integer REFERENCES users(id) ON DELETE CASCADE,
   created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  -- Added by migration 016_add_reactions (B1).
+  reaction varchar(10) DEFAULT 'like' NOT NULL
+    CONSTRAINT chk_likes_reaction CHECK (reaction IN ('like', 'love', 'haha', 'wow', 'sad', 'angry')),
   UNIQUE (post_id, user_id)
 );
 

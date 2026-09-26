@@ -6,6 +6,7 @@ const likeController = require('../controllers/likeController');
 
 router.post('/posts/:id/like', authMiddleware, likeController.likePost);
 router.delete('/posts/:id/like', authMiddleware, likeController.unlikePost);
+router.put('/posts/:id/reaction', authMiddleware, likeController.setReaction);
 router.get('/posts/:id/likes', optionalAuth, likeController.getLikes);
 
 module.exports = router;

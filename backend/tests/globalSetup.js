@@ -71,12 +71,13 @@ module.exports = async function globalSetup() {
 
   if (!dbExists) {
     run('createdb.exe', ['-h', 'localhost', '-p', PORT, '-U', DB_USER, DB_NAME]);
-    run('psql.exe', [
-      '-h', 'localhost', '-p', PORT, '-U', DB_USER, '-d', DB_NAME,
-      '-v', 'ON_ERROR_STOP=1',
-      '-f', path.join(__dirname, 'fixtures', 'schema.sql')
-    ]);
   }
+
+  // Rebuild the schema on EVERY run (not only when the DB is first
+  // created), so a schema.sql change -- e.g. a new migration's column --
+  // is picked up immediately instead of tests running against a stale
+  // schema from an earlier run. Same path CI mode uses.
+  await loadSchemaIntoExternalDb(`postgresql://${DB_USER}@localhost:${PORT}/${DB_NAME}`);
 };
 
 module.exports.DATA_DIR = DATA_DIR;
