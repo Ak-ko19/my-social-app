@@ -42,7 +42,7 @@ const pool = new Pool({ connectionString: TEST_DATABASE_URL });
 const TABLES = [
   'messages_dm_legacy', 'reports', 'notifications', 'bookmarks', 'blocks', 'follows',
   'likes', 'comments', 'conversation_participants', 'messages', 'conversations',
-  'post_hashtags', 'hashtags', 'posts', 'users'
+  'post_hashtags', 'hashtags', 'post_media', 'posts', 'users'
 ];
 
 async function resetDb() {

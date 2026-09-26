@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const optionalAuth = require('../middleware/optionalAuth');
-const { upload, uploadToCloudinary } = require('../middleware/cloudinaryUpload');
+const { uploadPostImages, uploadManyToCloudinary } = require('../middleware/cloudinaryUpload');
 const postController = require('../controllers/postController');
 
-router.post('/posts', authMiddleware, upload.single('image'), uploadToCloudinary('posts'), postController.createPost);
+router.post('/posts', authMiddleware, uploadPostImages, uploadManyToCloudinary('posts'), postController.createPost);
 router.get('/posts', optionalAuth, postController.getPosts);
 router.get('/feed', authMiddleware, postController.getFeed);
 router.get('/posts/:id', optionalAuth, postController.getPost);

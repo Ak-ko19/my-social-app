@@ -113,6 +113,16 @@ CREATE TABLE comments (
   created_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Added by migration 017_add_post_media (B2).
+CREATE TABLE post_media (
+  id SERIAL PRIMARY KEY,
+  post_id integer NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  url text NOT NULL,
+  position smallint NOT NULL CHECK (position >= 0),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (post_id, position)
+);
+
 CREATE TABLE likes (
   id SERIAL PRIMARY KEY,
   post_id integer REFERENCES posts(id) ON DELETE CASCADE,

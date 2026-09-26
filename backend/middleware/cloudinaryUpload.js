@@ -73,4 +73,55 @@ function uploadToCloudinary(folder = 'mysocialapp', resourceType = 'image', form
   };
 }
 
-module.exports = { upload, uploadAudio, uploadToCloudinary };
+// B2: up to MAX_POST_IMAGES images per post, sent as repeated `images`
+// fields. The legacy single `image` field is still accepted, so an older
+// frontend (or any existing client) keeps working unchanged.
+const MAX_POST_IMAGES = 10;
+const TOO_MANY_IMAGES = `You can attach up to ${MAX_POST_IMAGES} images`;
+
+function uploadPostImages(req, res, next) {
+  upload.fields([
+    { name: 'images', maxCount: MAX_POST_IMAGES },
+    { name: 'image', maxCount: 1 }
+  ])(req, res, (err) => {
+    if (err && err.code === 'LIMIT_UNEXPECTED_FILE') {
+      // multer's own message here is just "Unexpected field".
+      return next(new Error(TOO_MANY_IMAGES));
+    }
+    if (err) return next(err);
+    const files = [...(req.files?.images || []), ...(req.files?.image || [])];
+    if (files.length > MAX_POST_IMAGES) {
+      return next(new Error(TOO_MANY_IMAGES));
+    }
+    req.postImageFiles = files;
+    next();
+  });
+}
+
+function uploadBufferToCloudinary(buffer, options) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (err, result) => (err ? reject(err) : resolve(result)));
+    stream.end(buffer);
+  });
+}
+
+// Use after uploadPostImages. Uploads every file in parallel and attaches
+// the results IN THE ORDER THE FILES WERE SENT as req.cloudinaryResults
+// (empty array when no images). If any upload fails the request fails --
+// images that already finished uploading stay in Cloudinary unreferenced
+// (a rare, harmless orphan; not worth a compensating delete here).
+function uploadManyToCloudinary(folder = 'mysocialapp') {
+  return async (req, res, next) => {
+    const files = req.postImageFiles || [];
+    try {
+      req.cloudinaryResults = await Promise.all(
+        files.map((file) => uploadBufferToCloudinary(file.buffer, { folder, resource_type: 'image' }))
+      );
+      next();
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+module.exports = { upload, uploadAudio, uploadToCloudinary, uploadPostImages, uploadManyToCloudinary, MAX_POST_IMAGES };

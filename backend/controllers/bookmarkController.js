@@ -1,5 +1,5 @@
 const db = require('../db');
-const { reactionColumnsSql } = require('../services/reactionService');
+const { reactionColumnsSql, mediaColumnSql } = require('../services/reactionService');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const { getVisiblePost } = require('../services/postVisibilityService');
@@ -60,6 +60,7 @@ async function getBookmarks(req, res) {
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
+        ${mediaColumnSql()},
         true AS bookmarked_by_me
       FROM bookmarks
       JOIN posts ON posts.id = bookmarks.post_id

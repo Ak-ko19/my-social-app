@@ -1,5 +1,5 @@
 const db = require('../db');
-const { reactionColumnsSql } = require('../services/reactionService');
+const { reactionColumnsSql, mediaColumnSql } = require('../services/reactionService');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 
@@ -20,6 +20,7 @@ async function getPostsByHashtag(req, res) {
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
+        ${mediaColumnSql()},
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me
       FROM post_hashtags
       JOIN hashtags ON hashtags.id = post_hashtags.hashtag_id

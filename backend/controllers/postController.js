@@ -1,5 +1,5 @@
 const db = require('../db');
-const { reactionColumnsSql } = require('../services/reactionService');
+const { reactionColumnsSql, mediaColumnSql } = require('../services/reactionService');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const blockService = require('../services/blockService');
@@ -12,14 +12,26 @@ async function createPost(req, res) {
     if (!content || content.trim() === '') {
       return res.status(400).send('Post content cannot be empty');
     }
-    const imageUrl = req.cloudinaryResult ? req.cloudinaryResult.secure_url : null;
+    // B2: every uploaded image, in the order sent (see uploadManyToCloudinary).
+    const imageUrls = (req.cloudinaryResults || []).map((r) => r.secure_url);
+    // One statement inserts the post AND its post_media rows, so a post can
+    // never exist with only some of its images. posts.image_url mirrors the
+    // first image for older readers (see migration 017).
     const result = await db.query(
-      'INSERT INTO posts (user_id, content, image_url) VALUES ($1, $2, $3) RETURNING *',
-      [req.userId, content, imageUrl]
+      `WITH new_post AS (
+         INSERT INTO posts (user_id, content, image_url) VALUES ($1, $2, $3) RETURNING *
+       ), new_media AS (
+         INSERT INTO post_media (post_id, url, position)
+         SELECT new_post.id, m.url, (m.ord - 1)::smallint
+         FROM new_post, unnest($4::text[]) WITH ORDINALITY AS m(url, ord)
+       )
+       SELECT * FROM new_post`,
+      [req.userId, content, imageUrls[0] || null, imageUrls]
     );
-    await hashtagService.syncPostHashtags(result.rows[0].id, content);
-    await mentionService.notifyMentions({ content, authorId: req.userId, postId: result.rows[0].id });
-    res.status(201).json(result.rows[0]);
+    const post = { ...result.rows[0], media: imageUrls.map((url) => ({ url })) };
+    await hashtagService.syncPostHashtags(post.id, content);
+    await mentionService.notifyMentions({ content, authorId: req.userId, postId: post.id });
+    res.status(201).json(post);
   } catch (err) {
     sendServerError(res, err, 'Create post failed. Please try again later.');
   }
@@ -42,6 +54,7 @@ async function getPosts(req, res) {
       SELECT posts.id, posts.content, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
+        ${mediaColumnSql()},
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me
       FROM posts
@@ -88,6 +101,7 @@ async function getFeed(req, res) {
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
+        ${mediaColumnSql()},
         EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
         EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = posts.user_id AND follows.status = 'accepted') AS is_following
       FROM posts
@@ -138,6 +152,7 @@ async function getPost(req, res) {
         (SELECT COUNT(*)::int FROM comments WHERE comments.post_id = posts.id) AS comment_count,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
+        ${mediaColumnSql()},
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted') AS viewer_is_follower
       FROM posts

@@ -13,6 +13,27 @@ function setupTestApp() {
     query: (...args) => require('./testDb').pool.query(...args)
   }));
 
+  // Never talk to the real Cloudinary account from tests: uploads resolve
+  // instantly with a fake, unique secure_url (numbered in upload order, so
+  // tests can assert ordering). tests/setupEnv.js also blanks the
+  // credentials, so this is belt-and-braces.
+  jest.mock('../../config/cloudinary', () => {
+    let seq = 0;
+    return {
+      uploader: {
+        upload_stream: (options, callback) => ({
+          end: () => {
+            seq += 1;
+            callback(null, {
+              secure_url: `https://res.cloudinary.com/test/image/upload/${options.folder || 'test'}/img${seq}.jpg`,
+              public_id: `${options.folder || 'test'}/img${seq}`
+            });
+          }
+        })
+      }
+    };
+  });
+
   const app = require('../../server');
 
   // Jest gives each test file its own module registry, so each file gets
