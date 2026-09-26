@@ -617,6 +617,32 @@ built and how to re-verify it.
 - Free-tier budget: one always-on service is about 730 of 750 free
   Render hours a month.
 
+### A6 — Security & performance audit ✅
+- **Post visibility has one source of truth:**
+  `backend/services/postVisibilityService.js` → `getVisiblePost(postId,
+  viewerId)`. It returns null for a deactivated author, a block in
+  either direction, or a private account the viewer doesn't follow.
+  Any new route that reads or writes a post by id must call it and
+  answer 404 on null, never 403, so a hidden post's existence isn't
+  confirmed.
+- **Frontend:** calls to post-scoped endpoints must send the token, even
+  on `optionalAuth` routes (comments, search, mentions). Without it the
+  server treats the request as anonymous, so private-account content
+  404s and block filtering is skipped.
+- **Follower/following lists:** owner and accepted followers only for
+  private accounts (`followController.connectionsAccessError`). Counts
+  stay public.
+- **Tests:** `backend/tests/api/visibility.test.js` covers the rules
+  above.
+- **Indexes:** migration 015 adds `conversation_participants(user_id)`
+  plus the FK indexes that account/post delete cascades need. Apply it
+  with `node scripts/run-migration.js migrations/015_add_fk_lookup_indexes.up.sql`.
+  Migrations are plain SQL in a transaction; the runner sends each file
+  as one query, so no `CONCURRENTLY`.
+- **Code splitting:** only `HomeFeed` is eager; every other route is
+  `React.lazy` in `App.jsx`, with `<Suspense>` in `PhoneShell`. Keep new
+  screens lazy.
+
 ---
 
 ## How to use this file

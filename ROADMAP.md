@@ -275,7 +275,7 @@ time stays low even after a long idle gap.
   only after dev → master is merged, which is owner-only. See NEEDS OWNER.
 
 ### A6 — Security & performance audit
-**Status:** 🟡 PARTIAL (WIP checkpoint 2026-09-24 — privacy/visibility fixes done; rest of audit remains)
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** every route re-checked for an auth/ownership check where
 needed (backend audit on 2026-09-23 found no missing checks, but this is
 a formal re-pass); no N+1 query patterns in feed/comments/notifications;
@@ -284,57 +284,67 @@ already added several trigram/perf indexes — confirm still sufficient);
 frontend production bundle size reviewed for accidental bloat (same class
 of issue already caught once in `MenuScreen.jsx`'s icon-import choice).
 **Notes:**
-- WIP checkpoint (2026-09-24). Stopped mid-audit on the owner's request.
-- **Done: route inventory.** Listed all 56 routes with their middleware.
-  `/profile/me` is registered before `/profile/:id`, so there's no route
-  shadowing.
-- **Done: shared visibility helper.**
-  `backend/services/postVisibilityService.js` → `getVisiblePost(postId,
-  viewerId)`. It applies the same rules as GET /posts/:id:
-  - deactivated author → hidden;
-  - a block in either direction → hidden;
-  - private account without an accepted follow → hidden.
-  Hidden means 404, never 403, so a direct link doesn't confirm the
-  post exists.
-- **Done: fixed privacy leaks using that helper.**
-  - Before, anyone could like or comment on a post they're not allowed to
-    see (private account, a block, or a deactivated author), and that
-    also sent the author a notification. `POST /posts/:id/like` and
-    `POST /posts/:id/comments` now 404 in those cases.
-  - `POST /posts/:id/bookmark` checked blocks only; it now also covers
-    private and deactivated accounts.
-  - `GET /posts/:id/comments` and `GET /posts/:id/likes` were public with
-    no check at all. They now use `optionalAuth` plus the helper, and
-    comments also hide commenters the viewer has a block with.
-- **Done: follower/following lists gated.** `GET /users/:id/followers`
-  and `/following` exposed private accounts' lists to anyone, logged in
-  or not.
-  - They now take `optionalAuth`. The lists are visible to the owner,
-    plus accepted followers when the account is private.
-  - Private → 403 "This account is private"; deactivated or blocked → 404.
-  - Counts (`/follow-counts`) stay public, as on Instagram.
-  - The frontend doesn't call these list endpoints, so nothing in the UI
-    changed.
-- Tests: 80/80 pass. I updated 3 assertions in `follow.test.js` that read
-  a private account's follower list anonymously; they now read it as the
-  owner, which is the new intended rule.
-- **Remaining:**
-  - `GET /test-db` echoes raw DB error text to the public. The fix is to
-    log it server-side and return a generic message. I drafted it, but the
-    edit was stopped and is not applied.
-  - Finish the ownership re-check of authed routes. Not yet re-read:
-    notifications mark-read (`user_id` scoping), follow-request
-    approve/deny scoping, conversation read/getMessages participant
-    checks, report, profile update.
-  - Add API tests for the new visibility rules: like/comment/bookmark on
-    a private or blocked post → 404; anonymous comments/likes on a
-    private post → 404; private follower list → 403 for a non-follower.
-  - `useMentionAutocomplete` → `searchUsers()` sends no token, so blocked
-    users can appear in @-suggestions. Carried over from A2.
-  - N+1 review of feed/comments/notifications queries.
-  - DB index review against real query patterns (migrations 001/002).
-  - Frontend bundle review: the build warns about a single chunk over
-    500 kB, so code-splitting routes is a candidate.
+- **Route re-pass (all 56 routes).**
+  - Ownership scoping is correct on every authed write: posts, comments,
+    notifications, follow-request approve/deny, conversations (service
+    layer plus participant middleware), reports, profile, block.
+    `/profile/me` is registered before `/profile/:id`, so there's no
+    route shadowing.
+  - The gaps were all *visibility*, not ownership. Fixed:
+    - Like and comment ignored private/block/deactivated rules. Anyone
+      could interact with a post they couldn't see, and the author got
+      notified.
+    - Bookmark checked blocks only.
+    - `GET /posts/:id/comments` and `/likes` were public with no check.
+    - Private accounts' follower/following lists were readable by anyone.
+  - All of these now use `services/postVisibilityService.getVisiblePost`
+    (the same rules as `GET /posts/:id`). The lists use
+    `connectionsAccessError`: owner and accepted followers only; counts
+    stay public.
+  - Also fixed:
+    - `PUT /profile` now validates the email format like signup does.
+    - Changing your email resets `email_verified`, and the frontend
+      re-syncs the verify banner.
+    - `GET /test-db` no longer echoes DB error text.
+    - @-mention suggestions now send the token, so blocked users are no
+      longer suggested.
+  - Regression I caught in my own change: `fetchComments` sent no token,
+    so followers of a private account got a 404 on comments once the
+    visibility check existed. Fixed. A browser check (headless Edge)
+    fails without the fix and passes with it.
+- **N+1:** none. Hashtag and mention writes are batched. Feed and post
+  counts use correlated subqueries backed by indexes. Comments load
+  lazily per post, only when opened, not per feed render.
+- **Indexes: new migration 015.**
+  - `conversation_participants(user_id)`: every socket connect and inbox
+    load was a full scan, because the primary key leads with
+    `conversation_id`.
+  - Foreign-key indexes for the cascades behind account and post
+    deletion: `comments.user_id`, `likes.user_id`,
+    `notifications.actor_id`, `messages.sender_id`, `bookmarks.post_id`.
+  - Verified on a throwaway DB: up → re-up → down → up all work, and
+    EXPLAIN shows an index scan.
+  - **Not applied to production**; that's an owner step (NEEDS OWNER).
+  - 001/002's feed, comment, notification and trigram indexes are still
+    sufficient for the hot read paths.
+- **Bundle.** Per-package breakdown via source-map-explorer: no
+  accidental bloat, and lucide is properly tree-shaken at 17.8 kB. I
+  added route-level code splitting: HomeFeed stays eager, every other
+  screen is `React.lazy`, and PhoneShell's `<Suspense>` keeps the tab bar
+  visible while a screen loads.
+  - First-load JS: 190.5 → 166.1 kB gzipped. The >500 kB chunk warning
+    is gone.
+  - The service worker's network-first runtime cache stores lazy chunks
+    on first visit, so offline behavior is unchanged.
+- **Tests.**
+  - New `tests/api/visibility.test.js` (12 tests). I confirmed they fail
+    against the pre-fix controllers.
+  - Backend 92/92.
+  - A3 visual matrix 120/120 and A2 walkthrough 22/22 (both with lazy
+    loading); eslint clean.
+- Decision logged: a mention in a private account's post still notifies
+  the mentioned user even if they don't follow the account (the author
+  chose to mention them; Instagram behaves the same way). Left as-is.
 
 ---
 
@@ -502,3 +512,8 @@ running app in one pass, with a written pass/fail report per item.
   "Run workflow" once to confirm it goes green. Then, after an idle stretch
   of 30+ min, check that a visit to the site loads quickly (no ~20s cold
   start) and that the run logs show sub-second times. If so, mark A5 ✅.
+- A6 migration 015 on production: back up first, then run
+  `node scripts/run-migration.js migrations/015_add_fk_lookup_indexes.up.sql`
+  from `backend/` with the real DATABASE_URL. It's idempotent (IF NOT
+  EXISTS), and `015_...down.sql` reverts it. (Claude never touches the
+  production DB.)

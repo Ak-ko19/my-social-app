@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import clsx from 'clsx';
 import BottomTabBar from './BottomTabBar';
 import './layout.css';
@@ -20,7 +21,9 @@ import './layout.css';
 function PhoneShell({ children, className, hideTabBar = false }) {
   return (
     <div className={clsx('phone-shell', className)}>
-      {children}
+      {/* Screens are lazy-loaded (App.jsx) -- this fallback only shows on the
+          first visit to a screen, while its chunk downloads. */}
+      <Suspense fallback={<p className="screen-status" role="status">Loading…</p>}>{children}</Suspense>
       {!hideTabBar && <BottomTabBar />}
     </div>
   );
