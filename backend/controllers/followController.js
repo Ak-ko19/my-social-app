@@ -1,6 +1,7 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const blockService = require('../services/blockService');
+const notificationService = require('../services/notificationService');
 
 // Who may see a user's follower/following LISTS (counts stay public, like
 // Instagram): the user themselves, or anyone when the account is public.
@@ -71,10 +72,7 @@ async function followUser(req, res) {
       'INSERT INTO follows (follower_id, following_id, status) VALUES ($1, $2, $3)',
       [req.userId, followingId, status]
     );
-    await db.query(
-      'INSERT INTO notifications (user_id, actor_id, type) VALUES ($1, $2, $3)',
-      [followingId, req.userId, isPrivate ? 'follow_request' : 'follow']
-    );
+    await notificationService.notify({ userId: Number(followingId), actorId: req.userId, type: isPrivate ? 'follow_request' : 'follow' });
     res.status(201).json({ status });
   } catch (err) {
     // Same reasoning as likeController.likePost: follows has a
@@ -205,10 +203,7 @@ async function approveFollowRequest(req, res) {
     // Lets the requester know they're now actually following -- they had
     // no notification at all while pending (only the target was notified,
     // via 'follow_request').
-    await db.query(
-      'INSERT INTO notifications (user_id, actor_id, type) VALUES ($1, $2, $3)',
-      [req.params.followerId, req.userId, 'follow_accepted']
-    );
+    await notificationService.notify({ userId: Number(req.params.followerId), actorId: req.userId, type: 'follow_accepted' });
     res.status(200).send('Follow request approved');
   } catch (err) {
     sendServerError(res, err, 'Approve follow request failed. Please try again later.');

@@ -1,5 +1,6 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const notificationService = require('../services/notificationService');
 const { getPagination } = require('../utils/pagination');
 
 async function getNotifications(req, res) {
@@ -68,4 +69,32 @@ async function markAllAsRead(req, res) {
   }
 }
 
-module.exports = { getNotifications, getUnreadCount, markAsRead, markAllAsRead };
+// B11: GET /notification-preferences -- the five category switches.
+async function getPreferences(req, res) {
+  try {
+    res.json(await notificationService.getPreferences(req.userId));
+  } catch (err) {
+    sendServerError(res, err, 'Loading notification settings failed. Please try again later.');
+  }
+}
+
+// B11: PUT /notification-preferences -- partial; only boolean values for
+// known categories are applied, anything else is a 400.
+async function updatePreferences(req, res) {
+  try {
+    const body = req.body || {};
+    const keys = Object.keys(body);
+    const unknown = keys.filter((k) => !notificationService.CATEGORIES.includes(k));
+    if (keys.length === 0 || unknown.length > 0 || keys.some((k) => typeof body[k] !== 'boolean')) {
+      return res.status(400).send(`Send true/false for any of: ${notificationService.CATEGORIES.join(', ')}`);
+    }
+    res.json(await notificationService.updatePreferences(req.userId, body));
+  } catch (err) {
+    sendServerError(res, err, 'Saving notification settings failed. Please try again later.');
+  }
+}
+
+module.exports = { getNotifications, getUnreadCount, markAsRead, markAllAsRead,
+  getPreferences,
+  updatePreferences
+};

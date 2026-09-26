@@ -211,6 +211,17 @@ CREATE TABLE notifications (
   created_at timestamp DEFAULT now()
 );
 
+-- Added by migration 024_add_notification_preferences (B11).
+CREATE TABLE notification_preferences (
+  user_id integer PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  likes boolean NOT NULL DEFAULT true,
+  comments boolean NOT NULL DEFAULT true,
+  mentions boolean NOT NULL DEFAULT true,
+  follows boolean NOT NULL DEFAULT true,
+  follow_accepted boolean NOT NULL DEFAULT true,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE reports (
   id SERIAL PRIMARY KEY,
   reporter_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,

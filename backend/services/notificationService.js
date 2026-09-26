@@ -1,0 +1,75 @@
+// B11: the ONE place notifications get created, so every type respects the
+// recipient's notification settings (migration 024) and a new type can't
+// forget to. Missing preferences row = everything on.
+const db = require('../db');
+
+// Notification type -> the setting (column) that controls it. Column names
+// come only from this map, never from input, so interpolating them into
+// SQL below is safe.
+const CATEGORY_BY_TYPE = {
+  like: 'likes',
+  comment_like: 'likes',
+  comment: 'comments',
+  reply: 'comments',
+  mention: 'mentions',
+  follow: 'follows',
+  follow_request: 'follows',
+  follow_accepted: 'follow_accepted'
+};
+
+const CATEGORIES = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted'];
+
+function categoryFor(type) {
+  const category = CATEGORY_BY_TYPE[type];
+  if (!category) throw new Error(`Unknown notification type: ${type}`);
+  return category;
+}
+
+// SQL condition "recipient <recipientSql> hasn't turned <category> off".
+function allowedSql(category, recipientSql) {
+  return `NOT EXISTS (
+    SELECT 1 FROM notification_preferences np
+    WHERE np.user_id = ${recipientSql} AND np.${category} = false
+  )`;
+}
+
+// Creates one notification unless the recipient turned that category off
+// (or is the actor -- nobody is notified about their own actions). The
+// preference check and the insert are one statement.
+async function notify({ userId, actorId, type, postId = null, commentId = null }) {
+  if (userId === actorId) return;
+  const category = categoryFor(type);
+  await db.query(
+    `INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id)
+     SELECT $1, $2, $3, $4, $5
+     WHERE ${allowedSql(category, '$1::int')}`,
+    [userId, actorId, type, postId, commentId]
+  );
+}
+
+// { likes, comments, mentions, follows, follow_accepted } -- all true when
+// the user never saved settings.
+async function getPreferences(userId) {
+  const result = await db.query(`SELECT ${CATEGORIES.join(', ')} FROM notification_preferences WHERE user_id = $1`, [userId]);
+  if (result.rows.length === 0) return Object.fromEntries(CATEGORIES.map((c) => [c, true]));
+  return result.rows[0];
+}
+
+// Partial update: only the categories present (as booleans) change.
+async function updatePreferences(userId, changes) {
+  const updates = CATEGORIES.filter((c) => typeof changes[c] === 'boolean');
+  if (updates.length === 0) return getPreferences(userId);
+  const current = await getPreferences(userId);
+  const next = { ...current };
+  for (const c of updates) next[c] = changes[c];
+  await db.query(
+    `INSERT INTO notification_preferences (user_id, ${CATEGORIES.join(', ')}, updated_at)
+     VALUES ($1, ${CATEGORIES.map((_, i) => `$${i + 2}`).join(', ')}, now())
+     ON CONFLICT (user_id) DO UPDATE SET
+       ${CATEGORIES.map((c) => `${c} = EXCLUDED.${c}`).join(', ')}, updated_at = now()`,
+    [userId, ...CATEGORIES.map((c) => next[c])]
+  );
+  return next;
+}
+
+module.exports = { notify, getPreferences, updatePreferences, allowedSql, CATEGORIES, CATEGORY_BY_TYPE };

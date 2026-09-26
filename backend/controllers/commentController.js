@@ -3,6 +3,7 @@ const { sendServerError } = require('../utils/sendError');
 const mentionService = require('../services/mentionService');
 const { getVisiblePost } = require('../services/postVisibilityService');
 const blockService = require('../services/blockService');
+const notificationService = require('../services/notificationService');
 
 async function createComment(req, res) {
   try {
@@ -58,16 +59,10 @@ async function createComment(req, res) {
     // One notification per person: when the post owner is also the one
     // being replied to, they get the more specific 'reply' only.
     if (postOwnerId !== req.userId && !(notifyReply && parentAuthorId === postOwnerId)) {
-      await db.query(
-        'INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id) VALUES ($1, $2, $3, $4, $5)',
-        [postOwnerId, req.userId, 'comment', req.params.id, newCommentId]
-      );
+      await notificationService.notify({ userId: postOwnerId, actorId: req.userId, type: 'comment', postId: post.id, commentId: newCommentId });
     }
     if (notifyReply) {
-      await db.query(
-        'INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id) VALUES ($1, $2, $3, $4, $5)',
-        [parentAuthorId, req.userId, 'reply', req.params.id, newCommentId]
-      );
+      await notificationService.notify({ userId: parentAuthorId, actorId: req.userId, type: 'reply', postId: post.id, commentId: newCommentId });
     }
     await mentionService.notifyMentions({
       content,
@@ -196,10 +191,7 @@ async function likeComment(req, res) {
       [comment.id, req.userId]
     );
     if (inserted.rows.length > 0 && comment.user_id !== req.userId) {
-      await db.query(
-        'INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id) VALUES ($1, $2, $3, $4, $5)',
-        [comment.user_id, req.userId, 'comment_like', comment.post_id, comment.id]
-      );
+      await notificationService.notify({ userId: comment.user_id, actorId: req.userId, type: 'comment_like', postId: comment.post_id, commentId: comment.id });
     }
     res.status(inserted.rows.length > 0 ? 201 : 200).json({ likedByMe: true, likeCount: await commentLikeCount(comment.id) });
   } catch (err) {

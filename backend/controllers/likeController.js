@@ -2,6 +2,7 @@ const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { getVisiblePost } = require('../services/postVisibilityService');
 const reactionService = require('../services/reactionService');
+const notificationService = require('../services/notificationService');
 
 async function likePost(req, res) {
   try {
@@ -26,10 +27,7 @@ async function likePost(req, res) {
     );
     const postOwnerId = post.user_id;
     if (postOwnerId !== req.userId) {
-      await db.query(
-        'INSERT INTO notifications (user_id, actor_id, type, post_id) VALUES ($1, $2, $3, $4)',
-        [postOwnerId, req.userId, 'like', req.params.id]
-      );
+      await notificationService.notify({ userId: postOwnerId, actorId: req.userId, type: 'like', postId: post.id });
     }
     // Returns the authoritative count so the frontend's optimistic UI can
     // reconcile instead of just trusting its own local +1/-1 math.
@@ -99,10 +97,7 @@ async function setReaction(req, res) {
     const inserted = result.rows[0].inserted;
 
     if (inserted && post.user_id !== req.userId) {
-      await db.query(
-        'INSERT INTO notifications (user_id, actor_id, type, post_id) VALUES ($1, $2, $3, $4)',
-        [post.user_id, req.userId, 'like', req.params.id]
-      );
+      await notificationService.notify({ userId: post.user_id, actorId: req.userId, type: 'like', postId: post.id });
     }
 
     const summary = await reactionService.getReactionSummary(req.params.id);

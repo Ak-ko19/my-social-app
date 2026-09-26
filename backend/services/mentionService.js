@@ -3,6 +3,7 @@
 // existing notifications table/shape (user_id, actor_id, type, post_id,
 // comment_id) rather than a new table, same as 'like'/'comment'/'follow'.
 const db = require('../db');
+const { allowedSql } = require('./notificationService');
 
 const MENTION_REGEX = /@(\w+)/g;
 const MAX_USERNAME_LENGTH = 50; // matches users.username's practical length
@@ -36,6 +37,8 @@ async function notifyMentions({ content, authorId, postId, commentId = null, exc
     `SELECT id FROM users
      WHERE LOWER(username) = ANY($1::text[]) AND id != $2
        AND id != ALL($3::int[])
+       -- B11: respect the recipient's notification settings.
+       AND ${allowedSql('mentions', 'users.id')}
        AND NOT EXISTS (
          SELECT 1 FROM blocks
          WHERE (blocker_id = $2 AND blocked_id = users.id)

@@ -40,7 +40,7 @@ const pool = new Pool({ connectionString: TEST_DATABASE_URL });
 // TRUNCATE ... CASCADE (doesn't actually matter with CASCADE, but keeps
 // the list self-documenting as a full inventory of what gets wiped).
 const TABLES = [
-  'messages_dm_legacy', 'reports', 'notifications', 'bookmarks', 'blocks', 'follows',
+  'messages_dm_legacy', 'reports', 'notification_preferences', 'notifications', 'bookmarks', 'blocks', 'follows',
   'likes', 'comment_likes', 'comments', 'conversation_participants', 'messages', 'conversations',
   'post_hashtags', 'hashtags', 'post_media', 'story_views', 'stories', 'posts', 'users'
 ];

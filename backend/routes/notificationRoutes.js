@@ -4,6 +4,9 @@ const authMiddleware = require('../middleware/authMiddleware');
 const notificationController = require('../controllers/notificationController');
 
 router.get('/notifications', authMiddleware, notificationController.getNotifications);
+// B11 notification settings.
+router.get('/notification-preferences', authMiddleware, notificationController.getPreferences);
+router.put('/notification-preferences', authMiddleware, notificationController.updatePreferences);
 router.get('/notifications/unread-count', authMiddleware, notificationController.getUnreadCount);
 router.put('/notifications/read-all', authMiddleware, notificationController.markAllAsRead);
 router.put('/notifications/:id/read', authMiddleware, notificationController.markAsRead);
