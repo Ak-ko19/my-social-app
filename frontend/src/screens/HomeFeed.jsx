@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useFeed } from '../hooks/useFeed';
@@ -10,30 +10,27 @@ import FeedEmptyState from '../components/feed/FeedEmptyState';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import EmailVerificationBanner from '../components/common/EmailVerificationBanner';
 import { useCurrentUserSummary } from '../hooks/useCurrentUserSummary';
+import { useStories } from '../hooks/useStories';
+import StoriesRow from '../components/feed/StoriesRow';
+import StoryViewer from '../components/feed/StoryViewer';
 // Self-imported here (not just relying on Feed.jsx having already loaded
 // it elsewhere in the bundle) since this is the first place FeedList/
 // FeedSkeleton/etc. render outside of Feed.jsx itself -- same "own your
 // styles" reasoning as TopAppBar/Logo importing layout.css directly.
 import '../components/feed/Feed.css';
 
-// Real feed, same as Feed.jsx (/feed): the same useFeed hook, the same
-// FeedList (real pagination/virtualization) rendering real <PostCard
-// post={p} />, and the same loading/error/empty states -- this screen
-// doesn't reimplement any of that, it's the same real data wired into the
-// new layout shell. The composer's avatar stays mock/stubbed as before
-// (no real "current user" fetch wired here yet); only the post feed below
-// it is real. There's no Stories row here at all -- it used to render
-// fake hardcoded people (no /stories API exists anywhere in the backend),
-// which would have shown the same made-up 7 "friends" to every real user.
-// components/feed/StoriesRow.jsx itself is untouched and still a clean,
-// purely prop-driven component -- wiring it back in is a one-line change
-// here whenever a real stories feature/endpoint exists, not a rebuild.
+// Real feed: the shared useFeed hook, FeedList (real pagination/
+// virtualization) rendering real <PostCard post={p} />, plus the real
+// stories tray (B3, useStories + StoriesRow + StoryViewer) above it.
 function HomeFeed() {
   const navigate = useNavigate();
   const location = useLocation();
   const { token } = useAuth();
   const currentUser = useCurrentUserSummary();
   const justReactivated = Boolean(location.state?.reactivated);
+  const stories = useStories(token);
+  // Index into stories.tray of the person whose stories are open, or null.
+  const [openStoryGroup, setOpenStoryGroup] = useState(null);
   const {
     posts,
     loading,
@@ -70,6 +67,23 @@ function HomeFeed() {
         >
           Welcome back! Your account has been reactivated.
         </p>
+      )}
+      <StoriesRow
+        tray={stories.tray}
+        currentUser={currentUser}
+        uploading={stories.uploading}
+        error={stories.error}
+        onAddStory={stories.addStory}
+        onOpenGroup={setOpenStoryGroup}
+      />
+      {openStoryGroup !== null && (
+        <StoryViewer
+          tray={stories.tray}
+          startGroupIndex={openStoryGroup}
+          onClose={() => setOpenStoryGroup(null)}
+          onViewed={stories.markViewed}
+          onDelete={stories.removeStory}
+        />
       )}
       <PostComposer currentUser={currentUser} />
       {feedState === 'loading' && <FeedSkeleton />}

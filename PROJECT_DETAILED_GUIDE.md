@@ -686,6 +686,25 @@ built and how to re-verify it.
 - **Deploy:** run migrations 015 → 016 → 017 before deploying the
   matching backend.
 
+### B3 — Stories ✅
+- **Data:** `stories` (24h `expires_at`) and `story_views` (migration
+  018). Expiry is a query-time filter, so there's no cron. Every read
+  must keep `expires_at > now()`.
+- **API** (`controllers/storiesController.js`):
+  - `POST /stories` (multipart `image`), `GET /stories`,
+    `POST /stories/:id/view`, `DELETE /stories/:id`.
+  - `GET /stories` returns the tray grouped by author:
+    `[{ user_id, username, avatar_url, is_own, all_seen, stories: [...] }]`.
+  - Visibility is self plus accepted follows, minus blocks and
+    deactivated accounts. It lives in one SQL fragment,
+    `VISIBLE_TO_VIEWER_SQL`, so reuse that for any new story query.
+- **Frontend:** `hooks/useStories.js` (tray, add, optimistic seen,
+  delete), `components/feed/StoriesRow.jsx` (tray),
+  `components/feed/StoryViewer.jsx` (full-screen player, portal to
+  body). All mounted by `screens/HomeFeed.jsx`.
+- **Deploy:** migrations 015 → 016 → 017 → 018 before the matching
+  backend.
+
 ---
 
 ## How to use this file

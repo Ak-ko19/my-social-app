@@ -468,12 +468,59 @@ feed and post-detail render a swipeable carousel.
   stay in Cloudinary unreferenced — rare and harmless.
 
 ### B3 — Stories: real backend + UI, auto-expire 24h
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** a `stories` table with `expires_at`, an upload endpoint,
 expiry enforced (query-time filter or cron cleanup), and `StoriesRow.jsx`
 (left intact in Phase 1 specifically for this) wired to the real data
 instead of removed entirely.
-**Notes:** _(none yet)_
+**Notes:**
+- **Schema (migration 018):** `stories(user_id, media_url, created_at,
+  expires_at DEFAULT now()+24h)` plus `story_views(story_id, viewer_id)`
+  for seen state, with cascades and indexes. Verified: up/down/up, and
+  the default expiry is exactly 24h.
+- **Expiry decision: query-time filter** (`expires_at > now()` in every
+  read), not a cron. A story disappears the instant it expires, with no
+  job to run or monitor. Expired rows stay in the table; a periodic
+  prune can be added later if it grows.
+- **API** (all logged-in):
+  - `POST /stories` (one image) and `GET /stories` (the tray, grouped by
+    author: own first, then authors with unseen stories, then newest).
+  - `POST /stories/:id/view` is idempotent. `DELETE /stories/:id` is
+    author-only (403 for anyone else).
+- **Visibility decision: Instagram model.** You see your own stories
+  plus accounts you follow with an accepted follow. A pending request to
+  a private account shows nothing; blocks in either direction and
+  deactivated accounts are excluded. One shared SQL condition is used by
+  the tray and the view check, so they can't drift. Hidden or expired
+  stories 404.
+- **UI:**
+  - `StoriesRow` is wired back into Home with real data. Avatars are real
+    buttons; the accent ring means unseen, grey means all seen. "Your
+    story" opens your stories, and the + badge (44px hit area) adds one.
+  - `StoryViewer` (new) is full-screen and always dark. It has progress
+    segments and 5s auto-advance timed from image load. It runs through
+    all stories, then on to the next person, then closes. Left/right tap
+    zones, ←/→ and Esc all work; focus starts on the close button and
+    returns to the opener.
+  - Stories are marked seen when shown (optimistic). Your own stories can
+    be deleted via the confirm dialog, which pauses the timer.
+- **Verified:**
+  - 9 new API tests: expiry, visibility incl. pending/blocked, seen
+    ordering, delete ownership. Backend 117/117.
+  - B3 browser test 16/16 in headless Edge: tray membership and order,
+    auto-advance, tap zones, keyboard, focus in and out, seen state
+    synced to the server, own-story delete, add-story upload
+    (intercepted multipart), 375px full-screen. 0 console errors.
+  - All earlier browser suites (A2, A3, B1, B2) still pass; eslint and
+    build clean.
+- **Deploy order (owner):** run migration 018 before deploying this
+  backend. See NEEDS OWNER.
+- **Not done (out of scope):**
+  - A "who viewed my story" list: the data exists in `story_views`,
+    there's just no endpoint or UI.
+  - Video stories: images only (see the video budget item in NEEDS
+    OWNER).
+  - A cleanup job for expired rows.
 
 ### B4 — Comment replies (nested) + comment likes
 **Status:** ⬜ NOT CHECKED
@@ -626,4 +673,7 @@ running app in one pass, with a written pass/fail report per item.
   Existing likes become "like" reactions automatically.
 - B2 migration 017 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/017_add_post_media.up.sql`
-  (backfills existing single-image posts). Run 015 → 016 → 017 in order.
+  (backfills existing single-image posts).
+- B3 migration 018 on production, **before deploying the new backend**:
+  `node scripts/run-migration.js migrations/018_add_stories.up.sql`.
+  Run all pending migrations in order: 015 → 016 → 017 → 018.

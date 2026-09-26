@@ -18,6 +18,7 @@
 }
 
 .stories-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -25,12 +26,6 @@
   flex: 0 0 64px;
 }
 
-.stories-plus-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-}
 
 .stories-label {
   font-size: 10.5px;
@@ -40,4 +35,60 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 64px;
+}
+
+/* B3: each avatar is a real button (keyboard/screen-reader reachable). */
+.stories-avatar-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.stories-avatar-btn:focus-visible,
+.stories-add-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.stories-avatar-btn:disabled,
+.stories-add-btn:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+/* The + badge on Your story -- its own button so it can add a story even
+   when tapping the avatar opens your existing ones. 24px visual, with an
+   invisible 44px hit area via the ::after below. */
+.stories-add-btn {
+  position: absolute;
+  top: 38px;
+  left: 42px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 2px solid var(--color-surface);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.stories-add-btn::after {
+  content: '';
+  position: absolute;
+  inset: -11px;
+}
+
+.stories-error {
+  flex: 0 0 auto;
+  align-self: center;
+  margin: 0 var(--space-4) 0 0;
+  max-width: 180px;
+  font-size: 12px;
+  color: var(--color-accent-3);
 }
