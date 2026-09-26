@@ -24,6 +24,7 @@ const hashtagRoutes = require('./routes/hashtagRoutes');
 const storyRoutes = require('./routes/storyRoutes');
 const userPostsRoutes = require('./routes/userPostsRoutes');
 const exploreRoutes = require('./routes/exploreRoutes');
+const suggestionRoutes = require('./routes/suggestionRoutes');
 
 const app = express();
 const PORT = 3000;
@@ -71,6 +72,8 @@ app.get('/test-db', async (req, res) => {
   }
 });
 
+// Before followRoutes/userPostsRoutes: literal /users/suggestions must win over /users/:id/... patterns.
+app.use(suggestionRoutes);
 app.use(authRoutes);
 app.use(profileRoutes);
 app.use(postRoutes);
