@@ -149,6 +149,12 @@ async function login(req, res) {
       return res.status(401).send('Invalid email or password');
     }
 
+    // B12: checked BEFORE the auto-reactivation below -- a ban also sets
+    // is_deactivated, and logging in must not undo it.
+    if (user.banned_at) {
+      return res.status(403).send('This account has been banned');
+    }
+
     // A deactivated account reactivates the moment its owner successfully
     // logs back in -- that's the entire "how do I undo a deactivation" flow
     // (no separate reactivate endpoint), so this only runs after the

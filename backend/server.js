@@ -25,6 +25,7 @@ const storyRoutes = require('./routes/storyRoutes');
 const userPostsRoutes = require('./routes/userPostsRoutes');
 const exploreRoutes = require('./routes/exploreRoutes');
 const suggestionRoutes = require('./routes/suggestionRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 const PORT = 3000;
@@ -40,6 +41,14 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 app.use(express.json());
+// Express 5 leaves req.body undefined when a request has no body; every
+// handler here reads req.body.x or destructures it, which would then throw
+// (a 500 instead of the handler's own 400). Default it to {} once, here.
+// (multer sets req.body itself on multipart routes, after this runs.)
+app.use((req, res, next) => {
+  if (req.body === undefined) req.body = {};
+  next();
+});
 app.use(cors({
   origin: (origin, callback) => {
     // No Origin header means a non-browser caller (curl, server-to-server,
@@ -90,6 +99,7 @@ app.use(hashtagRoutes);
 app.use(storyRoutes);
 app.use(userPostsRoutes);
 app.use(exploreRoutes);
+app.use(adminRoutes);
 
 // Handle multer upload errors (wrong file type, too large) with a clear message
 app.use((err, req, res, next) => {

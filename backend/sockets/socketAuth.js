@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
+const { isBanned } = require('../services/accountStatusService');
 
 // Socket.io handshake middleware -- mirrors middleware/authMiddleware.js, but
 // reads the token from handshake.auth (set by the client as
@@ -18,7 +19,7 @@ function authFailure(message) {
   return err;
 }
 
-function socketAuthMiddleware(socket, next) {
+async function socketAuthMiddleware(socket, next) {
   const token = socket.handshake.auth?.token;
   if (!token) {
     return next(authFailure('No token provided'));
@@ -29,6 +30,11 @@ function socketAuthMiddleware(socket, next) {
     // this app issues has one -- see authController's jwt.sign), throwing
     // TokenExpiredError for an expired one, which lands in this same catch.
     const decoded = jwt.verify(token, JWT_SECRET);
+    // B12: same code as a dead token, so the client stops retrying and
+    // logs out instead of reconnecting forever.
+    if (await isBanned(decoded.userId)) {
+      return next(authFailure('This account has been banned'));
+    }
     socket.userId = decoded.userId;
     next();
   } catch (err) {
