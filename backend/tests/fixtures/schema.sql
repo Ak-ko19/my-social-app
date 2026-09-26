@@ -68,6 +68,10 @@ CREATE TABLE conversations (
   user_a_id integer REFERENCES users(id) ON DELETE CASCADE,
   user_b_id integer REFERENCES users(id) ON DELETE CASCADE,
   created_at timestamptz DEFAULT now() NOT NULL,
+  -- Added by migration 023_add_group_chats (B10).
+  name varchar(100),
+  created_by integer REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT chk_conversations_group_name CHECK (type <> 'group' OR (name IS NOT NULL AND length(btrim(name)) > 0)),
   CONSTRAINT chk_conversations_direct_pair_order CHECK (
     type <> 'direct'
     OR (user_a_id IS NOT NULL AND user_b_id IS NOT NULL AND user_a_id < user_b_id)
@@ -110,6 +114,8 @@ CREATE TABLE conversation_participants (
   user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   joined_at timestamptz DEFAULT now() NOT NULL,
   last_read_message_id integer REFERENCES messages(id) ON DELETE SET NULL,
+  -- Added by migration 023_add_group_chats (B10).
+  role varchar(10) DEFAULT 'member' NOT NULL CONSTRAINT chk_participants_role CHECK (role IN ('admin', 'member')),
   PRIMARY KEY (conversation_id, user_id)
 );
 

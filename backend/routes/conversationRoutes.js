@@ -4,9 +4,16 @@ const authMiddleware = require('../middleware/authMiddleware');
 const requireConversationParticipant = require('../middleware/requireConversationParticipant');
 const { upload, uploadAudio, uploadToCloudinary } = require('../middleware/cloudinaryUpload');
 const conversationController = require('../controllers/conversationController');
+const groupController = require('../controllers/groupController');
 
 router.get('/conversations', authMiddleware, conversationController.getConversations);
 router.post('/conversations', authMiddleware, conversationController.createConversation);
+// B10 group chat.
+router.post('/conversations/groups', authMiddleware, groupController.createGroup);
+router.get('/conversations/:id', authMiddleware, groupController.getConversationDetails);
+router.patch('/conversations/:id', authMiddleware, groupController.renameGroup);
+router.post('/conversations/:id/members', authMiddleware, groupController.addMembers);
+router.delete('/conversations/:id/members/:userId', authMiddleware, groupController.removeMember);
 router.get('/conversations/:id/messages', authMiddleware, conversationController.getMessages);
 router.post('/conversations/:id/messages', authMiddleware, conversationController.sendMessage);
 router.post(

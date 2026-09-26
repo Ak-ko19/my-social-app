@@ -28,6 +28,7 @@ async function getConversations(req, res) {
           ELSE lm.content
         END AS last_message,
         lm.created_at AS last_message_at,
+        COALESCE(lm.created_at, c.created_at) AS activity_at,
         COALESCE(unread.count, 0)::int AS unread_count
       FROM conversation_participants cp
       JOIN conversations c ON c.id = cp.conversation_id AND c.type = 'direct'
@@ -62,10 +63,58 @@ async function getConversations(req, res) {
     // in SQL.
     const rows = result.rows.map((row) => ({
       ...row,
+      type: 'direct',
       is_online: presence.isOnline(row.other_user_id)
     }));
 
-    res.json(rows);
+    // B10 group conversations. Same row shape as direct ones (so the inbox
+    // renders them unchanged: `username` carries the group name), plus
+    // type/name/member_count. The preview names the sender -- in a group
+    // "who said it" matters.
+    const groups = await db.query(`
+      SELECT
+        c.id AS conversation_id,
+        'group' AS type,
+        c.name,
+        c.name AS username,
+        NULL::int AS other_user_id,
+        NULL AS avatar_url,
+        (SELECT COUNT(*)::int FROM conversation_participants m WHERE m.conversation_id = c.id) AS member_count,
+        lm.id AS last_message_id,
+        CASE
+          WHEN lm.id IS NULL THEN NULL
+          ELSE (CASE WHEN lm.sender_id = $1 THEN 'You' ELSE sender.username END) || ': ' ||
+            CASE
+              WHEN lm.deleted_at IS NOT NULL THEN 'This message was deleted'
+              WHEN lm.type = 'voice' THEN 'Voice message'
+              WHEN lm.type = 'image' THEN COALESCE('Photo: ' || NULLIF(lm.content, ''), 'Photo')
+              ELSE lm.content
+            END
+        END AS last_message,
+        lm.created_at AS last_message_at,
+        COALESCE(lm.created_at, c.created_at) AS activity_at,
+        COALESCE(unread.count, 0)::int AS unread_count
+      FROM conversation_participants cp
+      JOIN conversations c ON c.id = cp.conversation_id AND c.type = 'group'
+      LEFT JOIN LATERAL (
+        SELECT id, sender_id, content, type, created_at, deleted_at
+        FROM messages m WHERE m.conversation_id = c.id
+        ORDER BY m.created_at DESC, m.id DESC LIMIT 1
+      ) lm ON true
+      LEFT JOIN users sender ON sender.id = lm.sender_id
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*) AS count FROM messages m
+        WHERE m.conversation_id = c.id AND m.sender_id != $1 AND m.deleted_at IS NULL
+          AND (cp.last_read_message_id IS NULL OR m.id > cp.last_read_message_id)
+      ) unread ON true
+      WHERE cp.user_id = $1
+    `, [req.userId]);
+
+    const all = [...rows, ...groups.rows.map((g) => ({ ...g, is_online: false }))];
+    // Most recent activity first (a conversation with no messages yet sorts
+    // by when it was created), same order the direct-only query used.
+    all.sort((x, y) => new Date(y.activity_at) - new Date(x.activity_at));
+    res.json(all);
   } catch (err) {
     sendServerError(res, err, 'Fetch conversations failed. Please try again later.');
   }

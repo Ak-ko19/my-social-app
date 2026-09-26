@@ -81,9 +81,13 @@ async function isParticipant(conversationId, userId) {
   return result.rows.length > 0;
 }
 
-// Only meaningful for direct (2-participant) conversations, the only kind
-// this app creates today -- same assumption conversationController.
-// getConversations already documents making.
+// B10: 'direct' | 'group' | null (no such conversation).
+async function getConversationType(conversationId) {
+  const result = await db.query('SELECT type FROM conversations WHERE id = $1', [conversationId]);
+  return result.rows[0]?.type ?? null;
+}
+
+// Only meaningful for direct (2-participant) conversations.
 async function getOtherParticipantId(conversationId, userId) {
   const result = await db.query(
     'SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2 LIMIT 1',
@@ -96,7 +100,12 @@ async function getOtherParticipantId(conversationId, userId) {
 // a block placed AFTER an existing conversation was created still takes
 // effect immediately -- old messages stay visible, but no new ones can be
 // sent in either direction once either side has blocked the other.
+//
+// B10: groups are exempt (WhatsApp-style) -- a block between two members
+// doesn't silence the whole group; instead groupController refuses to put
+// blocked pairs into the same group in the first place.
 async function assertNotBlocked(conversationId, senderId) {
+  if ((await getConversationType(conversationId)) === 'group') return;
   const otherUserId = await getOtherParticipantId(conversationId, senderId);
   if (otherUserId && (await blockService.isBlocked(senderId, otherUserId))) {
     throw new BlockedError();
@@ -224,6 +233,12 @@ async function markDelivered({ conversationId, userId, messageId }) {
     throw new NotParticipantError();
   }
 
+  // B10: a message has ONE status field, which can't honestly describe
+  // many recipients -- group messages stay 'sent' (no ticks), like most
+  // apps without per-member receipts. Unread counts still work per member
+  // via last_read_message_id.
+  if ((await getConversationType(convId)) === 'group') return null;
+
   const result = await db.query(
     `UPDATE messages
      SET status = 'delivered'
@@ -273,6 +288,10 @@ async function markRead({ conversationId, userId, upToMessageId }) {
        AND (last_read_message_id IS NULL OR last_read_message_id < $1)`,
     [threshold, convId, userId]
   );
+
+  if ((await getConversationType(convId)) === 'group') {
+    return { lastReadMessageId: threshold, updatedMessageIds: [] };
+  }
 
   const updated = await db.query(
     `UPDATE messages SET status = 'read'
@@ -463,6 +482,7 @@ module.exports = {
   markRead,
   deleteMessage,
   isParticipant,
+  getConversationType,
   sanitizeContent,
   scrubDeletedContent,
   MessageValidationError,

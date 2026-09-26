@@ -41,6 +41,12 @@ function initSocket(httpServer) {
   io.use(socketAuthMiddleware);
 
   io.on('connection', (socket) => {
+    // B10: a personal room, joined synchronously (before any await), so
+    // group membership changes can move this user's live sockets into/out
+    // of a conversation room via io.in(`user_<id>`).socketsJoin/socketsLeave
+    // without a reconnect.
+    socket.join(`user_${socket.userId}`);
+
     // Listeners are attached synchronously, before the async room-join below
     // ever awaits -- a client that emits send_message right after 'connect'
     // must not have that event silently dropped while the join is still
