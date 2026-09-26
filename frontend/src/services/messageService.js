@@ -100,3 +100,34 @@ export function sendVoiceMessageRest(conversationId, blob, clientTempId, token, 
     })
     .then((res) => res.data);
 }
+
+// ---------- B10 group chat ----------
+
+// { id, type: 'group', name, members, my_role }
+export function createGroup(name, userIds, token) {
+  return api.post('/conversations/groups', { name, userIds }, authHeaders(token)).then((res) => res.data);
+}
+
+// { id, type, name, created_by, my_role, members: [{ id, username, avatar_url, role }] }
+// Works for direct conversations too (type 'direct', 2 members).
+export function fetchConversationDetails(conversationId, token) {
+  return api.get(`/conversations/${conversationId}`, authHeaders(token)).then((res) => res.data);
+}
+
+export function addGroupMembers(conversationId, userIds, token) {
+  return api.post(`/conversations/${conversationId}/members`, { userIds }, authHeaders(token)).then((res) => res.data);
+}
+
+// Removing yourself = leaving the group.
+export function removeGroupMember(conversationId, userId, token) {
+  return api.delete(`/conversations/${conversationId}/members/${userId}`, authHeaders(token)).then((res) => res.data);
+}
+
+export function renameGroup(conversationId, name, token) {
+  return api.patch(`/conversations/${conversationId}`, { name }, authHeaders(token)).then((res) => res.data);
+}
+
+// People you can add to a group: the accounts you follow.
+export function fetchMyFollowing(userId, token) {
+  return api.get(`/users/${userId}/following`, authHeaders(token)).then((res) => res.data);
+}

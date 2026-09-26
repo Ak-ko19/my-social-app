@@ -63,6 +63,7 @@ function MessageBubble({
   message,
   isOwn,
   replyAuthorLabel,
+  senderName,
   isEditing,
   onRetry,
   onRetryVoice,
@@ -173,6 +174,8 @@ function MessageBubble({
             &times;
           </button>
         )}
+        {/* B10: in a group, others' bubbles say who sent them. */}
+        {senderName && <span className="messages-sender-name">{senderName}</span>}
         {message.reply_to && !isDeleted && (
           <div className="messages-reply-quote">
             <span className="messages-reply-quote-author">{replyAuthorLabel(message.reply_to.sender_id)}</span>

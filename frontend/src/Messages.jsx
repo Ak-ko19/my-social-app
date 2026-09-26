@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Users } from 'lucide-react';
 import { IconButton } from './components/ui';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useAuth } from './hooks/useAuth';
@@ -57,6 +57,9 @@ function Messages() {
       <header className="screen-header">
         <IconButton icon={ChevronLeft} aria-label="Back to Home" onClick={() => navigate('/')} />
         <h1 className="screen-header-title">Messages</h1>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={() => navigate('/messages/new-group')}>
+          <Users size={14} aria-hidden="true" /> New group
+        </button>
       </header>
       <div className="screen-body">
       <ConnectionBanner />

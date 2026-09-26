@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useSocket } from './hooks/useSocket';
@@ -6,10 +6,10 @@ import { useConversationMessages } from './hooks/useConversationMessages';
 import { usePresenceEvents } from './hooks/usePresenceEvents';
 import { useTypingIndicator } from './hooks/useTypingIndicator';
 import { VoicePlaybackProvider } from './context/VoicePlaybackProvider';
-import { fetchConversations } from './services/messageService';
+import { fetchConversations, fetchConversationDetails } from './services/messageService';
 import { formatRelativeTime } from './utils/formatRelativeTime';
 import Avatar from './components/common/Avatar';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Users } from 'lucide-react';
 import { IconButton } from './components/ui';
 import MessageBubble from './components/messages/MessageBubble';
 import MessageComposer from './components/messages/MessageComposer';
@@ -68,10 +68,22 @@ function Conversation() {
     setEditingId(messageId);
   }, []);
   const handleCancelEdit = useCallback(() => setEditingId(null), []);
+  // B10: conversation details (type, group name, members + roles). Fetched
+  // for every conversation (cheap); groups use it for the header, sender
+  // names and typing names. Refetched when the group changes (group_updated).
+  const [details, setDetails] = useState(null);
+  const [detailsError, setDetailsError] = useState('');
+  const isGroup = details?.type === 'group';
+  const membersById = useMemo(() => new Map((details?.members || []).map((m) => [m.id, m])), [details]);
+
   const otherUsername = headerInfo?.username;
   const replyAuthorLabel = useCallback(
-    (senderId) => (senderId === userId ? 'You' : otherUsername || 'Them'),
-    [userId, otherUsername]
+    (senderId) => {
+      if (senderId === userId) return 'You';
+      if (isGroup) return membersById.get(senderId)?.username || 'Someone';
+      return otherUsername || 'Them';
+    },
+    [userId, otherUsername, isGroup, membersById]
   );
   const handleSaveEdit = useCallback(
     (messageId, content) => {
@@ -83,6 +95,37 @@ function Conversation() {
   const { socket } = useSocket();
   const { isOnline } = usePresenceEvents();
   const typingUserIds = useTypingIndicator(conversationId);
+
+  const loadDetails = useCallback(() => {
+    if (!token) return;
+    fetchConversationDetails(conversationId, token)
+      .then((data) => {
+        setDetails(data);
+        setDetailsError('');
+      })
+      .catch((err) => {
+        // 403 = you were removed from (or left) this group meanwhile -- an
+        // expected state, shown as a notice rather than logged as an error.
+        if (err.response?.status === 403) {
+          setDetailsError("You're no longer in this conversation.");
+          return;
+        }
+        console.error(err);
+      });
+  }, [conversationId, token]);
+
+  useEffect(() => {
+    loadDetails();
+  }, [loadDetails]);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+    const onGroupUpdated = ({ conversationId: cid }) => {
+      if (String(cid) === String(conversationId)) loadDetails();
+    };
+    socket.on('group_updated', onGroupUpdated);
+    return () => socket.off('group_updated', onGroupUpdated);
+  }, [socket, conversationId, loadDetails]);
 
   const containerRef = useRef(null);
   const isNearBottomRef = useRef(true);
@@ -205,13 +248,40 @@ function Conversation() {
     }
   };
 
-  const otherIsOnline = headerInfo ? isOnline(headerInfo.other_user_id, headerInfo.is_online) : false;
-  const isOtherTyping = headerInfo ? typingUserIds.has(headerInfo.other_user_id) : false;
+  const otherIsOnline = !isGroup && headerInfo ? isOnline(headerInfo.other_user_id, headerInfo.is_online) : false;
+  const isOtherTyping = !isGroup && headerInfo ? typingUserIds.has(headerInfo.other_user_id) : false;
+  // Groups: name whoever is typing (1: "alice is", 2: "alice and bob are", 3+: "several people are").
+  const typingNames = isGroup
+    ? [...typingUserIds].filter((id) => id !== userId).map((id) => membersById.get(id)?.username).filter(Boolean)
+    : [];
+  const groupTypingText =
+    typingNames.length === 0 ? null
+      : typingNames.length === 1 ? `${typingNames[0]} is typing…`
+        : typingNames.length === 2 ? `${typingNames[0]} and ${typingNames[1]} are typing…`
+          : 'Several people are typing…';
 
   return (
     <div className="conversation-screen">
       <header className="screen-header conversation-header">
         <IconButton icon={ChevronLeft} aria-label="Back to Messages" onClick={() => navigate('/messages')} />
+        {isGroup ? (
+          // B10: the whole group header opens Group info.
+          <button
+            type="button"
+            className="messages-header-button"
+            onClick={() => navigate(`/messages/${conversationId}/info`)}
+            aria-label={`Group info: ${details.name}, ${details.members.length} members`}
+          >
+            <span className="messages-group-avatar" aria-hidden="true">
+              <Users size={20} />
+            </span>
+            <span className="conversation-header-text">
+              <span className="screen-header-title">{details.name}</span>
+              <small className="messages-header-status">{details.members.length} members · tap for info</small>
+            </span>
+          </button>
+        ) : (
+          <>
         {headerInfo && (
           <span className="messages-avatar-wrap">
             <Avatar src={headerInfo.avatar_url} size={40} alt={`${headerInfo.username}'s profile picture`} />
@@ -230,7 +300,15 @@ function Conversation() {
             </small>
           )}
         </div>
+          </>
+        )}
       </header>
+
+      {detailsError && (
+        <p className="form-error conversation-notice" role="alert">
+          {detailsError}
+        </p>
+      )}
 
       <ConnectionBanner />
 
@@ -263,6 +341,7 @@ function Conversation() {
                 onRetryImage={retryImageSend}
                 onDelete={deleteMessage}
                 replyAuthorLabel={replyAuthorLabel}
+                senderName={isGroup && message.sender_id !== userId ? membersById.get(message.sender_id)?.username || 'Former member' : null}
                 isEditing={editingId === message.id}
                 onReply={handleReply}
                 onStartEdit={handleStartEdit}
@@ -277,6 +356,11 @@ function Conversation() {
       {isOtherTyping && (
         <p className="messages-typing-indicator" role="status">
           {headerInfo?.username || 'Someone'} is typing…
+        </p>
+      )}
+      {groupTypingText && (
+        <p className="messages-typing-indicator" role="status">
+          {groupTypingText}
         </p>
       )}
 

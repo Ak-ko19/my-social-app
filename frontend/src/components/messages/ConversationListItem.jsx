@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { Users } from 'lucide-react';
 import Avatar from '../common/Avatar';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 
@@ -21,8 +22,11 @@ function ConversationListItem({ conversation, isOnline = false, onClick }) {
     avatar_url: avatarUrl,
     last_message: lastMessage,
     last_message_at: lastMessageAt,
-    unread_count: unreadCount
+    unread_count: unreadCount,
+    type,
+    member_count: memberCount
   } = conversation;
+  const isGroup = type === 'group';
 
   const hasUnread = unreadCount > 0;
 
@@ -33,13 +37,23 @@ function ConversationListItem({ conversation, isOnline = false, onClick }) {
       onClick={onClick}
     >
       <span className="messages-avatar-wrap">
-        <Avatar src={avatarUrl} size={48} alt={`${username}'s profile picture`} />
+        {isGroup ? (
+          // B10: groups have no avatar of their own -- a group glyph instead.
+          <span className="messages-group-avatar" aria-hidden="true">
+            <Users size={22} />
+          </span>
+        ) : (
+          <Avatar src={avatarUrl} size={48} alt={`${username}'s profile picture`} />
+        )}
         {isOnline && <span className="messages-online-dot" aria-label="Online" />}
       </span>
 
       <span className="messages-body">
         <span className="messages-top-row">
-          <span className="messages-name">{username}</span>
+          <span className="messages-name">
+            {username}
+            {isGroup && <span className="messages-member-count"> · {memberCount} members</span>}
+          </span>
           {lastMessageAt && (
             <time
               className="messages-time"

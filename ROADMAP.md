@@ -840,13 +840,83 @@ again; edit and reply-to are net-new.
   See NEEDS OWNER.
 
 ### B10 — Group chat
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** conversations reliably support more than 2 participants,
 plus group-specific UI (name, member list, add/remove member).
-**Notes:** the existing `conversation_participants` join-table design
-(confirmed via FK audit 2026-09-23) may already be structurally
-multi-participant-capable — verify before assuming new schema work is
-needed here.
+**Notes:**
+- **CHECK result: PARTIAL, as the note predicted.** `conversation_type`
+  already had 'group' and `conversation_participants` was a real
+  many-to-many table. Groups still lacked a name, roles, an API, inbox
+  rows and UI, and several code paths assumed "the other participant".
+- **Schema (migration 023):** `conversations.name` (required for groups
+  via a CHECK) and `created_by`, plus `conversation_participants.role`
+  (admin/member, default member). Verified: existing direct chats
+  untouched, an unnamed group rejected, down removes groups and keeps
+  direct chats, then up again.
+- **API** (`controllers/groupController.js`):
+  - `POST /conversations/groups` creates the group (conversation and
+    participants in one statement). The creator becomes admin.
+  - `GET /conversations/:id` returns details and members; it also works
+    for direct chats.
+  - `PATCH /conversations/:id` renames (admins only).
+  - `POST /conversations/:id/members` adds people (admins only).
+  - `DELETE /conversations/:id/members/:userId` removes someone (admins)
+    or lets you leave.
+- **Decisions:**
+  - At most 50 members. You can't add blocked (either direction) or
+    deactivated users.
+  - **A block between two members doesn't silence the group**
+    (WhatsApp-style); blocked pairs just can't be put together.
+  - The last admin leaving promotes the longest-standing member, and
+    the last member leaving deletes the group.
+  - **No delivered/read ticks in groups:** one status field can't
+    describe many readers, so group messages stay 'sent'. Unread counts
+    still work per member.
+- **Realtime:**
+  - Each socket now joins a personal `user_<id>` room on connect, so
+    add/remove moves live sockets into and out of the group room without
+    a reconnect.
+  - A `group_updated` event refreshes open chats and info screens.
+  - Someone removed by an admin is notified; someone who leaves
+    voluntarily isn't. That was a fix: notifying yourself caused a
+    needless 403 refetch.
+- **Inbox:** groups are listed alongside direct chats, with the group
+  name, member count and a sender-prefixed preview ("alice: hi", "You:
+  hello!"). They're ordered by latest activity, with a fix to preserve
+  the old ordering for empty chats.
+- **UI:**
+  - A "New group" button on Messages leads to `/messages/new-group`
+    (name plus a picker over the people you follow, with a filter and
+    native checkboxes).
+  - The chat header shows the group glyph, name and "N members", and
+    taps through to `/messages/:id/info`.
+  - Group info shows members and roles; admins can rename, add (existing
+    members shown as "In group") and remove, with confirmation; anyone
+    can leave, with confirmation.
+  - Bubbles show the sender's name; reply quotes and "X is typing" use
+    member names.
+  - If you've been removed while a chat is open, it shows "You're no
+    longer in this conversation".
+- **Verified:**
+  - 13 new API tests: create and its validation, the 50 cap on create
+    and add (with 50 real users so the *cap* is what rejects), messaging
+    and non-member refusal, a block not silencing the group, no
+    misleading ticks, per-member unread counts, inbox rows, admin-only
+    actions, removal revoking access, admin handover, deletion on last
+    leave, rename, direct chats refused by group endpoints. Backend
+    184/184.
+  - B10 browser test 14/14, stable across 3 consecutive runs, 0 console
+    errors: create from the UI, live messages with sender names, info,
+    rename, remove → 403, picker re-add, a live update while another
+    member leaves, inbox row, leave → handover, 375px dark.
+  - The A3 matrix now includes `/messages/new-group`: 138/138. All
+    earlier suites green; eslint and build clean.
+- **Deploy order (owner):** migration 023 before this backend. See NEEDS
+  OWNER.
+- **Not done:**
+  - No system messages in the thread ("alice added bob").
+  - No group avatar upload (a group glyph is shown instead).
+  - No per-member read receipts.
 
 ### B11 — Notification settings (choose which to receive)
 **Status:** ⬜ NOT CHECKED
@@ -951,10 +1021,12 @@ running app in one pass, with a written pass/fail report per item.
   (backfills existing single-image posts).
 - B3 migration 018 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/018_add_stories.up.sql`.
-  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022.
+  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023.
 - B4 migration 019 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/019_add_comment_replies_likes.up.sql`.
 - B5 migration 020 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/020_add_post_visibility.up.sql`.
 - B9 migrations 021 **then** 022 on production, before deploying the new
   backend (021 must be its own run -- see its header comment).
+- B10 migration 023 on production, before deploying the new backend:
+  `node scripts/run-migration.js migrations/023_add_group_chats.up.sql`.

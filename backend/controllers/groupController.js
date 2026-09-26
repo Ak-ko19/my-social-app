@@ -218,7 +218,9 @@ async function removeMember(req, res) {
         [conversationId, heir.id]
       );
     }
-    emitGroupUpdated(conversationId, [targetId]);
+    // Someone removed by an admin is told too (their open chat then shows
+    // "no longer in this conversation"); someone who left did it themselves.
+    emitGroupUpdated(conversationId, leaving ? [] : [targetId]);
     res.json({ members: await getMembers(conversationId), deleted: false });
   } catch (err) {
     handle(res, err, 'Updating the group failed. Please try again later.');

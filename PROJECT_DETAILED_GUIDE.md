@@ -802,6 +802,29 @@ built and how to re-verify it.
   - `MessageComposer` has the reply bar and the photo button.
 - **Deploy:** migrations through 022 before the matching backend.
 
+### B10 — Group chat ✅
+- **Data:** `conversations.type = 'group'` with `name` and `created_by`,
+  plus `conversation_participants.role` (migration 023). Direct chats
+  are unchanged.
+- **API:** `controllers/groupController.js`: create, details, rename,
+  add and remove/leave. Rules are in its header comment: 50-member cap,
+  no blocked or deactivated members, admin handover, and deletion when
+  empty.
+- **Group-aware code paths:**
+  - `messageService.assertNotBlocked` skips groups.
+  - `markDelivered`/`markRead` skip per-message status for groups.
+  - `getConversations` returns both kinds.
+  - `getConversationType()` is the helper to use for any new check.
+- **Realtime:** each socket joins `user_<id>`, and `syncRooms` moves
+  members' sockets in and out of `conv_<id>` rooms. `group_updated` tells
+  clients to refetch details.
+- **Frontend:**
+  - `screens/CreateGroupScreen.jsx`, `screens/GroupInfoScreen.jsx` and
+    `components/messages/MemberPicker.jsx`.
+  - `Conversation.jsx` fetches details (`fetchConversationDetails`) for
+    the group header, sender names and typing names.
+- **Deploy:** migrations through 023 before the matching backend.
+
 ---
 
 ## How to use this file
