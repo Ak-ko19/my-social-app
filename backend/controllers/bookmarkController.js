@@ -55,7 +55,7 @@ async function getBookmarks(req, res) {
     // the same block-filtering as getFeed -- a saved post from someone you
     // later blocked (or who blocked you) shouldn't keep showing up here.
     const result = await db.query(`
-      SELECT posts.id, posts.content, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url,
+      SELECT posts.id, posts.content, posts.visibility, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url,
         bookmarks.created_at AS bookmarked_at,
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
@@ -72,7 +72,7 @@ async function getBookmarks(req, res) {
              OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
         )
         AND (
-          NOT users.is_private
+          (NOT users.is_private AND posts.visibility = 'public')
           OR users.id = $1
           OR EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted')
         )

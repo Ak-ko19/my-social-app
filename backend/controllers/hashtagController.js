@@ -16,7 +16,7 @@ async function getPostsByHashtag(req, res) {
     // getPosts -- this is a filtered view of the public post stream, not a
     // separate feature with its own visibility rules.
     const result = await db.query(`
-      SELECT posts.id, posts.content, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url,
+      SELECT posts.id, posts.content, posts.visibility, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url,
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
@@ -33,7 +33,7 @@ async function getPostsByHashtag(req, res) {
              OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
         ))
         AND (
-          NOT users.is_private
+          (NOT users.is_private AND posts.visibility = 'public')
           OR users.id = $1
           OR EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted')
         )

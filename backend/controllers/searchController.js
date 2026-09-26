@@ -37,7 +37,7 @@ async function searchPosts(req, res) {
     const viewerId = req.userId ?? null;
 
     const result = await db.query(`
-      SELECT posts.id, posts.content, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url
+      SELECT posts.id, posts.content, posts.visibility, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url
       FROM posts
       JOIN users ON posts.user_id = users.id
       WHERE posts.content ILIKE $1
@@ -47,7 +47,7 @@ async function searchPosts(req, res) {
              OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $4)
         ))
         AND (
-          NOT users.is_private
+          (NOT users.is_private AND posts.visibility = 'public')
           OR users.id = $4
           OR EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $4 AND follows.following_id = users.id AND follows.status = 'accepted')
         )

@@ -4,8 +4,9 @@
 // them identically instead of only checking that the post exists:
 //   1. a deactivated author's posts are visible only to the author;
 //   2. a block in either direction hides the post (mutual invisibility);
-//   3. a private author's posts are visible only to the author and
-//      accepted followers.
+//   3. a private author's posts -- and any post marked visibility =
+//      'followers' (B5) -- are visible only to the author and accepted
+//      followers.
 // Callers answer 404 (not 403) when this returns null, same as getPost,
 // so a direct link never confirms that a hidden post exists.
 const db = require('../db');
@@ -15,7 +16,7 @@ const blockService = require('./blockService');
 // or the viewer (null = logged out) isn't allowed to see it.
 async function getVisiblePost(postId, viewerId) {
   const result = await db.query(
-    `SELECT posts.id, posts.user_id,
+    `SELECT posts.id, posts.user_id, posts.visibility,
        users.is_private, users.is_deactivated,
        $2::int IS NOT NULL AND EXISTS(
          SELECT 1 FROM follows
@@ -34,7 +35,7 @@ async function getVisiblePost(postId, viewerId) {
 
   if (post.is_deactivated) return null;
   if (viewerId != null && (await blockService.isBlocked(viewerId, post.user_id))) return null;
-  if (post.is_private && !post.viewer_is_follower) return null;
+  if ((post.is_private || post.visibility === 'followers') && !post.viewer_is_follower) return null;
 
   return { id: post.id, user_id: post.user_id };
 }

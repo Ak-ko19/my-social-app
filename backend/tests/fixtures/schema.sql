@@ -42,7 +42,10 @@ CREATE TABLE posts (
   user_id integer REFERENCES users(id) ON DELETE CASCADE,
   content text NOT NULL,
   created_at timestamp DEFAULT CURRENT_TIMESTAMP,
-  image_url text
+  image_url text,
+  -- Added by migration 020_add_post_visibility (B5).
+  visibility varchar(10) DEFAULT 'public' NOT NULL
+    CONSTRAINT chk_posts_visibility CHECK (visibility IN ('public', 'followers'))
 );
 
 CREATE TABLE hashtags (
