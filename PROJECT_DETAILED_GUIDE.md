@@ -737,6 +737,22 @@ built and how to re-verify it.
   icon; the PostMenu item delegates to PostCard's `toggleVisibility`.
 - **Deploy:** migrations through 020 before the matching backend.
 
+### B6 — Profile tabs ✅
+- **API:** `GET /users/:id/posts?tab=posts|photos|tagged` in
+  `controllers/userPostsController.js`.
+  - "Tagged" = others' posts that @mention the user, built with
+    `mentionPattern(username)`: regex-escaped, word-boundary,
+    case-insensitive.
+  - The same visibility predicate as the feed applies. A private account
+    returns 403 to non-followers.
+- **Saved tab:** the viewer's own `GET /bookmarks`, shown on your own
+  profile only.
+- **Frontend:** `components/profile/ProfileTabs.jsx` (ARIA tabs, photo
+  grid) and `hooks/useProfileTabPosts.js`, mounted in
+  `screens/ProfileScreen.jsx`. The Settings profile row links to
+  `/profile/<your id>`.
+- No migration.
+
 ---
 
 ## How to use this file

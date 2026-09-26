@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Flag, MoreHorizontal, UserX } from 'lucide-react';
 import { Avatar, IconButton, ActionSheet, ConfirmDialog } from '../components/ui';
 import ReportDialog from '../components/feed/ReportDialog';
+import ProfileTabs from '../components/profile/ProfileTabs';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import { useAuth } from '../hooks/useAuth';
 import { fetchProfile } from '../services/profileService';
@@ -206,6 +207,8 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
           </p>
         )}
       </div>
+
+      <ProfileTabs userId={profile.id} username={profile.username} isOwn={isOwnProfile} token={token} />
 
       <ActionSheet
         open={sheetOpen}

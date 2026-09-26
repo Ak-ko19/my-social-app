@@ -9,3 +9,11 @@ function authHeaders(token) {
 export function fetchProfile(idOrUsername, token) {
   return api.get(`/profile/${idOrUsername}`, token ? authHeaders(token) : undefined).then((res) => res.data);
 }
+
+// B6 profile tabs: tab = 'posts' | 'photos' | 'tagged'. A private account
+// the viewer doesn't follow answers 403 (see backend userPostsController).
+export function fetchUserPosts(userId, tab, token, { page = 1, limit = 12 } = {}) {
+  return api
+    .get(`/users/${userId}/posts`, { ...(token ? authHeaders(token) : {}), params: { tab, page, limit } })
+    .then((res) => res.data);
+}

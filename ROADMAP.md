@@ -631,12 +631,58 @@ private-account gating.
   OWNER.
 
 ### B6 — Profile tabs: Posts / Photos / Saved / Tagged
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** `ProfileScreen.jsx` has tabbed navigation, each tab backed
 by a real filtered query. "Tagged" needs a scope decision (tagging people
 in a post/photo isn't the same as an @mention in text — currently only
 text mentions exist).
-**Notes:** _(none yet)_
+**Notes:**
+- **Scope decision: Tagged = @mentioned.** The app has text @mentions,
+  not photo tagging, so the Tagged tab shows *other people's* posts that
+  @mention the user. That's real data today. The match uses the same
+  word boundaries as mention parsing, is case-insensitive, and
+  regex-escapes the username (usernames aren't restricted to word
+  characters). It's passed as a bound SQL parameter. Photo tagging would
+  be a separate feature.
+- **API:** new `GET /users/:id/posts?tab=posts|photos|tagged&page&limit`
+  (optionalAuth, paginated with `hasMore`).
+  - **posts:** the user's own posts. **photos:** own posts that have
+    images (post_media). **tagged:** as above.
+  - Every row passes the same per-post visibility predicate as the feed:
+    account privacy, B5 audience and blocks. A tab can never show a post
+    the viewer couldn't open directly.
+  - A private account → 403 "This account is private" for
+    non-followers, the same pattern as the follower lists. Blocked or
+    unknown → 404; a bad tab → 400.
+  - **Saved** reuses the viewer's own `GET /bookmarks` and only appears
+    on your own profile.
+- **UI (`components/profile/ProfileTabs.jsx`):**
+  - WAI-ARIA tabs with roving tabindex; ←/→/Home/End move between tabs.
+  - Photos is a 3-column square grid with a count badge on multi-image
+    posts; tapping opens the post. The other tabs show full PostCards
+    with "Load more".
+  - Separate loading, empty, error+retry and private states ("This
+    account is private. Follow X to see their posts.").
+  - Hook: `hooks/useProfileTabPosts.js`.
+- **Decision:** the Settings profile row now opens **your own profile**
+  (which has an Edit Profile button). Before, there was no way to reach
+  your own profile page at all. "Personal Information" still goes
+  straight to the edit form.
+- **Verified:**
+  - 7 new API tests (tab filtering, mention boundaries and case,
+    audience, private 403, block/unknown 404, pagination). Backend
+    146/146.
+  - B6 browser test 13/13 in headless Edge: tab sets for other vs own
+    profile, each tab's contents, keyboard navigation, photo → post,
+    Settings row → own profile, Saved, empty state, private message,
+    375px dark. 0 console errors.
+  - All earlier suites still green; eslint and build clean.
+- **No migration needed.**
+- **Found, not fixed (outside B6, logged for A6/C4):** usernames
+  accept any characters (spaces, symbols) at signup and edit. A username
+  with non-word characters can't be @mentioned at all. Worth
+  restricting to `[A-Za-z0-9_]`, but existing accounts need a policy
+  first.
 
 ### B7 — Explore page: trending hashtags, popular posts
 **Status:** ⬜ NOT CHECKED

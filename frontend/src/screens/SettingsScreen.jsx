@@ -93,7 +93,7 @@ const SETTINGS_SECTIONS = [
 
 function SettingsScreen() {
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, userId } = useAuth();
   const { unreadCount } = useUnreadCount(token);
   const currentUser = useCurrentUserSummary();
 
@@ -106,7 +106,10 @@ function SettingsScreen() {
       </header>
 
       <div className="settings-profile-section">
-        <ProfileSummaryRow user={currentUser} src={currentUser.avatarUrl} size={54} to="/edit-profile" />
+        {/* Opens your own profile (B6 tabs live there; it has its own Edit
+            Profile button, and "Personal Information" below still goes
+            straight to the edit form). */}
+        <ProfileSummaryRow user={currentUser} src={currentUser.avatarUrl} size={54} to={userId ? `/profile/${userId}` : "/edit-profile"} />
       </div>
 
       {SETTINGS_SECTIONS.map((section) => (
