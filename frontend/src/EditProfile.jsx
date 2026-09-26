@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api, { resolveImageUrl } from './api';
 import { useNavigate } from 'react-router-dom';
+import { setEmailVerified } from './hooks/useAuth';
 import { ChevronLeft } from 'lucide-react';
 import { IconButton, Avatar } from './components/ui';
 
@@ -32,6 +33,9 @@ function EditProfile() {
       setEmail(response.data.email);
       setBio(response.data.bio || '');
       setAvatarUrl(response.data.avatar_url || null);
+      // Changing the email resets verification server-side -- sync it so
+      // the verify-email banner reappears without a reload.
+      setEmailVerified(Boolean(response.data.email_verified));
       setLoading(false);
     })
     .catch((err) => {

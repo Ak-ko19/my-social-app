@@ -61,7 +61,10 @@ app.get('/test-db', async (req, res) => {
     const result = await db.query('SELECT NOW()');
     res.send('Database connected! Server time: ' + result.rows[0].now);
   } catch (err) {
-    res.status(500).send('Database connection failed: ' + err.message);
+    // Public endpoint: log the real error server-side, never echo DB
+    // error text (hostnames, auth failures, ...) back to the caller.
+    console.error('GET /test-db failed:', err.message);
+    res.status(500).send('Database connection failed');
   }
 });
 

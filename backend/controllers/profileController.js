@@ -2,6 +2,9 @@ const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const blockService = require('../services/blockService');
 
+// Same check signup uses (authController.EMAIL_REGEX).
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 async function getMyProfile(req, res) {
   try {
     const result = await db.query('SELECT id, username, email, bio, avatar_url, is_private, email_verified, created_at FROM users WHERE id = $1', [req.userId]);
@@ -71,14 +74,27 @@ async function getProfile(req, res) {
 
 async function updateProfile(req, res) {
   try {
-    const { username, email, bio } = req.body;
+    const username = (req.body.username || '').trim();
+    const email = (req.body.email || '').trim();
+    const { bio } = req.body;
     if (!username || !email) {
       return res.status(400).send('Username and email are required');
     }
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).send('Invalid email format');
+    }
     const avatarUrl = req.cloudinaryResult ? req.cloudinaryResult.secure_url : null;
     const result = await db.query(
-      'UPDATE users SET username = $1, email = $2, bio = $3, avatar_url = COALESCE($4, avatar_url) WHERE id = $5 RETURNING id, username, email, bio, avatar_url, created_at',
-      [username, email, bio || null, avatarUrl, req.userId]
+      // Changing the email drops verification: the account hasn't proven it
+      // owns the NEW address. (SET expressions see the row's old values, so
+      // `email = $6` compares against the current address; $6 is the same
+      // value as $2, passed separately so Postgres infers one type per param.) The user can
+      // re-verify via POST /resend-verification (the in-app banner).
+      `UPDATE users SET username = $1, email = $2, bio = $3, avatar_url = COALESCE($4, avatar_url),
+         email_verified = CASE WHEN email = $6 THEN email_verified ELSE false END
+       WHERE id = $5
+       RETURNING id, username, email, bio, avatar_url, email_verified, created_at`,
+      [username, email, bio || null, avatarUrl, req.userId, email]
     );
     res.status(200).json(result.rows[0]);
   } catch (err) {

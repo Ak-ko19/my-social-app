@@ -1,5 +1,8 @@
 import api from '../api';
 
-export function searchUsers(query) {
-  return api.get('/search/users', { params: { q: query } }).then((res) => res.data);
+// Pass the viewer's token: /search/users is optionalAuth, and without it
+// the search runs anonymously (blocked users would still be suggested).
+export function searchUsers(query, token) {
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  return api.get('/search/users', { params: { q: query }, headers }).then((res) => res.data);
 }

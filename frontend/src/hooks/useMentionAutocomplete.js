@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { searchUsers } from '../services/searchService';
+import { useAuth } from './useAuth';
 
 // Matches an in-progress "@partial" mention ending exactly at the cursor --
 // only triggers right after a word boundary (start of string or
@@ -11,6 +12,7 @@ const ACTIVE_MENTION_REGEX = /(?:^|\s)@(\w*)$/;
 // change via handleInputChange, get back the live suggestion list, and use
 // applyMentionSelection to splice a chosen username back into the text.
 export function useMentionAutocomplete() {
+  const { token } = useAuth();
   const [query, setQuery] = useState(null); // null = no active @mention being typed
   const [suggestions, setSuggestions] = useState([]);
   const requestIdRef = useRef(0);
@@ -27,7 +29,7 @@ export function useMentionAutocomplete() {
     // Debounced -- avoids firing a search request on every keystroke while
     // someone is still typing the username.
     const timeout = setTimeout(() => {
-      searchUsers(query)
+      searchUsers(query, token)
         .then((users) => {
           if (requestId !== requestIdRef.current) return;
           setSuggestions(users.slice(0, 5));
@@ -38,7 +40,7 @@ export function useMentionAutocomplete() {
         });
     }, 200);
     return () => clearTimeout(timeout);
-  }, [query]);
+  }, [query, token]);
 
   const handleInputChange = useCallback((value, cursorPos) => {
     const match = value.slice(0, cursorPos).match(ACTIVE_MENTION_REGEX);
