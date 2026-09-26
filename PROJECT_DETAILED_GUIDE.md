@@ -753,6 +753,20 @@ built and how to re-verify it.
   `/profile/<your id>`.
 - No migration.
 
+### B7 — Explore ✅
+- **API** (`controllers/exploreController.js`):
+  - `GET /explore/hashtags`: top 10 tags over 7 days, counting only
+    publicly visible posts.
+  - `GET /explore/posts`: viewer-visible, engaged posts, scored
+    `(reactions + 2×comments) / (hours+2)^1.5`.
+  - Tune the window in `EXPLORE_WINDOW`, and the weights and gravity in
+    the SQL.
+- **Frontend:** `screens/ExploreScreen.jsx` (`/explore`),
+  `components/explore/TrendingHashtags.jsx` (also shown on Search before
+  a query), `hooks/useExplore.js`.
+- **Scale note:** move trending to a periodically refreshed materialized
+  view once traffic grows.
+
 ---
 
 ## How to use this file

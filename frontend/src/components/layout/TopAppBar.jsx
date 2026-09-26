@@ -9,13 +9,10 @@ import './layout.css';
 // Home screen's header only (see screens/HomeFeed.jsx) -- Menu/Settings
 // each have their own back-button header instead, not this.
 //
-// Notifications is visual-only for now (aria-label only, no onClick) --
-// where it should go isn't decided yet (this app already has a working
-// /notifications screen from before this rebrand, but Home/Menu/Settings
-// are getting fresh screens rather than reusing the old ones as-is, so
-// wiring it to the old route isn't necessarily right -- left for whoever
-// builds that screen next to decide). Search was wired to the existing
-// /search route since it's just navigation, not a rebrand decision.
+// Search and Notifications open their screens (/search, /notifications).
+// The bell used to be visual-only while the old Notifications page
+// awaited the rebrand; A3 migrated that screen into PhoneShell, so B7
+// wired the bell to it. Its aria-label includes the unread count.
 function TopAppBar({ className }) {
   const navigate = useNavigate();
   const { token } = useAuth();
@@ -27,7 +24,12 @@ function TopAppBar({ className }) {
       <Logo />
       <span className="top-app-bar-spacer" />
       <IconButton icon={Search} aria-label="Search" onClick={() => navigate('/search')} />
-      <IconButton icon={Bell} aria-label="Notifications" badgeCount={unreadCount} />
+      <IconButton
+        icon={Bell}
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+        badgeCount={unreadCount}
+        onClick={() => navigate('/notifications')}
+      />
       <IconButton icon={SlidersHorizontal} aria-label="Open settings" onClick={() => navigate('/settings')} />
     </header>
   );

@@ -4,6 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { IconButton, Avatar } from './components/ui';
 import { createConversation } from './services/messageService';
+import { useTrendingHashtags } from './hooks/useExplore';
+import TrendingHashtags from './components/explore/TrendingHashtags';
+import { Compass } from 'lucide-react';
 import { useFollowToggle } from './hooks/useFollowToggle';
 import FollowButton from './components/feed/FollowButton';
 
@@ -46,6 +49,8 @@ function Search() {
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
+  // B7: shown before the first search, as a starting point.
+  const trending = useTrendingHashtags(token);
 
   // /messages/:conversationId takes a CONVERSATION id -- this used to
   // navigate to /messages/<userId>, opening the wrong chat (or none).
@@ -120,6 +125,15 @@ function Search() {
         </form>
         {error && <p className="form-error" role="alert" style={{ marginTop: 'var(--space-3)' }}>{error}</p>}
         {searching && <p className="screen-status" role="status">Searching…</p>}
+
+        {!searched && !searching && (
+          <>
+            <TrendingHashtags tags={trending.tags} loaded={trending.loaded} />
+            <Link to="/explore" className="screen-link explore-link">
+              <Compass size={16} aria-hidden="true" /> Explore popular posts
+            </Link>
+          </>
+        )}
 
         {searched && !searching && (
           <>

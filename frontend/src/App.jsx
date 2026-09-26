@@ -27,6 +27,7 @@ const ProfileScreen = lazy(() => import('./screens/ProfileScreen'));
 const FollowRequestsScreen = lazy(() => import('./screens/FollowRequestsScreen'));
 const AccountManagementScreen = lazy(() => import('./screens/AccountManagementScreen'));
 const VerifyEmailScreen = lazy(() => import('./screens/VerifyEmailScreen'));
+const ExploreScreen = lazy(() => import('./screens/ExploreScreen'));
 
 function App() {
   return (
@@ -138,6 +139,7 @@ function App() {
         <Route path="/messages" element={<PhoneShell><Messages /></PhoneShell>} />
         <Route path="/messages/:conversationId" element={<PhoneShell hideTabBar><Conversation /></PhoneShell>} />
         <Route path="/search" element={<PhoneShell><Search /></PhoneShell>} />
+        <Route path="/explore" element={<PhoneShell><ExploreScreen /></PhoneShell>} />
       </Routes>
     </BrowserRouter>
   );

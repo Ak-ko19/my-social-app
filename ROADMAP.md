@@ -685,10 +685,47 @@ text mentions exist).
   first.
 
 ### B7 — Explore page: trending hashtags, popular posts
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** a ranking query (e.g. engagement over a recent time
 window) backs a new `/explore` endpoint and screen.
-**Notes:** _(none yet)_
+**Notes:**
+- **API** (optionalAuth; both look at the last 7 days):
+  - `GET /explore/hashtags` returns the top 10 tags by number of distinct
+    posts, with ties going to the most recently used. Decision: only
+    **publicly visible** posts (public account, public post, active
+    author) count toward trends, so a trend can't reveal activity in
+    private or followers-only posts, not even as a number. Authors the
+    viewer blocked are excluded.
+  - `GET /explore/posts` ranks posts the viewer can see (the same
+    visibility predicate as the feed) by engagement with time decay:
+    `(reactions + 2×comments) / (hours_old + 2)^1.5`, Hacker-News-style
+    gravity. Comments count double because they take more effort. Only
+    posts with at least one reaction or comment qualify. Paginated.
+- **UI:**
+  - The new `/explore` screen (lazy) shows "Trending this week" chips,
+    each linking to its hashtag feed, plus "Popular this week" as
+    PostCards with Load more. It has loading, empty, error+retry states.
+  - Decision: the entry point is the **Search screen**. Before you
+    search, it shows the trending chips and an "Explore popular posts"
+    link. The top bar is already full at 375px (the logo truncates), so
+    a 5th icon wasn't an option.
+- **Bug fixed along the way:** the top-bar Notifications bell had no
+  onClick (a leftover "visual-only" stub), so it showed an unread badge
+  but did nothing. It now opens /notifications, and its label includes
+  the unread count.
+- **Verified:**
+  - 10 new API tests: ranking, 7-day window, comment weighting, time
+    decay (a fresh 2-like post beats a 48h-old 3-like post), visibility,
+    blocks, pagination, and trends ignoring private/followers-only posts
+    even for their own author. Backend 156/156.
+  - B7 browser test 7/7: bell → Notifications, trending chips on Search
+    in the right order, chip → hashtag feed, Explore ranking, 375px dark.
+  - The A3 visual matrix now also covers `/explore` and your own
+    profile: 132/132. All earlier suites green; eslint and build clean.
+- **No migration needed.** Performance is fine at MVP scale with the
+  existing indexes. At real scale, pre-compute trending (for example a
+  materialized view refreshed every few minutes) instead of scanning the
+  7-day window per request.
 
 ### B8 — People you may know (follow suggestions)
 **Status:** ⬜ NOT CHECKED
