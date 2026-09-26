@@ -774,12 +774,70 @@ an endpoint, surfaced in a real UI slot (e.g. on Explore or Search).
   cache them per user.
 
 ### B9 — DM extras: edit/delete message, reply-to, send images
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** each sub-feature has DB + API support and UI controls in
 `Conversation.jsx`. Note: soft-delete for messages already exists
 (confirmed 2026-09-23) — verify what's reusable before building delete
 again; edit and reply-to are net-new.
-**Notes:** _(none yet)_
+**Notes:**
+- **CHECK result: PARTIAL.** Delete (soft delete over socket and REST,
+  with UI) already existed and was reused; I audited it rather than
+  rebuilding it. `messages.edited_at` existed but was never written.
+  Reply-to and images were net-new.
+- **Schema:** two migrations, on purpose. 021 adds the `image` value to
+  `message_type`. 022 adds `reply_to_message_id` (ON DELETE SET NULL)
+  and extends the CHECK for image rows.
+  - Why two: Postgres can't use a new enum value inside the transaction
+    that adds it, and the runner sends each file as one transaction.
+  - 021's DOWN is a documented no-op (Postgres can't drop an enum
+    value). 022's DOWN deletes image messages, then restores the old
+    constraint.
+  - Verified up/down/up on a pre-021 DB with real rows.
+- **Edit:** your own **text** messages only, not deleted, within **15
+  minutes** of sending (decision: Messenger/WhatsApp-style, long enough
+  to fix a typo without letting history be rewritten later). Sets
+  `edited_at`, so bubbles show "edited".
+  - Available over the socket (`edit_message`, broadcasting
+    `message_edited`) and REST (`PUT .../messages/:id`).
+  - The Edit button hides itself exactly when the window closes (a
+    timer, not render-time clock reads).
+- **Reply-to:** the target must be in the **same conversation**, so a
+  reply can't quote a message from a chat you're not in.
+  - Every message carries a `reply_to` preview (author, type, first 120
+    characters). These are batched in one query per page, and a deleted
+    original shows as "Message deleted".
+  - Quotes already on screen update live when the original is edited or
+    deleted, and a retried failed reply stays a reply.
+- **Images:** `POST .../messages/image` (optional caption). The
+  participant check runs **before** the upload, so a non-participant
+  can't put a file on Cloudinary.
+  - The UI sends optimistically from a local preview, shows upload
+    progress, and offers Retry on failure. Tapping a photo opens it full
+    size.
+- **Audit fix (privacy):** a **deleted voice message still sent its
+  audio URL and duration** to both participants, so it stayed playable.
+  Deleted rows now scrub media too (`media_url`, `duration_seconds`),
+  which also covers images.
+- **Also fixed:**
+  - The inbox preview was blank for voice messages and would have been
+    blank for photos. It now says "Voice message" / "Photo" / "Photo:
+    caption", in both the SQL and the live socket update.
+  - After adding the photo button, the composer wrapped Send onto a
+    second line at 375px. The input now shrinks instead; checked at 320,
+    375 and 390px.
+- **Verified:**
+  - 11 new API tests: every edit rejection including the 15-minute
+    window, the reply preview, the cross-conversation rejection, image
+    send, non-participant refused before upload, and the voice-scrub
+    fix. Backend 171/171; the existing A1 DM test caught my own inbox
+    SQL slip immediately.
+  - B9 browser test 15/15 with real sockets: live receive, reply bar →
+    quoted bubble (checked server-side), inline edit + Esc, the other
+    user's edit updating bubble and quote live, a deleted original
+    showing "Message deleted", failed photo → Retry → one image.
+  - All earlier suites still green; eslint and build clean.
+- **Deploy order (owner):** migrations 021 then 022 before this backend.
+  See NEEDS OWNER.
 
 ### B10 — Group chat
 **Status:** ⬜ NOT CHECKED
@@ -893,8 +951,10 @@ running app in one pass, with a written pass/fail report per item.
   (backfills existing single-image posts).
 - B3 migration 018 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/018_add_stories.up.sql`.
-  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020.
+  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022.
 - B4 migration 019 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/019_add_comment_replies_likes.up.sql`.
 - B5 migration 020 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/020_add_post_visibility.up.sql`.
+- B9 migrations 021 **then** 022 on production, before deploying the new
+  backend (021 must be its own run -- see its header comment).

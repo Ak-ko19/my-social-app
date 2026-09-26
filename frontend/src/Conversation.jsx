@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useSocket } from './hooks/useSocket';
@@ -48,8 +48,38 @@ function Conversation() {
     sendVoiceMessage,
     retryVoiceSend,
     deleteMessage,
+    editMessage,
+    sendImageMessage,
+    retryImageSend,
     reload
   } = useConversationMessages(conversationId, token, userId);
+
+  // B9: the message being replied to (null = a normal message), and the id
+  // of the message being edited inline (null = none). Callbacks are stable
+  // (useCallback) because MessageBubble is memoized.
+  const [replyTo, setReplyTo] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const handleReply = useCallback((message) => {
+    setEditingId(null);
+    setReplyTo(message);
+  }, []);
+  const handleStartEdit = useCallback((messageId) => {
+    setReplyTo(null);
+    setEditingId(messageId);
+  }, []);
+  const handleCancelEdit = useCallback(() => setEditingId(null), []);
+  const otherUsername = headerInfo?.username;
+  const replyAuthorLabel = useCallback(
+    (senderId) => (senderId === userId ? 'You' : otherUsername || 'Them'),
+    [userId, otherUsername]
+  );
+  const handleSaveEdit = useCallback(
+    (messageId, content) => {
+      editMessage(messageId, content);
+      setEditingId(null);
+    },
+    [editMessage]
+  );
   const { socket } = useSocket();
   const { isOnline } = usePresenceEvents();
   const typingUserIds = useTypingIndicator(conversationId);
@@ -152,7 +182,14 @@ function Conversation() {
     // Sending is always an intent to be at the bottom, even if the user had
     // scrolled up to read history.
     isNearBottomRef.current = true;
-    sendMessage(content);
+    sendMessage(content, replyTo);
+    setReplyTo(null);
+  };
+
+  const handleSendImage = (file) => {
+    isNearBottomRef.current = true;
+    sendImageMessage(file, replyTo);
+    setReplyTo(null);
   };
 
   const handleSendVoice = (blob, durationSeconds) => {
@@ -223,7 +260,14 @@ function Conversation() {
                 isOwn={message.sender_id === userId}
                 onRetry={retrySend}
                 onRetryVoice={retryVoiceSend}
+                onRetryImage={retryImageSend}
                 onDelete={deleteMessage}
+                replyAuthorLabel={replyAuthorLabel}
+                isEditing={editingId === message.id}
+                onReply={handleReply}
+                onStartEdit={handleStartEdit}
+                onSaveEdit={handleSaveEdit}
+                onCancelEdit={handleCancelEdit}
               />
             ))}
           </VoicePlaybackProvider>
@@ -236,7 +280,15 @@ function Conversation() {
         </p>
       )}
 
-      <MessageComposer onSend={handleSend} onSendVoice={handleSendVoice} onTyping={handleTyping} />
+      <MessageComposer
+        onSend={handleSend}
+        onSendVoice={handleSendVoice}
+        onSendImage={handleSendImage}
+        onTyping={handleTyping}
+        replyTo={replyTo}
+        replyToLabel={replyTo ? replyAuthorLabel(replyTo.sender_id) : ''}
+        onCancelReply={() => setReplyTo(null)}
+      />
     </div>
   );
 }

@@ -30,9 +30,33 @@ export function createConversation(userId, token) {
 // persists identically to the socket send_message path (same backend
 // service function), so a caller can't tell which transport was used from
 // the response shape alone.
-export function sendMessageRest(conversationId, content, clientTempId, token) {
+// replyToMessageId (optional, B9) makes it a reply.
+export function sendMessageRest(conversationId, content, clientTempId, token, replyToMessageId = null) {
+  const body = replyToMessageId ? { content, clientTempId, replyToMessageId } : { content, clientTempId };
   return api
-    .post(`/conversations/${conversationId}/messages`, { content, clientTempId }, authHeaders(token))
+    .post(`/conversations/${conversationId}/messages`, body, authHeaders(token))
+    .then((res) => res.data);
+}
+
+// B9: REST fallback for editing a message when the socket is down (same
+// backend service as the socket 'edit_message' event).
+export function editMessageRest(conversationId, messageId, content, token) {
+  return api
+    .put(`/conversations/${conversationId}/messages/${messageId}`, { content }, authHeaders(token))
+    .then((res) => res.data);
+}
+
+// B9: image message (multipart 'image'; optional caption / reply target).
+// Always REST, like voice -- a file isn't something you emit over the
+// socket. The backend broadcasts new_message once it's saved.
+export function sendImageMessageRest(conversationId, file, clientTempId, token, { caption, replyToMessageId, onUploadProgress } = {}) {
+  const formData = new FormData();
+  formData.append('image', file);
+  if (clientTempId) formData.append('clientTempId', clientTempId);
+  if (caption) formData.append('caption', caption);
+  if (replyToMessageId) formData.append('replyToMessageId', String(replyToMessageId));
+  return api
+    .post(`/conversations/${conversationId}/messages/image`, formData, { ...authHeaders(token), onUploadProgress })
     .then((res) => res.data);
 }
 

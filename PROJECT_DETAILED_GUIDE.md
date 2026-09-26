@@ -779,6 +779,29 @@ built and how to re-verify it.
   request to a private account), and `FollowButton` shows "Requested".
   Use this pair for any new follow button.
 
+### B9 — DM edit / reply / images ✅
+- **Data:** migration 021 adds `message_type 'image'` (its own run: an
+  enum value can't be used in the transaction that adds it). Migration
+  022 adds `messages.reply_to_message_id` and the image CHECK.
+- **Service** (`services/messageService.js`):
+  - `editMessage` (own text, not deleted, 15-minute
+    `MESSAGE_EDIT_WINDOW_MS`).
+  - `sendImageMessage`.
+  - `validateReplyTo` (same conversation only).
+  - `attachReplyPreviews` (batched `reply_to` on every message).
+  - `scrubDeletedContent` now also nulls `media_url`/`duration_seconds`.
+- **Transport:**
+  - Socket `edit_message` broadcasts `message_edited`.
+  - `send_message` accepts `replyToMessageId`.
+  - REST: `PUT .../messages/:id` and `POST .../messages/image`.
+- **Frontend:**
+  - `useConversationMessages` gains `editMessage`, `sendImageMessage`
+    and `retryImageSend`; `syncQuotes` keeps reply quotes current.
+  - `MessageBubble` has the quote, image, edited label, Reply/Edit
+    actions and inline edit.
+  - `MessageComposer` has the reply bar and the photo button.
+- **Deploy:** migrations through 022 before the matching backend.
+
 ---
 
 ## How to use this file

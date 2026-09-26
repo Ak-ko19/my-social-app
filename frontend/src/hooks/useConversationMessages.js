@@ -5,8 +5,32 @@ import {
   sendMessageRest,
   markConversationRead,
   deleteMessageRest,
-  sendVoiceMessageRest
+  sendVoiceMessageRest,
+  editMessageRest,
+  sendImageMessageRest
 } from '../services/messageService';
+
+// B9: a reply's quote, built locally for an optimistic message the same way
+// the server builds reply_to (see backend messageService.attachReplyPreviews)
+// so the bubble looks identical before and after the server confirms it.
+// Keeps every reply's quote in sync when the ORIGINAL is edited or deleted
+// (otherwise quotes already on screen would stay stale until a reload).
+function syncQuotes(messages, originalId, patch) {
+  return messages.map((m) =>
+    m.reply_to && m.reply_to.id === originalId ? { ...m, reply_to: { ...m.reply_to, ...patch } } : m
+  );
+}
+
+function buildReplyPreview(replyTo) {
+  if (!replyTo || replyTo.id == null) return null;
+  return {
+    id: replyTo.id,
+    sender_id: replyTo.sender_id,
+    type: replyTo.type || 'text',
+    deleted: Boolean(replyTo.deleted_at),
+    content: replyTo.deleted_at || !replyTo.content ? null : String(replyTo.content).slice(0, 120)
+  };
+}
 
 const SEND_TIMEOUT_MS = 5000;
 // 'sending'/'failed' are local-only states a server message never carries;
@@ -74,6 +98,9 @@ export function useConversationMessages(conversationId, token, currentUserId) {
   // async socket events) can confirm or roll back the optimistic delete
   // applied in deleteMessage below.
   const pendingDeletesRef = useRef(new Map());
+  // B9: messageId -> the pre-edit message while a socket edit is in flight,
+  // so message_error can roll it back (same idea as pendingDeletesRef).
+  const pendingEditsRef = useRef(new Map());
 
   const mergeMessages = useCallback((incoming) => {
     if (!incoming.length) return;
@@ -161,6 +188,7 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     pendingTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
     pendingTimeoutsRef.current.clear();
     pendingDeletesRef.current.clear();
+    pendingEditsRef.current.clear();
     // Deferred by a microtask so this reset runs behind an async boundary
     // instead of synchronously inside the effect's call stack (same
     // reasoning as useFeed's loadMore -- see its comment). loadMessages()
@@ -197,14 +225,32 @@ export function useConversationMessages(conversationId, token, currentUserId) {
       if (convId !== conversationIdNum) return;
       pendingDeletesRef.current.delete(messageId);
       setMessages((current) =>
-        current.map((m) =>
-          m.id === messageId ? { ...m, deleted_at: deletedAt || new Date().toISOString(), content: null } : m
+        syncQuotes(
+          current.map((m) =>
+            m.id === messageId ? { ...m, deleted_at: deletedAt || new Date().toISOString(), content: null } : m
+          ),
+          messageId,
+          { deleted: true, content: null }
         )
       );
     };
     socket.on('message_deleted', handleMessageDeleted);
     return () => socket.off('message_deleted', handleMessageDeleted);
   }, [socket, conversationIdNum]);
+
+  // B9: live edits (this client's own -- doubling as its confirmation -- or
+  // one made from another device/tab).
+  useEffect(() => {
+    if (!socket) return;
+    const handleMessageEdited = ({ conversationId: convId, message }) => {
+      if (convId !== conversationIdNum || !message) return;
+      pendingEditsRef.current.delete(message.id);
+      mergeMessages([message]);
+      setMessages((current) => syncQuotes(current, message.id, { content: (message.content || '').slice(0, 120) }));
+    };
+    socket.on('message_edited', handleMessageEdited);
+    return () => socket.off('message_edited', handleMessageEdited);
+  }, [socket, conversationIdNum, mergeMessages]);
 
   // Ack/error for this client's own sends -- see attemptSend below for the
   // other half (arming the timeout these clear).
@@ -229,7 +275,14 @@ export function useConversationMessages(conversationId, token, currentUserId) {
         console.error('delete_message failed:', errorMessage);
         setMessages((current) => current.map((m) => (m.id === messageId ? previous : m)));
       }
-      // Otherwise not one of our sends/deletes (e.g. a mark_read failure) -- ignore.
+      if (messageId != null && pendingEditsRef.current.has(messageId)) {
+        const previous = pendingEditsRef.current.get(messageId);
+        pendingEditsRef.current.delete(messageId);
+        console.error('edit_message failed:', errorMessage);
+        setMessages((current) => current.map((m) => (m.id === messageId ? previous : m)));
+        return;
+      }
+      // Otherwise not one of our sends/deletes/edits (e.g. a mark_read failure) -- ignore.
     };
     socket.on('message_ack', handleAck);
     socket.on('message_error', handleErrorEvent);
@@ -282,7 +335,7 @@ export function useConversationMessages(conversationId, token, currentUserId) {
   // each time it's called, so a retry after reconnecting correctly uses the
   // socket even if the original attempt had to fall back to REST.
   const attemptSend = useCallback(
-    (clientTempId, content) => {
+    (clientTempId, content, replyToMessageId = null) => {
       setMessages((current) =>
         current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, status: 'sending' } : m))
       );
@@ -300,14 +353,14 @@ export function useConversationMessages(conversationId, token, currentUserId) {
         }, SEND_TIMEOUT_MS);
         pendingTimeoutsRef.current.set(clientTempId, timeoutId);
 
-        socket.emit('send_message', { conversationId, content, clientTempId });
+        socket.emit('send_message', { conversationId, content, clientTempId, replyToMessageId });
         return;
       }
 
       // Socket isn't connected right now -- REST fallback immediately
       // instead of waiting out a timeout that would only confirm what we
       // already know.
-      sendMessageRest(conversationId, content, clientTempId, token)
+      sendMessageRest(conversationId, content, clientTempId, token, replyToMessageId)
         .then((savedMessage) => mergeMessages([savedMessage]))
         .catch((err) => {
           console.error(err);
@@ -320,7 +373,7 @@ export function useConversationMessages(conversationId, token, currentUserId) {
   );
 
   const buildOptimisticMessage = useCallback(
-    (clientTempId, content) => ({
+    (clientTempId, content, replyTo = null) => ({
       id: null,
       client_temp_id: clientTempId,
       conversation_id: conversationIdNum,
@@ -329,18 +382,21 @@ export function useConversationMessages(conversationId, token, currentUserId) {
       status: 'sending',
       created_at: new Date().toISOString(),
       edited_at: null,
-      deleted_at: null
+      deleted_at: null,
+      reply_to_message_id: replyTo ? replyTo.id : null,
+      reply_to: buildReplyPreview(replyTo)
     }),
     [conversationIdNum, currentUserId]
   );
 
+  // replyTo (B9): the message being replied to, or null.
   const sendMessage = useCallback(
-    (content) => {
+    (content, replyTo = null) => {
       const trimmed = content.trim();
       if (!trimmed) return;
       const clientTempId = makeClientTempId();
-      mergeMessages([buildOptimisticMessage(clientTempId, trimmed)]);
-      attemptSend(clientTempId, trimmed);
+      mergeMessages([buildOptimisticMessage(clientTempId, trimmed, replyTo)]);
+      attemptSend(clientTempId, trimmed, replyTo ? replyTo.id : null);
     },
     [mergeMessages, buildOptimisticMessage, attemptSend]
   );
@@ -355,12 +411,14 @@ export function useConversationMessages(conversationId, token, currentUserId) {
   // delivery (a genuinely-late success plus a retry can still both persist
   // as two real messages server-side), which would need backend-side
   // idempotency to fully close.
+  // replyTo: the failed row's reply_to preview (B9) -- a retried reply
+  // stays a reply.
   const retrySend = useCallback(
-    (clientTempId, content) => {
+    (clientTempId, content, replyTo = null) => {
       setMessages((current) => current.filter((m) => !(m.client_temp_id === clientTempId && m.id == null)));
       const newClientTempId = makeClientTempId();
-      mergeMessages([buildOptimisticMessage(newClientTempId, content)]);
-      attemptSend(newClientTempId, content);
+      mergeMessages([buildOptimisticMessage(newClientTempId, content, replyTo)]);
+      attemptSend(newClientTempId, content, replyTo ? replyTo.id : null);
     },
     [mergeMessages, buildOptimisticMessage, attemptSend]
   );
@@ -382,6 +440,7 @@ export function useConversationMessages(conversationId, token, currentUserId) {
         })
       );
       if (!previous) return;
+      setMessages((current) => syncQuotes(current, messageId, { deleted: true, content: null }));
 
       if (connectionState === 'connected' && socket) {
         pendingDeletesRef.current.set(messageId, previous);
@@ -509,6 +568,111 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     [mergeMessages, buildOptimisticVoiceMessage, attemptVoiceUpload]
   );
 
+  // B9 edit: optimistic content + edited_at, confirmed by the room's
+  // message_edited broadcast (socket) or the REST response; rolled back on
+  // failure. The server enforces own-text-only and the 15-minute window.
+  const editMessage = useCallback(
+    (messageId, content) => {
+      const trimmed = content.trim();
+      if (!trimmed) return;
+      let previous = null;
+      setMessages((current) =>
+        current.map((m) => {
+          if (m.id !== messageId || m.deleted_at) return m;
+          previous = m;
+          return { ...m, content: trimmed, edited_at: new Date().toISOString() };
+        })
+      );
+      if (!previous) return;
+      setMessages((current) => syncQuotes(current, messageId, { content: trimmed.slice(0, 120) }));
+
+      if (connectionState === 'connected' && socket) {
+        pendingEditsRef.current.set(messageId, previous);
+        socket.emit('edit_message', { conversationId, messageId, content: trimmed });
+        return;
+      }
+      editMessageRest(conversationId, messageId, trimmed, token)
+        .then((updated) => mergeMessages([updated]))
+        .catch((err) => {
+          console.error(err);
+          setMessages((current) => current.map((m) => (m.id === messageId ? previous : m)));
+        });
+    },
+    [socket, connectionState, conversationId, token, mergeMessages]
+  );
+
+  // B9 image send -- REST only (a file isn't a socket payload), optimistic
+  // bubble from a local blob URL, same shape as voice sends.
+  const attemptImageUpload = useCallback(
+    (clientTempId, file, localUrl, replyTo) => {
+      sendImageMessageRest(conversationId, file, clientTempId, token, {
+        replyToMessageId: replyTo ? replyTo.id : null,
+        onUploadProgress: (progressEvent) => {
+          if (!progressEvent.total) return;
+          const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+          setMessages((current) =>
+            current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, _uploadProgress: percent } : m))
+          );
+        }
+      })
+        .then((saved) => {
+          URL.revokeObjectURL(localUrl);
+          mergeMessages([saved]);
+        })
+        .catch((err) => {
+          console.error(err);
+          setMessages((current) =>
+            current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, status: 'failed', _uploadProgress: 0 } : m))
+          );
+        });
+    },
+    [conversationId, token, mergeMessages]
+  );
+
+  const buildOptimisticImage = useCallback(
+    (clientTempId, file, localUrl, replyTo) => ({
+      id: null,
+      client_temp_id: clientTempId,
+      conversation_id: conversationIdNum,
+      sender_id: currentUserId,
+      content: null,
+      type: 'image',
+      media_url: localUrl,
+      status: 'sending',
+      created_at: new Date().toISOString(),
+      edited_at: null,
+      deleted_at: null,
+      reply_to_message_id: replyTo ? replyTo.id : null,
+      reply_to: buildReplyPreview(replyTo),
+      _imageFile: file, // kept so a failed upload can be retried
+      _uploadProgress: 0
+    }),
+    [conversationIdNum, currentUserId]
+  );
+
+  const sendImageMessage = useCallback(
+    (file, replyTo = null) => {
+      if (!file) return;
+      const clientTempId = makeClientTempId();
+      const localUrl = URL.createObjectURL(file);
+      mergeMessages([buildOptimisticImage(clientTempId, file, localUrl, replyTo)]);
+      attemptImageUpload(clientTempId, file, localUrl, replyTo);
+    },
+    [mergeMessages, buildOptimisticImage, attemptImageUpload]
+  );
+
+  const retryImageSend = useCallback(
+    (failedClientTempId, file, replyTo = null) => {
+      setMessages((current) => {
+        const failed = current.find((m) => m.client_temp_id === failedClientTempId && m.id == null);
+        if (failed?.media_url) URL.revokeObjectURL(failed.media_url);
+        return current.filter((m) => !(m.client_temp_id === failedClientTempId && m.id == null));
+      });
+      sendImageMessage(file, replyTo);
+    },
+    [sendImageMessage]
+  );
+
   return {
     messages,
     loading,
@@ -521,6 +685,9 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     sendVoiceMessage,
     retryVoiceSend,
     deleteMessage,
+    editMessage,
+    sendImageMessage,
+    retryImageSend,
     reload: () => loadMessages({ markRead: false })
   };
 }
