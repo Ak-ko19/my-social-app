@@ -23,6 +23,7 @@ const bookmarkRoutes = require('./routes/bookmarkRoutes');
 const hashtagRoutes = require('./routes/hashtagRoutes');
 const storyRoutes = require('./routes/storyRoutes');
 const userPostsRoutes = require('./routes/userPostsRoutes');
+const exploreRoutes = require('./routes/exploreRoutes');
 
 const app = express();
 const PORT = 3000;
@@ -85,6 +86,7 @@ app.use(bookmarkRoutes);
 app.use(hashtagRoutes);
 app.use(storyRoutes);
 app.use(userPostsRoutes);
+app.use(exploreRoutes);
 
 // Handle multer upload errors (wrong file type, too large) with a clear message
 app.use((err, req, res, next) => {
