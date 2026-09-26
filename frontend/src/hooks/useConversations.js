@@ -6,6 +6,15 @@ import { fetchConversations } from '../services/messageService';
 // updates from the shared socket so a new message doesn't require
 // re-fetching the whole list. Mirrors useFeed's load/reload/stale-response
 // guard shape.
+// Inbox preview line for a message -- mirrors the backend getConversations
+// CASE (voice/image have no text of their own, only an optional caption).
+export function messagePreviewText(message) {
+  if (message.deleted_at) return 'This message was deleted';
+  if (message.type === 'voice') return 'Voice message';
+  if (message.type === 'image') return message.content ? 'Photo: ' + message.content : 'Photo';
+  return message.content;
+}
+
 export function useConversations(token, currentUserId) {
   const { socket, connectionState } = useSocket();
   const [conversations, setConversations] = useState([]);
@@ -70,7 +79,7 @@ export function useConversations(token, currentUserId) {
         const isFromOther = message.sender_id !== currentUserId;
         const updated = {
           ...existing,
-          last_message: message.content,
+          last_message: messagePreviewText(message),
           last_message_id: message.id,
           last_message_at: message.created_at,
           unread_count: isFromOther ? existing.unread_count + 1 : existing.unread_count

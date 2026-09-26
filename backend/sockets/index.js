@@ -13,6 +13,7 @@ function errorCodeFor(err) {
   if (err instanceof messageService.NotParticipantError) return 'FORBIDDEN';
   if (err instanceof messageService.NotMessageOwnerError) return 'FORBIDDEN';
   if (err instanceof messageService.BlockedError) return 'FORBIDDEN';
+  if (err instanceof messageService.NotEditableError) return 'FORBIDDEN';
   if (err instanceof messageService.MessageNotFoundError) return 'NOT_FOUND';
   if (err instanceof messageService.RateLimitError) return 'RATE_LIMITED';
   return 'SERVER_ERROR';
@@ -57,7 +58,8 @@ function initSocket(httpServer) {
           conversationId: payload?.conversationId,
           senderId: socket.userId,
           content: payload?.content,
-          clientTempId
+          clientTempId,
+          replyToMessageId: payload?.replyToMessageId
         });
 
         // Persist-then-broadcast: the row above is already committed with
@@ -105,6 +107,27 @@ function initSocket(httpServer) {
       } catch (err) {
         if (errorCodeFor(err) === 'SERVER_ERROR') {
           console.error(`delete_message failed for user ${socket.userId}:`, err.message);
+        }
+        socket.emit('message_error', { messageId, error: err.message, code: errorCodeFor(err) });
+      }
+    });
+
+    // B9: edit your own recent text message. Same shared-service pattern as
+    // delete_message; the room broadcast doubles as the editor's own
+    // confirmation, message_error (with messageId) covers failure.
+    socket.on('edit_message', async (payload) => {
+      const messageId = payload?.messageId;
+      try {
+        const message = await messageService.editMessage({
+          conversationId: payload?.conversationId,
+          messageId,
+          userId: socket.userId,
+          content: payload?.content
+        });
+        io.to(`conv_${message.conversation_id}`).emit('message_edited', { conversationId: message.conversation_id, message });
+      } catch (err) {
+        if (errorCodeFor(err) === 'SERVER_ERROR') {
+          console.error(`edit_message failed for user ${socket.userId}:`, err.message);
         }
         socket.emit('message_error', { messageId, error: err.message, code: errorCodeFor(err) });
       }

@@ -14,7 +14,8 @@
 CREATE TYPE conversation_type AS ENUM ('direct', 'group');
 CREATE TYPE follow_status AS ENUM ('accepted', 'pending');
 CREATE TYPE message_status AS ENUM ('sent', 'delivered', 'read');
-CREATE TYPE message_type AS ENUM ('text', 'voice');
+-- 'image' added by migration 021_add_message_image_type (B9).
+CREATE TYPE message_type AS ENUM ('text', 'voice', 'image');
 CREATE TYPE report_status AS ENUM ('pending', 'reviewed');
 CREATE TYPE report_target_type AS ENUM ('post', 'user');
 
@@ -93,10 +94,14 @@ CREATE TABLE messages (
   type message_type DEFAULT 'text'::message_type NOT NULL,
   media_url text,
   duration_seconds integer,
+  -- Added by migration 022_add_message_replies_images (B9).
+  reply_to_message_id integer REFERENCES messages(id) ON DELETE SET NULL,
   CONSTRAINT chk_messages_type_fields CHECK (
     (type = 'text' AND content IS NOT NULL AND content <> '')
     OR
     (type = 'voice' AND media_url IS NOT NULL AND duration_seconds IS NOT NULL)
+    OR
+    (type = 'image' AND media_url IS NOT NULL)
   )
 );
 

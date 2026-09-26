@@ -19,7 +19,14 @@ async function getConversations(req, res) {
         other.avatar_url,
         other.last_seen,
         lm.id AS last_message_id,
-        CASE WHEN lm.deleted_at IS NOT NULL THEN 'This message was deleted' ELSE lm.content END AS last_message,
+        -- Media messages have no (or only caption) content, so label them;
+        -- keep in sync with the frontend's messagePreviewText().
+        CASE
+          WHEN lm.deleted_at IS NOT NULL THEN 'This message was deleted'
+          WHEN lm.type = 'voice' THEN 'Voice message'
+          WHEN lm.type = 'image' THEN COALESCE('Photo: ' || NULLIF(lm.content, ''), 'Photo')
+          ELSE lm.content
+        END AS last_message,
         lm.created_at AS last_message_at,
         COALESCE(unread.count, 0)::int AS unread_count
       FROM conversation_participants cp
@@ -32,7 +39,7 @@ async function getConversations(req, res) {
         -- unread-count lateral below) -- the true last message is wanted
         -- even if it was deleted, so its preview can say so below instead
         -- of silently falling back to an older, no-longer-current message.
-        SELECT id, content, created_at, deleted_at
+        SELECT id, content, type, created_at, deleted_at
         FROM messages m
         WHERE m.conversation_id = c.id
         ORDER BY m.created_at DESC, m.id DESC
@@ -184,7 +191,8 @@ async function getMessages(req, res) {
     // oldest-first so the client can render straight down the page. Any
     // soft-deleted row keeps its place (id/sender/timestamp) but never
     // sends its content to the client.
-    res.json({ messages: page.reverse().map(messageService.scrubDeletedContent), nextCursor });
+    const withPreviews = await messageService.attachReplyPreviews(conversationId, page.reverse());
+    res.json({ messages: withPreviews.map(messageService.scrubDeletedContent), nextCursor });
   } catch (err) {
     sendServerError(res, err, 'Fetch messages failed. Please try again later.');
   }
@@ -196,7 +204,8 @@ async function sendMessage(req, res) {
       conversationId: req.params.id,
       senderId: req.userId,
       content: req.body.content,
-      clientTempId: req.body.clientTempId
+      clientTempId: req.body.clientTempId,
+      replyToMessageId: req.body.replyToMessageId
     });
 
     // Still push it to anyone connected via the socket room -- this endpoint
@@ -336,8 +345,67 @@ async function markConversationRead(req, res) {
   }
 }
 
+// B9: POST /conversations/:id/messages/image (multipart 'image', optional
+// 'caption', 'clientTempId', 'replyToMessageId'). Participation is checked
+// by requireConversationParticipant BEFORE the upload, so a non-participant
+// never gets to put a file on Cloudinary.
+async function sendImageMessage(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).send('An image file is required (field name "image")');
+    }
+    const message = await messageService.sendImageMessage({
+      conversationId: req.params.id,
+      senderId: req.userId,
+      mediaUrl: req.cloudinaryResult.secure_url,
+      caption: req.body.caption,
+      clientTempId: req.body.clientTempId,
+      replyToMessageId: req.body.replyToMessageId
+    });
+    try {
+      getIO().to(`conv_${message.conversation_id}`).emit('new_message', message);
+    } catch (err) {
+      console.error('Failed to emit new_message over socket:', err.message);
+    }
+    res.status(201).json(message);
+  } catch (err) {
+    if (err instanceof messageService.MessageValidationError) return res.status(400).send(err.message);
+    if (err instanceof messageService.NotParticipantError) return res.status(403).send(err.message);
+    if (err instanceof messageService.BlockedError) return res.status(403).send(err.message);
+    if (err instanceof messageService.RateLimitError) return res.status(429).send(err.message);
+    sendServerError(res, err, 'Send image failed. Please try again later.');
+  }
+}
+
+// B9: PUT /conversations/:id/messages/:messageId { content } -- REST twin of
+// the socket 'edit_message' event (same service, same broadcast).
+async function editMessage(req, res) {
+  try {
+    const message = await messageService.editMessage({
+      conversationId: req.params.id,
+      messageId: req.params.messageId,
+      userId: req.userId,
+      content: req.body.content
+    });
+    try {
+      getIO().to(`conv_${message.conversation_id}`).emit('message_edited', { conversationId: message.conversation_id, message });
+    } catch (err) {
+      console.error('Failed to emit message_edited over socket:', err.message);
+    }
+    res.json(message);
+  } catch (err) {
+    if (err instanceof messageService.MessageValidationError) return res.status(400).send(err.message);
+    if (err instanceof messageService.MessageNotFoundError) return res.status(404).send(err.message);
+    if (err instanceof messageService.NotMessageOwnerError) return res.status(403).send(err.message);
+    if (err instanceof messageService.NotEditableError) return res.status(403).send(err.message);
+    sendServerError(res, err, 'Edit message failed. Please try again later.');
+  }
+}
+
 module.exports = {
   getConversations,
+  sendImageMessage,
+  editMessage,
   createConversation,
   getMessages,
   sendMessage,

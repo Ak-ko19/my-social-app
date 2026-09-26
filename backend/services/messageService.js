@@ -47,6 +47,18 @@ class NotMessageOwnerError extends Error {
   }
 }
 
+// B9: how long after sending a text message can still be edited (same idea
+// as Messenger/WhatsApp) -- long enough to fix a typo, short enough that a
+// conversation's history can't be quietly rewritten later.
+const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000;
+
+class NotEditableError extends Error {
+  constructor(message = 'This message can no longer be edited') {
+    super(message);
+    this.name = 'NotEditableError';
+  }
+}
+
 class BlockedError extends Error {
   constructor(message = 'You cannot message this user') {
     super(message);
@@ -108,7 +120,7 @@ function validateClientTempId(clientTempId) {
 // (e.g. one enforcing participation and the other forgetting to). Callers
 // are expected to have already done their own type-specific validation
 // (content shape, media fields, etc.) before reaching this.
-async function createMessage({ conversationId, senderId, type, content, mediaUrl, durationSeconds, clientTempId }) {
+async function createMessage({ conversationId, senderId, type, content, mediaUrl, durationSeconds, clientTempId, replyToMessageId = null }) {
   // Room membership alone is never trusted as authorization -- a socket
   // could theoretically still be joined to a stale room, so every write
   // re-checks conversation_participants directly.
@@ -127,15 +139,18 @@ async function createMessage({ conversationId, senderId, type, content, mediaUrl
   }
 
   const result = await db.query(
-    `INSERT INTO messages (conversation_id, sender_id, content, client_temp_id, type, media_url, duration_seconds)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO messages (conversation_id, sender_id, content, client_temp_id, type, media_url, duration_seconds, reply_to_message_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
-    [conversationId, senderId, content ?? null, clientTempId || null, type, mediaUrl || null, durationSeconds ?? null]
+    [conversationId, senderId, content ?? null, clientTempId || null, type, mediaUrl || null, durationSeconds ?? null, replyToMessageId]
   );
-  return result.rows[0];
+  // Every new message goes out with its reply preview already attached, so
+  // a new_message broadcast renders the quote without another fetch.
+  const [withPreview] = await attachReplyPreviews(conversationId, result.rows);
+  return withPreview;
 }
 
-async function sendMessage({ conversationId, senderId, content, clientTempId }) {
+async function sendMessage({ conversationId, senderId, content, clientTempId, replyToMessageId }) {
   const convId = parseInt(conversationId, 10);
   if (isNaN(convId)) {
     throw new MessageValidationError('Invalid conversation ID');
@@ -151,7 +166,8 @@ async function sendMessage({ conversationId, senderId, content, clientTempId }) 
 
   validateClientTempId(clientTempId);
 
-  return createMessage({ conversationId: convId, senderId, type: 'text', content: cleaned, clientTempId });
+  const replyTo = await validateReplyTo(convId, replyToMessageId);
+  return createMessage({ conversationId: convId, senderId, type: 'text', content: cleaned, clientTempId, replyToMessageId: replyTo });
 }
 
 // mediaUrl/durationSeconds come from the Cloudinary upload result the
@@ -307,18 +323,142 @@ async function deleteMessage({ conversationId, messageId, userId }) {
   return result.rows[0];
 }
 
+// B9 reply-to: the target must be a message in the SAME conversation (so a
+// reply can never quote -- and so leak -- a message from a conversation the
+// sender isn't in). Returns the id to store, or null for a normal message.
+async function validateReplyTo(conversationId, replyToMessageId) {
+  if (replyToMessageId === undefined || replyToMessageId === null || replyToMessageId === '') return null;
+  const id = Number(replyToMessageId);
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new MessageValidationError('Invalid replyToMessageId');
+  }
+  const result = await db.query('SELECT id FROM messages WHERE id = $1 AND conversation_id = $2', [id, conversationId]);
+  if (result.rows.length === 0) {
+    throw new MessageValidationError('The message you are replying to is not in this conversation');
+  }
+  return id;
+}
+
+const REPLY_PREVIEW_LENGTH = 120;
+
+// Adds reply_to: { id, sender_id, type, content, deleted } to every row
+// that replies to something -- one query for the whole page, not one per
+// message. A deleted original shows as deleted (no content), same scrub
+// rule as the thread itself.
+async function attachReplyPreviews(conversationId, rows) {
+  const ids = [...new Set(rows.map((r) => r.reply_to_message_id).filter(Boolean))];
+  if (ids.length === 0) return rows.map((r) => ({ ...r, reply_to: null }));
+  const result = await db.query(
+    'SELECT id, sender_id, type, content, deleted_at FROM messages WHERE id = ANY($1::int[]) AND conversation_id = $2',
+    [ids, conversationId]
+  );
+  const byId = new Map(result.rows.map((m) => [m.id, m]));
+  return rows.map((r) => {
+    const original = r.reply_to_message_id ? byId.get(r.reply_to_message_id) : null;
+    if (!original) return { ...r, reply_to: null };
+    const deleted = Boolean(original.deleted_at);
+    return {
+      ...r,
+      reply_to: {
+        id: original.id,
+        sender_id: original.sender_id,
+        type: original.type,
+        deleted,
+        content: deleted || !original.content ? null : original.content.slice(0, REPLY_PREVIEW_LENGTH)
+      }
+    };
+  });
+}
+
+// B9 image messages. mediaUrl comes from the caller's Cloudinary upload
+// (same split as sendVoiceMessage: this only validates and persists).
+// content is an optional caption.
+async function sendImageMessage({ conversationId, senderId, mediaUrl, caption, clientTempId, replyToMessageId }) {
+  const convId = parseInt(conversationId, 10);
+  if (isNaN(convId)) {
+    throw new MessageValidationError('Invalid conversation ID');
+  }
+  if (!mediaUrl || typeof mediaUrl !== 'string') {
+    throw new MessageValidationError('An image is required');
+  }
+  const cleanedCaption = sanitizeContent(caption || '');
+  if (cleanedCaption.length > MAX_MESSAGE_LENGTH) {
+    throw new MessageValidationError(`Caption must be under ${MAX_MESSAGE_LENGTH} characters`);
+  }
+  validateClientTempId(clientTempId);
+  const replyTo = await validateReplyTo(convId, replyToMessageId);
+  return createMessage({
+    conversationId: convId,
+    senderId,
+    type: 'image',
+    content: cleanedCaption || null,
+    mediaUrl,
+    clientTempId,
+    replyToMessageId: replyTo
+  });
+}
+
+// B9 edit: the sender's own TEXT message, not deleted, within
+// MESSAGE_EDIT_WINDOW_MS of sending. Sets edited_at (shown as "edited").
+async function editMessage({ conversationId, messageId, userId, content }) {
+  const convId = parseInt(conversationId, 10);
+  const msgId = parseInt(messageId, 10);
+  if (isNaN(convId) || isNaN(msgId)) {
+    throw new MessageValidationError('Invalid conversationId or messageId');
+  }
+  const cleaned = sanitizeContent(content);
+  if (!cleaned) {
+    throw new MessageValidationError('Message content cannot be empty');
+  }
+  if (cleaned.length > MAX_MESSAGE_LENGTH) {
+    throw new MessageValidationError(`Message content must be under ${MAX_MESSAGE_LENGTH} characters`);
+  }
+
+  const existing = await db.query('SELECT * FROM messages WHERE id = $1 AND conversation_id = $2', [msgId, convId]);
+  if (existing.rows.length === 0) {
+    throw new MessageNotFoundError();
+  }
+  const message = existing.rows[0];
+  if (message.sender_id !== userId) {
+    throw new NotMessageOwnerError('You can only edit your own messages');
+  }
+  if (message.deleted_at) {
+    throw new NotEditableError('A deleted message cannot be edited');
+  }
+  if (message.type !== 'text') {
+    throw new NotEditableError('Only text messages can be edited');
+  }
+  if (Date.now() - new Date(message.created_at).getTime() > MESSAGE_EDIT_WINDOW_MS) {
+    throw new NotEditableError('Messages can only be edited within 15 minutes of sending');
+  }
+
+  const result = await db.query(
+    'UPDATE messages SET content = $1, edited_at = now() WHERE id = $2 RETURNING *',
+    [cleaned, msgId]
+  );
+  const [withPreview] = await attachReplyPreviews(convId, result.rows);
+  return withPreview;
+}
+
 // Soft-deleted messages (deleted_at set) keep their row -- other fields
 // (id, sender_id, created_at, status) still matter for rendering a
 // "message deleted" placeholder in the right place in the thread -- but
 // their content must never reach a client over the wire.
+//
+// B9 audit fix: media is scrubbed too. Before this, a deleted VOICE
+// message still sent its media_url (and duration) to both participants, so
+// it stayed playable; the same would apply to image messages.
 function scrubDeletedContent(message) {
   if (!message.deleted_at) return message;
-  return { ...message, content: null };
+  return { ...message, content: null, media_url: null, duration_seconds: null };
 }
 
 module.exports = {
   sendMessage,
   sendVoiceMessage,
+  sendImageMessage,
+  editMessage,
+  attachReplyPreviews,
   markDelivered,
   markRead,
   deleteMessage,
@@ -331,6 +471,8 @@ module.exports = {
   MessageNotFoundError,
   NotMessageOwnerError,
   BlockedError,
+  NotEditableError,
+  MESSAGE_EDIT_WINDOW_MS,
   MAX_MESSAGE_LENGTH,
   MAX_CLIENT_TEMP_ID_LENGTH
 };

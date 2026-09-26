@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const requireConversationParticipant = require('../middleware/requireConversationParticipant');
-const { uploadAudio, uploadToCloudinary } = require('../middleware/cloudinaryUpload');
+const { upload, uploadAudio, uploadToCloudinary } = require('../middleware/cloudinaryUpload');
 const conversationController = require('../controllers/conversationController');
 
 router.get('/conversations', authMiddleware, conversationController.getConversations);
@@ -21,6 +21,16 @@ router.post(
   uploadToCloudinary('voice-messages', 'video', 'mp3'),
   conversationController.sendVoiceMessage
 );
+// B9: image messages (participation checked before the upload happens).
+router.post(
+  '/conversations/:id/messages/image',
+  authMiddleware,
+  requireConversationParticipant,
+  upload.single('image'),
+  uploadToCloudinary('message-images'),
+  conversationController.sendImageMessage
+);
+router.put('/conversations/:id/messages/:messageId', authMiddleware, conversationController.editMessage);
 router.delete('/conversations/:id/messages/:messageId', authMiddleware, conversationController.deleteMessage);
 router.put('/conversations/:id/read', authMiddleware, conversationController.markConversationRead);
 
