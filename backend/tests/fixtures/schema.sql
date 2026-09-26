@@ -113,6 +113,22 @@ CREATE TABLE comments (
   created_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Added by migration 018_add_stories (B3).
+CREATE TABLE stories (
+  id SERIAL PRIMARY KEY,
+  user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  media_url text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL DEFAULT (now() + INTERVAL '24 hours')
+);
+
+CREATE TABLE story_views (
+  story_id integer NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  viewer_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  viewed_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (story_id, viewer_id)
+);
+
 -- Added by migration 017_add_post_media (B2).
 CREATE TABLE post_media (
   id SERIAL PRIMARY KEY,
