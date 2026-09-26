@@ -413,11 +413,59 @@ picker UI, existing plain "like" data stays compatible/migrated.
   returns counts only.
 
 ### B2 — Multiple images per post (carousel)
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** a `post_media`-style join table replaces the current
 single `image_url` column on `posts`; upload UI supports multi-select;
 feed and post-detail render a swipeable carousel.
-**Notes:** current schema is single-image-per-post (confirmed 2026-09-23).
+**Notes:**
+- **Schema (migration 017):** `post_media(post_id, url, position)` with
+  `UNIQUE(post_id, position)`, which also serves the per-post lookup. It
+  cascades on post delete.
+  - It backfills every existing image post at position 0. Verified on a
+    pre-017 DB: the image post was backfilled, the text post skipped, and
+    down → up works.
+  - Decision: `posts.image_url` is **kept** and mirrors the first image,
+    rather than being dropped as the done-when wording suggested.
+    Dropping it would break the deployed frontend and search results
+    mid-rollout. `post_media` is the source of truth for the full list.
+- **Upload and API:**
+  - `POST /posts` accepts up to 10 `images` fields; the legacy single
+    `image` field still works.
+  - Uploads to Cloudinary run in parallel and keep their order. The post
+    and its media rows are inserted in one SQL statement, so a post can't
+    exist with only some of its images.
+  - More than 10 images → 400 "You can attach up to 10 images" (multer's
+    own message was just "Unexpected field").
+  - Every post payload adds `media: [{url}]` in order, via
+    `reactionService.mediaColumnSql()`.
+- **UI:**
+  - CreatePost: multi-select that adds across picker opens, a thumbnail
+    grid with per-image remove, a cap at 10 with a message, blob URLs
+    revoked, and a "Posting…" state that blocks double-submit during
+    multi-upload.
+  - `components/feed/MediaCarousel.jsx`: native CSS scroll-snap (swipe
+    and trackpad for free), "n/N" counter, dots, and prev/next buttons
+    (hidden on touch-only devices). ←/→ work on the focused track, with
+    ARIA carousel/slide roles. A 1-image post renders exactly as before.
+  - The carousel is used by PostCard, so the feed, post detail, hashtag
+    feed and saved posts all get it.
+- **Test infra:** Cloudinary is now mocked in `setupTestApp`, so no test
+  can ever upload for real.
+- **Verified:**
+  - 7 new API tests; backend 108/108.
+  - B2 browser test 14/14 in headless Edge: 3-slide carousel, next/prev
+    via buttons and keys, 1-image post unchanged, touch swipe at 375px
+    with no page h-scroll and arrows hidden, CreatePost add/remove/submit
+    (intercepted multipart had exactly 2 `images` parts), 11 → capped at
+    10 with a message.
+  - Regressions: B1 14/14, A3 120/120, A2 22/22, eslint clean, build
+    passes.
+- **Deploy order (owner):** run migration 017 **before** deploying this
+  backend, since `POST /posts` and every post query use `post_media`.
+  See NEEDS OWNER.
+- **Not done:** editing a post doesn't add or remove images (text edit
+  only, as before). If one upload in a multi-upload fails, the others
+  stay in Cloudinary unreferenced — rare and harmless.
 
 ### B3 — Stories: real backend + UI, auto-expire 24h
 **Status:** ⬜ NOT CHECKED
@@ -576,3 +624,6 @@ running app in one pass, with a written pass/fail report per item.
   (the post queries select `likes.reaction` and would fail without it):
   `node scripts/run-migration.js migrations/016_add_reactions.up.sql`.
   Existing likes become "like" reactions automatically.
+- B2 migration 017 on production, **before deploying the new backend**:
+  `node scripts/run-migration.js migrations/017_add_post_media.up.sql`
+  (backfills existing single-image posts). Run 015 → 016 → 017 in order.

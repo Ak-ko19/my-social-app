@@ -667,6 +667,25 @@ built and how to re-verify it.
 - **Deploy:** run migration 016 before deploying a backend that includes
   B1.
 
+### B2 — Multiple images per post ✅
+- **Data:** `post_media(post_id, url, position)` (migration 017) holds
+  the ordered image list. `posts.image_url` still mirrors the first image
+  for older readers; don't drop it without checking search and older
+  clients.
+- **Upload:** `POST /posts` takes up to 10 repeated `images` fields
+  (legacy `image` still works). Middleware: `uploadPostImages` +
+  `uploadManyToCloudinary` (`middleware/cloudinaryUpload.js`), which
+  sets `req.cloudinaryResults` in the order sent. The post and its media
+  are inserted in one SQL statement.
+- **Payloads:** `media: [{url}]` on every post, via
+  `reactionService.mediaColumnSql()`. Add it to any new post query.
+- **Frontend:** `components/feed/MediaCarousel.jsx` (scroll-snap
+  carousel; one image renders plain) and CreatePost's multi-select grid.
+- **Tests:** Cloudinary is mocked in `tests/helpers/setupTestApp.js`,
+  with fake URLs numbered in upload order.
+- **Deploy:** run migrations 015 → 016 → 017 before deploying the
+  matching backend.
+
 ---
 
 ## How to use this file

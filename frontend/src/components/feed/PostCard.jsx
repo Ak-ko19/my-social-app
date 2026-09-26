@@ -13,7 +13,7 @@ import { getOptimizedImageUrl } from '../../utils/cloudinaryImage';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import { updatePost } from '../../services/postService';
 import { Avatar, VerifiedTick } from '../ui';
-import ProgressiveImage from '../common/ProgressiveImage';
+import MediaCarousel from './MediaCarousel';
 import CommentSection from './CommentSection';
 import PostMenu from './PostMenu';
 import PostText from './PostText';
@@ -184,13 +184,13 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost }) {
         <PostText content={post.content} className="post-card-body" />
       )}
 
-      {post.image_url && (
-        <ProgressiveImage
-          src={post.image_url}
-          alt={`Image attached to ${post.username}'s post`}
-          className="post-card-media"
-        />
-      )}
+      {/* B2: media[] is the full ordered list; image_url is the fallback for
+          payloads that predate post_media (e.g. a cached older response). */}
+      <MediaCarousel
+        media={post.media?.length ? post.media : post.image_url ? [{ url: post.image_url }] : []}
+        altPrefix={`Image attached to ${post.username}'s post`}
+        className="post-card-media"
+      />
 
       {post.linkPreview && (
         <a className="post-card-link-preview" href={post.linkPreview.url} target="_blank" rel="noreferrer">
