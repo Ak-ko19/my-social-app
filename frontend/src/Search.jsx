@@ -6,6 +6,7 @@ import { IconButton, Avatar } from './components/ui';
 import { createConversation } from './services/messageService';
 import { useTrendingHashtags } from './hooks/useExplore';
 import TrendingHashtags from './components/explore/TrendingHashtags';
+import PeopleYouMayKnow from './components/explore/PeopleYouMayKnow';
 import { Compass } from 'lucide-react';
 import { useFollowToggle } from './hooks/useFollowToggle';
 import FollowButton from './components/feed/FollowButton';
@@ -128,6 +129,7 @@ function Search() {
 
         {!searched && !searching && (
           <>
+            <PeopleYouMayKnow token={token} />
             <TrendingHashtags tags={trending.tags} loaded={trending.loaded} />
             <Link to="/explore" className="screen-link explore-link">
               <Compass size={16} aria-hidden="true" /> Explore popular posts

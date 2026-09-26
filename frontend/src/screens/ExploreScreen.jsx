@@ -4,6 +4,7 @@ import { IconButton } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import { useTrendingHashtags, usePopularPosts } from '../hooks/useExplore';
 import TrendingHashtags from '../components/explore/TrendingHashtags';
+import PeopleYouMayKnow from '../components/explore/PeopleYouMayKnow';
 import PostCard from '../components/feed/PostCard';
 import PostCardSkeleton from '../components/feed/PostCardSkeleton';
 import FeedErrorState from '../components/feed/FeedErrorState';
@@ -49,6 +50,7 @@ function ExploreScreen() {
         <h1 className="screen-header-title">Explore</h1>
       </header>
       <div className="screen-body explore-body">
+        <PeopleYouMayKnow token={token} />
         <TrendingHashtags tags={trending.tags} loaded={trending.loaded} />
         <h2 className="section-heading">Popular this week</h2>
       </div>

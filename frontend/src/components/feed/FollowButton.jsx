@@ -6,7 +6,7 @@ import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
 // tap feedback as LikeButton/CommentButton for consistency, without the
 // extra label-swap animation (only Like's state transition was asked for).
 function FollowButton({ follow }) {
-  const { isFollowing, pending, error, toggle } = follow;
+  const { isFollowing, requested, pending, error, toggle } = follow;
   const reduceMotion = useReducedMotion();
 
   return (
@@ -20,7 +20,7 @@ function FollowButton({ follow }) {
         whileTap={reduceMotion ? undefined : { scale: 0.92 }}
         transition={{ duration: DURATION_FAST, ease: EASE_STANDARD }}
       >
-        {isFollowing ? 'Following' : 'Follow'}
+        {isFollowing ? (requested ? 'Requested' : 'Following') : 'Follow'}
       </motion.button>
       {error && (
         <span className="feed-error-text" role="alert">

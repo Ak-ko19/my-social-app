@@ -728,10 +728,50 @@ window) backs a new `/explore` endpoint and screen.
   7-day window per request.
 
 ### B8 — People you may know (follow suggestions)
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** a suggestion query (mutual follows / shared network) backs
 an endpoint, surfaced in a real UI slot (e.g. on Explore or Search).
-**Notes:** _(none yet)_
+**Notes:**
+- **API:** `GET /users/suggestions` (logged-in), up to 10 results.
+  - **Network:** friends-of-friends (followed by the people you follow),
+    ranked by mutual count, with a sample of up to 2 mutual usernames.
+    Plus people who **follow you** but you haven't followed back, which
+    get a +2 boost since it's a strong signal.
+  - **Fallback:** the most-followed **public** accounts ("popular"), so a
+    brand-new account still gets suggestions.
+  - **Excluded:** you, anyone you follow or have a pending request to,
+    blocks in either direction, and deactivated accounts. A private
+    account is never used as a popular fallback.
+  - **Privacy check:** mutuals come only from your *accepted* follows'
+    following lists, which A6's list rules already let you see. Nothing
+    new is revealed.
+- **UI (`components/explore/PeopleYouMayKnow.jsx`):**
+  - A horizontal, snap-scrolling row of cards: avatar and name link to
+    the profile, a plain-language reason ("Followed by X and Y",
+    "Followed by X and 2 others", "Follows you", "Popular · N
+    followers"), and a Follow button.
+  - Shown on Explore (top) and on Search before a query. Hidden when
+    empty or on error, since it's a discovery aid.
+- **Bug fixed along the way:** `useFollowToggle` ignored the server's
+  `status`, so following a **private** account showed "Following" while
+  it was really a pending request. This affected Search results before
+  B8 too. The hook now tracks `requested`, and the shared `FollowButton`
+  says "Requested".
+- **Verified:**
+  - 6 new API tests: ranking and mutual sample, follows-you boost, every
+    exclusion (deactivation confirmed via the real password flow),
+    popular fallback excluding private accounts, network before popular
+    with no duplicates. Backend 162/162.
+  - B8 browser test 10/10: order and reasons, follow → "Following"
+    (checked server-side), follow private → "Requested" (pending checked
+    server-side), card → profile, followed people drop off Search's
+    list, 375px dark with no page scroll.
+  - All earlier suites green (A3 matrix 132/132); eslint and build
+    clean.
+- **No migration needed.**
+- **Not done:** no "dismiss this suggestion" action (it would need
+  persisted dismissals). Suggestions are computed per request; at scale,
+  cache them per user.
 
 ### B9 — DM extras: edit/delete message, reply-to, send images
 **Status:** ⬜ NOT CHECKED

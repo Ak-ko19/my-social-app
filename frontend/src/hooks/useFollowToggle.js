@@ -12,6 +12,10 @@ const NOT_FOLLOWING_MESSAGE = 'You are not following this user';
 // itself doesn't assume that; it just reflects whatever it's given).
 export function useFollowToggle(userId, initialIsFollowing, token) {
   const [isFollowing, setIsFollowing] = useState(Boolean(initialIsFollowing));
+  // True when the last follow created a PENDING request (private account)
+  // rather than an accepted follow -- the server says which in its
+  // response. Buttons show "Requested" instead of "Following" then.
+  const [requested, setRequested] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const pendingRef = useRef(false);
@@ -27,8 +31,12 @@ export function useFollowToggle(userId, initialIsFollowing, token) {
     setIsFollowing(nextFollowing);
 
     const action = nextFollowing ? followUser : unfollowUser;
+    if (!nextFollowing) setRequested(false);
 
     action(userId, token)
+      .then((res) => {
+        if (nextFollowing) setRequested(res?.data?.status === 'pending');
+      })
       .catch((err) => {
         console.error(err);
         const message = err.response?.data;
@@ -48,5 +56,5 @@ export function useFollowToggle(userId, initialIsFollowing, token) {
       });
   }, [isFollowing, userId, token]);
 
-  return { isFollowing, pending, error, toggle };
+  return { isFollowing, requested, pending, error, toggle };
 }

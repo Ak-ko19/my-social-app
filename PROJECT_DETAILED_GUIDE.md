@@ -767,6 +767,18 @@ built and how to re-verify it.
 - **Scale note:** move trending to a periodically refreshed materialized
   view once traffic grows.
 
+### B8 — People you may know ✅
+- **API:** `GET /users/suggestions` (`controllers/suggestionsController.js`).
+  It returns friends-of-friends by mutual count, then follows-you (+2),
+  then popular public accounts as a fallback. Every row carries a
+  `reason` (`mutuals | follows_you | popular`) and `mutual_sample`.
+  Shared exclusions live in `ELIGIBLE_SQL`.
+- **Frontend:** `components/explore/PeopleYouMayKnow.jsx`, on Explore
+  and on Search before a query.
+- **Follow state:** `useFollowToggle` now returns `requested` (a pending
+  request to a private account), and `FollowButton` shows "Requested".
+  Use this pair for any new follow button.
+
 ---
 
 ## How to use this file
