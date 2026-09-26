@@ -7,6 +7,7 @@ import {
   User,
   ShieldCheck,
   Bell,
+  BellRing,
   UserX,
   Globe,
   Moon,
@@ -51,6 +52,8 @@ const SETTINGS_SECTIONS = [
       // notifications count is live data, so it's injected at render
       // time below (the one row key this component special-cases).
       { key: 'notifications', icon: Bell, title: 'Notifications', to: '/notifications' },
+      // B11: choose which notifications to receive.
+      { key: 'notification-settings', icon: BellRing, title: 'Notification Settings', to: '/settings/notifications' },
       { key: 'blocked-users', icon: UserX, title: 'Blocked Users', to: '/settings/blocked-users' },
       { key: 'follow-requests', icon: Users, title: 'Follow Requests', to: '/settings/follow-requests' },
       { key: 'language-region', icon: Globe, title: 'Language & Region' },

@@ -825,6 +825,21 @@ built and how to re-verify it.
     the group header, sender names and typing names.
 - **Deploy:** migrations through 023 before the matching backend.
 
+### B11 — Notification settings ✅
+- **Always create notifications with
+  `notificationService.notify({ userId, actorId, type, postId?, commentId? })`**,
+  never a raw INSERT. It enforces the recipient's settings and skips
+  self-notifications.
+  - A new type needs an entry in `CATEGORY_BY_TYPE`, or it throws.
+  - For batched inserts, filter recipients with
+    `allowedSql(category, '<recipient id sql>')`, as `mentionService`
+    does.
+- **Data:** `notification_preferences` (migration 024); no row means all
+  on.
+- **API/UI:** `GET` / `PUT /notification-preferences`; the
+  `/settings/notifications` screen (`screens/NotificationSettingsScreen.jsx`).
+- **Deploy:** migrations through 024 before the matching backend.
+
 ---
 
 ## How to use this file

@@ -30,6 +30,7 @@ const VerifyEmailScreen = lazy(() => import('./screens/VerifyEmailScreen'));
 const ExploreScreen = lazy(() => import('./screens/ExploreScreen'));
 const CreateGroupScreen = lazy(() => import('./screens/CreateGroupScreen'));
 const GroupInfoScreen = lazy(() => import('./screens/GroupInfoScreen'));
+const NotificationSettingsScreen = lazy(() => import('./screens/NotificationSettingsScreen'));
 
 function App() {
   return (
@@ -144,6 +145,7 @@ function App() {
         <Route path="/messages/:conversationId" element={<PhoneShell hideTabBar><Conversation /></PhoneShell>} />
         <Route path="/search" element={<PhoneShell><Search /></PhoneShell>} />
         <Route path="/explore" element={<PhoneShell><ExploreScreen /></PhoneShell>} />
+        <Route path="/settings/notifications" element={<PhoneShell><NotificationSettingsScreen /></PhoneShell>} />
       </Routes>
     </BrowserRouter>
   );

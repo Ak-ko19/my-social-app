@@ -919,12 +919,56 @@ plus group-specific UI (name, member list, add/remove member).
   - No per-member read receipts.
 
 ### B11 — Notification settings (choose which to receive)
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** a per-user preferences table/column exists, notification-
 creation code checks it before inserting each notification type, and a
 Settings UI toggle controls it (row already exists as a stub —
 `SettingsScreen.jsx`'s "Content Preferences"/notifications area).
-**Notes:** _(none yet)_
+**Notes:**
+- **Schema (migration 024):** `notification_preferences` has one row per
+  user, with a boolean per category. **No row means everything on**, so
+  existing users need no backfill and keep every notification.
+  Verified: defaults, cascade on account deletion, down/up.
+- **Decision: categories, not raw types.** Five switches that match how
+  people think about it:
+  - likes & reactions (`like`, `comment_like`);
+  - comments & replies (`comment`, `reply`);
+  - mentions;
+  - new followers (`follow`, `follow_request`);
+  - accepted requests (`follow_accepted`).
+  The type → category map lives in `services/notificationService.js`.
+- **The real change:** notifications used to be created by raw
+  `INSERT`s scattered across 7 controller sites. Now there's one
+  `notificationService.notify()` that checks the preference and inserts
+  in a single statement (nobody is ever notified about their own
+  actions). The batched mention insert uses the same `allowedSql()`
+  filter. A future notification type can't accidentally skip settings.
+- **API:** `GET` / `PUT /notification-preferences`. PUT is partial and
+  validated: known keys only, booleans only.
+- **UI:** a new Settings row, "Notification Settings", opens
+  `/settings/notifications`.
+  - Five switches, reusing the app's switch style, each with a
+    one-line description linked via `aria-describedby`.
+  - Changes are optimistic with revert and an inline error.
+  - The screen explains that turning something off won't remove
+    notifications you already have.
+- **Verified:**
+  - 7 new API tests: each switch silences exactly its types and nothing
+    else (mentions through the batched path, with another user still
+    getting theirs), defaults, partial updates, validation, turning back
+    on resumes, and existing notifications are never deleted. Backend
+    191/191.
+  - B11 browser test 9/9: Settings → screen, all on by default, click
+    off (checked server-side), end to end (Bob's like silent, his
+    comment delivered), persists across reload, Space toggles a focused
+    switch, accessible descriptions, 375px dark.
+  - The A3 matrix now includes this screen: 144/144. All earlier suites
+    green; eslint and build clean.
+- **Deploy order (owner):** migration 024 before this backend. See NEEDS
+  OWNER.
+- **Not done:** web push notifications (still a NEEDS OWNER item for the
+  VAPID keys). These settings will apply to push too once it exists,
+  since everything goes through `notify()`.
 
 ### B12 — Admin panel: review reports, ban users, remove posts
 **Status:** ⬜ NOT CHECKED
@@ -1021,7 +1065,7 @@ running app in one pass, with a written pass/fail report per item.
   (backfills existing single-image posts).
 - B3 migration 018 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/018_add_stories.up.sql`.
-  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023.
+  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → 024.
 - B4 migration 019 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/019_add_comment_replies_likes.up.sql`.
 - B5 migration 020 on production, **before deploying the new backend**:
@@ -1030,3 +1074,5 @@ running app in one pass, with a written pass/fail report per item.
   backend (021 must be its own run -- see its header comment).
 - B10 migration 023 on production, before deploying the new backend:
   `node scripts/run-migration.js migrations/023_add_group_chats.up.sql`.
+- B11 migration 024 on production, before deploying the new backend:
+  `node scripts/run-migration.js migrations/024_add_notification_preferences.up.sql`.

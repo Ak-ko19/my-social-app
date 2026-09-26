@@ -1,0 +1,49 @@
+/* B11 notification settings -- rebrand tokens (dark mode via tokens.css);
+   the switch itself is the shared .theme-switch from Feed.css. */
+.notif-settings-intro {
+  margin: 0 0 var(--space-4);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.notif-settings-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.notif-settings-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  min-height: 56px;
+}
+
+.notif-settings-row + .notif-settings-row {
+  border-top: 1px solid var(--color-border);
+}
+
+.notif-settings-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notif-settings-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.notif-settings-desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
