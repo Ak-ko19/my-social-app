@@ -2,6 +2,7 @@ const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const mentionService = require('../services/mentionService');
 const { getVisiblePost } = require('../services/postVisibilityService');
+const blockService = require('../services/blockService');
 
 async function createComment(req, res) {
   try {
@@ -17,15 +18,55 @@ async function createComment(req, res) {
     if (!post) {
       return res.status(404).send('Post not found');
     }
+    // B4 replies: optional parentCommentId. Replies are one level deep --
+    // replying to a reply attaches to that reply's own parent (see
+    // migration 019). The parent must be on this post and visible to the
+    // replier (no block with its author).
+    let parentId = null;
+    let parentAuthorId = null;
+    if (req.body.parentCommentId !== undefined && req.body.parentCommentId !== null) {
+      const parentCommentId = Number(req.body.parentCommentId);
+      if (!Number.isInteger(parentCommentId)) {
+        return res.status(400).send('Invalid parent comment');
+      }
+      const parentResult = await db.query(
+        'SELECT id, post_id, user_id, parent_comment_id FROM comments WHERE id = $1',
+        [parentCommentId]
+      );
+      const parent = parentResult.rows[0];
+      if (!parent || parent.post_id !== post.id || (await blockService.isBlocked(req.userId, parent.user_id))) {
+        return res.status(400).send('Invalid parent comment');
+      }
+      if (parent.parent_comment_id) {
+        const topResult = await db.query('SELECT id, user_id FROM comments WHERE id = $1', [parent.parent_comment_id]);
+        parentId = topResult.rows[0].id;
+      } else {
+        parentId = parent.id;
+      }
+      // Notify the person actually replied to (the reply's author, when
+      // replying to a reply).
+      parentAuthorId = parent.user_id;
+    }
+
     const result = await db.query(
-      'INSERT INTO comments (post_id, user_id, content) VALUES ($1, $2, $3) RETURNING *',
-      [req.params.id, req.userId, content]
+      'INSERT INTO comments (post_id, user_id, content, parent_comment_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [req.params.id, req.userId, content, parentId]
     );
+    const newCommentId = result.rows[0].id;
     const postOwnerId = post.user_id;
-    if (postOwnerId !== req.userId) {
+    const notifyReply = parentAuthorId !== null && parentAuthorId !== req.userId;
+    // One notification per person: when the post owner is also the one
+    // being replied to, they get the more specific 'reply' only.
+    if (postOwnerId !== req.userId && !(notifyReply && parentAuthorId === postOwnerId)) {
       await db.query(
         'INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id) VALUES ($1, $2, $3, $4, $5)',
-        [postOwnerId, req.userId, 'comment', req.params.id, result.rows[0].id]
+        [postOwnerId, req.userId, 'comment', req.params.id, newCommentId]
+      );
+    }
+    if (notifyReply) {
+      await db.query(
+        'INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id) VALUES ($1, $2, $3, $4, $5)',
+        [parentAuthorId, req.userId, 'reply', req.params.id, newCommentId]
       );
     }
     await mentionService.notifyMentions({
@@ -34,7 +75,7 @@ async function createComment(req, res) {
       postId: parseInt(req.params.id, 10),
       commentId: result.rows[0].id
     });
-    res.status(201).json(result.rows[0]);
+    res.status(201).json({ ...result.rows[0], like_count: 0, liked_by_me: false });
   } catch (err) {
     sendServerError(res, err, 'Create comment failed. Please try again later.');
   }
@@ -54,7 +95,12 @@ async function getComments(req, res) {
     // (either direction), same mutual-invisibility rule as everywhere else.
     const viewerId = req.userId ?? null;
     const result = await db.query(`
-      SELECT comments.id, comments.content, comments.created_at, users.id AS user_id, users.username
+      SELECT comments.id, comments.content, comments.created_at, comments.parent_comment_id,
+        users.id AS user_id, users.username,
+        (SELECT COUNT(*)::int FROM comment_likes cl WHERE cl.comment_id = comments.id) AS like_count,
+        $2::int IS NOT NULL AND EXISTS(
+          SELECT 1 FROM comment_likes cl WHERE cl.comment_id = comments.id AND cl.user_id = $2
+        ) AS liked_by_me
       FROM comments
       JOIN users ON comments.user_id = users.id
       WHERE comments.post_id = $1
@@ -116,4 +162,65 @@ async function deleteComment(req, res) {
   }
 }
 
-module.exports = { createComment, getComments, updateComment, deleteComment };
+// B4 comment likes. A comment can be liked by anyone who can see it: its
+// post is visible to them (postVisibilityService) and there's no block
+// with the comment's author. Hidden -> 404, same as posts.
+async function getLikeableComment(commentId, viewerId) {
+  const result = await db.query('SELECT id, post_id, user_id FROM comments WHERE id = $1', [commentId]);
+  const comment = result.rows[0];
+  if (!comment) return null;
+  if (!(await getVisiblePost(comment.post_id, viewerId))) return null;
+  if (await blockService.isBlocked(viewerId, comment.user_id)) return null;
+  return comment;
+}
+
+async function commentLikeCount(commentId) {
+  const result = await db.query('SELECT COUNT(*)::int AS count FROM comment_likes WHERE comment_id = $1', [commentId]);
+  return result.rows[0].count;
+}
+
+// POST /comments/:id/like -- idempotent; notifies the author on the first
+// like only.
+async function likeComment(req, res) {
+  try {
+    if (isNaN(req.params.id)) {
+      return res.status(400).send('Invalid comment ID');
+    }
+    const comment = await getLikeableComment(req.params.id, req.userId);
+    if (!comment) {
+      return res.status(404).send('Comment not found');
+    }
+    const inserted = await db.query(
+      'INSERT INTO comment_likes (comment_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING comment_id',
+      [comment.id, req.userId]
+    );
+    if (inserted.rows.length > 0 && comment.user_id !== req.userId) {
+      await db.query(
+        'INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id) VALUES ($1, $2, $3, $4, $5)',
+        [comment.user_id, req.userId, 'comment_like', comment.post_id, comment.id]
+      );
+    }
+    res.status(inserted.rows.length > 0 ? 201 : 200).json({ likedByMe: true, likeCount: await commentLikeCount(comment.id) });
+  } catch (err) {
+    sendServerError(res, err, 'Like comment failed. Please try again later.');
+  }
+}
+
+// DELETE /comments/:id/like -- idempotent.
+async function unlikeComment(req, res) {
+  try {
+    if (isNaN(req.params.id)) {
+      return res.status(400).send('Invalid comment ID');
+    }
+    const comment = await getLikeableComment(req.params.id, req.userId);
+    if (!comment) {
+      return res.status(404).send('Comment not found');
+    }
+    await db.query('DELETE FROM comment_likes WHERE comment_id = $1 AND user_id = $2', [comment.id, req.userId]);
+    res.json({ likedByMe: false, likeCount: await commentLikeCount(comment.id) });
+  } catch (err) {
+    sendServerError(res, err, 'Unlike comment failed. Please try again later.');
+  }
+}
+
+module.exports = { createComment, getComments, updateComment, deleteComment, likeComment, unlikeComment };

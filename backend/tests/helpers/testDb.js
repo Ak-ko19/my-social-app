@@ -41,7 +41,7 @@ const pool = new Pool({ connectionString: TEST_DATABASE_URL });
 // the list self-documenting as a full inventory of what gets wiped).
 const TABLES = [
   'messages_dm_legacy', 'reports', 'notifications', 'bookmarks', 'blocks', 'follows',
-  'likes', 'comments', 'conversation_participants', 'messages', 'conversations',
+  'likes', 'comment_likes', 'comments', 'conversation_participants', 'messages', 'conversations',
   'post_hashtags', 'hashtags', 'post_media', 'story_views', 'stories', 'posts', 'users'
 ];
 

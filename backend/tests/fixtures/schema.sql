@@ -110,7 +110,17 @@ CREATE TABLE comments (
   post_id integer REFERENCES posts(id) ON DELETE CASCADE,
   user_id integer REFERENCES users(id) ON DELETE CASCADE,
   content text NOT NULL,
-  created_at timestamp DEFAULT CURRENT_TIMESTAMP
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  -- Added by migration 019_add_comment_replies_likes (B4).
+  parent_comment_id integer REFERENCES comments(id) ON DELETE CASCADE
+);
+
+-- Added by migration 019_add_comment_replies_likes (B4).
+CREATE TABLE comment_likes (
+  comment_id integer NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+  user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (comment_id, user_id)
 );
 
 -- Added by migration 018_add_stories (B3).
