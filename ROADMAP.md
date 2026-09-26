@@ -971,13 +971,81 @@ Settings UI toggle controls it (row already exists as a stub —
   since everything goes through `notify()`.
 
 ### B12 — Admin panel: review reports, ban users, remove posts
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** an admin-only route group + role/flag on `users` exists;
 a UI (can be minimal) lists the `reports` table (already populated by
 real user reports since the 12-feature batch, currently reviewed by
 nobody — confirmed 2026-09-23) and supports acting on them (dismiss,
 remove content, ban).
-**Notes:** _(none yet)_
+**Notes:**
+- **Schema (migration 025):** `users.is_admin`, `banned_at`, `ban_reason`;
+  `reports.resolved_by`, `resolved_at`, `resolution`
+  (dismissed / content_removed / user_banned). Verified: existing users
+  and reports unaffected, invalid resolution rejected, down/up.
+- **Who's an admin (decision):** there is **no API or UI to grant admin**,
+  so nobody can promote themselves. `node scripts/make-admin.js
+  <username>` (or `--revoke`) sets it; that's an owner step, see NEEDS
+  OWNER. `requireAdmin` re-reads the flag from the DB on every request,
+  so revoking takes effect immediately. Non-admins get **404** from the
+  admin API, so it doesn't advertise itself.
+- **Moderation API:**
+  - `GET /admin/reports?status=pending|reviewed` returns target
+    summaries (post text and author, or the reported account) plus how
+    many pending reports share that target.
+  - Actions: dismiss, remove-content (posts only), `POST
+    /admin/users/:id/ban` (optional reason) and `/unban`.
+  - **Acting on one report resolves every pending report on the same
+    target**: five reports on one post is one decision. Each records
+    who, when and the outcome.
+  - A ban also resolves pending reports about that user's posts.
+- **Ban design (decision):**
+  - A ban also sets `is_deactivated`, so every existing visibility rule
+    hides the user's posts, profile and comments with no query changes.
+  - Login refuses a banned account (403) **before** the auto-reactivation
+    that deactivated accounts get.
+  - Existing sessions end immediately: `authMiddleware` returns 401,
+    which the frontend already turns into a logout. `optionalAuth`
+    treats the user as anonymous, `socketAuth` refuses the connection,
+    and live sockets are disconnected.
+  - You can't ban yourself or another admin. Unban restores everything.
+  - Cost: one PK lookup per authenticated request (noted in
+    `accountStatusService`).
+- **Bug fixed along the way (app-wide):** under Express 5, `req.body` is
+  `undefined` when a request has no body. Every handler that reads or
+  destructures it crashed with a 500 instead of its own 400; the first
+  one found was banning without a reason. `req.body` now defaults to
+  `{}` globally, with regression tests for both cases.
+- **UI:**
+  - `/admin` ("Moderation") has Pending (oldest first) and Reviewed
+    (outcome, who, when) tabs.
+  - Report cards show a target preview with links, a "N reports" badge,
+    and Dismiss / Remove post / Ban (optional reason typed inline before
+    confirming) / Unban.
+  - An admin-only "Admin → Moderation" section appears in Settings; a
+    non-admin opening `/admin` sees "Not found".
+- **Verified:**
+  - 12 new API tests: 404 for non-admins, `is_admin` on the profile,
+    listing and counts, dismiss/remove resolving the whole target,
+    remove refused for user reports, ban hiding content + blocking
+    login + killing old tokens + anonymous browsing, reason optional,
+    no self/admin bans, unban, immediate revoke, and the body-less
+    request regression. Backend 203/203.
+  - B12 browser test 13/13, including a banned user's **already-open
+    session being sent to the login page**.
+  - The A3 matrix now includes `/admin` (as an admin): 150/150. All
+    other suites green.
+- **Test-infra notes:**
+  - One full run hit `ERR_INTERNET_DISCONNECTED`: this machine briefly
+    lost internet, and the only external request is the Google Fonts
+    stylesheet. The affected suites were rerun clean.
+  - Fixed a flaky Explore test that sometimes counted the loading
+    skeleton, which also carries the `post-card` class. It now targets
+    `article.post-card`; 5/5 runs pass.
+- **Deploy order (owner):** migration 025 before this backend, then
+  promote your own account with `scripts/make-admin.js`. See NEEDS
+  OWNER.
+- **Not done:** no audit log beyond each report's resolution fields, no
+  temporary (timed) bans, and no bulk actions.
 
 ### B13 — Groups (create, join, post inside, admins)
 **Status:** ⬜ NOT CHECKED
@@ -1065,7 +1133,7 @@ running app in one pass, with a written pass/fail report per item.
   (backfills existing single-image posts).
 - B3 migration 018 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/018_add_stories.up.sql`.
-  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → 024.
+  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → 024 → 025.
 - B4 migration 019 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/019_add_comment_replies_likes.up.sql`.
 - B5 migration 020 on production, **before deploying the new backend**:
@@ -1076,3 +1144,8 @@ running app in one pass, with a written pass/fail report per item.
   `node scripts/run-migration.js migrations/023_add_group_chats.up.sql`.
 - B11 migration 024 on production, before deploying the new backend:
   `node scripts/run-migration.js migrations/024_add_notification_preferences.up.sql`.
+- B12 migration 025 on production, before deploying the new backend:
+  `node scripts/run-migration.js migrations/025_add_admin_moderation.up.sql`.
+  Then make yourself an admin (no UI can do this, by design):
+  `node scripts/make-admin.js <your username>` -- Settings then shows
+  Admin → Moderation.

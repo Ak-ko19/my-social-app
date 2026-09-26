@@ -16,7 +16,8 @@ export const EMPTY_USER = {
   bg: 'var(--color-subtle-bg)',
   color: 'var(--color-text)',
   verified: false,
-  avatarUrl: undefined
+  avatarUrl: undefined,
+  isAdmin: false
 };
 
 // The logged-in user's summary for Menu/Settings/Home -- replaces the old
@@ -41,7 +42,9 @@ export function useCurrentUserSummary() {
           bg: 'var(--color-accent)',
           color: '#fff',
           verified: false,
-          avatarUrl: resolveImageUrl(profile.avatar_url)
+          avatarUrl: resolveImageUrl(profile.avatar_url),
+          // B12: shows the Admin row in Settings (the API enforces it anyway).
+          isAdmin: Boolean(profile.is_admin)
         });
       })
       .catch((err) => console.error(err));

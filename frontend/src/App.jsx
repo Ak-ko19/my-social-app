@@ -31,6 +31,7 @@ const ExploreScreen = lazy(() => import('./screens/ExploreScreen'));
 const CreateGroupScreen = lazy(() => import('./screens/CreateGroupScreen'));
 const GroupInfoScreen = lazy(() => import('./screens/GroupInfoScreen'));
 const NotificationSettingsScreen = lazy(() => import('./screens/NotificationSettingsScreen'));
+const AdminScreen = lazy(() => import('./screens/AdminScreen'));
 
 function App() {
   return (
@@ -146,6 +147,7 @@ function App() {
         <Route path="/search" element={<PhoneShell><Search /></PhoneShell>} />
         <Route path="/explore" element={<PhoneShell><ExploreScreen /></PhoneShell>} />
         <Route path="/settings/notifications" element={<PhoneShell><NotificationSettingsScreen /></PhoneShell>} />
+        <Route path="/admin" element={<PhoneShell><AdminScreen /></PhoneShell>} />
       </Routes>
     </BrowserRouter>
   );

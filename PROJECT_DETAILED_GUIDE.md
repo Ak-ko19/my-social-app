@@ -840,6 +840,27 @@ built and how to re-verify it.
   `/settings/notifications` screen (`screens/NotificationSettingsScreen.jsx`).
 - **Deploy:** migrations through 024 before the matching backend.
 
+### B12 — Admin moderation ✅
+- **Admins:** `users.is_admin`, granted only by
+  `node scripts/make-admin.js <username> [--revoke]`. No API or UI can
+  grant it. `middleware/requireAdmin.js` checks the DB on every request
+  and 404s for non-admins.
+- **API:** `controllers/adminController.js`:
+  - `GET /admin/reports`, `POST /admin/reports/:id/dismiss|remove-content`,
+    `POST /admin/users/:id/ban|unban`.
+  - Acting on a report resolves every pending report on that target.
+- **Bans:** `banned_at` plus `is_deactivated`, so the existing visibility
+  rules hide the user's content. `services/accountStatusService.isBanned`
+  is enforced in `authMiddleware` (401 → frontend logout), `optionalAuth`
+  (anonymous), `socketAuth` (refused), and login (403, before
+  auto-reactivation). Live sockets are disconnected on ban.
+- **Express 5 note:** `server.js` defaults `req.body` to `{}`. Don't
+  remove it; body-less requests would crash handlers.
+- **Frontend:** `screens/AdminScreen.jsx` (`/admin`); a Settings "Admin"
+  section when `useCurrentUserSummary().isAdmin`.
+- **Deploy:** migrations through 025, then `make-admin.js` for your
+  account.
+
 ---
 
 ## How to use this file

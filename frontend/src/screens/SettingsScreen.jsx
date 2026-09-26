@@ -6,6 +6,7 @@ import {
   LogOut,
   User,
   ShieldCheck,
+  ShieldAlert,
   Bell,
   BellRing,
   UserX,
@@ -42,6 +43,12 @@ import './SettingsScreen.css';
 // entirely and doubled that screen's bundle). Here there's no separate
 // data file to keep swappable, so there's no need for the lookup-map
 // layer at all: each row just holds its icon component directly.
+// B12: only admins see this section (the /admin API enforces it anyway).
+const ADMIN_SECTION = {
+  label: 'Admin',
+  rows: [{ key: 'moderation', icon: ShieldAlert, title: 'Moderation', to: '/admin' }]
+};
+
 const SETTINGS_SECTIONS = [
   {
     label: 'Account',
@@ -115,7 +122,7 @@ function SettingsScreen() {
         <ProfileSummaryRow user={currentUser} src={currentUser.avatarUrl} size={54} to={userId ? `/profile/${userId}` : "/edit-profile"} />
       </div>
 
-      {SETTINGS_SECTIONS.map((section) => (
+      {(currentUser.isAdmin ? [ADMIN_SECTION, ...SETTINGS_SECTIONS] : SETTINGS_SECTIONS).map((section) => (
         <section className="settings-section" key={section.label}>
           <SectionLabel className="settings-section-label">{section.label}</SectionLabel>
 
