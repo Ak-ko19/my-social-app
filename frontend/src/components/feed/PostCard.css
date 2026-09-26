@@ -502,3 +502,11 @@
     transition: none;
   }
 }
+
+/* B5: audience icon after the timestamp (globe = public, people = followers). */
+.post-card-audience {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: pre;
+}

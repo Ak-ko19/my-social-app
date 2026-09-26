@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flag, MoreHorizontal, Pencil, Trash2, UserX } from 'lucide-react';
+import { Flag, Globe, MoreHorizontal, Pencil, Trash2, UserX, Users } from 'lucide-react';
 import { IconButton, ActionSheet, ConfirmDialog } from '../ui';
 import ReportDialog from './ReportDialog';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,7 +11,7 @@ import { deletePost } from '../../services/postService';
 // second menu component, so there's exactly one "more options" surface per
 // post card. onEdit puts PostCard into inline edit mode; the edit form
 // itself lives there, not here, since it needs to replace the post body.
-function PostMenu({ post, onBlocked, onDeleted, onEdit }) {
+function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, onDeleted, onEdit }) {
   const { token, userId } = useAuth();
   const isOwner = post.user_id === userId;
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -46,6 +46,13 @@ function PostMenu({ post, onBlocked, onDeleted, onEdit }) {
 
   const items = isOwner
     ? [
+        {
+          key: 'visibility',
+          label: visibility === 'followers' ? 'Make public' : 'Make visible to followers only',
+          icon: visibility === 'followers' ? Globe : Users,
+          // B5: PostCard owns the change (optimistic + error display).
+          onSelect: () => onToggleVisibility?.()
+        },
         {
           key: 'edit',
           label: 'Edit post',

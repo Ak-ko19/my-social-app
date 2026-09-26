@@ -723,6 +723,20 @@ built and how to re-verify it.
   (threads via `buildThreads`, `CommentItem`).
 - **Deploy:** migrations through 019 before the matching backend.
 
+### B5 — Post audience (Public / Followers only) ✅
+- **Data:** `posts.visibility` `'public' | 'followers'` (migration 020).
+- **The rule:** visible to the author and accepted followers; to anyone
+  else only if the account is public AND the post is public. In listing
+  SQL that's the predicate
+  `(NOT users.is_private AND posts.visibility = 'public') OR author OR
+  accepted follower`. Copy it into any new post-listing query. By-id
+  access goes through `postVisibilityService.getVisiblePost`.
+- **API:** `POST /posts` (`visibility` field); `PUT /posts/:id` accepts
+  `content` and/or `visibility`.
+- **Frontend:** CreatePost's `.audience-picker`; the PostCard header
+  icon; the PostMenu item delegates to PostCard's `toggleVisibility`.
+- **Deploy:** migrations through 020 before the matching backend.
+
 ---
 
 ## How to use this file

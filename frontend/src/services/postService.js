@@ -61,6 +61,11 @@ export function deletePost(postId, token) {
   return api.delete(`/posts/${postId}`, authHeaders(token));
 }
 
+// B5: change only a post's audience ('public' | 'followers').
+export function updatePostVisibility(postId, visibility, token) {
+  return api.put(`/posts/${postId}`, { visibility }, authHeaders(token)).then((res) => res.data);
+}
+
 export function updatePost(postId, content, token) {
   return api.put(`/posts/${postId}`, { content }, authHeaders(token)).then((res) => res.data);
 }

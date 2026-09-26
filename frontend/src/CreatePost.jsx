@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import api from './api';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, X } from 'lucide-react';
+import { ChevronLeft, Globe, Users, X } from 'lucide-react';
 import { IconButton } from './components/ui';
 import MentionAutocomplete from './components/feed/MentionAutocomplete';
 import { useMentionAutocomplete, applyMentionSelection } from './hooks/useMentionAutocomplete';
@@ -13,6 +13,7 @@ function CreatePost() {
   const [content, setContent] = useState('');
   const [images, setImages] = useState([]); // [{ file, preview }]
   const [submitting, setSubmitting] = useState(false);
+  const [visibility, setVisibility] = useState('public'); // B5 audience
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const textareaRef = useRef(null);
@@ -81,6 +82,7 @@ function CreatePost() {
 
     const formData = new FormData();
     formData.append('content', content);
+    formData.append('visibility', visibility);
     images.forEach((img) => formData.append('images', img.file));
 
     setSubmitting(true);
@@ -131,6 +133,17 @@ function CreatePost() {
             disabled={images.length >= MAX_IMAGES || submitting}
           />
         </label>
+        <fieldset className="audience-picker">
+          <legend className="form-label">Who can see this?</legend>
+          <label className={visibility === 'public' ? 'audience-option is-selected' : 'audience-option'}>
+            <input type="radio" name="visibility" value="public" checked={visibility === 'public'} onChange={() => setVisibility('public')} />
+            <Globe size={15} aria-hidden="true" /> Public
+          </label>
+          <label className={visibility === 'followers' ? 'audience-option is-selected' : 'audience-option'}>
+            <input type="radio" name="visibility" value="followers" checked={visibility === 'followers'} onChange={() => setVisibility('followers')} />
+            <Users size={15} aria-hidden="true" /> Followers
+          </label>
+        </fieldset>
         {images.length > 0 && (
           <ul className="image-picker-grid" aria-label="Selected images">
             {images.map((img, i) => (

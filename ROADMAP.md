@@ -575,11 +575,60 @@ like button on comments.
   was outside this task.
 
 ### B5 — Post privacy: Public / Followers only
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** a `posts.visibility` column exists and every feed/profile
 query respects it in addition to the existing account-level
 private-account gating.
-**Notes:** _(none yet)_
+**Notes:**
+- **Schema (migration 020):** `posts.visibility` 'public' | 'followers',
+  default 'public', with a CHECK. Existing posts stay public. Verified:
+  an old post defaults to public, invalid values are rejected, and down
+  → up works.
+- **Rule:** a post is visible to its author, to accepted followers, and
+  to anyone else only when **both** the account is public **and** the
+  post is public. Account privacy still wins: on a private account,
+  "Public" posts are followers-only too.
+- **Where it's enforced:**
+  - Every listing predicate: discovery `GET /posts`, hashtag feed,
+    search, and bookmarks. `NOT users.is_private` became
+    `(NOT users.is_private AND posts.visibility = 'public')`.
+  - The single-post rules: `getPost` and `postVisibilityService`. So
+    likes, reactions, comments, comment likes, bookmarks and the
+    comments/likes reads all follow it automatically.
+  - `GET /feed` needed no change; it already only returns your own and
+    accepted follows' posts.
+  - A bookmark saved while a post was public disappears once the author
+    restricts it.
+- **API:**
+  - `POST /posts` takes `visibility`.
+  - `PUT /posts/:id` can change content and/or visibility (either
+    alone).
+  - Payloads include `visibility`.
+- **Bug fixed along the way:** `PUT /posts/:id` with empty or missing
+  content wrote NULL into a NOT NULL column and returned a 500. It's now
+  a 400 with a message.
+- **UI:**
+  - Create Post has a "Who can see this?" control: native radios styled
+    as pills, so arrow keys work.
+  - Post headers show a globe (Public) or people (Followers) icon with a
+    screen-reader label. This replaced a leftover mock that printed the
+    raw value.
+  - Owners switch audience from the post's ⋯ menu ("Make public" /
+    "Make visible to followers only"). The change is optimistic, with
+    rollback and an inline error.
+- **Verified:**
+  - 11 new API tests covering every surface above. I confirmed they fail
+    when the rule is reverted. Backend 139/139.
+  - B5 browser test 14/14: create Followers-only from the UI; a
+    non-follower gets "Post not found" and no search hit; menu toggle to
+    public and back; a new follower can see it; keyboard selection;
+    375px dark.
+  - All earlier suites still green; eslint and build clean.
+- **Decision logged:** as with private accounts (A6 note), an @mention
+  in a followers-only post still notifies the mentioned user even if
+  they don't follow the author. The author chose to mention them.
+- **Deploy order (owner):** migration 020 before this backend. See NEEDS
+  OWNER.
 
 ### B6 — Profile tabs: Posts / Photos / Saved / Tagged
 **Status:** ⬜ NOT CHECKED
@@ -721,6 +770,8 @@ running app in one pass, with a written pass/fail report per item.
   (backfills existing single-image posts).
 - B3 migration 018 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/018_add_stories.up.sql`.
-  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019.
+  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020.
 - B4 migration 019 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/019_add_comment_replies_likes.up.sql`.
+- B5 migration 020 on production, **before deploying the new backend**:
+  `node scripts/run-migration.js migrations/020_add_post_visibility.up.sql`.

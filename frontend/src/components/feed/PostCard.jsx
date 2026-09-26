@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { Bookmark, MessageCircle, Share2 } from 'lucide-react';
+import { Bookmark, Globe, MessageCircle, Share2, Users } from 'lucide-react';
 import ReactionButton from './ReactionButton';
 import { topReactions } from '../../utils/reactions';
 import clsx from 'clsx';
@@ -11,7 +11,7 @@ import { useComments } from '../../hooks/useComments';
 import { resolveImageUrl } from '../../api';
 import { getOptimizedImageUrl } from '../../utils/cloudinaryImage';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
-import { updatePost } from '../../services/postService';
+import { updatePost, updatePostVisibility } from '../../services/postService';
 import { Avatar, VerifiedTick } from '../ui';
 import MediaCarousel from './MediaCarousel';
 import CommentSection from './CommentSection';
@@ -58,6 +58,21 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost }) {
   const [editPending, setEditPending] = useState(false);
   const [editError, setEditError] = useState('');
   const [shareFeedback, setShareFeedback] = useState('');
+  // B5 audience -- local so an owner's change shows immediately.
+  const [visibility, setVisibility] = useState(post.visibility || 'public');
+  const [visibilityError, setVisibilityError] = useState('');
+
+  const toggleVisibility = () => {
+    const previous = visibility;
+    const next = previous === 'followers' ? 'public' : 'followers';
+    setVisibility(next);
+    setVisibilityError('');
+    updatePostVisibility(post.id, next, token).catch((err) => {
+      console.error(err);
+      setVisibility(previous);
+      setVisibilityError(err.response?.data || 'Could not change who can see this post');
+    });
+  };
 
   const handleShare = async () => {
     const url = `${window.location.origin}/posts/${post.id}`;
@@ -151,11 +166,27 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost }) {
           <div className="post-card-meta">
             <span>{formatRelativeTime(post.created_at)}</span>
             {post.sponsored && <span> · Sponsored</span>}
-            {!post.sponsored && post.visibility && <span> · {post.visibility}</span>}
+            <span className="post-card-audience" title={visibility === 'followers' ? 'Followers only' : 'Public'}>
+              {' · '}
+              {visibility === 'followers' ? <Users size={12} aria-hidden="true" /> : <Globe size={12} aria-hidden="true" />}
+              <span className="feed-visually-hidden">{visibility === 'followers' ? 'Followers only' : 'Public'}</span>
+            </span>
           </div>
         </div>
-        <PostMenu post={post} onBlocked={onRemovePostsByUser} onDeleted={onRemovePost} onEdit={startEditing} />
+        <PostMenu
+          post={post}
+          visibility={visibility}
+          onToggleVisibility={toggleVisibility}
+          onBlocked={onRemovePostsByUser}
+          onDeleted={onRemovePost}
+          onEdit={startEditing}
+        />
       </header>
+      {visibilityError && (
+        <p className="feed-error-text" role="alert">
+          {visibilityError}
+        </p>
+      )}
 
       {isEditing ? (
         <div className="post-card-edit">
