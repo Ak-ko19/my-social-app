@@ -705,6 +705,24 @@ built and how to re-verify it.
 - **Deploy:** migrations 015 → 016 → 017 → 018 before the matching
   backend.
 
+### B4 — Comment replies + comment likes ✅
+- **Data:** `comments.parent_comment_id` and `comment_likes` (migration
+  019). Replies are one level deep: the API flattens a reply-to-a-reply
+  onto the top-level comment.
+- **API:**
+  - `POST /posts/:id/comments { content, parentCommentId? }`.
+  - `POST` / `DELETE /comments/:id/like` return `{ likedByMe, likeCount }`.
+  - Comment lists include `parent_comment_id`, `like_count` and
+    `liked_by_me`.
+- **Notifications:** new types `reply` and `comment_like`. Rule: one
+  notification per person per action. Pass `excludeUserIds` to
+  `mentionService.notifyMentions` for anyone already notified another
+  way.
+- **Frontend:** `hooks/useComments.js` (`startReply`, `cancelReply`,
+  `toggleCommentLike`, optimistic) and `components/feed/CommentSection.jsx`
+  (threads via `buildThreads`, `CommentItem`).
+- **Deploy:** migrations through 019 before the matching backend.
+
 ---
 
 ## How to use this file

@@ -22,7 +22,10 @@ function parseMentionUsernames(content) {
 // authorId is excluded (mentioning yourself doesn't notify you); postId is
 // always required (a mention notification always points at a post, same as
 // 'comment'), commentId is only set when the mention came from a comment.
-async function notifyMentions({ content, authorId, postId, commentId = null }) {
+// excludeUserIds: people already notified about this same comment another
+// way (e.g. the 'reply' recipient, whose @mention is pre-filled by the
+// reply UI) -- one action should produce one notification per person.
+async function notifyMentions({ content, authorId, postId, commentId = null, excludeUserIds = [] }) {
   const usernames = parseMentionUsernames(content);
   if (usernames.length === 0) return;
 
@@ -32,12 +35,13 @@ async function notifyMentions({ content, authorId, postId, commentId = null }) {
   const usersResult = await db.query(
     `SELECT id FROM users
      WHERE LOWER(username) = ANY($1::text[]) AND id != $2
+       AND id != ALL($3::int[])
        AND NOT EXISTS (
          SELECT 1 FROM blocks
          WHERE (blocker_id = $2 AND blocked_id = users.id)
             OR (blocker_id = users.id AND blocked_id = $2)
        )`,
-    [usernames, authorId]
+    [usernames, authorId, excludeUserIds]
   );
   if (usersResult.rows.length === 0) return;
 

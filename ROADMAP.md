@@ -523,11 +523,56 @@ instead of removed entirely.
   - A cleanup job for expired rows.
 
 ### B4 — Comment replies (nested) + comment likes
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** `comments.parent_comment_id` added (schema is currently
 flat, confirmed 2026-09-23), threaded reply UI, `comment_likes` table +
 like button on comments.
-**Notes:** _(none yet)_
+**Notes:**
+- **Schema (migration 019):** `comments.parent_comment_id` (indexed,
+  CASCADE) plus `comment_likes(comment_id, user_id)` as the primary key.
+  Verified: existing comments become top-level, and on down a reply is
+  kept as a plain comment.
+- **Decision: replies are one level deep (Facebook-style).** Replying
+  to a reply attaches to the same top-level comment, and the UI
+  pre-fills an @mention of whoever you're answering. That keeps threads
+  readable at phone width; unlimited nesting collapses on a 375px
+  screen. A parent must be on the same post and not across a block.
+- **API:**
+  - `POST /posts/:id/comments` takes an optional `parentCommentId`.
+  - `GET` comments returns `parent_comment_id`, `like_count` and
+    `liked_by_me`.
+  - `POST` / `DELETE /comments/:id/like` are idempotent and
+    visibility-checked (the post's rules plus no block with the comment
+    author).
+- **Notifications:**
+  - New types: 'reply' (to the person replied to) and 'comment_like'
+    (first like only; never for self-likes).
+  - One notification per person per action. A post owner who is also
+    the one replied to gets 'reply' only.
+  - The replied-to person is excluded from the reply's @mention
+    notifications (`notifyMentions` gained `excludeUserIds`); anyone
+    else mentioned still gets 'mention'. The browser test caught this
+    duplicate, and 2 API tests now lock the fix in.
+  - The Notifications screen shows readable text for both new types.
+- **UI:**
+  - `CommentSection` renders threads with replies indented behind a
+    guide line. Each comment has a meta row: time, heart + count,
+    Reply, and Edit for your own.
+  - The "Replying to @user" bar cancels with × or Esc. Likes are
+    optimistic with rollback. A reply whose parent is hidden (block) is
+    dropped rather than shown out of context.
+- **Verified:**
+  - 11 new API tests; backend 128/128.
+  - B4 browser test 15/15 in headless Edge: like/unlike, reply nesting,
+    reply-to-reply flattening (checked server-side), cancel via × and
+    Esc, notification types and screen text, 375px dark with no h-scroll.
+  - All earlier suites still green (A2, A3, B1, B2, B3); eslint and
+    build clean.
+- **Deploy order (owner):** migration 019 before this backend. See
+  NEEDS OWNER.
+- **Not done:** there's still no delete button for comments in the UI.
+  The API exists and is owner-checked; I didn't add it here because it
+  was outside this task.
 
 ### B5 — Post privacy: Public / Followers only
 **Status:** ⬜ NOT CHECKED
@@ -676,4 +721,6 @@ running app in one pass, with a written pass/fail report per item.
   (backfills existing single-image posts).
 - B3 migration 018 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/018_add_stories.up.sql`.
-  Run all pending migrations in order: 015 → 016 → 017 → 018.
+  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019.
+- B4 migration 019 on production, **before deploying the new backend**:
+  `node scripts/run-migration.js migrations/019_add_comment_replies_likes.up.sql`.

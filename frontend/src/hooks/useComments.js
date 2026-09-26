@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { fetchComments, createComment, updateComment } from '../services/postService';
+import { fetchComments, createComment, updateComment, likeComment, unlikeComment } from '../services/postService';
 
 let tempIdSeq = 0;
 function makeTempId() {
@@ -27,6 +27,13 @@ export function useComments(postId, token, currentUser) {
   const [editText, setEditText] = useState('');
   const [editError, setEditError] = useState(null);
 
+  // B4: the comment being replied to, or null for a top-level comment.
+  // { id, username, topId } -- topId is where the reply will actually live
+  // (replies are one level deep; see the backend's createComment).
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [likeError, setLikeError] = useState(null);
+  const likePendingRef = useRef(new Set());
+
   const load = () => {
     fetchComments(postId, token)
       .then(setComments)
@@ -52,6 +59,9 @@ export function useComments(postId, token, currentUser) {
     setSubmitError(null);
     setCommentInput('');
 
+    const target = replyingTo;
+    setReplyingTo(null);
+
     const tempId = makeTempId();
     const optimisticComment = {
       id: tempId,
@@ -59,11 +69,14 @@ export function useComments(postId, token, currentUser) {
       username: currentUser.username || 'You',
       content,
       created_at: new Date().toISOString(),
+      parent_comment_id: target ? target.topId : null,
+      like_count: 0,
+      liked_by_me: false,
       pending: true
     };
     setComments((current) => [...current, optimisticComment]);
 
-    createComment(postId, content, token)
+    createComment(postId, content, token, target ? target.id : null)
       .then((created) => {
         // Reconcile the temp comment with the server-generated one, by
         // temp id -> matching this exact optimistic entry, not by appending
@@ -78,6 +91,7 @@ export function useComments(postId, token, currentUser) {
         console.error(err);
         setComments((current) => current.filter((c) => c.id !== tempId));
         setCommentInput(content); // give the text back so nothing is lost
+        setReplyingTo(target); // ...and the reply target
         setSubmitError(err.response?.data || 'Failed to post comment');
       })
       .finally(() => {
@@ -116,9 +130,73 @@ export function useComments(postId, token, currentUser) {
     });
   };
 
+  // Reply to `comment` (top-level or itself a reply). Pre-fills an
+  // @mention of whoever is being replied to, like Facebook/Instagram --
+  // that also makes it clear who a flattened reply-to-a-reply is for.
+  const startReply = (comment) => {
+    setReplyingTo({
+      id: comment.id,
+      username: comment.username,
+      topId: comment.parent_comment_id ?? comment.id
+    });
+    setCommentInput((current) => {
+      const mention = `@${comment.username} `;
+      return current.startsWith(mention) ? current : mention + current;
+    });
+  };
+
+  const cancelReply = () => {
+    if (replyingTo) {
+      const mention = `@${replyingTo.username} `;
+      setCommentInput((current) => (current.startsWith(mention) ? current.slice(mention.length) : current));
+    }
+    setReplyingTo(null);
+  };
+
+  // Optimistic like/unlike of one comment, reconciled with the server's
+  // count; per-comment in-flight guard against double clicks.
+  const toggleCommentLike = (commentId) => {
+    if (likePendingRef.current.has(commentId)) return;
+    const previous = comments.find((c) => c.id === commentId);
+    if (!previous || previous.pending) return;
+    likePendingRef.current.add(commentId);
+    setLikeError(null);
+
+    const nextLiked = !previous.liked_by_me;
+    setComments((current) =>
+      current.map((c) =>
+        c.id === commentId
+          ? { ...c, liked_by_me: nextLiked, like_count: Math.max(0, (c.like_count || 0) + (nextLiked ? 1 : -1)) }
+          : c
+      )
+    );
+
+    (nextLiked ? likeComment : unlikeComment)(commentId, token)
+      .then((data) => {
+        setComments((current) =>
+          current.map((c) => (c.id === commentId ? { ...c, liked_by_me: data.likedByMe, like_count: data.likeCount } : c))
+        );
+      })
+      .catch((err) => {
+        console.error(err);
+        setComments((current) =>
+          current.map((c) =>
+            c.id === commentId ? { ...c, liked_by_me: previous.liked_by_me, like_count: previous.like_count } : c
+          )
+        );
+        setLikeError(err.response?.data || 'Could not update the like');
+      })
+      .finally(() => likePendingRef.current.delete(commentId));
+  };
+
   return {
     visible,
     comments,
+    replyingTo,
+    startReply,
+    cancelReply,
+    toggleCommentLike,
+    likeError,
     commentInput,
     setCommentInput,
     submitPending,

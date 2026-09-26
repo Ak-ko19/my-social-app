@@ -68,6 +68,19 @@ describe('comment replies + likes (B4)', () => {
     expect(types).toEqual(['reply']);
   });
 
+  it('a reply that @mentions the replied-to person notifies them once ("reply"), not also "mention"', async () => {
+    const top = (await comment(alice, 'top')).body;
+    await comment(bob, `@${alice.username} good point`, top.id);
+    expect((await notesOf(alice)).map((n) => n.type)).toEqual(['reply']);
+  });
+
+  it('other people @mentioned in a reply still get "mention"', async () => {
+    const carol = await registerAndLogin(app);
+    const top = (await comment(alice, 'top')).body;
+    await comment(bob, `@${alice.username} @${carol.username} look`, top.id);
+    expect((await notesOf(carol)).map((n) => n.type)).toEqual(['mention']);
+  });
+
   it('deleting a top-level comment deletes its replies', async () => {
     const top = (await comment(alice, 'top')).body;
     await comment(bob, 'reply', top.id);

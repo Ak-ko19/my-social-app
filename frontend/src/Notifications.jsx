@@ -13,6 +13,8 @@ function notificationText(n) {
   if (n.type === 'mention') return n.comment_id ? 'mentioned you in a comment' : 'mentioned you in a post';
   if (n.type === 'follow_request') return 'requested to follow you';
   if (n.type === 'follow_accepted') return 'accepted your follow request';
+  if (n.type === 'reply') return 'replied to your comment';
+  if (n.type === 'comment_like') return 'liked your comment';
   return 'interacted with you';
 }
 

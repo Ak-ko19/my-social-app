@@ -1,22 +1,101 @@
 import { useRef } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
+import { Heart, X } from 'lucide-react';
+import clsx from 'clsx';
 import { useAuth } from '../../hooks/useAuth';
 import Username from './Username';
 import { renderTextWithLinks } from '../../utils/renderTextWithLinks';
+import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import MentionAutocomplete from './MentionAutocomplete';
 import { useMentionAutocomplete, applyMentionSelection } from '../../hooks/useMentionAutocomplete';
 import { DURATION_NORMAL, EASE_STANDARD } from '../../utils/motionTokens';
+
+// Top-level comments in order, each with its replies (one level, B4).
+// A reply whose parent isn't in the list (e.g. hidden by a block) is
+// dropped rather than shown out of context.
+function buildThreads(list) {
+  const topLevel = [];
+  const replies = new Map();
+  for (const c of list) {
+    if (c.parent_comment_id == null) topLevel.push(c);
+    else {
+      if (!replies.has(c.parent_comment_id)) replies.set(c.parent_comment_id, []);
+      replies.get(c.parent_comment_id).push(c);
+    }
+  }
+  return topLevel.map((c) => ({ comment: c, replies: replies.get(c.id) || [] }));
+}
+
+function CommentItem({ c, comments, currentUserId, onReply }) {
+  const { editingCommentId, editText, setEditText, startEdit, cancelEdit, saveEdit, toggleCommentLike } = comments;
+
+  if (editingCommentId === c.id) {
+    return (
+      <form
+        className="feed-comment-edit-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          saveEdit();
+        }}
+      >
+        <label className="feed-visually-hidden" htmlFor={`edit-comment-${c.id}`}>
+          Edit comment
+        </label>
+        <input id={`edit-comment-${c.id}`} type="text" value={editText} onChange={(e) => setEditText(e.target.value)} />
+        <button type="submit" className="feed-btn">
+          Save
+        </button>
+        <button type="button" onClick={cancelEdit} className="feed-btn">
+          Cancel
+        </button>
+      </form>
+    );
+  }
+
+  const likeCount = c.like_count || 0;
+  return (
+    <div className="comment-body">
+      <p className="feed-comment-text">
+        <Username>{c.username}</Username>: {renderTextWithLinks(c.content)}
+        {c.pending && <span className="feed-comment-status"> (sending…)</span>}
+      </p>
+      {/* A not-yet-confirmed comment has no real id to like/reply/edit
+          against, so its actions appear once it's reconciled. */}
+      {!c.pending && (
+        <div className="comment-actions">
+          <span className="comment-time">{formatRelativeTime(c.created_at)}</span>
+          <button
+            type="button"
+            className={clsx('comment-action', c.liked_by_me && 'comment-action-liked')}
+            onClick={() => toggleCommentLike(c.id)}
+            aria-pressed={Boolean(c.liked_by_me)}
+            aria-label={`${c.liked_by_me ? 'Unlike' : 'Like'} ${c.username}'s comment${likeCount ? `, ${likeCount} ${likeCount === 1 ? 'like' : 'likes'}` : ''}`}
+          >
+            <Heart size={13} aria-hidden="true" fill={c.liked_by_me ? 'currentColor' : 'none'} />
+            {likeCount > 0 && <span aria-hidden="true">{likeCount}</span>}
+          </button>
+          <button type="button" className="comment-action" onClick={() => onReply(c)} aria-label={`Reply to ${c.username}`}>
+            Reply
+          </button>
+          {c.user_id === currentUserId && (
+            <button type="button" className="comment-action" onClick={() => startEdit(c)}>
+              Edit
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Receives the `comments` bag from useComments (owned by PostCard, shared
 // with the CommentButton toggle) rather than fetching its own data.
 //
 // The open/close transition (PostCard mounts/unmounts this inside an
 // AnimatePresence) only animates opacity + a small y offset, never height.
-// This card lives inside a virtualized row measured by ResizeObserver
-// (Step 3) -- animating height would make that observer fire continuously
-// for the whole animation, reflowing every row below on every frame. With
-// opacity/transform only, the row's real height changes once, instantly,
-// and the observer only has to react a single time.
+// This card lives inside a virtualized row measured by ResizeObserver --
+// animating height would make that observer fire continuously for the
+// whole animation, reflowing every row below on every frame.
 function CommentSection({ postId, comments }) {
   const { userId: currentUserId } = useAuth();
   const reduceMotion = useReducedMotion();
@@ -28,15 +107,25 @@ function CommentSection({ postId, comments }) {
     setCommentInput,
     submitPending,
     submitError,
-    editingCommentId,
-    editText,
-    setEditText,
     editError,
-    submitComment,
-    startEdit,
-    cancelEdit,
-    saveEdit
+    likeError,
+    replyingTo,
+    startReply,
+    cancelReply,
+    submitComment
   } = comments;
+
+  const threads = buildThreads(list);
+
+  const handleReply = (c) => {
+    startReply(c);
+    requestAnimationFrame(() => {
+      const input = commentInputRef.current;
+      if (!input) return;
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    });
+  };
 
   return (
     <motion.section
@@ -47,60 +136,40 @@ function CommentSection({ postId, comments }) {
       exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
       transition={{ duration: reduceMotion ? 0 : DURATION_NORMAL, ease: EASE_STANDARD }}
     >
-      {list.length > 0 && (
+      {threads.length > 0 && (
         <ul className="feed-comment-list">
-          {list.map((c) => (
+          {threads.map(({ comment: c, replies }) => (
             <li key={c.id} className={c.pending ? 'feed-comment-pending' : undefined}>
-              {editingCommentId === c.id ? (
-                <form
-                  className="feed-comment-edit-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    saveEdit();
-                  }}
-                >
-                  <label className="feed-visually-hidden" htmlFor={`edit-comment-${c.id}`}>
-                    Edit comment
-                  </label>
-                  <input
-                    id={`edit-comment-${c.id}`}
-                    type="text"
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                  />
-                  <button type="submit" className="feed-btn">
-                    Save
-                  </button>
-                  <button type="button" onClick={cancelEdit} className="feed-btn">
-                    Cancel
-                  </button>
-                </form>
-              ) : (
-                <p className="feed-comment-text">
-                  <Username>{c.username}</Username>: {renderTextWithLinks(c.content)}
-                  {c.pending && <span className="feed-comment-status"> (sending…)</span>}
-                  {/* Editing a not-yet-confirmed comment has no real id to PUT
-                      against, so the edit action is hidden until it's reconciled. */}
-                  {!c.pending && c.user_id === currentUserId && (
-                    <button
-                      type="button"
-                      onClick={() => startEdit(c)}
-                      className="feed-btn feed-btn-link"
-                    >
-                      Edit
-                    </button>
-                  )}
-                </p>
+              <CommentItem c={c} comments={comments} currentUserId={currentUserId} onReply={handleReply} />
+              {replies.length > 0 && (
+                <ul className="comment-replies" aria-label={`Replies to ${c.username}`}>
+                  {replies.map((r) => (
+                    <li key={r.id} className={r.pending ? 'feed-comment-pending' : undefined}>
+                      <CommentItem c={r} comments={comments} currentUserId={currentUserId} onReply={handleReply} />
+                    </li>
+                  ))}
+                </ul>
               )}
             </li>
           ))}
         </ul>
       )}
 
-      {editError && (
+      {(editError || likeError) && (
         <p className="feed-error-text" role="alert">
-          {editError}
+          {editError || likeError}
         </p>
+      )}
+
+      {replyingTo && (
+        <div className="comment-replying-to" role="status">
+          <span>
+            Replying to <strong>@{replyingTo.username}</strong>
+          </span>
+          <button type="button" className="comment-replying-cancel" onClick={cancelReply} aria-label="Cancel reply">
+            <X size={14} aria-hidden="true" />
+          </button>
+        </div>
       )}
 
       <form
@@ -111,7 +180,7 @@ function CommentSection({ postId, comments }) {
         }}
       >
         <label className="feed-visually-hidden" htmlFor={`comment-input-${postId}`}>
-          Write a comment
+          {replyingTo ? `Reply to ${replyingTo.username}` : 'Write a comment'}
         </label>
         <input
           id={`comment-input-${postId}`}
@@ -122,11 +191,14 @@ function CommentSection({ postId, comments }) {
             setCommentInput(e.target.value);
             mention.handleInputChange(e.target.value, e.target.selectionStart);
           }}
-          placeholder="Write a comment... (@ to mention someone)"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && replyingTo) cancelReply();
+          }}
+          placeholder={replyingTo ? 'Write a reply...' : 'Write a comment... (@ to mention someone)'}
           disabled={submitPending}
         />
         <button type="submit" className="feed-btn" disabled={submitPending}>
-          {submitPending ? 'Sending…' : 'Send'}
+          {submitPending ? 'Sending…' : replyingTo ? 'Reply' : 'Send'}
         </button>
       </form>
       {mention.active && (

@@ -37,8 +37,20 @@ export function fetchComments(postId, token) {
   return api.get(`/posts/${postId}/comments`, token ? authHeaders(token) : undefined).then((res) => res.data);
 }
 
-export function createComment(postId, content, token) {
-  return api.post(`/posts/${postId}/comments`, { content }, authHeaders(token)).then((res) => res.data);
+// parentCommentId (optional, B4) makes it a reply; the server attaches
+// replies-to-replies to the top-level comment.
+export function createComment(postId, content, token, parentCommentId = null) {
+  const body = parentCommentId ? { content, parentCommentId } : { content };
+  return api.post(`/posts/${postId}/comments`, body, authHeaders(token)).then((res) => res.data);
+}
+
+// B4 comment likes -- both return { likedByMe, likeCount }.
+export function likeComment(commentId, token) {
+  return api.post(`/comments/${commentId}/like`, {}, authHeaders(token)).then((res) => res.data);
+}
+
+export function unlikeComment(commentId, token) {
+  return api.delete(`/comments/${commentId}/like`, authHeaders(token)).then((res) => res.data);
 }
 
 export function updateComment(commentId, content, token) {

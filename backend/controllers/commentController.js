@@ -73,7 +73,8 @@ async function createComment(req, res) {
       content,
       authorId: req.userId,
       postId: parseInt(req.params.id, 10),
-      commentId: result.rows[0].id
+      commentId: result.rows[0].id,
+      excludeUserIds: notifyReply ? [parentAuthorId] : []
     });
     res.status(201).json({ ...result.rows[0], like_count: 0, liked_by_me: false });
   } catch (err) {
