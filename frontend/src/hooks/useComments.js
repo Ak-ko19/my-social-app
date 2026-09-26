@@ -28,7 +28,7 @@ export function useComments(postId, token, currentUser) {
   const [editError, setEditError] = useState(null);
 
   const load = () => {
-    fetchComments(postId)
+    fetchComments(postId, token)
       .then(setComments)
       .catch((err) => console.error(err));
   };

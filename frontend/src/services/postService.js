@@ -26,8 +26,10 @@ export function unfollowUser(userId, token) {
   return api.delete(`/users/${userId}/follow`, authHeaders(token));
 }
 
-export function fetchComments(postId) {
-  return api.get(`/posts/${postId}/comments`).then((res) => res.data);
+// Token required for a private account's post: GET comments applies the
+// same visibility rules as GET /posts/:id, so an anonymous request 404s.
+export function fetchComments(postId, token) {
+  return api.get(`/posts/${postId}/comments`, token ? authHeaders(token) : undefined).then((res) => res.data);
 }
 
 export function createComment(postId, content, token) {
