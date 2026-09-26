@@ -1,6 +1,8 @@
 import { memo, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { Bookmark, ThumbsUp, MessageCircle, Share2 } from 'lucide-react';
+import { Bookmark, MessageCircle, Share2 } from 'lucide-react';
+import ReactionButton from './ReactionButton';
+import { topReactions } from '../../utils/reactions';
 import clsx from 'clsx';
 import { useAuth } from '../../hooks/useAuth';
 import { useLikeToggle } from '../../hooks/useLikeToggle';
@@ -37,7 +39,17 @@ import './PostCard.css';
 // clipboard-copy fallback otherwise (see handleShare below).
 function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost }) {
   const { token, userId, username } = useAuth();
-  const like = useLikeToggle(post.id, { likedByMe: post.liked_by_me, likeCount: post.like_count }, token);
+  const like = useLikeToggle(
+    post.id,
+    {
+      likedByMe: post.liked_by_me,
+      likeCount: post.like_count,
+      myReaction: post.my_reaction,
+      reactionCounts: post.reaction_counts
+    },
+    token
+  );
+  const shownReactions = topReactions(like.reactionCounts);
   const bookmark = useBookmarkToggle(post.id, post.bookmarked_by_me, token);
   const comments = useComments(post.id, token, { userId, username });
 
@@ -201,20 +213,23 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost }) {
       )}
 
       <div className="post-card-stats">
-        <span>{like.likeCount > 0 ? `${like.likeCount} ${like.likeCount === 1 ? 'like' : 'likes'}` : ''}</span>
+        <span className="post-card-reaction-summary">
+          {like.likeCount > 0 && (
+            <>
+              <span className="post-card-reaction-emojis" aria-hidden="true">
+                {shownReactions.map((r) => <span key={r.key}>{r.emoji}</span>)}
+              </span>
+              <span>
+                {like.likeCount} {like.likeCount === 1 ? 'reaction' : 'reactions'}
+              </span>
+            </>
+          )}
+        </span>
         <span>{commentCountLabel}</span>
       </div>
 
       <div className="post-card-actions">
-        <button
-          type="button"
-          className={clsx('post-card-action', like.likedByMe && 'post-card-action-active')}
-          onClick={like.toggle}
-          disabled={like.pending}
-        >
-          <ThumbsUp size={18} aria-hidden="true" />
-          <span>Like</span>
-        </button>
+        <ReactionButton like={like} />
         <button type="button" className="post-card-action" onClick={comments.toggleVisible}>
           <MessageCircle size={18} aria-hidden="true" />
           <span>Comment</span>

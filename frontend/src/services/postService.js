@@ -14,6 +14,11 @@ export function likePost(postId, token) {
   return api.post(`/posts/${postId}/like`, {}, authHeaders(token)).then((res) => res.data);
 }
 
+// Set or change the viewer's reaction (B1). Removing one is unlikePost.
+export function setReaction(postId, reaction, token) {
+  return api.put(`/posts/${postId}/reaction`, { reaction }, authHeaders(token)).then((res) => res.data);
+}
+
 export function unlikePost(postId, token) {
   return api.delete(`/posts/${postId}/like`, authHeaders(token)).then((res) => res.data);
 }

@@ -351,11 +351,66 @@ of issue already caught once in `MenuScreen.jsx`'s icon-import choice).
 ## SECTION B — Social features (Facebook/Instagram level)
 
 ### B1 — Reactions (like, love, haha, wow, sad, angry)
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-26)
 **Done when:** likes extended with a reaction type (new column or new
 table), API supports setting/changing a reaction, frontend reaction
 picker UI, existing plain "like" data stays compatible/migrated.
-**Notes:** _(none yet)_
+**Notes:**
+- **Schema (migration 016):** `likes.reaction` VARCHAR(10), NOT NULL,
+  DEFAULT 'like', with a CHECK over the six types. Decision: I extended
+  `likes` rather than adding a new table.
+  - A reaction is a like with a type, and `UNIQUE(post_id, user_id)`
+    already enforces one per user per post.
+  - Every existing like becomes 'like' with no data migration, and the
+    old like/unlike API is untouched.
+  - Verified on a pre-016 DB: an existing like became 'like', invalid
+    types are rejected, and down → up works.
+- **API:**
+  - New `PUT /posts/:id/reaction {reaction}` sets or changes a reaction
+    in one atomic upsert. It returns 201 when adding and 200 when
+    changing, and it's visibility-checked (A6 rules).
+  - It notifies the author only on the first reaction, so switching
+    like → love → haha doesn't spam them.
+  - `DELETE /posts/:id/like` removes any type. `POST /posts/:id/like`
+    still works and means 'like'.
+  - All like mutations and `GET /posts/:id/likes` return
+    `{ likeCount, reactionCounts, myReaction }`.
+  - Post payloads (feed, posts, detail, hashtag, bookmarks) add
+    `my_reaction` and `reaction_counts`, from one shared SQL fragment in
+    `services/reactionService.js`.
+- **UI (`components/feed/ReactionButton.jsx`):**
+  - Tap = like or remove, as before.
+  - The picker opens on long-press (touch; it doesn't also like),
+    hover (mouse), or ↑ (keyboard). ←/→ move between reactions, Esc
+    closes, and tapping outside dismisses it.
+  - The button shows the chosen emoji, label and color. The stats line
+    shows the top 3 reaction emojis plus "N reactions".
+  - `useLikeToggle` is now reaction-aware (optimistic, then reconciled
+    with the server's summary) and keeps its old fields.
+- **Bugs found by the browser test and fixed:**
+  - Hovering right after a click never opened the picker (no new
+    pointerenter fires). The hover timer now also arms on pointermove.
+  - After a keyboard choice, the button went `disabled` while the
+    request was pending, which threw focus to `<body>`. It now uses
+    `aria-busy` instead; the hook already blocks double submits.
+- **Test infra:** `globalSetup` now rebuilds the test schema on every
+  run. Before, `schema.sql` changes were silently ignored once the local
+  test DB existed.
+- **Verified:**
+  - 9 new API tests; backend 101/101.
+  - B1 browser test 14/14 in headless Edge: tap, hover → Love, persists
+    after reload, full keyboard path with focus return, remove, touch
+    long-press, picker fully on-screen at 375px in dark mode, 0 console
+    errors.
+  - A3 visual matrix 120/120, A2 walkthrough 22/22, eslint clean, build
+    passes.
+- **Deploy order (owner):** run migration 016 on production **before**
+  deploying this backend. The post queries select `likes.reaction` and
+  would fail without it. See NEEDS OWNER.
+- **Not done (out of scope):** reaction notifications still read "liked
+  your post" whatever the type, since notifications has no reaction
+  column. There's also no "who reacted" list; `GET /posts/:id/likes`
+  returns counts only.
 
 ### B2 — Multiple images per post (carousel)
 **Status:** ⬜ NOT CHECKED
@@ -517,3 +572,7 @@ running app in one pass, with a written pass/fail report per item.
   from `backend/` with the real DATABASE_URL. It's idempotent (IF NOT
   EXISTS), and `015_...down.sql` reverts it. (Claude never touches the
   production DB.)
+- B1 migration 016 on production, **before deploying the new backend**
+  (the post queries select `likes.reaction` and would fail without it):
+  `node scripts/run-migration.js migrations/016_add_reactions.up.sql`.
+  Existing likes become "like" reactions automatically.

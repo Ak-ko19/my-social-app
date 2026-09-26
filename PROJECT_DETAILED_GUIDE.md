@@ -645,6 +645,30 @@ built and how to re-verify it.
 
 ---
 
+## Section B — Social features (tracked in ROADMAP.md)
+
+### B1 — Reactions ✅
+- **Data:** `likes.reaction` (migration 016): `like | love | haha | wow |
+  sad | angry`, default `like`. One reaction per user per post, via the
+  existing `UNIQUE(post_id, user_id)`. "Like count" now means total
+  reactions.
+- **API:**
+  - `PUT /posts/:id/reaction { reaction }` sets or changes a reaction.
+  - `DELETE /posts/:id/like` removes one.
+  - `POST /posts/:id/like` is still the plain like.
+  - Each returns `{ myReaction, likeCount, reactionCounts }`.
+- **Post payloads:** every listing adds `my_reaction` and
+  `reaction_counts`. Use `reactionService.reactionColumnsSql('$N')` in
+  any new post query so the fields stay consistent.
+- **Frontend:** `components/feed/ReactionButton.jsx` (button + picker),
+  `hooks/useLikeToggle.js` (optimistic state; `toggle()` / `react(type)`),
+  `utils/reactions.js` (emoji/label/color list). Keep that list in sync
+  with `reactionService.REACTIONS` and the migration's CHECK.
+- **Deploy:** run migration 016 before deploying a backend that includes
+  B1.
+
+---
+
 ## How to use this file
 
 - Keep this file (and CLAUDE.md) in your project root or somewhere safe.

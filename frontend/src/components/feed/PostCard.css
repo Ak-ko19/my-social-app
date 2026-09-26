@@ -292,3 +292,100 @@
   border-radius: var(--radius-sm);
   background: var(--color-border);
 }
+
+/* ---------- Reactions (B1) ---------- */
+.post-card-reaction-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.post-card-reaction-emojis {
+  display: inline-flex;
+  font-size: 14px;
+  letter-spacing: -2px; /* slight overlap, like a stacked cluster */
+}
+
+/* The Like action is now a wrapper (button + picker) -- it takes the same
+   equal share of the action row the plain button used to. */
+.reaction-wrap {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  min-width: 0;
+}
+
+.reaction-wrap .post-card-action {
+  flex: 1 1 auto;
+}
+
+.reaction-current-emoji {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.reaction-picker {
+  position: absolute;
+  bottom: calc(100% + var(--space-1));
+  left: 0;
+  z-index: 20;
+  display: flex;
+  gap: 2px;
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 6px 20px rgba(20, 21, 26, 0.18);
+  animation: reaction-picker-in 140ms ease-out;
+}
+
+.reaction-option {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 120ms ease-out, background 120ms ease-out;
+}
+
+.reaction-option:hover,
+.reaction-option:focus-visible {
+  transform: scale(1.2) translateY(-2px);
+  background: var(--color-subtle-bg);
+  outline: none;
+}
+
+.reaction-option-selected {
+  background: var(--color-subtle-bg);
+}
+
+@keyframes reaction-picker-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reaction-picker {
+    animation: none;
+  }
+  .reaction-option {
+    transition: none;
+  }
+  .reaction-option:hover,
+  .reaction-option:focus-visible {
+    transform: none;
+  }
+}
