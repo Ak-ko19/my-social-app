@@ -11,6 +11,8 @@
 //   3b. a community post (B13): visible to anyone if the community is
 //       public, otherwise only to its members; the author's own feed
 //       audience doesn't apply inside a community.
+//   3c. a page post (B14): always public (pages are public entities, even
+//       when the owner's personal account is private).
 // Callers answer 404 (not 403) when this returns null, so a direct link
 // never confirms that a hidden post exists.
 const db = require('../db');
@@ -20,7 +22,7 @@ const blockService = require('./blockService');
 // doesn't exist or the viewer (null = logged out) isn't allowed to see it.
 async function getVisiblePost(postId, viewerId) {
   const result = await db.query(
-    `SELECT posts.id, posts.user_id, posts.visibility, posts.community_id,
+    `SELECT posts.id, posts.user_id, posts.visibility, posts.community_id, posts.page_id,
        users.is_private, users.is_deactivated,
        $2::int IS NOT NULL AND EXISTS(
          SELECT 1 FROM follows
@@ -51,6 +53,7 @@ async function getVisiblePost(postId, viewerId) {
     if (post.community_privacy === 'private' && !post.viewer_is_community_member) return null;
     return summary;
   }
+  if (post.page_id) return summary;
   if ((post.is_private || post.visibility === 'followers') && !post.viewer_is_follower) return null;
 
   return summary;

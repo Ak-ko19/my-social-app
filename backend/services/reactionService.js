@@ -52,4 +52,12 @@ function mediaColumnSql() {
     ) AS media`;
 }
 
-module.exports = { REACTIONS, isValidReaction, getReactionSummary, reactionColumnsSql, mediaColumnSql };
+// B14: { id, name } of the page a post was published as, or null -- the
+// feed shows the page instead of the author for these. Needs the posts
+// table aliased as "posts".
+function pageColumnSql() {
+  return `
+    (SELECT json_build_object('id', pg.id, 'name', pg.name) FROM pages pg WHERE pg.id = posts.page_id) AS page`;
+}
+
+module.exports = { REACTIONS, isValidReaction, getReactionSummary, reactionColumnsSql, mediaColumnSql, pageColumnSql };

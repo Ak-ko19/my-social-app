@@ -2,7 +2,7 @@ const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const blockService = require('../services/blockService');
-const { reactionColumnsSql, mediaColumnSql } = require('../services/reactionService');
+const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 
 // B6 profile tabs: GET /users/:id/posts?tab=posts|photos|tagged
 //   posts  -- the user's own posts
@@ -64,9 +64,9 @@ async function getUserPosts(req, res) {
     let tabCondition;
     const params = [viewerId, limit + 1, offset, targetId];
     if (tab === 'posts') {
-      tabCondition = 'posts.user_id = $4';
+      tabCondition = 'posts.user_id = $4 AND posts.page_id IS NULL'; // B14: page posts live on the page
     } else if (tab === 'photos') {
-      tabCondition = 'posts.user_id = $4 AND EXISTS (SELECT 1 FROM post_media pm WHERE pm.post_id = posts.id)';
+      tabCondition = 'posts.user_id = $4 AND posts.page_id IS NULL AND EXISTS (SELECT 1 FROM post_media pm WHERE pm.post_id = posts.id)';
     } else {
       tabCondition = 'posts.user_id <> $4 AND posts.content ~* $5';
       params.push(mentionPattern(user.username));
@@ -77,6 +77,7 @@ async function getUserPosts(req, res) {
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
+        ${pageColumnSql()},
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me
       FROM posts
@@ -89,7 +90,7 @@ async function getUserPosts(req, res) {
              OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
         ))
         AND (
-          (NOT users.is_private AND posts.visibility = 'public')
+          ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
           OR users.id = $1
           OR EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted')
         )

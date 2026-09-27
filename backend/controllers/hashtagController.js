@@ -1,5 +1,5 @@
 const db = require('../db');
-const { reactionColumnsSql, mediaColumnSql } = require('../services/reactionService');
+const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 
@@ -21,6 +21,7 @@ async function getPostsByHashtag(req, res) {
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
+        ${pageColumnSql()},
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me
       FROM post_hashtags
       JOIN hashtags ON hashtags.id = post_hashtags.hashtag_id
@@ -34,7 +35,7 @@ async function getPostsByHashtag(req, res) {
              OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
         ))
         AND (
-          (NOT users.is_private AND posts.visibility = 'public')
+          ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
           OR users.id = $1
           OR EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted')
         )

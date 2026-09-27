@@ -74,6 +74,31 @@ CREATE TABLE community_members (
 
 ALTER TABLE posts ADD COLUMN community_id integer REFERENCES communities(id) ON DELETE CASCADE;
 CREATE INDEX idx_posts_community_created ON posts (community_id, created_at DESC) WHERE community_id IS NOT NULL;
+CREATE INDEX idx_community_members_user ON community_members (user_id);
+
+-- B14 (migration 027): pages.
+CREATE TABLE pages (
+  id serial PRIMARY KEY,
+  name varchar(100) NOT NULL CHECK (length(btrim(name)) > 0),
+  category varchar(20) NOT NULL DEFAULT 'business'
+    CHECK (category IN ('business', 'creator', 'brand', 'organization', 'community', 'other')),
+  description text,
+  owner_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_pages_owner ON pages (owner_id);
+
+CREATE TABLE page_follows (
+  page_id integer NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+  user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (page_id, user_id)
+);
+CREATE INDEX idx_page_follows_user ON page_follows (user_id);
+
+ALTER TABLE posts ADD COLUMN page_id integer REFERENCES pages(id) ON DELETE CASCADE;
+CREATE INDEX idx_posts_page_created ON posts (page_id, created_at DESC) WHERE page_id IS NOT NULL;
+ALTER TABLE posts ADD CONSTRAINT posts_group_or_page CHECK (community_id IS NULL OR page_id IS NULL);
 
 CREATE TABLE hashtags (
   id SERIAL PRIMARY KEY,

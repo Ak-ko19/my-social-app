@@ -1,5 +1,5 @@
 const db = require('../db');
-const { reactionColumnsSql, mediaColumnSql } = require('../services/reactionService');
+const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 
 // B5: keep in sync with migration 020's CHECK constraint.
 const POST_VISIBILITIES = ['public', 'followers'];
@@ -37,6 +37,22 @@ async function createPost(req, res) {
         return res.status(403).send('Join this group to post in it');
       }
     }
+    // B14: posting as a page -- only its owner can, it's always public,
+    // and a post can't be both in a group and on a page.
+    let pageId = null;
+    if (req.body.pageId !== undefined && req.body.pageId !== '') {
+      pageId = Number(req.body.pageId);
+      if (!Number.isInteger(pageId)) {
+        return res.status(400).send('Invalid pageId');
+      }
+      if (communityId) {
+        return res.status(400).send('A post can be in a group or on a page, not both');
+      }
+      const owned = await db.query('SELECT 1 FROM pages WHERE id = $1 AND owner_id = $2', [pageId, req.userId]);
+      if (owned.rows.length === 0) {
+        return res.status(403).send('Only the page owner can post as this page');
+      }
+    }
     // B2: every uploaded image, in the order sent (see uploadManyToCloudinary).
     const imageUrls = (req.cloudinaryResults || []).map((r) => r.secure_url);
     // One statement inserts the post AND its post_media rows, so a post can
@@ -44,14 +60,14 @@ async function createPost(req, res) {
     // first image for older readers (see migration 017).
     const result = await db.query(
       `WITH new_post AS (
-         INSERT INTO posts (user_id, content, image_url, visibility, community_id) VALUES ($1, $2, $3, $5, $6) RETURNING *
+         INSERT INTO posts (user_id, content, image_url, visibility, community_id, page_id) VALUES ($1, $2, $3, $5, $6, $7) RETURNING *
        ), new_media AS (
          INSERT INTO post_media (post_id, url, position)
          SELECT new_post.id, m.url, (m.ord - 1)::smallint
          FROM new_post, unnest($4::text[]) WITH ORDINALITY AS m(url, ord)
        )
        SELECT * FROM new_post`,
-      [req.userId, content, imageUrls[0] || null, imageUrls, visibility, communityId]
+      [req.userId, content, imageUrls[0] || null, imageUrls, pageId ? 'public' : visibility, communityId, pageId]
     );
     const post = { ...result.rows[0], media: imageUrls.map((url) => ({ url })) };
     await hashtagService.syncPostHashtags(post.id, content);
@@ -80,6 +96,7 @@ async function getPosts(req, res) {
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
+        ${pageColumnSql()},
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me
       FROM posts
@@ -91,7 +108,7 @@ async function getPosts(req, res) {
            OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
       ))
       AND (
-        (NOT users.is_private AND posts.visibility = 'public')
+        ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
         OR users.id = $1
         OR EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted')
       )
@@ -128,13 +145,18 @@ async function getFeed(req, res) {
         EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
+        ${pageColumnSql()},
         EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
         EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = posts.user_id AND follows.status = 'accepted') AS is_following
       FROM posts
       JOIN users ON posts.user_id = users.id
       -- B13: community posts live in their community feed only.
-      WHERE posts.community_id IS NULL AND posts.user_id IN (
-        SELECT following_id FROM follows WHERE follower_id = $1 AND status = 'accepted'
+      WHERE posts.community_id IS NULL AND (
+        (posts.page_id IS NULL AND posts.user_id IN (
+          SELECT following_id FROM follows WHERE follower_id = $1 AND status = 'accepted'
+        ))
+        -- B14: posts from pages you follow.
+        OR posts.page_id IN (SELECT page_id FROM page_follows WHERE user_id = $1)
       )
       AND NOT EXISTS (
         SELECT 1 FROM blocks
@@ -180,6 +202,7 @@ async function getPost(req, res) {
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
+        ${pageColumnSql()},
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted') AS viewer_is_follower
       FROM posts
@@ -231,6 +254,9 @@ async function updatePost(req, res) {
     }
     if (postCheck.rows[0].user_id !== req.userId) {
       return res.status(403).send('You can only edit your own posts');
+    }
+    if (visibility !== undefined && (postCheck.rows[0].community_id || postCheck.rows[0].page_id)) {
+      return res.status(400).send("Group and page posts don't have their own audience");
     }
     const result = await db.query(
       'UPDATE posts SET content = COALESCE($1, content), visibility = COALESCE($2, visibility) WHERE id = $3 RETURNING *',

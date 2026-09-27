@@ -1,7 +1,7 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
-const { reactionColumnsSql, mediaColumnSql } = require('../services/reactionService');
+const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 
 // B7 Explore. Both lists look at the last EXPLORE_WINDOW of activity.
 const EXPLORE_WINDOW = "INTERVAL '7 days'";
@@ -10,7 +10,7 @@ const EXPLORE_WINDOW = "INTERVAL '7 days'";
 // Trending counts use ONLY these, so a trend can never reveal activity in
 // private or followers-only posts -- not even as a number.
 const PUBLICLY_VISIBLE_SQL = `
-  NOT users.is_private AND posts.visibility = 'public' AND NOT users.is_deactivated`;
+  (NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public' AND NOT users.is_deactivated`;
 
 // Hides authors the viewer ($1) has a block with, either direction.
 const NOT_BLOCKED_SQL = `
@@ -69,7 +69,7 @@ async function getPopularPosts(req, res) {
            AND ${NOT_BLOCKED_SQL}
            AND NOT users.is_deactivated
            AND (
-             (NOT users.is_private AND posts.visibility = 'public')
+             ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
              OR users.id = $1
              OR EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted')
            )
@@ -78,6 +78,7 @@ async function getPopularPosts(req, res) {
          $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
          ${reactionColumnsSql('$1')},
          ${mediaColumnSql()},
+        ${pageColumnSql()},
          scored.reactions::int AS like_count,
          scored.comment_total::int AS comment_count,
          $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
