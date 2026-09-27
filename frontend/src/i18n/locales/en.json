@@ -602,5 +602,40 @@
         "description": "When someone accepts your follow request"
       }
     }
+  },
+  "admin": {
+    "title": "Moderation",
+    "notFoundTitle": "Not found",
+    "notFound": "This page doesn't exist.",
+    "actionFailed": "That action failed. Please try again.",
+    "loadFailed": "Could not load reports",
+    "reportCount": "{{count}} reports",
+    "postBy": "Post by <link>{{name}}</link>",
+    "openPost": "Open post",
+    "postRemoved": "Post (already removed)",
+    "account": "Account <link>{{name}}</link>",
+    "banned": "Banned",
+    "accountDeleted": "Account (deleted)",
+    "reportedBy": "Reported by {{name}}",
+    "resolution": {
+      "dismissed": "Dismissed",
+      "content_removed": "Post removed",
+      "user_banned": "User banned",
+      "reviewed": "Reviewed"
+    },
+    "resolvedBy": "{{label}} by {{name}}",
+    "dismiss": "Dismiss",
+    "removePost": "Remove post",
+    "ban": "Ban {{name}}",
+    "banReason": "Reason for banning {{name}} (optional)",
+    "banning": "Banning…",
+    "confirmBan": "Confirm ban",
+    "unban": "Unban {{name}}",
+    "statusTabs": "Report status",
+    "pending": "Pending",
+    "reviewedTab": "Reviewed",
+    "loading": "Loading reports…",
+    "emptyPending": "No pending reports. All clear.",
+    "emptyReviewed": "Nothing reviewed yet."
   }
 }

@@ -7,18 +7,18 @@ import { useAuth } from '../hooks/useAuth';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import { fetchReports, dismissReport, removeReportedContent, banUser, unbanUser } from '../services/adminService';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
+import { Trans, useTranslation } from 'react-i18next';
+import { serverErrorText } from '../utils/serverError';
 import '../components/feed/Feed.css';
 import './AdminScreen.css';
 
-const RESOLUTION_LABEL = {
-  dismissed: 'Dismissed',
-  content_removed: 'Post removed',
-  user_banned: 'User banned'
-};
+// Labels: admin.resolution.<key>.
+const RESOLUTIONS = ['dismissed', 'content_removed', 'user_banned'];
 
 // One report, with the actions an admin can take on it. Ban asks for an
 // optional reason inline before confirming.
 function ReportCard({ report, token, onDone }) {
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [banOpen, setBanOpen] = useState(false);
@@ -36,7 +36,7 @@ function ReportCard({ report, token, onDone }) {
       .then(() => onDone())
       .catch((err) => {
         console.error(err);
-        setError(err.response?.data || 'That action failed. Please try again.');
+        setError(serverErrorText(err, 'admin.actionFailed'));
         setBusy(false);
       });
   };
@@ -44,9 +44,9 @@ function ReportCard({ report, token, onDone }) {
   return (
     <li className={clsx('admin-report', !pending && 'is-reviewed')}>
       <div className="admin-report-head">
-        <span className="admin-report-reason">{report.reason}</span>
+        <span className="admin-report-reason">{t(`report.reasons.${report.reason}`, { defaultValue: report.reason })}</span>
         {pending && report.pending_for_target > 1 && (
-          <span className="admin-report-count">{report.pending_for_target} reports</span>
+          <span className="admin-report-count">{t('admin.reportCount', { count: report.pending_for_target })}</span>
         )}
         <span className="admin-report-time">{formatRelativeTime(report.created_at)}</span>
       </div>
@@ -55,30 +55,32 @@ function ReportCard({ report, token, onDone }) {
         {isPost ? (
           report.target_exists ? (
             <>
-              <span className="admin-report-kind">Post by <Link to={`/profile/${report.post_author_id}`}>{report.post_author_username}</Link></span>
+              <span className="admin-report-kind"><Trans i18nKey="admin.postBy" values={{ name: report.post_author_username }} components={{ link: <Link to={`/profile/${report.post_author_id}`} /> }} /></span>
               <p className="admin-report-quote">“{report.post_content}”</p>
-              <Link to={`/posts/${report.target_id}`} className="admin-report-link">Open post</Link>
+              <Link to={`/posts/${report.target_id}`} className="admin-report-link">{t('admin.openPost')}</Link>
             </>
           ) : (
-            <span className="admin-report-kind">Post (already removed)</span>
+            <span className="admin-report-kind">{t('admin.postRemoved')}</span>
           )
         ) : report.target_exists ? (
           <span className="admin-report-kind">
-            Account <Link to={`/profile/${report.target_id}`}>{report.target_username}</Link>
-            {report.target_banned && <span className="admin-banned-tag">Banned</span>}
+            <Trans i18nKey="admin.account" values={{ name: report.target_username }} components={{ link: <Link to={`/profile/${report.target_id}`} /> }} />
+            {report.target_banned && <span className="admin-banned-tag">{t('admin.banned')}</span>}
           </span>
         ) : (
-          <span className="admin-report-kind">Account (deleted)</span>
+          <span className="admin-report-kind">{t('admin.accountDeleted')}</span>
         )}
       </div>
 
       {report.details && <p className="admin-report-details">{report.details}</p>}
-      <p className="admin-report-meta">Reported by {report.reporter_username}</p>
+      <p className="admin-report-meta">{t('admin.reportedBy', { name: report.reporter_username })}</p>
 
       {!pending && (
         <p className="admin-report-resolution">
-          {RESOLUTION_LABEL[report.resolution] || 'Reviewed'}
-          {report.resolved_by_username && ` by ${report.resolved_by_username}`}
+          {(() => {
+            const label = t(`admin.resolution.${RESOLUTIONS.includes(report.resolution) ? report.resolution : 'reviewed'}`);
+            return report.resolved_by_username ? t('admin.resolvedBy', { label, name: report.resolved_by_username }) : label;
+          })()}
           {report.resolved_at && ` · ${formatRelativeTime(report.resolved_at)}`}
         </p>
       )}
@@ -88,16 +90,16 @@ function ReportCard({ report, token, onDone }) {
       {pending && !banOpen && (
         <div className="admin-report-actions">
           <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => act(() => dismissReport(report.id, token))}>
-            Dismiss
+            {t('admin.dismiss')}
           </button>
           {isPost && report.target_exists && (
             <button type="button" className="btn btn-secondary btn-sm admin-danger" disabled={busy} onClick={() => act(() => removeReportedContent(report.id, token))}>
-              Remove post
+              {t('admin.removePost')}
             </button>
           )}
           {targetUserId && (
             <button type="button" className="btn btn-sm admin-danger-solid" disabled={busy} onClick={() => setBanOpen(true)}>
-              Ban {targetUsername}
+              {t('admin.ban', { name: targetUsername })}
             </button>
           )}
         </div>
@@ -112,15 +114,15 @@ function ReportCard({ report, token, onDone }) {
           }}
         >
           <label className="form-field">
-            <span className="form-label">Reason for banning {targetUsername} (optional)</span>
+            <span className="form-label">{t('admin.banReason', { name: targetUsername })}</span>
             <input className="form-input" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} autoFocus />
           </label>
           <div className="admin-report-actions">
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => setBanOpen(false)} disabled={busy}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="btn btn-sm admin-danger-solid" disabled={busy}>
-              {busy ? 'Banning…' : `Confirm ban`}
+              {busy ? t('admin.banning') : t('admin.confirmBan')}
             </button>
           </div>
         </form>
@@ -129,7 +131,7 @@ function ReportCard({ report, token, onDone }) {
       {!pending && report.resolution === 'user_banned' && targetUserId && report.target_banned !== false && (
         <div className="admin-report-actions">
           <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => act(() => unbanUser(targetUserId, token))}>
-            Unban {targetUsername}
+            {t('admin.unban', { name: targetUsername })}
           </button>
         </div>
       )}
@@ -142,6 +144,7 @@ function ReportCard({ report, token, onDone }) {
 // 404 to non-admins; this screen then shows "Not found" too.
 function AdminScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { token } = useAuth();
   const [status, setStatus] = useState('pending');
   const [data, setData] = useState(null);
@@ -158,9 +161,9 @@ function AdminScreen() {
           return;
         }
         console.error(err);
-        setError('Could not load reports');
+        setError(t('admin.loadFailed'));
       });
-  }, [token, status]);
+  }, [token, status, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,22 +176,22 @@ function AdminScreen() {
         if (err.response?.status === 404) setNotAdmin(true);
         else {
           console.error(err);
-          setError('Could not load reports');
+          setError(t('admin.loadFailed'));
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [token, status]);
+  }, [token, status, t]);
 
   if (notAdmin) {
     return (
       <div className="screen-enter">
         <header className="screen-header">
-          <IconButton icon={ChevronLeft} aria-label="Back" onClick={() => navigate(-1)} />
-          <h1 className="screen-header-title">Not found</h1>
+          <IconButton icon={ChevronLeft} aria-label={t('common.back')} onClick={() => navigate(-1)} />
+          <h1 className="screen-header-title">{t('admin.notFoundTitle')}</h1>
         </header>
-        <p className="screen-status">This page doesn't exist.</p>
+        <p className="screen-status">{t('admin.notFound')}</p>
       </div>
     );
   }
@@ -196,11 +199,11 @@ function AdminScreen() {
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Settings" onClick={() => navigate('/settings')} />
-        <h1 className="screen-header-title">Moderation</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('common.backToSettings')} onClick={() => navigate('/settings')} />
+        <h1 className="screen-header-title">{t('admin.title')}</h1>
       </header>
       <div className="screen-body">
-        <div role="tablist" aria-label="Report status" className="admin-tabs">
+        <div role="tablist" aria-label={t('admin.statusTabs')} className="admin-tabs">
           {['pending', 'reviewed'].map((s) => (
             <button
               key={s}
@@ -213,17 +216,17 @@ function AdminScreen() {
                 setStatus(s);
               }}
             >
-              {s === 'pending' ? 'Pending' : 'Reviewed'}
+              {s === 'pending' ? t('admin.pending') : t('admin.reviewedTab')}
             </button>
           ))}
         </div>
 
         {error && <FeedErrorState message={error} onRetry={load} />}
-        {!data && !error && <p className="screen-status" role="status">Loading reports…</p>}
+        {!data && !error && <p className="screen-status" role="status">{t('admin.loading')}</p>}
         {data && data.reports.length === 0 && (
           <div className="admin-empty">
             <ShieldAlert size={28} aria-hidden="true" />
-            <p>{status === 'pending' ? 'No pending reports. All clear.' : 'Nothing reviewed yet.'}</p>
+            <p>{status === 'pending' ? t('admin.emptyPending') : t('admin.emptyReviewed')}</p>
           </div>
         )}
         {data && data.reports.length > 0 && (
