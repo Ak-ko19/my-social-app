@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { lazy } from 'react';
+import { lazy, Suspense } from 'react';
 import PhoneShell from './components/layout/PhoneShell';
 import HomeFeed from './screens/HomeFeed';
 
@@ -39,6 +39,7 @@ const ManageCommunityScreen = lazy(() => import('./screens/ManageCommunityScreen
 const PagesScreen = lazy(() => import('./screens/PagesScreen'));
 const LanguageScreen = lazy(() => import('./screens/LanguageScreen'));
 const LegalScreen = lazy(() => import('./screens/LegalScreen'));
+const LandingScreen = lazy(() => import('./screens/LandingScreen'));
 const CreatePageScreen = lazy(() => import('./screens/CreatePageScreen'));
 const PageScreen = lazy(() => import('./screens/PageScreen'));
 const EditPageScreen = lazy(() => import('./screens/EditPageScreen'));
@@ -164,6 +165,9 @@ function App() {
         <Route path="/groups/:id/manage" element={<PhoneShell hideTabBar><ManageCommunityScreen /></PhoneShell>} />
         <Route path="/pages" element={<PhoneShell><PagesScreen /></PhoneShell>} />
         <Route path="/settings/language" element={<PhoneShell><LanguageScreen /></PhoneShell>} />
+        {/* C3: public landing page -- full width, deliberately NOT inside
+            PhoneShell (its own Suspense instead). Logged-out "/" lands here. */}
+        <Route path="/welcome" element={<Suspense fallback={null}><LandingScreen /></Suspense>} />
         {/* C2: public legal pages (no login needed). */}
         <Route path="/terms" element={<PhoneShell hideTabBar><LegalScreen doc="terms" /></PhoneShell>} />
         <Route path="/privacy" element={<PhoneShell hideTabBar><LegalScreen doc="privacy" /></PhoneShell>} />

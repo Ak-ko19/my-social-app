@@ -47,8 +47,9 @@ function HomeFeed() {
   } = useFeed(token);
 
   useEffect(() => {
+    // C3: visitors who aren't logged in get the landing page, not a bare login form.
     if (!token) {
-      navigate('/login');
+      navigate('/welcome', { replace: true });
     }
   }, [token, navigate]);
 
