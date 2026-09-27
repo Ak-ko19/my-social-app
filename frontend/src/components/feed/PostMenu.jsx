@@ -69,8 +69,8 @@ function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, 
         }
       ];
 
-  // B13: the Public/Followers audience doesn't apply inside a group.
-  const ownerMenu = post.community_id ? ownerItems.filter((i) => i.key !== 'visibility') : ownerItems;
+  // B13/B14: the Public/Followers audience doesn't apply to group or page posts.
+  const ownerMenu = post.community_id || post.page ? ownerItems.filter((i) => i.key !== 'visibility') : ownerItems;
   const otherMenu = [
         {
           key: 'report-post',

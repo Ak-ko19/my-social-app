@@ -36,6 +36,10 @@ const GroupsScreen = lazy(() => import('./screens/GroupsScreen'));
 const CreateCommunityScreen = lazy(() => import('./screens/CreateCommunityScreen'));
 const CommunityScreen = lazy(() => import('./screens/CommunityScreen'));
 const ManageCommunityScreen = lazy(() => import('./screens/ManageCommunityScreen'));
+const PagesScreen = lazy(() => import('./screens/PagesScreen'));
+const CreatePageScreen = lazy(() => import('./screens/CreatePageScreen'));
+const PageScreen = lazy(() => import('./screens/PageScreen'));
+const EditPageScreen = lazy(() => import('./screens/EditPageScreen'));
 
 function App() {
   return (
@@ -156,6 +160,10 @@ function App() {
         <Route path="/groups/new" element={<PhoneShell hideTabBar><CreateCommunityScreen /></PhoneShell>} />
         <Route path="/groups/:id" element={<PhoneShell><CommunityScreen /></PhoneShell>} />
         <Route path="/groups/:id/manage" element={<PhoneShell hideTabBar><ManageCommunityScreen /></PhoneShell>} />
+        <Route path="/pages" element={<PhoneShell><PagesScreen /></PhoneShell>} />
+        <Route path="/pages/new" element={<PhoneShell hideTabBar><CreatePageScreen /></PhoneShell>} />
+        <Route path="/pages/:id" element={<PhoneShell><PageScreen /></PhoneShell>} />
+        <Route path="/pages/:id/edit" element={<PhoneShell hideTabBar><EditPageScreen /></PhoneShell>} />
       </Routes>
     </BrowserRouter>
   );

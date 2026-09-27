@@ -19,7 +19,9 @@ function CreatePost() {
   // B13: /create-post?communityId=N posts inside that group.
   const [searchParams] = useSearchParams();
   const communityId = searchParams.get('communityId');
-  const backTo = communityId ? `/groups/${communityId}` : '/';
+  // B14: /create-post?pageId=N posts as that page (owner only; always public).
+  const pageId = searchParams.get('pageId');
+  const backTo = communityId ? `/groups/${communityId}` : pageId ? `/pages/${pageId}` : '/';
   const textareaRef = useRef(null);
   const mention = useMentionAutocomplete();
 
@@ -87,6 +89,7 @@ function CreatePost() {
     const formData = new FormData();
     formData.append('content', content);
     if (communityId) formData.append('communityId', communityId);
+    else if (pageId) formData.append('pageId', pageId);
     else formData.append('visibility', visibility);
     images.forEach((img) => formData.append('images', img.file));
 
@@ -108,8 +111,8 @@ function CreatePost() {
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label={communityId ? 'Back to the group' : 'Back to Home'} onClick={() => navigate(backTo)} />
-        <h1 className="screen-header-title">{communityId ? 'Post in group' : 'Create Post'}</h1>
+        <IconButton icon={ChevronLeft} aria-label={communityId ? 'Back to the group' : pageId ? 'Back to the page' : 'Back to Home'} onClick={() => navigate(backTo)} />
+        <h1 className="screen-header-title">{communityId ? 'Post in group' : pageId ? 'Post as page' : 'Create Post'}</h1>
       </header>
       <form className="screen-body form-stack" onSubmit={handleSubmit}>
         <label className="form-field">
@@ -138,7 +141,7 @@ function CreatePost() {
             disabled={images.length >= MAX_IMAGES || submitting}
           />
         </label>
-        {!communityId && (
+        {!communityId && !pageId && (
         <fieldset className="audience-picker">
           <legend className="form-label">Who can see this?</legend>
           <label className={visibility === 'public' ? 'audience-option is-selected' : 'audience-option'}>

@@ -139,3 +139,8 @@
   background: var(--color-subtle-bg);
   color: var(--color-accent-2);
 }
+
+/* B14 Pages reuse the group list/hero styles; the icon gets its own hue. */
+.page-icon {
+  color: var(--color-accent-3);
+}

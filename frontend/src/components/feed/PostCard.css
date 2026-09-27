@@ -33,6 +33,15 @@
   color: var(--color-text);
 }
 
+/* B14: page posts link the page name to the page. */
+.post-card-author-link {
+  text-decoration: none;
+}
+
+.post-card-author-link:hover {
+  text-decoration: underline;
+}
+
 .post-card-meta {
   font-size: 11.5px;
   color: var(--color-text-muted);

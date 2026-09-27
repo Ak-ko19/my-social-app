@@ -1,4 +1,5 @@
 import { memo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { Bookmark, Globe, MessageCircle, Share2, Users } from 'lucide-react';
 import ReactionButton from './ReactionButton';
@@ -152,22 +153,31 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
   // broken, and a real Cloudinary one would request a full-size image
   // instead of one sized for a 42px avatar.
   const avatarSrc = post.avatar_url ? getOptimizedImageUrl(resolveImageUrl(post.avatar_url), 84) : undefined;
-  const initials = (post.username || '?').slice(0, 2).toUpperCase();
+  // B14: a page post is shown as the page (the owner stays in post.username
+  // for things like Report/Block, which act on the real person).
+  const page = post.page || null;
+  const initials = ((page ? page.name : post.username) || '?').slice(0, 2).toUpperCase();
 
   return (
     <article className="post-card">
       <header className="post-card-header">
-        <Avatar size={42} src={avatarSrc} initials={initials} alt="" />
+        <Avatar size={42} src={page ? undefined : avatarSrc} initials={initials} alt="" />
         <div className="post-card-header-text">
           <div className="post-card-author-row">
-            <span className="post-card-author">{post.username}</span>
+            {page ? (
+              <Link to={`/pages/${page.id}`} className="post-card-author post-card-author-link">{page.name}</Link>
+            ) : (
+              <span className="post-card-author">{post.username}</span>
+            )}
             {post.is_verified && <VerifiedTick size={14} />}
           </div>
           <div className="post-card-meta">
+            {page && <span>Page · </span>}
             <span>{formatRelativeTime(post.created_at)}</span>
             {post.sponsored && <span> · Sponsored</span>}
-            {/* B13: group posts follow the group's privacy, not an audience. */}
-            {!post.community_id && (
+            {/* B13/B14: group posts follow the group's privacy and page posts
+                are always public -- neither has its own audience. */}
+            {!post.community_id && !page && (
               <span className="post-card-audience" title={visibility === 'followers' ? 'Followers only' : 'Public'}>
                 {' · '}
                 {visibility === 'followers' ? <Users size={12} aria-hidden="true" /> : <Globe size={12} aria-hidden="true" />}

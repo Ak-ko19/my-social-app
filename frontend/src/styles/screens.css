@@ -162,6 +162,12 @@ textarea.form-input {
   background: var(--color-border);
 }
 
+/* Destructive actions (same red as Account Management's delete). */
+.btn-danger {
+  background: var(--color-accent-3);
+  color: #fff;
+}
+
 /* ---------- Auth screens (Login/Signup/Forgot/Reset) ---------- */
 .auth-screen {
   display: flex;
