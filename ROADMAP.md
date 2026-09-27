@@ -1146,7 +1146,7 @@ follow-a-page flow, and page-authored posts.
   "new follower" notification for page owners, and page insights.
 
 ### B15 — Myanmar / English language switch (i18n)
-**Status:** ⬜ NOT CHECKED
+**Status:** 🟡 PARTIAL (2026-09-27: i18next core, Settings → Language, Myanmar font, server-message map done; translated so far: layout/nav, settings, auth, feed/comments/reactions/stories/composer, UI primitives, hook errors. Remaining: profile/explore/search/notifications/saved/hashtag/post detail, messages, settings sub-screens + account + admin, groups/pages, menu + super-app category data; then key-parity check, Burmese A3 matrix, b15 test. Dead legacy components PostActions/LikeButton/CommentButton/MoreButton/PostHeader/FeedActions* are not imported anywhere and are deliberately left untranslated.)
 **Done when:** an i18n library is wired into the frontend, all
 user-facing strings are extracted (currently all hardcoded English), and
 a language toggle in Settings persists the choice.
