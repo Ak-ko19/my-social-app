@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Bookmark,
   UsersRound,
@@ -77,20 +78,21 @@ const CATEGORY_ROUTES = {
 
 function MenuScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const currentUser = useCurrentUserSummary();
 
   const filteredCategories = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return SUPER_APP_CATEGORIES;
-    return SUPER_APP_CATEGORIES.filter((category) => category.title.toLowerCase().includes(q));
-  }, [query]);
+    return SUPER_APP_CATEGORIES.filter((category) => t(`menu.categories.${category.key}.title`).toLowerCase().includes(q));
+  }, [query, t]);
 
   return (
     <div className="screen-enter">
       <header className="menu-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Home" onClick={() => navigate('/')} />
-        <span className="menu-header-eyebrow">Explore MySocialApp</span>
+        <IconButton icon={ChevronLeft} aria-label={t('common.backToHome')} onClick={() => navigate('/')} />
+        <span className="menu-header-eyebrow">{t('menu.eyebrow')}</span>
         <ProfileSummaryRow
           user={currentUser}
           src={currentUser.avatarUrl}
@@ -104,10 +106,10 @@ function MenuScreen() {
         <input
           type="text"
           className="menu-search-input"
-          placeholder="Search features…"
+          placeholder={t('menu.searchPlaceholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          aria-label="Search features"
+          aria-label={t('menu.searchLabel')}
         />
       </div>
 
@@ -121,8 +123,8 @@ function MenuScreen() {
             <Bookmark size={20} aria-hidden="true" />
           </span>
           <span className="menu-category-text">
-            <span className="menu-category-title">Saved Posts</span>
-            <span className="menu-category-subtitle">Posts you've bookmarked</span>
+            <span className="menu-category-title">{t('menu.saved')}</span>
+            <span className="menu-category-subtitle">{t('menu.savedSub')}</span>
           </span>
           <ChevronRight size={18} className="menu-category-chevron" aria-hidden="true" />
         </button>
@@ -131,8 +133,8 @@ function MenuScreen() {
             <UsersRound size={20} aria-hidden="true" />
           </span>
           <span className="menu-category-text">
-            <span className="menu-category-title">Groups</span>
-            <span className="menu-category-subtitle">Communities you've joined or can discover</span>
+            <span className="menu-category-title">{t('menu.groups')}</span>
+            <span className="menu-category-subtitle">{t('menu.groupsSub')}</span>
           </span>
           <ChevronRight size={18} className="menu-category-chevron" aria-hidden="true" />
         </button>
@@ -141,8 +143,8 @@ function MenuScreen() {
             <Flag size={20} aria-hidden="true" />
           </span>
           <span className="menu-category-text">
-            <span className="menu-category-title">Pages</span>
-            <span className="menu-category-subtitle">Business and creator pages</span>
+            <span className="menu-category-title">{t('menu.pages')}</span>
+            <span className="menu-category-subtitle">{t('menu.pagesSub')}</span>
           </span>
           <ChevronRight size={18} className="menu-category-chevron" aria-hidden="true" />
         </button>
@@ -161,7 +163,7 @@ function MenuScreen() {
               className="menu-category-row"
               onClick={isEnabled ? () => navigate(path) : undefined}
               disabled={!isEnabled}
-              title={!isEnabled ? 'Coming soon' : undefined}
+              title={!isEnabled ? t('common.comingSoon') : undefined}
               aria-disabled={!isEnabled}
             >
               <span
@@ -171,15 +173,15 @@ function MenuScreen() {
                 {Icon && <Icon size={20} aria-hidden="true" />}
               </span>
               <span className="menu-category-text">
-                <span className="menu-category-title">{category.title}</span>
-                <span className="menu-category-subtitle">{category.subtitle}</span>
+                <span className="menu-category-title">{t(`menu.categories.${category.key}.title`)}</span>
+                <span className="menu-category-subtitle">{t(`menu.categories.${category.key}.subtitle`)}</span>
               </span>
               <ChevronRight size={18} className="menu-category-chevron" aria-hidden="true" />
             </button>
           );
         })}
 
-        {filteredCategories.length === 0 && <p className="menu-empty-state">No features match “{query}”.</p>}
+        {filteredCategories.length === 0 && <p className="menu-empty-state">{t('menu.noMatch', { query })}</p>}
       </div>
 
       <AppFooter />

@@ -760,5 +760,91 @@
       "community": "Community",
       "other": "Other"
     }
+  },
+  "menu": {
+    "eyebrow": "Explore MySocialApp",
+    "searchPlaceholder": "Search features…",
+    "searchLabel": "Search features",
+    "saved": "Saved Posts",
+    "savedSub": "Posts you've bookmarked",
+    "groups": "Groups",
+    "groupsSub": "Communities you've joined or can discover",
+    "pages": "Pages",
+    "pagesSub": "Business and creator pages",
+    "noMatch": "No features match “{{query}}”.",
+    "categories": {
+      "news": {
+        "title": "News",
+        "subtitle": "Latest news & trending stories"
+      },
+      "jobs": {
+        "title": "Jobs",
+        "subtitle": "Find your dream job"
+      },
+      "identity": {
+        "title": "User Identity & Account",
+        "subtitle": "Manage your profile & identity"
+      },
+      "payments": {
+        "title": "Payments & Wallet",
+        "subtitle": "Pay bills, send & receive money"
+      },
+      "communication": {
+        "title": "Communication & Social Networking",
+        "subtitle": "Chat, call & connect with people"
+      },
+      "ecommerce": {
+        "title": "E-commerce & Marketplace",
+        "subtitle": "Shop, sell & grow your business"
+      },
+      "food": {
+        "title": "Food & Grocery",
+        "subtitle": "Order food & daily essentials"
+      },
+      "transport": {
+        "title": "Transportation",
+        "subtitle": "Ride, drive & travel easily"
+      },
+      "travel": {
+        "title": "Travel & Booking",
+        "subtitle": "Book flights, hotels & experiences"
+      },
+      "finance": {
+        "title": "Financial Services",
+        "subtitle": "Banking, loans & insurance"
+      },
+      "government": {
+        "title": "Government & Public Services",
+        "subtitle": "Access government services"
+      },
+      "healthcare": {
+        "title": "Healthcare",
+        "subtitle": "Health, wellness & medical care"
+      },
+      "education": {
+        "title": "Education",
+        "subtitle": "Learn, grow & build your future"
+      },
+      "entertainment": {
+        "title": "Entertainment & Media",
+        "subtitle": "Movies, music, gaming & more"
+      },
+      "utilities": {
+        "title": "Utilities & Daily Services",
+        "subtitle": "Bills, top-ups & everyday services"
+      },
+      "ai-search": {
+        "title": "AI & Search",
+        "subtitle": "Smart search & AI assistant"
+      },
+      "mini-apps": {
+        "title": "Mini App Platform & Developer",
+        "subtitle": "Build & explore mini apps"
+      },
+      "rewards": {
+        "title": "Loyalty & Rewards",
+        "subtitle": "Earn points & enjoy rewards"
+      }
+    }
   }
 }
