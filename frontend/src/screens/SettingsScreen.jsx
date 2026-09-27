@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { LANGUAGES } from '../i18n';
 import {
   ChevronLeft,
   ChevronRight,
@@ -45,74 +47,77 @@ import './SettingsScreen.css';
 // layer at all: each row just holds its icon component directly.
 // B12: only admins see this section (the /admin API enforces it anyway).
 const ADMIN_SECTION = {
-  label: 'Admin',
-  rows: [{ key: 'moderation', icon: ShieldAlert, title: 'Moderation', to: '/admin' }]
+  id: 'admin',
+  rows: [{ key: 'moderation', icon: ShieldAlert, to: '/admin' }]
 };
 
 const SETTINGS_SECTIONS = [
   {
-    label: 'Account',
+    id: 'account',
     rows: [
-      { key: 'personal-info', icon: User, title: 'Personal Information', to: '/edit-profile' },
-      { key: 'security', icon: ShieldCheck, title: 'Security & Privacy', to: '/settings/account' },
+      { key: 'personal-info', icon: User, to: '/edit-profile' },
+      { key: 'security', icon: ShieldCheck, to: '/settings/account' },
       // badgeCount isn't set here -- it's static config, but the
       // notifications count is live data, so it's injected at render
       // time below (the one row key this component special-cases).
-      { key: 'notifications', icon: Bell, title: 'Notifications', to: '/notifications' },
+      { key: 'notifications', icon: Bell, to: '/notifications' },
       // B11: choose which notifications to receive.
-      { key: 'notification-settings', icon: BellRing, title: 'Notification Settings', to: '/settings/notifications' },
-      { key: 'blocked-users', icon: UserX, title: 'Blocked Users', to: '/settings/blocked-users' },
-      { key: 'follow-requests', icon: Users, title: 'Follow Requests', to: '/settings/follow-requests' },
-      { key: 'language-region', icon: Globe, title: 'Language & Region' },
+      { key: 'notification-settings', icon: BellRing, to: '/settings/notifications' },
+      { key: 'blocked-users', icon: UserX, to: '/settings/blocked-users' },
+      { key: 'follow-requests', icon: Users, to: '/settings/follow-requests' },
+      // B15: English / Myanmar.
+      { key: 'language', icon: Globe, to: '/settings/language' },
       // Real, not "coming soon" -- wired to the real ThemeProvider/
       // ThemeToggle already built for this app, same as Personal
       // Information/Notifications above.
-      { key: 'dark-mode', icon: Moon, title: 'Dark Mode', toggle: true }
+      { key: 'dark-mode', icon: Moon, toggle: true }
     ]
   },
   {
-    label: 'Social',
+    id: 'social',
     rows: [
-      { key: 'privacy-settings', icon: Lock, title: 'Private Account', toggle: true, ToggleComponent: PrivacyToggle },
-      { key: 'content-visibility', icon: Eye, title: 'Who Can See My Content' },
-      { key: 'followers-following', icon: Users, title: 'Followers & Following' },
-      { key: 'content-preferences', icon: SlidersHorizontal, title: 'Content Preferences' }
+      { key: 'privacy-settings', icon: Lock, toggle: true, ToggleComponent: PrivacyToggle },
+      { key: 'content-visibility', icon: Eye },
+      { key: 'followers-following', icon: Users },
+      { key: 'content-preferences', icon: SlidersHorizontal }
     ]
   },
   {
-    label: 'App Features',
+    id: 'features',
     rows: [
-      { key: 'news-feed-settings', icon: Rss, title: 'News Feed Settings' },
-      { key: 'story-settings', icon: Film, title: 'Story Settings' },
-      { key: 'reels-videos', icon: Video, title: 'Reels & Videos' },
-      { key: 'live-streaming', icon: Radio, title: 'Live Streaming' },
-      { key: 'communities', icon: UsersRound, title: 'Communities' },
-      { key: 'groups', icon: Group, title: 'Groups' }
+      { key: 'news-feed-settings', icon: Rss },
+      { key: 'story-settings', icon: Film },
+      { key: 'reels-videos', icon: Video },
+      { key: 'live-streaming', icon: Radio },
+      { key: 'pages', icon: UsersRound, to: '/pages' },
+      { key: 'groups', icon: Group, to: '/groups' }
     ]
   },
   {
-    label: 'Support & Legal',
+    id: 'support',
     rows: [
-      { key: 'help-support', icon: LifeBuoy, title: 'Help & Support' },
-      { key: 'terms', icon: FileText, title: 'Terms & Conditions' },
-      { key: 'privacy-policy', icon: ScrollText, title: 'Privacy Policy' },
-      { key: 'about', icon: Info, title: 'About MySocialApp' }
+      { key: 'help-support', icon: LifeBuoy },
+      { key: 'terms', icon: FileText },
+      { key: 'privacy-policy', icon: ScrollText },
+      { key: 'about', icon: Info }
     ]
   }
 ];
 
 function SettingsScreen() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { token, userId } = useAuth();
+  const languageLabel = LANGUAGES.find((l) => l.code === i18n.language)?.label;
   const { unreadCount } = useUnreadCount(token);
   const currentUser = useCurrentUserSummary();
 
   return (
     <div className="screen-enter">
       <header className="settings-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Home" onClick={() => navigate('/')} />
-        <h1 className="settings-header-title">Settings</h1>
-        <IconButton icon={Search} aria-label="Search settings" disabled title="Coming soon" />
+        <IconButton icon={ChevronLeft} aria-label={t('common.backToHome')} onClick={() => navigate('/')} />
+        <h1 className="settings-header-title">{t('settings.title')}</h1>
+        <IconButton icon={Search} aria-label={t('settings.searchSettings')} disabled title={t('common.comingSoon')} />
       </header>
 
       <div className="settings-profile-section">
@@ -123,8 +128,8 @@ function SettingsScreen() {
       </div>
 
       {(currentUser.isAdmin ? [ADMIN_SECTION, ...SETTINGS_SECTIONS] : SETTINGS_SECTIONS).map((section) => (
-        <section className="settings-section" key={section.label}>
-          <SectionLabel className="settings-section-label">{section.label}</SectionLabel>
+        <section className="settings-section" key={section.id}>
+          <SectionLabel className="settings-section-label">{t(`settings.sections.${section.id}`)}</SectionLabel>
 
           {section.rows.map((row) => {
             const Icon = row.icon;
@@ -146,7 +151,7 @@ function SettingsScreen() {
                   <span className="settings-row-icon-badge">
                     <Icon size={17} aria-hidden="true" />
                   </span>
-                  <span className="settings-row-label">{row.title}</span>
+                  <span className="settings-row-label">{t(`settings.rows.${row.key}`)}</span>
                   <span className="settings-theme-switch">
                     <ToggleComponent />
                   </span>
@@ -161,13 +166,14 @@ function SettingsScreen() {
                 className="settings-row"
                 onClick={isEnabled ? () => navigate(row.to) : undefined}
                 disabled={!isEnabled}
-                title={!isEnabled ? 'Coming soon' : undefined}
+                title={!isEnabled ? t('common.comingSoon') : undefined}
                 aria-disabled={!isEnabled}
               >
                 <span className="settings-row-icon-badge">
                   <Icon size={17} aria-hidden="true" />
                 </span>
-                <span className="settings-row-label">{row.title}</span>
+                <span className="settings-row-label">{t(`settings.rows.${row.key}`)}</span>
+                {row.key === 'language' && <span className="settings-row-value">{languageLabel}</span>}
                 {typeof badgeCount === 'number' && badgeCount > 0 && (
                   <Badge
                     className="settings-row-badge"
@@ -187,7 +193,7 @@ function SettingsScreen() {
       <div className="settings-logout-wrap">
         <button type="button" className="settings-logout-button" onClick={forceLogout}>
           <LogOut size={16} aria-hidden="true" />
-          Log Out
+          {t('settings.logOut')}
         </button>
       </div>
 

@@ -163,3 +163,10 @@
 :root[data-theme='dark'] .settings-logout-button:hover {
   background: rgba(220, 38, 38, 0.26);
 }
+
+/* B15: current value on the right of a row (e.g. the language). */
+.settings-row-value {
+  flex: none;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}

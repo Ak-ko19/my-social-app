@@ -9,7 +9,7 @@
    names yet. Each screen moves over to these tokens (and index.css's
    equivalent rules get removed) as its own later step, not silently here. */
 
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Noto+Sans+Myanmar:wght@400;700&display=swap');
 
 :root {
   /* Color */
@@ -74,9 +74,11 @@
   --space-7: 32px;
   --space-8: 40px;
 
-  /* Font -- Manrope only; no Inter/Roboto/Arial anywhere in the fallback
-     chain, per spec. */
-  --font-sans: 'Manrope', system-ui, -apple-system, sans-serif;
+  /* Font -- Manrope; no Inter/Roboto/Arial anywhere in the fallback
+     chain, per spec. B15: Manrope has no Myanmar glyphs, so Burmese text
+     falls through to Noto Sans Myanmar (Google Fonts serves it with a
+     unicode-range, so it only downloads when Myanmar text is on screen). */
+  --font-sans: 'Manrope', 'Noto Sans Myanmar', system-ui, -apple-system, sans-serif;
 
   /* Shadow */
   --shadow-card: 0 2px 8px rgba(20, 21, 26, 0.06);
@@ -105,4 +107,10 @@
   --color-subtle-bg: #22232b;
 
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* B15: Burmese stacks vowel signs above and below the line; a little more
+   leading keeps them from touching (and from clipping in tight rows). */
+:lang(my) body {
+  line-height: 1.6;
 }

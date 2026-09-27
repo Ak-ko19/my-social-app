@@ -1,0 +1,88 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "comingSoon": "Coming soon",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "delete": "Delete",
+    "save": "Save",
+    "saveChanges": "Save changes",
+    "saved": "Saved.",
+    "retry": "Try again",
+    "create": "Create",
+    "loadMore": "Load more",
+    "search": "Search",
+    "backToHome": "Back to Home",
+    "backToMenu": "Back to Menu",
+    "backToSettings": "Back to Settings",
+    "somethingWentWrong": "Something went wrong. Please try again.",
+    "typeToConfirm": "Type \"{{text}}\" to confirm",
+    "typeToConfirmLabel": "Type {{text}} to confirm"
+  },
+  "time": {
+    "justNow": "just now",
+    "y": "{{count}}y ago",
+    "mo": "{{count}}mo ago",
+    "w": "{{count}}w ago",
+    "d": "{{count}}d ago",
+    "h": "{{count}}h ago",
+    "m": "{{count}}m ago"
+  },
+  "nav": {
+    "primary": "Primary",
+    "home": "Home",
+    "videos": "Videos",
+    "shorts": "Shorts",
+    "messages": "Messages",
+    "profile": "Profile",
+    "openMenu": "Open menu",
+    "search": "Search",
+    "notifications": "Notifications",
+    "notificationsUnread": "Notifications, {{count}} unread",
+    "openSettings": "Open settings",
+    "tagline": "More Than Social · A Super App for You"
+  },
+  "settings": {
+    "title": "Settings",
+    "searchSettings": "Search settings",
+    "logOut": "Log Out",
+    "sections": {
+      "admin": "Admin",
+      "account": "Account",
+      "social": "Social",
+      "features": "App Features",
+      "support": "Support & Legal"
+    },
+    "rows": {
+      "moderation": "Moderation",
+      "personal-info": "Personal Information",
+      "security": "Security & Privacy",
+      "notifications": "Notifications",
+      "notification-settings": "Notification Settings",
+      "blocked-users": "Blocked Users",
+      "follow-requests": "Follow Requests",
+      "language": "Language",
+      "dark-mode": "Dark Mode",
+      "privacy-settings": "Private Account",
+      "content-visibility": "Who Can See My Content",
+      "followers-following": "Followers & Following",
+      "content-preferences": "Content Preferences",
+      "news-feed-settings": "News Feed Settings",
+      "story-settings": "Story Settings",
+      "reels-videos": "Reels & Videos",
+      "live-streaming": "Live Streaming",
+      "pages": "Pages",
+      "groups": "Groups",
+      "help-support": "Help & Support",
+      "terms": "Terms & Conditions",
+      "privacy-policy": "Privacy Policy",
+      "about": "About MySocialApp"
+    }
+  },
+  "language": {
+    "title": "Language",
+    "choose": "App language",
+    "hint": "Changes the app's buttons, menus and messages on this device. Posts and comments stay in the language they were written in."
+  }
+}

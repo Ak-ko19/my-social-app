@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, PlayCircle, Zap, MessageSquare, User } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 import { useConversations } from '../../hooks/useConversations';
 import './layout.css';
@@ -13,11 +14,11 @@ import './layout.css';
 // (nothing new-system exists for it yet); Profile -> /settings is explicit
 // in the spec.
 const TABS = [
-  { key: 'home', label: 'Home', icon: Home, path: '/' },
-  { key: 'videos', label: 'Videos', icon: PlayCircle, path: null },
-  { key: 'shorts', label: 'Shorts', icon: Zap, path: null },
-  { key: 'messages', label: 'Messages', icon: MessageSquare, path: '/messages' },
-  { key: 'profile', label: 'Profile', icon: User, path: '/settings' }
+  { key: 'home', icon: Home, path: '/' },
+  { key: 'videos', icon: PlayCircle, path: null },
+  { key: 'shorts', icon: Zap, path: null },
+  { key: 'messages', icon: MessageSquare, path: '/messages' },
+  { key: 'profile', icon: User, path: '/settings' }
 ];
 
 // The "existing unread-DM-count logic" is useConversations' own per-
@@ -30,6 +31,7 @@ const TABS = [
 // same socket the hook already listens on, the whole time the user is
 // anywhere in this nav shell -- not just while actually on /messages.
 function BottomTabBar({ className }) {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { token, userId } = useAuth();
@@ -37,8 +39,8 @@ function BottomTabBar({ className }) {
   const unreadMessages = conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
 
   return (
-    <nav className={className ? `bottom-tab-bar ${className}` : 'bottom-tab-bar'} aria-label="Primary">
-      {TABS.map(({ key, label, icon: Icon, path }) => {
+    <nav className={className ? `bottom-tab-bar ${className}` : 'bottom-tab-bar'} aria-label={t('nav.primary')}>
+      {TABS.map(({ key, icon: Icon, path }) => {
         const isActive = path === location.pathname;
         const badgeCount = key === 'messages' ? unreadMessages : 0;
 
@@ -49,7 +51,7 @@ function BottomTabBar({ className }) {
             className={clsx('bottom-tab', isActive && 'bottom-tab-active')}
             onClick={path ? () => navigate(path) : undefined}
             disabled={!path}
-            title={!path ? 'Coming soon' : undefined}
+            title={!path ? t('common.comingSoon') : undefined}
             aria-current={isActive ? 'page' : undefined}
           >
             <span className="bottom-tab-icon-wrap">
@@ -60,7 +62,7 @@ function BottomTabBar({ className }) {
                 </span>
               )}
             </span>
-            <span className="bottom-tab-label">{label}</span>
+            <span className="bottom-tab-label">{t(`nav.${key}`)}</span>
           </button>
         );
       })}

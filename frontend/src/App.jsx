@@ -37,6 +37,7 @@ const CreateCommunityScreen = lazy(() => import('./screens/CreateCommunityScreen
 const CommunityScreen = lazy(() => import('./screens/CommunityScreen'));
 const ManageCommunityScreen = lazy(() => import('./screens/ManageCommunityScreen'));
 const PagesScreen = lazy(() => import('./screens/PagesScreen'));
+const LanguageScreen = lazy(() => import('./screens/LanguageScreen'));
 const CreatePageScreen = lazy(() => import('./screens/CreatePageScreen'));
 const PageScreen = lazy(() => import('./screens/PageScreen'));
 const EditPageScreen = lazy(() => import('./screens/EditPageScreen'));
@@ -161,6 +162,7 @@ function App() {
         <Route path="/groups/:id" element={<PhoneShell><CommunityScreen /></PhoneShell>} />
         <Route path="/groups/:id/manage" element={<PhoneShell hideTabBar><ManageCommunityScreen /></PhoneShell>} />
         <Route path="/pages" element={<PhoneShell><PagesScreen /></PhoneShell>} />
+        <Route path="/settings/language" element={<PhoneShell><LanguageScreen /></PhoneShell>} />
         <Route path="/pages/new" element={<PhoneShell hideTabBar><CreatePageScreen /></PhoneShell>} />
         <Route path="/pages/:id" element={<PhoneShell><PageScreen /></PhoneShell>} />
         <Route path="/pages/:id/edit" element={<PhoneShell hideTabBar><EditPageScreen /></PhoneShell>} />
