@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSocket } from './useSocket';
 import { fetchConversations } from '../services/messageService';
+import i18n from '../i18n';
 
 // Owns the inbox's conversation list: initial load, plus live in-place
 // updates from the shared socket so a new message doesn't require
@@ -37,7 +38,7 @@ export function useConversations(token, currentUserId) {
       .catch((err) => {
         if (requestId !== requestIdRef.current) return;
         console.error(err);
-        setError('Failed to load conversations');
+        setError(i18n.t('errors.loadConversations'));
       })
       .finally(() => {
         if (requestId === requestIdRef.current) setLoading(false);

@@ -18,11 +18,13 @@ import StoryViewer from '../components/feed/StoryViewer';
 // FeedSkeleton/etc. render outside of Feed.jsx itself -- same "own your
 // styles" reasoning as TopAppBar/Logo importing layout.css directly.
 import '../components/feed/Feed.css';
+import { useTranslation } from 'react-i18next';
 
 // Real feed: the shared useFeed hook, FeedList (real pagination/
 // virtualization) rendering real <PostCard post={p} />, plus the real
 // stories tray (B3, useStories + StoriesRow + StoryViewer) above it.
 function HomeFeed() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { token } = useAuth();
@@ -65,7 +67,7 @@ function HomeFeed() {
           role="status"
           style={{ padding: '12px 16px', margin: 0, background: 'var(--badge-green-bg)', color: 'var(--badge-green-fg)', fontSize: 13 }}
         >
-          Welcome back! Your account has been reactivated.
+          {t('feed.reactivated')}
         </p>
       )}
       <StoriesRow

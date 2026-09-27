@@ -3,6 +3,7 @@ import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import PostCard from './PostCard';
 import PostCardSkeleton from './PostCardSkeleton';
+import { useTranslation } from 'react-i18next';
 import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
 
 // Window-scoped virtualization (not a fixed-height inner scroll container)
@@ -18,6 +19,7 @@ import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
 // indicator (which mounts/unmounts far less often than every scroll frame)
 // gets a transition.
 function FeedList({ posts, hasMore, isLoadingMore, onLoadMore, onRemovePost, onRemovePostsByUser, onUpdatePost }) {
+  const { t } = useTranslation();
   const listRef = useRef(null);
   const reduceMotion = useReducedMotion();
   // The virtualizer measures from the top of the document; scrollMargin is
@@ -81,14 +83,14 @@ function FeedList({ posts, hasMore, isLoadingMore, onLoadMore, onRemovePost, onR
             key="loading-more"
             className="feed-loading-more"
             role="status"
-            aria-label="Loading more posts"
+            aria-label={t('feed.loadingMore')}
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={reduceMotion ? undefined : { opacity: 0 }}
             transition={{ duration: reduceMotion ? 0 : DURATION_FAST, ease: EASE_STANDARD }}
           >
             <PostCardSkeleton />
-            <span className="feed-visually-hidden">Loading more posts…</span>
+            <span className="feed-visually-hidden">{t('feed.loadingMoreDots')}</span>
           </motion.div>
         )}
       </AnimatePresence>

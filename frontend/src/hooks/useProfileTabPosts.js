@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchUserPosts } from '../services/profileService';
 import { fetchBookmarks } from '../services/bookmarkService';
+import i18n from '../i18n';
 
 const PAGE_LIMIT = 12;
 
@@ -49,7 +50,7 @@ export function useProfileTabPosts(userId, tab, token) {
           setError(null);
         } else {
           console.error(err);
-          setError('Failed to load posts');
+          setError(i18n.t('errors.loadPosts'));
           setIsPrivate(false);
         }
         setPosts([]);
@@ -90,7 +91,7 @@ export function useProfileTabPosts(userId, tab, token) {
       .catch((err) => {
         if (requestId !== requestIdRef.current) return;
         console.error(err);
-        setError('Failed to load more posts');
+        setError(i18n.t('errors.loadMorePosts'));
       })
       .finally(() => {
         loadingMoreRef.current = false;

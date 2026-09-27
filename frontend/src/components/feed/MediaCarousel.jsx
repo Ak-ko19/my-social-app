@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useReducedMotion } from 'motion/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import ProgressiveImage from '../common/ProgressiveImage';
 
 // A post's images (B2). One image renders exactly like before (a single
@@ -10,7 +11,9 @@ import ProgressiveImage from '../common/ProgressiveImage';
 // from the browser, no gesture library needed. Prev/next buttons, a
 // counter and dots cover mouse users; Left/Right arrows work when the
 // track is focused.
-function MediaCarousel({ media, altPrefix = 'Post image', className }) {
+function MediaCarousel({ media, altPrefix: altPrefixProp, className }) {
+  const { t } = useTranslation();
+  const altPrefix = altPrefixProp || t('media.postImage');
   const trackRef = useRef(null);
   const [index, setIndex] = useState(0);
   const reduceMotion = useReducedMotion();
@@ -54,7 +57,7 @@ function MediaCarousel({ media, altPrefix = 'Post image', className }) {
       className={clsx('media-carousel', className)}
       role="region"
       aria-roledescription="carousel"
-      aria-label={`${altPrefix}s, ${count} images`}
+      aria-label={t('media.carousel', { prefix: altPrefix, count })}
     >
       <div
         ref={trackRef}
@@ -62,7 +65,7 @@ function MediaCarousel({ media, altPrefix = 'Post image', className }) {
         onScroll={handleScroll}
         onKeyDown={handleKeyDown}
         tabIndex={0}
-        aria-label="Swipe or use arrow keys to see more images"
+        aria-label={t('media.hint')}
       >
         {media.map((item, i) => (
           <div
@@ -70,9 +73,9 @@ function MediaCarousel({ media, altPrefix = 'Post image', className }) {
             className="media-carousel-slide"
             role="group"
             aria-roledescription="slide"
-            aria-label={`${i + 1} of ${count}`}
+            aria-label={t('media.slide', { n: i + 1, count })}
           >
-            <ProgressiveImage src={item.url} alt={`${altPrefix} ${i + 1} of ${count}`} />
+            <ProgressiveImage src={item.url} alt={t('media.imageAlt', { prefix: altPrefix, n: i + 1, count })} />
           </div>
         ))}
       </div>
@@ -82,12 +85,12 @@ function MediaCarousel({ media, altPrefix = 'Post image', className }) {
       </span>
 
       {index > 0 && (
-        <button type="button" className="media-carousel-nav media-carousel-prev" aria-label="Previous image" onClick={() => goTo(index - 1)}>
+        <button type="button" className="media-carousel-nav media-carousel-prev" aria-label={t('media.prev')} onClick={() => goTo(index - 1)}>
           <ChevronLeft size={18} aria-hidden="true" />
         </button>
       )}
       {index < count - 1 && (
-        <button type="button" className="media-carousel-nav media-carousel-next" aria-label="Next image" onClick={() => goTo(index + 1)}>
+        <button type="button" className="media-carousel-nav media-carousel-next" aria-label={t('media.next')} onClick={() => goTo(index + 1)}>
           <ChevronRight size={18} aria-hidden="true" />
         </button>
       )}

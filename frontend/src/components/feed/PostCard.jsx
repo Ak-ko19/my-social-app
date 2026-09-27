@@ -1,5 +1,7 @@
 import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { serverErrorText } from '../../utils/serverError';
 import { AnimatePresence } from 'motion/react';
 import { Bookmark, Globe, MessageCircle, Share2, Users } from 'lucide-react';
 import ReactionButton from './ReactionButton';
@@ -39,6 +41,7 @@ import './PostCard.css';
 // row but the action itself is real: Web Share API where available,
 // clipboard-copy fallback otherwise (see handleShare below).
 function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canModerate = false }) {
+  const { t } = useTranslation();
   const { token, userId, username } = useAuth();
   const like = useLikeToggle(
     post.id,
@@ -71,7 +74,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
     updatePostVisibility(post.id, next, token).catch((err) => {
       console.error(err);
       setVisibility(previous);
-      setVisibilityError(err.response?.data || 'Could not change who can see this post');
+      setVisibilityError(serverErrorText(err, 'feed.visibilityError'));
     });
   };
 
@@ -87,7 +90,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
     // an unrequested clipboard write).
     if (navigator.share) {
       try {
-        await navigator.share({ title: `${post.username} on MySocialApp`, url });
+        await navigator.share({ title: t('feed.shareTitle', { name: post.username }), url });
       } catch (err) {
         if (err.name !== 'AbortError') {
           console.error(err);
@@ -97,11 +100,11 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
     }
     try {
       await navigator.clipboard.writeText(url);
-      setShareFeedback('Link copied!');
+      setShareFeedback(t('feed.linkCopied'));
       setTimeout(() => setShareFeedback(''), 2000);
     } catch (err) {
       console.error(err);
-      setShareFeedback('Failed to copy link');
+      setShareFeedback(t('feed.copyFailed'));
       setTimeout(() => setShareFeedback(''), 2000);
     }
   };
@@ -120,7 +123,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
   const saveEdit = () => {
     const trimmed = editContent.trim();
     if (!trimmed) {
-      setEditError('Post content cannot be empty');
+      setEditError(t('feed.editEmpty'));
       return;
     }
     setEditPending(true);
@@ -132,7 +135,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
       })
       .catch((err) => {
         console.error(err);
-        setEditError(err.response?.data || 'Failed to update post');
+        setEditError(serverErrorText(err, 'feed.updateFailed'));
       })
       .finally(() => setEditPending(false));
   };
@@ -143,8 +146,8 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
   // Only shown while open, rather than shown-then-hidden-again after
   // closing, so this can never display a stale number.
   const commentCountLabel = comments.visible
-    ? `${comments.comments.length} comment${comments.comments.length === 1 ? '' : 's'}`
-    : 'Comments';
+    ? t('feed.commentCount', { count: comments.comments.length })
+    : t('feed.comments');
 
   // The old common/Avatar component did this resolution internally; the
   // new components/ui/Avatar doesn't (it just renders whatever `src` it's
@@ -172,16 +175,16 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
             {post.is_verified && <VerifiedTick size={14} />}
           </div>
           <div className="post-card-meta">
-            {page && <span>Page · </span>}
+            {page && <span>{t('feed.page')} · </span>}
             <span>{formatRelativeTime(post.created_at)}</span>
-            {post.sponsored && <span> · Sponsored</span>}
+            {post.sponsored && <span> · {t('feed.sponsored')}</span>}
             {/* B13/B14: group posts follow the group's privacy and page posts
                 are always public -- neither has its own audience. */}
             {!post.community_id && !page && (
-              <span className="post-card-audience" title={visibility === 'followers' ? 'Followers only' : 'Public'}>
+              <span className="post-card-audience" title={visibility === 'followers' ? t('feed.audienceFollowers') : t('feed.audiencePublic')}>
                 {' · '}
                 {visibility === 'followers' ? <Users size={12} aria-hidden="true" /> : <Globe size={12} aria-hidden="true" />}
-                <span className="feed-visually-hidden">{visibility === 'followers' ? 'Followers only' : 'Public'}</span>
+                <span className="feed-visually-hidden">{visibility === 'followers' ? t('feed.audienceFollowers') : t('feed.audiencePublic')}</span>
               </span>
             )}
           </div>
@@ -218,10 +221,10 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
           )}
           <div className="post-card-edit-actions">
             <button type="button" className="post-card-edit-btn post-card-edit-btn-secondary" onClick={cancelEditing} disabled={editPending}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="button" className="post-card-edit-btn post-card-edit-btn-primary" onClick={saveEdit} disabled={editPending}>
-              {editPending ? 'Saving…' : 'Save'}
+              {editPending ? t('common.saving') : t('common.save')}
             </button>
           </div>
         </div>
@@ -233,7 +236,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
           payloads that predate post_media (e.g. a cached older response). */}
       <MediaCarousel
         media={post.media?.length ? post.media : post.image_url ? [{ url: post.image_url }] : []}
-        altPrefix={`Image attached to ${post.username}'s post`}
+        altPrefix={t('feed.imageAlt', { name: page ? page.name : post.username })}
         className="post-card-media"
       />
 
@@ -265,7 +268,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
                 {shownReactions.map((r) => <span key={r.key}>{r.emoji}</span>)}
               </span>
               <span>
-                {like.likeCount} {like.likeCount === 1 ? 'reaction' : 'reactions'}
+                {t('feed.reactionCount', { count: like.likeCount })}
               </span>
             </>
           )}
@@ -277,11 +280,11 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
         <ReactionButton like={like} />
         <button type="button" className="post-card-action" onClick={comments.toggleVisible}>
           <MessageCircle size={18} aria-hidden="true" />
-          <span>Comment</span>
+          <span>{t('feed.comment')}</span>
         </button>
         <button type="button" className="post-card-action" onClick={handleShare}>
           <Share2 size={18} aria-hidden="true" />
-          <span>{shareFeedback || 'Share'}</span>
+          <span>{shareFeedback || t('feed.share')}</span>
         </button>
         <button
           type="button"
@@ -291,7 +294,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
           aria-pressed={bookmark.bookmarked}
         >
           <Bookmark size={18} aria-hidden="true" fill={bookmark.bookmarked ? 'currentColor' : 'none'} />
-          <span>{bookmark.bookmarked ? 'Saved' : 'Save'}</span>
+          <span>{bookmark.bookmarked ? t('feed.saved') : t('feed.save')}</span>
         </button>
       </div>
 

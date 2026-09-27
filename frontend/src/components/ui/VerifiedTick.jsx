@@ -6,7 +6,10 @@
 // certain control over which part is filled vs stroked, and matches the
 // plain-inline-SVG convention already used elsewhere for small status
 // icons (see components/messages/MessageStatusIcon.jsx).
+import { useTranslation } from 'react-i18next';
+
 function VerifiedTick({ size = 16, className, ...rest }) {
+  const { t } = useTranslation();
   return (
     <svg
       className={className}
@@ -14,7 +17,7 @@ function VerifiedTick({ size = 16, className, ...rest }) {
       height={size}
       viewBox="0 0 16 16"
       role="img"
-      aria-label="Verified"
+      aria-label={t('ui.verified')}
       {...rest}
     >
       <circle cx="8" cy="8" r="8" fill="var(--color-accent-2)" />

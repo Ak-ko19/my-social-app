@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Heart, X } from 'lucide-react';
 import clsx from 'clsx';
+import { Trans, useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 import Username from './Username';
 import { renderTextWithLinks } from '../../utils/renderTextWithLinks';
@@ -27,6 +28,7 @@ function buildThreads(list) {
 }
 
 function CommentItem({ c, comments, currentUserId, onReply }) {
+  const { t } = useTranslation();
   const { editingCommentId, editText, setEditText, startEdit, cancelEdit, saveEdit, toggleCommentLike } = comments;
 
   if (editingCommentId === c.id) {
@@ -39,14 +41,14 @@ function CommentItem({ c, comments, currentUserId, onReply }) {
         }}
       >
         <label className="feed-visually-hidden" htmlFor={`edit-comment-${c.id}`}>
-          Edit comment
+          {t('comments.editLabel')}
         </label>
         <input id={`edit-comment-${c.id}`} type="text" value={editText} onChange={(e) => setEditText(e.target.value)} />
         <button type="submit" className="feed-btn">
-          Save
+          {t('common.save')}
         </button>
         <button type="button" onClick={cancelEdit} className="feed-btn">
-          Cancel
+          {t('common.cancel')}
         </button>
       </form>
     );
@@ -57,7 +59,7 @@ function CommentItem({ c, comments, currentUserId, onReply }) {
     <div className="comment-body">
       <p className="feed-comment-text">
         <Username>{c.username}</Username>: {renderTextWithLinks(c.content)}
-        {c.pending && <span className="feed-comment-status"> (sending…)</span>}
+        {c.pending && <span className="feed-comment-status"> {t('comments.pending')}</span>}
       </p>
       {/* A not-yet-confirmed comment has no real id to like/reply/edit
           against, so its actions appear once it's reconciled. */}
@@ -69,17 +71,17 @@ function CommentItem({ c, comments, currentUserId, onReply }) {
             className={clsx('comment-action', c.liked_by_me && 'comment-action-liked')}
             onClick={() => toggleCommentLike(c.id)}
             aria-pressed={Boolean(c.liked_by_me)}
-            aria-label={`${c.liked_by_me ? 'Unlike' : 'Like'} ${c.username}'s comment${likeCount ? `, ${likeCount} ${likeCount === 1 ? 'like' : 'likes'}` : ''}`}
+            aria-label={t(c.liked_by_me ? 'comments.unlike' : 'comments.like', { name: c.username }) + (likeCount ? t('comments.likeCount', { count: likeCount }) : '')}
           >
             <Heart size={13} aria-hidden="true" fill={c.liked_by_me ? 'currentColor' : 'none'} />
             {likeCount > 0 && <span aria-hidden="true">{likeCount}</span>}
           </button>
-          <button type="button" className="comment-action" onClick={() => onReply(c)} aria-label={`Reply to ${c.username}`}>
-            Reply
+          <button type="button" className="comment-action" onClick={() => onReply(c)} aria-label={t('comments.replyTo', { name: c.username })}>
+            {t('common.reply')}
           </button>
           {c.user_id === currentUserId && (
             <button type="button" className="comment-action" onClick={() => startEdit(c)}>
-              Edit
+              {t('common.edit')}
             </button>
           )}
         </div>
@@ -97,6 +99,7 @@ function CommentItem({ c, comments, currentUserId, onReply }) {
 // animating height would make that observer fire continuously for the
 // whole animation, reflowing every row below on every frame.
 function CommentSection({ postId, comments }) {
+  const { t } = useTranslation();
   const { userId: currentUserId } = useAuth();
   const reduceMotion = useReducedMotion();
   const commentInputRef = useRef(null);
@@ -130,7 +133,7 @@ function CommentSection({ postId, comments }) {
   return (
     <motion.section
       className="feed-comment-section"
-      aria-label="Comments"
+      aria-label={t('comments.section')}
       initial={reduceMotion ? false : { opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
@@ -142,7 +145,7 @@ function CommentSection({ postId, comments }) {
             <li key={c.id} className={c.pending ? 'feed-comment-pending' : undefined}>
               <CommentItem c={c} comments={comments} currentUserId={currentUserId} onReply={handleReply} />
               {replies.length > 0 && (
-                <ul className="comment-replies" aria-label={`Replies to ${c.username}`}>
+                <ul className="comment-replies" aria-label={t('comments.repliesTo', { name: c.username })}>
                   {replies.map((r) => (
                     <li key={r.id} className={r.pending ? 'feed-comment-pending' : undefined}>
                       <CommentItem c={r} comments={comments} currentUserId={currentUserId} onReply={handleReply} />
@@ -164,9 +167,9 @@ function CommentSection({ postId, comments }) {
       {replyingTo && (
         <div className="comment-replying-to" role="status">
           <span>
-            Replying to <strong>@{replyingTo.username}</strong>
+            <Trans i18nKey="comments.replyingTo" values={{ name: replyingTo.username }} components={{ b: <strong /> }} />
           </span>
-          <button type="button" className="comment-replying-cancel" onClick={cancelReply} aria-label="Cancel reply">
+          <button type="button" className="comment-replying-cancel" onClick={cancelReply} aria-label={t('comments.cancelReply')}>
             <X size={14} aria-hidden="true" />
           </button>
         </div>
@@ -180,7 +183,7 @@ function CommentSection({ postId, comments }) {
         }}
       >
         <label className="feed-visually-hidden" htmlFor={`comment-input-${postId}`}>
-          {replyingTo ? `Reply to ${replyingTo.username}` : 'Write a comment'}
+          {replyingTo ? t('comments.replyTo', { name: replyingTo.username }) : t('comments.writeComment')}
         </label>
         <input
           id={`comment-input-${postId}`}
@@ -194,11 +197,11 @@ function CommentSection({ postId, comments }) {
           onKeyDown={(e) => {
             if (e.key === 'Escape' && replyingTo) cancelReply();
           }}
-          placeholder={replyingTo ? 'Write a reply...' : 'Write a comment... (@ to mention someone)'}
+          placeholder={replyingTo ? t('comments.replyPlaceholder') : t('comments.commentPlaceholder')}
           disabled={submitPending}
         />
         <button type="submit" className="feed-btn" disabled={submitPending}>
-          {submitPending ? 'Sending…' : replyingTo ? 'Reply' : 'Send'}
+          {submitPending ? t('common.sending') : replyingTo ? t('common.reply') : t('common.send')}
         </button>
       </form>
       {mention.active && (

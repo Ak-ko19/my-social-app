@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { likePost, unlikePost, setReaction } from '../services/postService';
+import i18n from '../i18n';
+import { serverText } from '../utils/serverError';
 
 // Exact wording the backend sends for these two conflict cases (see
 // backend/controllers/likeController.js) -- matched precisely so we only
@@ -76,7 +78,7 @@ export function useLikeToggle(postId, initial, token) {
             setLikeCount(previous.likeCount);
             setReactionCounts(previous.reactionCounts);
           }
-          setError(typeof message === 'string' ? message : 'Could not update your reaction');
+          setError(typeof message === 'string' ? serverText(message) : i18n.t('errors.reaction'));
         })
         .finally(() => {
           pendingRef.current = false;

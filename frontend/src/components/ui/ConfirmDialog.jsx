@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Modal from './Modal';
+import { useTranslation } from 'react-i18next';
 
 // Shared confirm-before-you-act dialog -- block/unblock, delete post,
 // deactivate account, and (with `requireTypedConfirmation`) delete account
@@ -12,12 +13,13 @@ function ConfirmDialog({
   onConfirm,
   title,
   description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   danger = false,
   requireTypedConfirmation, // e.g. a username -- confirm stays disabled until typed exactly
   error
 }) {
+  const { t } = useTranslation();
   const [pending, setPending] = useState(false);
   const [typedValue, setTypedValue] = useState('');
 
@@ -48,8 +50,8 @@ function ConfirmDialog({
           className="ui-confirm-input"
           value={typedValue}
           onChange={(e) => setTypedValue(e.target.value)}
-          placeholder={`Type "${requireTypedConfirmation}" to confirm`}
-          aria-label={`Type ${requireTypedConfirmation} to confirm`}
+          placeholder={t('common.typeToConfirm', { text: requireTypedConfirmation })}
+          aria-label={t('common.typeToConfirmLabel', { text: requireTypedConfirmation })}
           autoComplete="off"
         />
       )}
@@ -60,7 +62,7 @@ function ConfirmDialog({
       )}
       <div className="ui-confirm-actions">
         <button type="button" className="ui-confirm-btn ui-confirm-btn-secondary" onClick={handleClose} disabled={pending}>
-          {cancelLabel}
+          {cancelLabel || t('common.cancel')}
         </button>
         <button
           type="button"
@@ -68,7 +70,7 @@ function ConfirmDialog({
           onClick={handleConfirm}
           disabled={pending || !canConfirm}
         >
-          {pending ? 'Please wait…' : confirmLabel}
+          {pending ? t('common.pleaseWait') : confirmLabel || t('common.confirm')}
         </button>
       </div>
     </Modal>

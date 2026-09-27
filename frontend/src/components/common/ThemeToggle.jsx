@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
 
 function SunIcon() {
@@ -39,6 +40,7 @@ function MoonIcon() {
 // checked='true'] .theme-switch-thumb), driven purely by the aria-checked
 // attribute so it needs no extra local state here.
 function ThemeToggle() {
+  const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const reduceMotion = useReducedMotion();
   const isDark = theme === 'dark';
@@ -51,8 +53,8 @@ function ThemeToggle() {
       aria-checked={isDark}
       onClick={toggleTheme}
       className="theme-switch"
-      aria-label={`Switch to ${nextTheme} theme`}
-      title={`Switch to ${nextTheme} theme`}
+      aria-label={nextTheme === 'dark' ? t('ui.switchToDark') : t('ui.switchToLight')}
+      title={nextTheme === 'dark' ? t('ui.switchToDark') : t('ui.switchToLight')}
       whileTap={reduceMotion ? undefined : { scale: 0.92 }}
       transition={{ duration: DURATION_FAST, ease: EASE_STANDARD }}
     >

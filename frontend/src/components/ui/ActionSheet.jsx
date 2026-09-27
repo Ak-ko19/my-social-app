@@ -1,4 +1,5 @@
 import Modal from './Modal';
+import { useTranslation } from 'react-i18next';
 
 // A bottom sheet of tappable rows -- the post "more options" menu (Edit /
 // Delete / Block / Report) and the report-reason picker both render through
@@ -6,6 +7,7 @@ import Modal from './Modal';
 // a row closes the sheet and then runs its action (so a confirm dialog it
 // opens isn't fighting this one's own unmount).
 function ActionSheet({ open, onClose, title, items }) {
+  const { t } = useTranslation();
   const handleSelect = (item) => {
     onClose();
     // Deferred one tick: if onSelect opens another overlay (a ConfirmDialog),
@@ -32,7 +34,7 @@ function ActionSheet({ open, onClose, title, items }) {
         ))}
       </div>
       <button type="button" className="ui-action-sheet-cancel" onClick={onClose}>
-        Cancel
+        {t('common.cancel')}
       </button>
     </Modal>
   );

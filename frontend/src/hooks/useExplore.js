@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchTrendingHashtags, fetchPopularPosts } from '../services/exploreService';
+import i18n from '../i18n';
 
 // Trending hashtags (one small list, no paging). Failures leave it empty:
 // it's a secondary strip, the screen still works without it.
@@ -49,7 +50,7 @@ export function usePopularPosts(token) {
       .catch((err) => {
         if (requestId !== requestIdRef.current) return;
         console.error(err);
-        setError('Failed to load popular posts');
+        setError(i18n.t('errors.loadPopular'));
       })
       .finally(() => {
         if (requestId === requestIdRef.current) setLoading(false);

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Image, Video, Radio } from 'lucide-react';
 import { Avatar } from '../ui';
+import { useTranslation } from 'react-i18next';
 import './PostComposer.css';
 
 // Both the trigger row and Photo open /create-post -- the real, already-
@@ -16,6 +17,7 @@ import './PostComposer.css';
 // yet, with a "Coming soon" title as a hover hint.
 function PostComposer({ currentUser, className }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const own = currentUser || { initials: 'ME', bg: 'var(--color-subtle-bg)', color: 'var(--color-text)' };
   const openComposer = () => navigate('/create-post');
 
@@ -24,22 +26,22 @@ function PostComposer({ currentUser, className }) {
       <div className="post-composer-row">
         <Avatar size={38} src={own.avatarUrl} initials={own.initials} bg={own.bg} color={own.color} alt="" />
         <button type="button" className="post-composer-trigger" onClick={openComposer}>
-          What&apos;s on your mind?
+          {t('feed.composerPrompt')}
         </button>
       </div>
 
       <div className="post-composer-actions">
         <button type="button" className="post-composer-action" onClick={openComposer}>
           <Image size={18} color="var(--badge-green-fg)" aria-hidden="true" />
-          <span className="post-composer-action-label">Photo</span>
+          <span className="post-composer-action-label">{t('feed.photo')}</span>
         </button>
-        <button type="button" className="post-composer-action" disabled title="Coming soon" aria-disabled="true">
+        <button type="button" className="post-composer-action" disabled title={t('common.comingSoon')} aria-disabled="true">
           <Video size={18} color="var(--badge-red-fg)" aria-hidden="true" />
-          <span className="post-composer-action-label">Video</span>
+          <span className="post-composer-action-label">{t('feed.video')}</span>
         </button>
-        <button type="button" className="post-composer-action" disabled title="Coming soon" aria-disabled="true">
+        <button type="button" className="post-composer-action" disabled title={t('common.comingSoon')} aria-disabled="true">
           <Radio size={18} color="var(--badge-orange-fg)" aria-hidden="true" />
-          <span className="post-composer-action-label">Live</span>
+          <span className="post-composer-action-label">{t('feed.live')}</span>
         </button>
       </div>
     </div>

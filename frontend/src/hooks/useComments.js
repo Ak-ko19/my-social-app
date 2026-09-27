@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { fetchComments, createComment, updateComment, likeComment, unlikeComment } from '../services/postService';
+import { serverErrorText } from '../utils/serverError';
 
 let tempIdSeq = 0;
 function makeTempId() {
@@ -92,7 +93,7 @@ export function useComments(postId, token, currentUser) {
         setComments((current) => current.filter((c) => c.id !== tempId));
         setCommentInput(content); // give the text back so nothing is lost
         setReplyingTo(target); // ...and the reply target
-        setSubmitError(err.response?.data || 'Failed to post comment');
+        setSubmitError(serverErrorText(err, 'errors.postComment'));
       })
       .finally(() => {
         submitPendingRef.current = false;
@@ -126,7 +127,7 @@ export function useComments(postId, token, currentUser) {
     updateComment(commentId, nextContent, token).catch((err) => {
       console.error(err);
       setComments((current) => current.map((c) => (c.id === commentId ? { ...c, content: previous.content } : c)));
-      setEditError(err.response?.data || 'Failed to update comment');
+      setEditError(serverErrorText(err, 'errors.updateComment'));
     });
   };
 
@@ -184,7 +185,7 @@ export function useComments(postId, token, currentUser) {
             c.id === commentId ? { ...c, liked_by_me: previous.liked_by_me, like_count: previous.like_count } : c
           )
         );
-        setLikeError(err.response?.data || 'Could not update the like');
+        setLikeError(serverErrorText(err, 'errors.commentLike'));
       })
       .finally(() => likePendingRef.current.delete(commentId));
   };

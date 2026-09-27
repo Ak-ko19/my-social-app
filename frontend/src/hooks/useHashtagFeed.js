@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchPostsByHashtag } from '../services/hashtagService';
+import i18n from '../i18n';
 
 const PAGE_LIMIT = 10;
 
@@ -31,7 +32,7 @@ export function useHashtagFeed(tag, token) {
       .catch((err) => {
         if (requestId !== requestIdRef.current) return;
         console.error(err);
-        setError('Failed to load posts for this hashtag');
+        setError(i18n.t('errors.loadHashtag'));
         setLoadedTag(tag);
       });
   }, [tag, token]);

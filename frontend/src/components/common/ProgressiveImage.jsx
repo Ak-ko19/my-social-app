@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { getOptimizedImageUrl, getPlaceholderImageUrl, isCloudinaryUrl } from '../../utils/cloudinaryImage';
 import { DURATION_NORMAL, EASE_STANDARD } from '../../utils/motionTokens';
+import { useTranslation } from 'react-i18next';
 
 // Generic progressive-loading image: reserves `aspectRatio` up front (no
 // layout shift regardless of loading/loaded/error state), shows a blurred
@@ -11,6 +12,7 @@ import { DURATION_NORMAL, EASE_STANDARD } from '../../utils/motionTokens';
 // back to a plain (still lazy-loaded) image for non-Cloudinary URLs, since
 // there's nothing to transform there.
 function ProgressiveImage({ src, alt, width = 640, aspectRatio = '4 / 3', className = '' }) {
+  const { t } = useTranslation();
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -24,7 +26,7 @@ function ProgressiveImage({ src, alt, width = 640, aspectRatio = '4 / 3', classN
         style={{ aspectRatio }}
       >
         <span className="feed-visually-hidden">{alt}</span>
-        <span aria-hidden="true">Image unavailable</span>
+        <span aria-hidden="true">{t('media.unavailable')}</span>
       </div>
     );
   }

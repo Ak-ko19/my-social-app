@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { followUser, unfollowUser } from '../services/postService';
+import i18n from '../i18n';
+import { serverText } from '../utils/serverError';
 
 // Exact wording the backend already sends for these two conflict cases
 // (see backend/controllers/followController.js).
@@ -48,7 +50,7 @@ export function useFollowToggle(userId, initialIsFollowing, token) {
         if (!alreadyInTargetState) {
           setIsFollowing(wasFollowing);
         }
-        setError(message || (nextFollowing ? 'Failed to follow' : 'Failed to unfollow'));
+        setError(message ? serverText(message) : i18n.t(nextFollowing ? 'errors.follow' : 'errors.unfollow'));
       })
       .finally(() => {
         pendingRef.current = false;

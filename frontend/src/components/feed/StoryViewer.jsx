@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Trash2, X } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { Avatar, ConfirmDialog } from '../ui';
 import { resolveImageUrl } from '../../api';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
@@ -19,6 +20,7 @@ const STORY_DURATION_MS = 5000;
 // - Each story is marked seen when shown. Your own stories get a delete
 //   button; the timer pauses while its confirmation is open.
 function StoryViewer({ tray, startGroupIndex, onClose, onViewed, onDelete }) {
+  const { t } = useTranslation();
   const [groupIndex, setGroupIndex] = useState(startGroupIndex);
   const [storyIndex, setStoryIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
@@ -90,12 +92,12 @@ function StoryViewer({ tray, startGroupIndex, onClose, onViewed, onDelete }) {
       onClose();
     } catch (err) {
       console.error(err);
-      setDeleteError('Could not delete this story. Please try again.');
+      setDeleteError(t('stories.deleteFailed'));
     }
   };
 
   return createPortal(
-    <div className="story-viewer" role="dialog" aria-modal="true" aria-label={`${group.username}'s story`}>
+    <div className="story-viewer" role="dialog" aria-modal="true" aria-label={t('stories.label', { name: group.username })}>
       <div className="story-viewer-frame">
         <div className="story-viewer-progress" aria-hidden="true">
           {group.stories.map((s, i) => (
@@ -117,15 +119,15 @@ function StoryViewer({ tray, startGroupIndex, onClose, onViewed, onDelete }) {
 
         <header className="story-viewer-header">
           <Avatar size={32} src={resolveImageUrl(group.avatar_url)} initials={(group.username || '?').slice(0, 2).toUpperCase()} alt="" />
-          <span className="story-viewer-name">{group.is_own ? 'Your story' : group.username}</span>
+          <span className="story-viewer-name">{group.is_own ? t('stories.yours') : group.username}</span>
           <span className="story-viewer-time">{formatRelativeTime(story.created_at)}</span>
           <span className="story-viewer-spacer" />
           {group.is_own && (
-            <button type="button" className="story-viewer-icon-btn" aria-label="Delete this story" onClick={() => setConfirmOpen(true)}>
+            <button type="button" className="story-viewer-icon-btn" aria-label={t('stories.deleteThis')} onClick={() => setConfirmOpen(true)}>
               <Trash2 size={18} aria-hidden="true" />
             </button>
           )}
-          <button ref={closeButtonRef} type="button" className="story-viewer-icon-btn" aria-label="Close stories" onClick={onClose}>
+          <button ref={closeButtonRef} type="button" className="story-viewer-icon-btn" aria-label={t('stories.close')} onClick={onClose}>
             <X size={20} aria-hidden="true" />
           </button>
         </header>
@@ -134,13 +136,13 @@ function StoryViewer({ tray, startGroupIndex, onClose, onViewed, onDelete }) {
           key={story.id}
           className={clsx('story-viewer-image', loaded && 'is-loaded')}
           src={resolveImageUrl(story.media_url)}
-          alt={`Story ${storyIndex + 1} of ${group.stories.length} from ${group.username}`}
+          alt={t('stories.alt', { n: storyIndex + 1, count: group.stories.length, name: group.username })}
           onLoad={() => setLoaded(true)}
           onError={() => setLoaded(true)}
         />
 
-        <button type="button" className="story-viewer-tap story-viewer-tap-prev" aria-label="Previous story" onClick={prev} />
-        <button type="button" className="story-viewer-tap story-viewer-tap-next" aria-label="Next story" onClick={next} />
+        <button type="button" className="story-viewer-tap story-viewer-tap-prev" aria-label={t('stories.prev')} onClick={prev} />
+        <button type="button" className="story-viewer-tap story-viewer-tap-next" aria-label={t('stories.next')} onClick={next} />
       </div>
 
       <ConfirmDialog
@@ -150,9 +152,9 @@ function StoryViewer({ tray, startGroupIndex, onClose, onViewed, onDelete }) {
           setDeleteError(null);
         }}
         onConfirm={handleDelete}
-        title="Delete this story?"
-        description="It will be removed for everyone right away."
-        confirmLabel="Delete"
+        title={t('stories.deleteTitle')}
+        description={t('stories.deleteDescription')}
+        confirmLabel={t('common.delete')}
         danger
         error={deleteError}
       />

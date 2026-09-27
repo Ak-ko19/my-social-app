@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { ThumbsUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { REACTIONS, REACTION_BY_KEY } from '../../utils/reactions';
 
 const LONG_PRESS_MS = 450;
@@ -14,6 +15,7 @@ const HOVER_CLOSE_MS = 300;
 // - keyboard: ArrowUp on the button opens it; Left/Right move between
 //   reactions; Escape closes and returns focus to the button.
 function ReactionButton({ like }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const buttonRef = useRef(null);
@@ -124,16 +126,16 @@ function ReactionButton({ like }) {
       onPointerLeave={handleMouseLeave}
     >
       {open && (
-        <div className="reaction-picker" role="toolbar" aria-label="Choose a reaction">
+        <div className="reaction-picker" role="toolbar" aria-label={t('reactions.choose')}>
           {REACTIONS.map((r, i) => (
             <button
               key={r.key}
               ref={(el) => { optionRefs.current[i] = el; }}
               type="button"
               className={clsx('reaction-option', like.myReaction === r.key && 'reaction-option-selected')}
-              aria-label={r.label}
+              aria-label={t(`reactions.${r.key}`)}
               aria-pressed={like.myReaction === r.key}
-              title={r.label}
+              title={t(`reactions.${r.key}`)}
               onClick={() => choose(r.key)}
               onKeyDown={(e) => handleOptionKeyDown(e, i)}
             >
@@ -164,14 +166,14 @@ function ReactionButton({ like }) {
         aria-pressed={Boolean(current)}
         aria-haspopup="true"
         aria-expanded={open}
-        aria-label={current ? `${current.label} (reacted). Press to remove; Arrow Up for more reactions` : 'Like. Arrow Up for more reactions'}
+        aria-label={current ? t('reactions.reactedLabel', { reaction: t(`reactions.${current.key}`) }) : t('reactions.likeLabel')}
       >
         {current && current.key !== 'like' ? (
           <span className="reaction-current-emoji" aria-hidden="true">{current.emoji}</span>
         ) : (
           <ThumbsUp size={18} aria-hidden="true" fill={current ? 'currentColor' : 'none'} />
         )}
-        <span>{current ? current.label : 'Like'}</span>
+        <span>{current ? t(`reactions.${current.key}`) : t('reactions.like')}</span>
       </button>
     </div>
   );

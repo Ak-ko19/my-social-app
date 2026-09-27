@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchBookmarks } from '../services/bookmarkService';
+import i18n from '../i18n';
 
 const PAGE_LIMIT = 10;
 
@@ -33,7 +34,7 @@ export function useSavedPosts(token) {
       .catch((err) => {
         if (requestId !== requestIdRef.current) return;
         console.error(err);
-        setError('Failed to load saved posts');
+        setError(i18n.t('errors.loadSaved'));
         setLoading(false);
       });
   }, [token]);

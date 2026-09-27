@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import i18n from '../i18n';
 
 const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/mp4'];
 const BAR_COUNT = 5;
@@ -26,18 +27,18 @@ function getSupportedMimeType() {
 //     iframe missing a `microphone` Permissions-Policy/allow attribute).
 function permissionErrorMessage(err) {
   if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
-    return 'Microphone access was denied. Allow microphone access in your browser settings to send voice messages.';
+    return i18n.t('voice.micDenied');
   }
   if (err?.name === 'NotFoundError' || err?.name === 'DevicesNotFoundError') {
-    return 'No microphone was found on this device.';
+    return i18n.t('voice.micNotFound');
   }
   if (err?.name === 'NotReadableError' || err?.name === 'TrackStartError') {
-    return 'Your microphone is already in use by another app or browser tab. Close it and try again.';
+    return i18n.t('voice.micInUse');
   }
   if (err?.name === 'SecurityError') {
-    return 'Microphone access is blocked on this page. Make sure you\'re using a secure (https) connection.';
+    return i18n.t('voice.micBlocked');
   }
-  return 'Could not access the microphone. Please check your device and try again.';
+  return i18n.t('voice.micGeneric');
 }
 
 // Hold-to-record voice messages via the native MediaRecorder API. Mirrors
@@ -125,7 +126,7 @@ export function useVoiceRecorder({ onComplete, maxDurationSeconds = 120, warning
 
     const mimeType = getSupportedMimeType();
     if (!mimeType) {
-      setPermissionError('Voice messages are not supported in this browser.');
+      setPermissionError(i18n.t('voice.notSupported'));
       setStatus('idle');
       return;
     }
@@ -168,7 +169,7 @@ export function useVoiceRecorder({ onComplete, maxDurationSeconds = 120, warning
     } catch {
       stream.getTracks().forEach((track) => track.stop());
       if (isMountedRef.current) {
-        setPermissionError('Could not start recording on this device.');
+        setPermissionError(i18n.t('voice.startFailed'));
         setStatus('idle');
       }
       return;

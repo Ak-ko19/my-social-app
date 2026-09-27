@@ -3,6 +3,8 @@ import api from './api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Globe, Users, X } from 'lucide-react';
 import { IconButton } from './components/ui';
+import { useTranslation } from 'react-i18next';
+import { serverErrorText } from './utils/serverError';
 import MentionAutocomplete from './components/feed/MentionAutocomplete';
 import { useMentionAutocomplete, applyMentionSelection } from './hooks/useMentionAutocomplete';
 
@@ -16,6 +18,7 @@ function CreatePost() {
   const [visibility, setVisibility] = useState('public'); // B5 audience
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { t } = useTranslation();
   // B13: /create-post?communityId=N posts inside that group.
   const [searchParams] = useSearchParams();
   const communityId = searchParams.get('communityId');
@@ -51,7 +54,7 @@ function CreatePost() {
     if (picked.length === 0) return;
     const room = MAX_IMAGES - images.length;
     if (picked.length > room) {
-      setError(`You can attach up to ${MAX_IMAGES} images.`);
+      setError(t('compose.tooMany', { max: MAX_IMAGES }));
     } else {
       setError('');
     }
@@ -103,7 +106,7 @@ function CreatePost() {
     })
     .catch((err) => {
       console.error(err);
-      setError(err.response?.data || 'Failed to create post. Please try again.');
+      setError(serverErrorText(err, 'compose.failed'));
       setSubmitting(false);
     });
   };
@@ -111,18 +114,18 @@ function CreatePost() {
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label={communityId ? 'Back to the group' : pageId ? 'Back to the page' : 'Back to Home'} onClick={() => navigate(backTo)} />
-        <h1 className="screen-header-title">{communityId ? 'Post in group' : pageId ? 'Post as page' : 'Create Post'}</h1>
+        <IconButton icon={ChevronLeft} aria-label={communityId ? t('compose.backToGroup') : pageId ? t('compose.backToPage') : t('common.backToHome')} onClick={() => navigate(backTo)} />
+        <h1 className="screen-header-title">{communityId ? t('compose.inGroupTitle') : pageId ? t('compose.asPageTitle') : t('compose.title')}</h1>
       </header>
       <form className="screen-body form-stack" onSubmit={handleSubmit}>
         <label className="form-field">
-          <span className="form-label">Post</span>
+          <span className="form-label">{t('compose.postLabel')}</span>
           <textarea
             ref={textareaRef}
             className="form-input"
             value={content}
             onChange={handleContentChange}
-            placeholder="What's on your mind? Use @ to mention someone, # for a hashtag"
+            placeholder={t('compose.placeholder')}
             rows="5"
             required
           />
@@ -130,7 +133,7 @@ function CreatePost() {
         {mention.active && <MentionAutocomplete suggestions={mention.suggestions} onSelect={handleMentionSelect} />}
         <label className="form-field">
           <span className="form-label">
-            Images (optional, up to {MAX_IMAGES}){images.length > 0 && ` · ${images.length} selected`}
+            {t('compose.images', { max: MAX_IMAGES })}{images.length > 0 && t('compose.selectedCount', { count: images.length })}
           </span>
           <input
             className="form-file"
@@ -143,26 +146,26 @@ function CreatePost() {
         </label>
         {!communityId && !pageId && (
         <fieldset className="audience-picker">
-          <legend className="form-label">Who can see this?</legend>
+          <legend className="form-label">{t('compose.audience')}</legend>
           <label className={visibility === 'public' ? 'audience-option is-selected' : 'audience-option'}>
             <input type="radio" name="visibility" value="public" checked={visibility === 'public'} onChange={() => setVisibility('public')} />
-            <Globe size={15} aria-hidden="true" /> Public
+            <Globe size={15} aria-hidden="true" /> {t('compose.public')}
           </label>
           <label className={visibility === 'followers' ? 'audience-option is-selected' : 'audience-option'}>
             <input type="radio" name="visibility" value="followers" checked={visibility === 'followers'} onChange={() => setVisibility('followers')} />
-            <Users size={15} aria-hidden="true" /> Followers
+            <Users size={15} aria-hidden="true" /> {t('compose.followers')}
           </label>
         </fieldset>
         )}
         {images.length > 0 && (
-          <ul className="image-picker-grid" aria-label="Selected images">
+          <ul className="image-picker-grid" aria-label={t('compose.selectedImages')}>
             {images.map((img, i) => (
               <li key={img.preview} className="image-picker-item">
-                <img src={img.preview} alt={`Selected image ${i + 1}`} />
+                <img src={img.preview} alt={t('compose.selectedImage', { n: i + 1 })} />
                 <button
                   type="button"
                   className="image-picker-remove"
-                  aria-label={`Remove image ${i + 1}`}
+                  aria-label={t('compose.removeImage', { n: i + 1 })}
                   onClick={() => removeImage(i)}
                   disabled={submitting}
                 >
@@ -174,7 +177,7 @@ function CreatePost() {
         )}
         {error && <p className="form-error" role="alert">{error}</p>}
         <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
-          {submitting ? 'Posting…' : 'Post'}
+          {submitting ? t('compose.posting') : t('compose.post')}
         </button>
       </form>
     </div>

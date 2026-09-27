@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSocket } from './useSocket';
+import i18n from '../i18n';
 import {
   fetchMessages,
   sendMessageRest,
@@ -153,7 +154,7 @@ export function useConversationMessages(conversationId, token, currentUserId) {
         .catch((err) => {
           if (requestId !== requestIdRef.current) return;
           console.error(err);
-          setError('Failed to load messages');
+          setError(i18n.t('errors.loadMessages'));
         })
         .finally(() => {
           if (requestId === requestIdRef.current) setLoading(false);

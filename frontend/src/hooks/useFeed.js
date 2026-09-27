@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchFeed } from '../services/postService';
+import i18n from '../i18n';
 
 const PAGE_LIMIT = 20;
 
@@ -40,7 +41,7 @@ export function useFeed(token) {
       .catch((err) => {
         if (requestId !== requestIdRef.current) return;
         console.error(err);
-        setError('Failed to load feed');
+        setError(i18n.t('errors.loadFeed'));
         setLoading(false);
       });
   }, [token]);

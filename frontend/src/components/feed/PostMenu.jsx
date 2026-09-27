@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Flag, Globe, MoreHorizontal, Pencil, Trash2, UserX, Users } from 'lucide-react';
 import { IconButton, ActionSheet, ConfirmDialog } from '../ui';
 import ReportDialog from './ReportDialog';
+import { useTranslation } from 'react-i18next';
+import { serverErrorText } from '../../utils/serverError';
 import { useAuth } from '../../hooks/useAuth';
 import { blockUser } from '../../services/blockService';
 import { deletePost } from '../../services/postService';
@@ -14,6 +16,7 @@ import { deletePost } from '../../services/postService';
 // canModerate (B13): the viewer is an admin of the post's group, so they
 // may delete someone else's post there.
 function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, onDeleted, onEdit, canModerate = false }) {
+  const { t } = useTranslation();
   const { token, userId } = useAuth();
   const isOwner = post.user_id === userId;
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -30,7 +33,7 @@ function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, 
       onBlocked?.(post.user_id);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data || 'Failed to block user');
+      setError(serverErrorText(err, 'postMenu.blockFailed'));
     }
   };
 
@@ -42,27 +45,27 @@ function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, 
       onDeleted?.(post.id);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data || 'Failed to delete post');
+      setError(serverErrorText(err, 'postMenu.deleteFailed'));
     }
   };
 
   const ownerItems = [
         {
           key: 'visibility',
-          label: visibility === 'followers' ? 'Make public' : 'Make visible to followers only',
+          label: visibility === 'followers' ? t('postMenu.makePublic') : t('postMenu.makeFollowersOnly'),
           icon: visibility === 'followers' ? Globe : Users,
           // B5: PostCard owns the change (optimistic + error display).
           onSelect: () => onToggleVisibility?.()
         },
         {
           key: 'edit',
-          label: 'Edit post',
+          label: t('postMenu.edit'),
           icon: Pencil,
           onSelect: () => onEdit?.()
         },
         {
           key: 'delete',
-          label: 'Delete post',
+          label: t('postMenu.delete'),
           icon: Trash2,
           danger: true,
           onSelect: () => setConfirmDeleteOpen(true)
@@ -74,19 +77,19 @@ function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, 
   const otherMenu = [
         {
           key: 'report-post',
-          label: 'Report post',
+          label: t('postMenu.report'),
           icon: Flag,
-          onSelect: () => setReportTarget({ type: 'post', label: 'this post' })
+          onSelect: () => setReportTarget({ type: 'post', label: t('report.thisPost') })
         },
         {
           key: 'report-user',
-          label: `Report ${post.username}`,
+          label: t('postMenu.reportUser', { name: post.username }),
           icon: Flag,
           onSelect: () => setReportTarget({ type: 'user', label: post.username })
         },
         {
           key: 'block',
-          label: `Block ${post.username}`,
+          label: t('postMenu.block', { name: post.username }),
           icon: UserX,
           danger: true,
           onSelect: () => setConfirmBlockOpen(true)
@@ -95,7 +98,7 @@ function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, 
   if (canModerate) {
     otherMenu.unshift({
       key: 'moderate-delete',
-      label: 'Delete post (group admin)',
+      label: t('postMenu.moderateDelete'),
       icon: Trash2,
       danger: true,
       onSelect: () => setConfirmDeleteOpen(true)
@@ -105,8 +108,8 @@ function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, 
 
   return (
     <>
-      <IconButton icon={MoreHorizontal} aria-label="More options" onClick={() => setSheetOpen(true)} />
-      <ActionSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Post options" items={items} />
+      <IconButton icon={MoreHorizontal} aria-label={t('postMenu.moreOptions')} onClick={() => setSheetOpen(true)} />
+      <ActionSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={t('postMenu.title')} items={items} />
       <ConfirmDialog
         open={confirmBlockOpen}
         onClose={() => {
@@ -114,9 +117,9 @@ function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, 
           setError('');
         }}
         onConfirm={handleBlock}
-        title={`Block ${post.username}?`}
-        description={`You won't see posts, follows, or messages from ${post.username} anymore, and they won't see yours.`}
-        confirmLabel="Block"
+        title={t('postMenu.blockTitle', { name: post.username })}
+        description={t('postMenu.blockDescription', { name: post.username })}
+        confirmLabel={t('postMenu.blockConfirm')}
         danger
         error={error}
       />
@@ -127,9 +130,9 @@ function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, 
           setError('');
         }}
         onConfirm={handleDelete}
-        title="Delete this post?"
-        description="This cannot be undone."
-        confirmLabel="Delete"
+        title={t('postMenu.deleteTitle')}
+        description={t('postMenu.deleteDescription')}
+        confirmLabel={t('common.delete')}
         danger
         error={error}
       />

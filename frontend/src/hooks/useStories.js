@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchStoriesTray, createStory, markStoryViewed, deleteStory } from '../services/storyService';
+import { serverErrorText } from '../utils/serverError';
 
 // Owns the Home screen's stories tray (B3): load, post a new story,
 // mark one seen (optimistically -- the ring should flip the moment it's
@@ -37,7 +38,7 @@ export function useStories(token) {
         .then(() => reload())
         .catch((err) => {
           console.error(err);
-          setError(err.response?.data || 'Could not post your story. Please try again.');
+          setError(serverErrorText(err, 'stories.postFailed'));
         })
         .finally(() => setUploading(false));
     },

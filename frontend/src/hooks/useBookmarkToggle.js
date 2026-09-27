@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { bookmarkPost, unbookmarkPost } from '../services/bookmarkService';
+import i18n from '../i18n';
+import { serverText } from '../utils/serverError';
 
 const ALREADY_BOOKMARKED_MESSAGE = 'You have already bookmarked this post';
 const NOT_BOOKMARKED_MESSAGE = 'You have not bookmarked this post';
@@ -34,7 +36,7 @@ export function useBookmarkToggle(postId, initialBookmarked, token) {
         if (!alreadyInTargetState) {
           setBookmarked(wasBookmarked);
         }
-        setError(message || (nextBookmarked ? 'Failed to bookmark post' : 'Failed to remove bookmark'));
+        setError(message ? serverText(message) : i18n.t(nextBookmarked ? 'errors.bookmark' : 'errors.unbookmark'));
       })
       .finally(() => {
         pendingRef.current = false;

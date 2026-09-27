@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { Lock, LockOpen } from 'lucide-react';
 import api from '../../api';
 import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
 
 function authHeaders(token) {
@@ -13,6 +14,7 @@ function authHeaders(token) {
 // driven by aria-checked) -- reuses its .theme-switch/.theme-switch-thumb
 // CSS rather than a third near-identical switch style.
 function PrivacyToggle() {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const [isPrivate, setIsPrivate] = useState(null); // null = not loaded yet
   const [pending, setPending] = useState(false);
@@ -49,8 +51,8 @@ function PrivacyToggle() {
       onClick={toggle}
       disabled={pending}
       className="theme-switch"
-      aria-label={isPrivate ? 'Make account public' : 'Make account private'}
-      title={isPrivate ? 'Account is private' : 'Account is public'}
+      aria-label={isPrivate ? t('ui.makeAccountPublic') : t('ui.makeAccountPrivate')}
+      title={isPrivate ? t('ui.accountIsPrivate') : t('ui.accountIsPublic')}
       whileTap={reduceMotion ? undefined : { scale: 0.92 }}
       transition={{ duration: DURATION_FAST, ease: EASE_STANDARD }}
     >
