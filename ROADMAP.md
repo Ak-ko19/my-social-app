@@ -1146,11 +1146,62 @@ follow-a-page flow, and page-authored posts.
   "new follower" notification for page owners, and page insights.
 
 ### B15 — Myanmar / English language switch (i18n)
-**Status:** 🟡 PARTIAL (2026-09-27: i18next core, Settings → Language, Myanmar font, server-message map done; translated so far: layout/nav, settings, auth, feed/comments/reactions/stories/composer, UI primitives, hook errors. Remaining: profile/explore/search/notifications/saved/hashtag/post detail, messages, settings sub-screens + account + admin, groups/pages, menu + super-app category data; then key-parity check, Burmese A3 matrix, b15 test. Dead legacy components PostActions/LikeButton/CommentButton/MoreButton/PostHeader/FeedActions* are not imported anywhere and are deliberately left untranslated.)
+**Status:** ✅ VERIFIED (2026-09-27)
 **Done when:** an i18n library is wired into the frontend, all
 user-facing strings are extracted (currently all hardcoded English), and
 a language toggle in Settings persists the choice.
-**Notes:** _(none yet)_
+**Notes:**
+- **Library (autonomous choice):** i18next + react-i18next. These are
+  free npm packages with no account or service. Strings live in
+  `frontend/src/i18n/locales/en.json` and `my.json` (692 keys each),
+  keyed by area (common, nav, feed, messages, groups, pages, admin, …).
+- **Switching:** Settings → Language (`/settings/language`).
+  - The choice is kept per device in localStorage `lang`. The first
+    visit follows the browser language (`my*` → Myanmar, otherwise
+    English).
+  - `<html lang>` follows the choice.
+  - The app remounts on a switch (`i18n/LanguageRoot.jsx`), so every
+    screen updates immediately.
+- **Font:** Noto Sans Myanmar from Google Fonts is placed after Manrope in
+  `--font-sans`. Its unicode-range means it only downloads when Burmese
+  text is on screen. `:lang(my)` gets a slightly taller line height so
+  stacked vowel marks don't collide.
+- **Server messages:** the API still answers in English.
+  - `i18n/serverMessages.js` maps about 80 user-facing messages to
+    Burmese, plus a pattern for every "… failed. Please try again later."
+    fallback.
+  - `utils/serverError.serverErrorText(err, fallbackKey)` is used by
+    every screen.
+  - Unknown messages still show in English rather than a vaguer generic
+    one.
+- **Dates:** `dateLocale()` gives Burmese dates and times in Myanmar
+  mode, and relative times ("5 မိနစ်က") are translated too.
+- **Guard:** `npm run check:i18n` (added to CI) fails on any en/my key
+  mismatch or any key used in code that doesn't exist.
+- **Fixed along the way:**
+  - The chat header said "Active 5m ago ago".
+  - The image carousel label said "…'s posts, 3 images".
+  - Search results now show the page name on page posts.
+  - Account password fields had no labels.
+  - Settings → Groups/Pages rows now open their screens.
+- **Verified:**
+  - B15 browser test 12/12: switch, persistence, `html lang`,
+    font, Burmese server error on login, Burmese relative time, 375px
+    dark.
+  - A3 matrix in English 204/204 and in Burmese 204/204, with a
+    new check for vertically clipped text and `html lang`.
+  - Every earlier browser suite is green; the English text is unchanged.
+  - Backend 231/231.
+- **Not done:**
+  - Posts and comments aren't machine-translated.
+  - Backend emails are still English only.
+  - Developer-facing validation messages stay in English.
+  - Dead legacy components (PostActions, LikeButton, CommentButton,
+    MoreButton, PostHeader, FeedActions*) aren't imported anywhere and
+    were left untranslated. They are candidates for deletion.
+- **Translation quality:** Myanmar strings were written by Claude. A
+  native speaker should skim `my.json` before launch (listed under NEEDS
+  OWNER as optional).
 
 ---
 
@@ -1186,6 +1237,9 @@ running app in one pass, with a written pass/fail report per item.
 ---
 
 ## NEEDS OWNER (Claude must skip these — require your own account/action)
+
+- (Optional, B15) Have a native Myanmar speaker skim
+  `frontend/src/i18n/locales/my.json` for wording before public launch.
 
 - Email via Brevo API — needs a Brevo account + API key; Render blocks
   outbound SMTP on its free tier, so Gmail SMTP (Phase 2) only works for

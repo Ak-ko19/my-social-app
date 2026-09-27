@@ -930,6 +930,25 @@ built and how to re-verify it.
   - A Menu row.
 - **Deploy:** migration 027 after 026.
 
+### B15 — Myanmar / English (i18n) ✅
+- **Setup:** `src/i18n/index.js` (i18next init, `LANGUAGES`,
+  `dateLocale()`), `LanguageRoot.jsx` (remount on switch), and
+  `locales/en.json` and `my.json`.
+- **Adding UI text:**
+  - Use `const { t } = useTranslation()` then `t('area.key')`, and add
+    the key to BOTH json files.
+  - Sentences with a name or link inside use
+    `<Trans i18nKey=… components={{ b: <strong/> }} />`.
+  - Counts use i18next plurals (`key_one` / `key_other`).
+  - Outside components, use `i18n.t(...)`.
+- **API errors:** `serverErrorText(err, 'fallback.key')` (in
+  `utils/serverError.js`). New user-facing server messages can be given a
+  Burmese version in `i18n/serverMessages.js`.
+- **Check:** `npm run check:i18n` (also in CI): key parity plus keys that
+  are used but missing.
+- **UI:** Settings → Language (`screens/LanguageScreen.jsx`). The choice
+  is kept in localStorage `lang`.
+
 ---
 
 ## How to use this file
