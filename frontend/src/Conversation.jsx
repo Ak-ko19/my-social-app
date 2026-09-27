@@ -18,6 +18,7 @@ import ConversationListErrorState from './components/messages/ConversationListEr
 import ConnectionBanner from './components/messages/ConnectionBanner';
 import './components/messages/Messages.css';
 import './components/feed/Feed.css';
+import { useTranslation } from 'react-i18next';
 
 const NEAR_BOTTOM_THRESHOLD = 120;
 const NEAR_TOP_THRESHOLD = 80;
@@ -26,6 +27,7 @@ function Conversation() {
   const { conversationId } = useParams();
   const { token, userId } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const location = useLocation();
 
   // The inbox passes the conversation row (avatar/username) via navigation
@@ -79,11 +81,11 @@ function Conversation() {
   const otherUsername = headerInfo?.username;
   const replyAuthorLabel = useCallback(
     (senderId) => {
-      if (senderId === userId) return 'You';
-      if (isGroup) return membersById.get(senderId)?.username || 'Someone';
-      return otherUsername || 'Them';
+      if (senderId === userId) return t('messages.you');
+      if (isGroup) return membersById.get(senderId)?.username || t('messages.someone');
+      return otherUsername || t('messages.them');
     },
-    [userId, otherUsername, isGroup, membersById]
+    [userId, otherUsername, isGroup, membersById, t]
   );
   const handleSaveEdit = useCallback(
     (messageId, content) => {
@@ -107,12 +109,12 @@ function Conversation() {
         // 403 = you were removed from (or left) this group meanwhile -- an
         // expected state, shown as a notice rather than logged as an error.
         if (err.response?.status === 403) {
-          setDetailsError("You're no longer in this conversation.");
+          setDetailsError(t('messages.noLongerMember'));
           return;
         }
         console.error(err);
       });
-  }, [conversationId, token]);
+  }, [conversationId, token, t]);
 
   useEffect(() => {
     loadDetails();
@@ -256,46 +258,46 @@ function Conversation() {
     : [];
   const groupTypingText =
     typingNames.length === 0 ? null
-      : typingNames.length === 1 ? `${typingNames[0]} is typing…`
-        : typingNames.length === 2 ? `${typingNames[0]} and ${typingNames[1]} are typing…`
-          : 'Several people are typing…';
+      : typingNames.length === 1 ? t('messages.typingOne', { name: typingNames[0] })
+        : typingNames.length === 2 ? t('messages.typingTwo', { first: typingNames[0], second: typingNames[1] })
+          : t('messages.typingMany');
 
   return (
     <div className="conversation-screen">
       <header className="screen-header conversation-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Messages" onClick={() => navigate('/messages')} />
+        <IconButton icon={ChevronLeft} aria-label={t('messages.backToMessages')} onClick={() => navigate('/messages')} />
         {isGroup ? (
           // B10: the whole group header opens Group info.
           <button
             type="button"
             className="messages-header-button"
             onClick={() => navigate(`/messages/${conversationId}/info`)}
-            aria-label={`Group info: ${details.name}, ${details.members.length} members`}
+            aria-label={t('messages.groupInfoLabel', { name: details.name, count: details.members.length })}
           >
             <span className="messages-group-avatar" aria-hidden="true">
               <Users size={20} />
             </span>
             <span className="conversation-header-text">
               <span className="screen-header-title">{details.name}</span>
-              <small className="messages-header-status">{details.members.length} members · tap for info</small>
+              <small className="messages-header-status">{t('messages.membersTapInfo', { count: details.members.length })}</small>
             </span>
           </button>
         ) : (
           <>
         {headerInfo && (
           <span className="messages-avatar-wrap">
-            <Avatar src={headerInfo.avatar_url} size={40} alt={`${headerInfo.username}'s profile picture`} />
-            {otherIsOnline && <span className="messages-online-dot" aria-label="Online" />}
+            <Avatar src={headerInfo.avatar_url} size={40} alt={t('messages.profilePicture', { name: headerInfo.username })} />
+            {otherIsOnline && <span className="messages-online-dot" aria-label={t('messages.online')} />}
           </span>
         )}
         <div className="conversation-header-text">
-          <h1 className="screen-header-title">{headerInfo ? headerInfo.username : 'Conversation'}</h1>
+          <h1 className="screen-header-title">{headerInfo ? headerInfo.username : t('messages.conversation')}</h1>
           {headerInfo && (
             <small className="messages-header-status">
               {otherIsOnline
-                ? 'Active now'
+                ? t('messages.activeNow')
                 : headerInfo.last_seen
-                  ? `Active ${formatRelativeTime(headerInfo.last_seen)} ago`
+                  ? t('messages.activeAgo', { time: formatRelativeTime(headerInfo.last_seen) })
                   : null}
             </small>
           )}
@@ -319,12 +321,12 @@ function Conversation() {
       {!loading && !error && (
         <div className="messages-thread" ref={containerRef} onScroll={handleScroll}>
           {loadingOlder && (
-            <div className="messages-load-older" role="status" aria-label="Loading older messages">
+            <div className="messages-load-older" role="status" aria-label={t('messages.loadingOlder')}>
               <span className="messages-spinner" />
             </div>
           )}
           {messages.length === 0 && (
-            <p className="messages-thread-empty-hint">No messages yet. Say hello!</p>
+            <p className="messages-thread-empty-hint">{t('messages.emptyThread')}</p>
           )}
           {/* Scoped to this one open conversation -- "only one voice message
               plays at a time across the chat window" means this window, not
@@ -341,7 +343,7 @@ function Conversation() {
                 onRetryImage={retryImageSend}
                 onDelete={deleteMessage}
                 replyAuthorLabel={replyAuthorLabel}
-                senderName={isGroup && message.sender_id !== userId ? membersById.get(message.sender_id)?.username || 'Former member' : null}
+                senderName={isGroup && message.sender_id !== userId ? membersById.get(message.sender_id)?.username || t('messages.formerMember') : null}
                 isEditing={editingId === message.id}
                 onReply={handleReply}
                 onStartEdit={handleStartEdit}
@@ -355,7 +357,7 @@ function Conversation() {
 
       {isOtherTyping && (
         <p className="messages-typing-indicator" role="status">
-          {headerInfo?.username || 'Someone'} is typing…
+          {t('messages.typingOne', { name: headerInfo?.username || t('messages.someone') })}
         </p>
       )}
       {groupTypingText && (

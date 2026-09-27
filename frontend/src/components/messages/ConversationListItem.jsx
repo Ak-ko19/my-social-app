@@ -2,6 +2,18 @@ import { memo } from 'react';
 import { Users } from 'lucide-react';
 import Avatar from '../common/Avatar';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
+import { useTranslation } from 'react-i18next';
+import { dateLocale } from '../../i18n';
+
+// The API labels media/deleted previews in English (conversationController,
+// useConversations' messagePreviewText) -- shown in the app's language here.
+function localizePreview(text, t) {
+  if (text === 'This message was deleted') return t('messages.preview.deleted');
+  if (text === 'Voice message') return t('messages.preview.voice');
+  if (text === 'Photo') return t('messages.preview.photo');
+  if (text?.startsWith('Photo: ')) return t('messages.preview.photoCaption', { caption: text.slice(7) });
+  return text;
+}
 
 // Deliberately a single component rather than split into sub-parts like
 // PostCard/PostHeader/PostContent -- a conversation row has none of
@@ -17,6 +29,7 @@ import { formatRelativeTime } from '../../utils/formatRelativeTime';
 // and a `conversations` array update (e.g. a different row moving to the
 // top on a new message) would otherwise re-render every already-mounted row.
 function ConversationListItem({ conversation, isOnline = false, onClick }) {
+  const { t } = useTranslation();
   const {
     username,
     avatar_url: avatarUrl,
@@ -43,31 +56,31 @@ function ConversationListItem({ conversation, isOnline = false, onClick }) {
             <Users size={22} />
           </span>
         ) : (
-          <Avatar src={avatarUrl} size={48} alt={`${username}'s profile picture`} />
+          <Avatar src={avatarUrl} size={48} alt={t('messages.profilePicture', { name: username })} />
         )}
-        {isOnline && <span className="messages-online-dot" aria-label="Online" />}
+        {isOnline && <span className="messages-online-dot" aria-label={t('messages.online')} />}
       </span>
 
       <span className="messages-body">
         <span className="messages-top-row">
           <span className="messages-name">
             {username}
-            {isGroup && <span className="messages-member-count"> · {memberCount} members</span>}
+            {isGroup && <span className="messages-member-count"> · {t('messages.memberCount', { count: memberCount })}</span>}
           </span>
           {lastMessageAt && (
             <time
               className="messages-time"
               dateTime={lastMessageAt}
-              title={new Date(lastMessageAt).toLocaleString()}
+              title={new Date(lastMessageAt).toLocaleString(dateLocale())}
             >
               {formatRelativeTime(lastMessageAt)}
             </time>
           )}
         </span>
         <span className="messages-bottom-row">
-          <span className="messages-preview">{lastMessage || 'Say hello!'}</span>
+          <span className="messages-preview">{localizePreview(lastMessage, t) || t('messages.sayHello')}</span>
           {hasUnread && (
-            <span className="messages-unread-badge" aria-label={`${unreadCount} unread`}>
+            <span className="messages-unread-badge" aria-label={t('messages.unread', { count: unreadCount })}>
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}

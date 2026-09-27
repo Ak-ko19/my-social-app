@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useVoicePlayback } from '../../hooks/useVoicePlayback';
+import { useTranslation } from 'react-i18next';
 
 const WAVEFORM_BAR_COUNT = 24;
 
@@ -77,6 +78,7 @@ function ErrorIcon() {
 // listener below, keeping its state in sync without any cross-component
 // coordination beyond the provider itself.
 function VoiceMessagePlayer({ src, durationSeconds, seedKey }) {
+  const { t } = useTranslation();
   const audioRef = useRef(null);
   const barRef = useRef(null);
   const { requestPlay, releaseIfCurrent } = useVoicePlayback();
@@ -231,7 +233,7 @@ function VoiceMessagePlayer({ src, durationSeconds, seedKey }) {
         className="voice-player-toggle"
         onClick={togglePlayback}
         disabled={hasError}
-        aria-label={hasError ? 'Voice message failed to load' : isPlaying ? 'Pause voice message' : 'Play voice message'}
+        aria-label={hasError ? t('messages.voiceLoadFailed') : isPlaying ? t('messages.pauseVoice') : t('messages.playVoice')}
       >
         {hasError ? <ErrorIcon /> : isBuffering ? <span className="voice-player-spinner" aria-hidden="true" /> : isPlaying ? <PauseIcon /> : <PlayIcon />}
       </button>
@@ -243,7 +245,7 @@ function VoiceMessagePlayer({ src, durationSeconds, seedKey }) {
           onMouseDown={handleBarMouseDown}
           onTouchStart={handleBarTouchStart}
           role="slider"
-          aria-label="Seek voice message"
+          aria-label={t('messages.seekVoice')}
           aria-valuemin={0}
           aria-valuemax={Math.round(duration)}
           aria-valuenow={Math.round(currentTime)}
@@ -257,7 +259,7 @@ function VoiceMessagePlayer({ src, durationSeconds, seedKey }) {
             />
           ))}
         </div>
-        <div className="voice-player-time">{hasError ? "Couldn't load audio" : `${formatTime(currentTime)} / ${formatTime(duration)}`}</div>
+        <div className="voice-player-time">{hasError ? t('messages.audioFailed') : `${formatTime(currentTime)} / ${formatTime(duration)}`}</div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSocket } from '../../hooks/useSocket';
+import { useTranslation } from 'react-i18next';
 
 // Only shown once the socket has been down for a moment -- the normal
 // initial connect (and a quick blip) resolves well within this, so the
@@ -11,6 +12,7 @@ const SHOW_AFTER_MS = 2000;
 // falls back to REST), and both the inbox and the open thread refetch on
 // reconnect, so this is purely informational.
 function ConnectionBanner() {
+  const { t } = useTranslation();
   const { connectionState } = useSocket();
   const [visible, setVisible] = useState(false);
   const isDown = connectionState !== 'connected';
@@ -31,7 +33,7 @@ function ConnectionBanner() {
 
   return (
     <div className="messages-connection-banner" role="status">
-      {connectionState === 'connecting' ? 'Reconnecting…' : 'Connection lost. Trying to reconnect…'}
+      {connectionState === 'connecting' ? t('messages.reconnecting') : t('messages.connectionLost')}
     </div>
   );
 }

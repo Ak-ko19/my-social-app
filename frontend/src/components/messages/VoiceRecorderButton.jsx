@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
+import { useTranslation } from 'react-i18next';
 
 const MAX_DURATION_SECONDS = 120; // matches the backend's 5MB (~2 min of compressed voice) upload limit
 const WARNING_THRESHOLD_SECONDS = 105; // last 15s of the cap
@@ -25,6 +26,7 @@ function formatTimer(totalSeconds) {
 // reliably fire once the recording UI has replaced the button the touch
 // actually started on.
 function VoiceRecorderButton({ onSend, onRecordingChange }) {
+  const { t } = useTranslation();
   const {
     status,
     elapsedSeconds,
@@ -152,8 +154,8 @@ function VoiceRecorderButton({ onSend, onRecordingChange }) {
         className="messages-mic-btn"
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        aria-label="Hold to record a voice message"
-        title="Hold to record a voice message"
+        aria-label={t('messages.holdToRecord')}
+        title={t('messages.holdToRecord')}
       >
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
           <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z" fill="currentColor" />

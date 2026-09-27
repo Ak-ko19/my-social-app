@@ -2,9 +2,12 @@
 // deliberately plain inline SVG (no icon library in this project). 'sending'
 // renders the shared CSS spinner instead of a checkmark; 'failed' is
 // handled by the bubble itself (a Retry button), not this component.
+import { useTranslation } from 'react-i18next';
+
 function MessageStatusIcon({ status }) {
+  const { t } = useTranslation();
   if (status === 'sending') {
-    return <span className="messages-spinner" role="status" aria-label="Sending" />;
+    return <span className="messages-spinner" role="status" aria-label={t('messages.status.sending')} />;
   }
 
   if (status === 'sent') {
@@ -14,7 +17,7 @@ function MessageStatusIcon({ status }) {
         viewBox="0 0 16 16"
         width="14"
         height="14"
-        aria-label="Sent"
+        aria-label={t('messages.status.sent')}
         role="img"
       >
         <path
@@ -36,7 +39,7 @@ function MessageStatusIcon({ status }) {
         viewBox="0 0 20 16"
         width="18"
         height="14"
-        aria-label={status === 'read' ? 'Read' : 'Delivered'}
+        aria-label={status === 'read' ? t('messages.status.read') : t('messages.status.delivered')}
         role="img"
       >
         <path

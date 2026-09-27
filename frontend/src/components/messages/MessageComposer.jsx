@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, X } from 'lucide-react';
 import VoiceRecorderButton from './VoiceRecorderButton';
+import { Trans, useTranslation } from 'react-i18next';
 
 // Debounce the "should I check whether to fire typing?" trigger by 300ms
 // (a natural pause between keystrokes), then only actually emit if it's
@@ -19,6 +20,7 @@ const TYPING_EMIT_INTERVAL_MS = 2500;
 // B9: replyTo shows a "Replying to ..." bar (x or Escape cancels), and the
 // image button sends a photo (replying too, when a reply is active).
 function MessageComposer({ onSend, onSendVoice, onSendImage, onTyping, replyTo, replyToLabel, onCancelReply }) {
+  const { t } = useTranslation();
   const [content, setContent] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const debounceTimerRef = useRef(null);
@@ -70,10 +72,10 @@ function MessageComposer({ onSend, onSendVoice, onSendImage, onTyping, replyTo, 
       {replyTo && (
         <div className="messages-replying-bar" role="status">
           <span className="messages-replying-text">
-            Replying to <strong>{replyToLabel}</strong>
-            {replyTo.content ? `: ${replyTo.content}` : replyTo.type === 'image' ? ': Photo' : replyTo.type === 'voice' ? ': Voice message' : ''}
+            <Trans i18nKey="messages.replyingTo" values={{ name: replyToLabel }} components={{ b: <strong /> }} />
+            {replyTo.content ? `: ${replyTo.content}` : replyTo.type === 'image' ? `: ${t('messages.preview.photo')}` : replyTo.type === 'voice' ? `: ${t('messages.preview.voice')}` : ''}
           </span>
-          <button type="button" className="messages-replying-cancel" onClick={onCancelReply} aria-label="Cancel reply">
+          <button type="button" className="messages-replying-cancel" onClick={onCancelReply} aria-label={t('comments.cancelReply')}>
             <X size={14} aria-hidden="true" />
           </button>
         </div>
@@ -88,7 +90,7 @@ function MessageComposer({ onSend, onSendVoice, onSendImage, onTyping, replyTo, 
               hidden
               onChange={handleImagePicked}
             />
-            <button type="button" className="messages-attach-btn" onClick={() => fileInputRef.current?.click()} aria-label="Send a photo">
+            <button type="button" className="messages-attach-btn" onClick={() => fileInputRef.current?.click()} aria-label={t('messages.sendPhoto')}>
               <ImagePlus size={18} aria-hidden="true" />
             </button>
           </>
@@ -96,7 +98,7 @@ function MessageComposer({ onSend, onSendVoice, onSendImage, onTyping, replyTo, 
         {!isRecording && (
           <>
             <label className="feed-visually-hidden" htmlFor="message-composer-input">
-              {replyTo ? 'Write a reply' : 'Write a message'}
+              {replyTo ? t('messages.writeReply') : t('messages.writeMessage')}
             </label>
             <input
               ref={inputRef}
@@ -107,7 +109,7 @@ function MessageComposer({ onSend, onSendVoice, onSendImage, onTyping, replyTo, 
               onKeyDown={(e) => {
                 if (e.key === 'Escape' && replyTo) onCancelReply();
               }}
-              placeholder={replyTo ? 'Write a reply...' : 'Type a message...'}
+              placeholder={replyTo ? t('messages.replyPlaceholder') : t('messages.messagePlaceholder')}
               autoComplete="off"
             />
           </>
@@ -115,7 +117,7 @@ function MessageComposer({ onSend, onSendVoice, onSendImage, onTyping, replyTo, 
         {onSendVoice && <VoiceRecorderButton onSend={onSendVoice} onRecordingChange={setIsRecording} />}
         {!isRecording && (
           <button type="submit" className="feed-btn" disabled={!content.trim()}>
-            Send
+            {t('common.send')}
           </button>
         )}
       </form>

@@ -7,6 +7,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useSocket } from '../hooks/useSocket';
 import MemberPicker from '../components/messages/MemberPicker';
 import FeedErrorState from '../components/feed/FeedErrorState';
+import { useTranslation } from 'react-i18next';
+import { serverErrorText } from '../utils/serverError';
 import {
   fetchConversationDetails,
   addGroupMembers,
@@ -20,6 +22,7 @@ import '../components/messages/Messages.css';
 // rename / add / remove for admins; leave for everyone.
 function GroupInfoScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { conversationId } = useParams();
   const { token, userId } = useAuth();
   const { socket } = useSocket();
@@ -41,13 +44,13 @@ function GroupInfoScreen() {
       .catch((err) => {
         // 403 is an expected state (you left or were removed), not an error.
         if (err.response?.status === 403) {
-          setLoadError("You're not in this group any more.");
+          setLoadError(t('groupChat.notMember'));
           return;
         }
         console.error(err);
-        setLoadError('Could not load the group.');
+        setLoadError(t('groupChat.loadFailed'));
       });
-  }, [conversationId, token]);
+  }, [conversationId, token, t]);
 
   useEffect(() => {
     load();
@@ -67,21 +70,21 @@ function GroupInfoScreen() {
     return (
       <div className="screen-enter">
         <header className="screen-header">
-          <IconButton icon={ChevronLeft} aria-label="Back to Messages" onClick={() => navigate('/messages')} />
-          <h1 className="screen-header-title">Group info</h1>
+          <IconButton icon={ChevronLeft} aria-label={t('messages.backToMessages')} onClick={() => navigate('/messages')} />
+          <h1 className="screen-header-title">{t('groupChat.info')}</h1>
         </header>
         <FeedErrorState message={loadError} onRetry={load} />
       </div>
     );
   }
-  if (!group) return <p className="screen-status" role="status">Loading…</p>;
+  if (!group) return <p className="screen-status" role="status">{t('common.loading')}</p>;
 
   const isAdmin = group.my_role === 'admin';
   const run = (promise) => {
     setActionError('');
     return promise.catch((err) => {
       console.error(err);
-      setActionError(err.response?.data || 'Something went wrong. Please try again.');
+      setActionError(serverErrorText(err, 'common.somethingWentWrong'));
       throw err;
     });
   };
@@ -122,24 +125,24 @@ function GroupInfoScreen() {
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to the chat" onClick={() => navigate(`/messages/${conversationId}`)} />
-        <h1 className="screen-header-title">Group info</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('groupChat.backToChat')} onClick={() => navigate(`/messages/${conversationId}`)} />
+        <h1 className="screen-header-title">{t('groupChat.info')}</h1>
       </header>
 
       <div className="screen-body">
         {renaming ? (
           <form className="inline-form" onSubmit={saveName}>
-            <label className="feed-visually-hidden" htmlFor="group-name-input">Group name</label>
+            <label className="feed-visually-hidden" htmlFor="group-name-input">{t('groupChat.groupName')}</label>
             <input id="group-name-input" className="form-input" maxLength={100} value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} autoFocus />
-            <button type="submit" className="btn btn-primary" disabled={!nameDraft.trim()}>Save</button>
-            <button type="button" className="btn btn-secondary" onClick={() => setRenaming(false)}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={!nameDraft.trim()}>{t('common.save')}</button>
+            <button type="button" className="btn btn-secondary" onClick={() => setRenaming(false)}>{t('common.cancel')}</button>
           </form>
         ) : (
           <div className="group-info-title">
             <h2 className="group-info-name">{group.name}</h2>
             {isAdmin && (
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setNameDraft(group.name); setRenaming(true); }}>
-                Rename
+                {t('groupChat.rename')}
               </button>
             )}
           </div>
@@ -147,18 +150,18 @@ function GroupInfoScreen() {
 
         {actionError && <p className="form-error" role="alert">{actionError}</p>}
 
-        <h3 className="section-heading">{group.members.length} members</h3>
+        <h3 className="section-heading">{t('messages.memberCount', { count: group.members.length })}</h3>
         <ul className="card-list">
           {group.members.map((m) => (
             <li key={m.id} className="card-row group-member-row">
               <Avatar src={m.avatar_url} size={36} alt="" />
               <span className="card-row-body">
-                {m.id === userId ? 'You' : m.username}
-                {m.role === 'admin' && <span className="group-admin-badge">Admin</span>}
+                {m.id === userId ? t('messages.you') : m.username}
+                {m.role === 'admin' && <span className="group-admin-badge">{t('groupChat.admin')}</span>}
               </span>
               {isAdmin && m.id !== userId && (
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setConfirm({ kind: 'remove', member: m })} aria-label={`Remove ${m.username}`}>
-                  Remove
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setConfirm({ kind: 'remove', member: m })} aria-label={t('groupChat.removeName', { name: m.username })}>
+                  {t('groupChat.remove')}
                 </button>
               )}
             </li>
@@ -167,7 +170,7 @@ function GroupInfoScreen() {
 
         {isAdmin && !adding && (
           <button type="button" className="btn btn-secondary btn-block group-info-gap" onClick={() => setAdding(true)}>
-            Add people
+            {t('groupChat.addPeople')}
           </button>
         )}
         {isAdmin && adding && (
@@ -181,17 +184,17 @@ function GroupInfoScreen() {
             />
             <div className="inline-form">
               <button type="button" className="btn btn-primary" onClick={addPeople} disabled={toAdd.length === 0}>
-                Add {toAdd.length > 0 ? toAdd.length : ''}
+                {toAdd.length > 0 ? t('groupChat.addCount', { count: toAdd.length }) : t('groupChat.add')}
               </button>
               <button type="button" className="btn btn-secondary" onClick={() => { setAdding(false); setToAdd([]); }}>
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>
         )}
 
         <button type="button" className="btn btn-block group-leave-btn" onClick={() => setConfirm({ kind: 'leave' })}>
-          Leave group
+          {t('groupChat.leaveGroup')}
         </button>
       </div>
 
@@ -199,13 +202,13 @@ function GroupInfoScreen() {
         open={Boolean(confirm)}
         onClose={() => setConfirm(null)}
         onConfirm={confirmAction}
-        title={confirm?.kind === 'leave' ? 'Leave this group?' : `Remove ${confirm?.member?.username}?`}
+        title={confirm?.kind === 'leave' ? t('groupChat.leaveTitle') : t('groupChat.removeTitle', { name: confirm?.member?.username })}
         description={
           confirm?.kind === 'leave'
-            ? "You'll stop getting its messages and won't see its history any more."
-            : 'They will stop getting messages and lose access to the history.'
+            ? t('groupChat.leaveDescription')
+            : t('groupChat.removeDescription')
         }
-        confirmLabel={confirm?.kind === 'leave' ? 'Leave' : 'Remove'}
+        confirmLabel={confirm?.kind === 'leave' ? t('groupChat.leave') : t('groupChat.remove')}
         danger
         error={actionError}
       />

@@ -13,9 +13,11 @@ import ConversationListErrorState from './components/messages/ConversationListEr
 import ConnectionBanner from './components/messages/ConnectionBanner';
 import { DURATION_NORMAL, EASE_STANDARD } from './utils/motionTokens';
 import './components/messages/Messages.css';
+import { useTranslation } from 'react-i18next';
 
 function Messages() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { token, userId } = useAuth();
   const { conversations, loading, error, reload } = useConversations(token, userId);
   const { isOnline } = usePresenceEvents();
@@ -55,10 +57,10 @@ function Messages() {
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Home" onClick={() => navigate('/')} />
-        <h1 className="screen-header-title">Messages</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('common.backToHome')} onClick={() => navigate('/')} />
+        <h1 className="screen-header-title">{t('messages.title')}</h1>
         <button type="button" className="btn btn-secondary btn-sm" onClick={() => navigate('/messages/new-group')}>
-          <Users size={14} aria-hidden="true" /> New group
+          <Users size={14} aria-hidden="true" /> {t('messages.newGroup')}
         </button>
       </header>
       <div className="screen-body">
