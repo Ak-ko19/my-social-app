@@ -1095,7 +1095,7 @@ to a group, group-admin permissions enforced.
   new post), invite links, and pinned posts.
 
 ### B14 — Pages (business/creator pages, follow pages)
-**Status:** ⬜ NOT CHECKED
+**Status:** 🟡 PARTIAL (backend done 2026-09-27: migration 027, /pages API, post-as-page, 14 tests, suite 231/231; frontend screens + browser tests remain)
 **Done when:** a page entity distinct from a user account exists, a
 follow-a-page flow, and page-authored posts.
 **Notes:** _(none yet)_
