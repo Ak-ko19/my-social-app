@@ -846,5 +846,86 @@
         "subtitle": "Earn points & enjoy rewards"
       }
     }
+  },
+  "legal": {
+    "draftNote": "Draft — this document will be reviewed before MySocialApp's public launch.",
+    "updated": "Last updated: {{date}}",
+    "agree": "By signing up, you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>.",
+    "otherTerms": "Read the Terms & Conditions",
+    "otherPrivacy": "Read the Privacy Policy",
+    "terms": {
+      "title": "Terms & Conditions",
+      "sections": [
+        {
+          "heading": "1. Using MySocialApp",
+          "body": "MySocialApp is a social network for sharing posts, photos and messages with the people you choose. By creating an account or using the app, you agree to these terms. You must be at least 13 years old to use MySocialApp."
+        },
+        {
+          "heading": "2. Your account",
+          "body": "Keep your password private — you are responsible for what happens on your account. Give accurate sign-up information, and don't create accounts for someone else without their permission or to get around a ban."
+        },
+        {
+          "heading": "3. Your content",
+          "body": "You own what you post. By posting, you let us store, display and share it with the audience you pick (for example Public, Followers only, a private group or a page's followers) so the app can work. You can edit or delete your posts at any time."
+        },
+        {
+          "heading": "4. What's not allowed",
+          "body": "Don't post anything illegal, hateful, harassing, sexually exploitative, or intended to scam or mislead people. Don't impersonate others, spam, or try to break or overload the service. Respect other people's privacy and copyright."
+        },
+        {
+          "heading": "5. Reports and moderation",
+          "body": "Anyone can report a post or an account. Our moderators may remove content or suspend accounts that break these terms. If your account is banned, you won't be able to log in."
+        },
+        {
+          "heading": "6. Groups and pages",
+          "body": "Group admins decide who can join their group and may remove posts or members. Page owners are responsible for what they post as their page."
+        },
+        {
+          "heading": "7. Ending your account",
+          "body": "You can deactivate your account (it is hidden until you log in again) or delete it permanently in Settings. Deleting removes your profile, posts, comments, messages and pages."
+        },
+        {
+          "heading": "8. Changes and disclaimer",
+          "body": "MySocialApp is provided as it is while we keep improving it, and features may change. If these terms change in an important way, we will tell you in the app before the changes take effect."
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "sections": [
+        {
+          "heading": "1. What we collect",
+          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, private-account setting); and what you create: posts, photos, comments, reactions, messages, voice messages, groups, pages, follows, bookmarks, blocks and reports."
+        },
+        {
+          "heading": "2. How we use it",
+          "body": "Only to run the app: showing your posts to the audience you chose, delivering messages and notifications, suggesting people you may know, keeping accounts secure, and handling reports. We do not sell your data and we do not show ads."
+        },
+        {
+          "heading": "3. Who can see what",
+          "body": "Public posts can be seen by anyone. Followers-only posts, private accounts and private groups are limited to the people allowed in. Direct and group messages are visible only to the people in that conversation. Blocking someone hides you from each other."
+        },
+        {
+          "heading": "4. Services we use",
+          "body": "Photos, voice messages and profile pictures are stored with our media hosting provider (Cloudinary). Verification and password-reset emails are sent by an email provider. These providers only process the data needed for that job."
+        },
+        {
+          "heading": "5. Data on your device",
+          "body": "The app keeps your login session, theme (light/dark) and language choice in your browser's local storage. We don't use advertising or tracking cookies."
+        },
+        {
+          "heading": "6. Security",
+          "body": "Passwords are stored hashed, connections are encrypted, and repeated login attempts are rate-limited. Your IP address is used briefly for this rate limiting and is not stored in our database."
+        },
+        {
+          "heading": "7. Your choices",
+          "body": "You can edit your profile, make your account private, control notifications, and delete your account at any time in Settings. Deleting your account permanently removes your data from our database."
+        },
+        {
+          "heading": "8. Changes",
+          "body": "If we change this policy in an important way, we will tell you in the app before the change takes effect."
+        }
+      ]
+    }
   }
 }

@@ -97,8 +97,8 @@ const SETTINGS_SECTIONS = [
     id: 'support',
     rows: [
       { key: 'help-support', icon: LifeBuoy },
-      { key: 'terms', icon: FileText },
-      { key: 'privacy-policy', icon: ScrollText },
+      { key: 'terms', icon: FileText, to: '/terms' },
+      { key: 'privacy-policy', icon: ScrollText, to: '/privacy' },
       { key: 'about', icon: Info }
     ]
   }

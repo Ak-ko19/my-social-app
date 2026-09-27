@@ -38,6 +38,7 @@ const CommunityScreen = lazy(() => import('./screens/CommunityScreen'));
 const ManageCommunityScreen = lazy(() => import('./screens/ManageCommunityScreen'));
 const PagesScreen = lazy(() => import('./screens/PagesScreen'));
 const LanguageScreen = lazy(() => import('./screens/LanguageScreen'));
+const LegalScreen = lazy(() => import('./screens/LegalScreen'));
 const CreatePageScreen = lazy(() => import('./screens/CreatePageScreen'));
 const PageScreen = lazy(() => import('./screens/PageScreen'));
 const EditPageScreen = lazy(() => import('./screens/EditPageScreen'));
@@ -163,6 +164,9 @@ function App() {
         <Route path="/groups/:id/manage" element={<PhoneShell hideTabBar><ManageCommunityScreen /></PhoneShell>} />
         <Route path="/pages" element={<PhoneShell><PagesScreen /></PhoneShell>} />
         <Route path="/settings/language" element={<PhoneShell><LanguageScreen /></PhoneShell>} />
+        {/* C2: public legal pages (no login needed). */}
+        <Route path="/terms" element={<PhoneShell hideTabBar><LegalScreen doc="terms" /></PhoneShell>} />
+        <Route path="/privacy" element={<PhoneShell hideTabBar><LegalScreen doc="privacy" /></PhoneShell>} />
         <Route path="/pages/new" element={<PhoneShell hideTabBar><CreatePageScreen /></PhoneShell>} />
         <Route path="/pages/:id" element={<PhoneShell><PageScreen /></PhoneShell>} />
         <Route path="/pages/:id/edit" element={<PhoneShell hideTabBar><EditPageScreen /></PhoneShell>} />

@@ -1,0 +1,36 @@
+/* C2: Terms & Privacy pages. */
+.legal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 32px;
+}
+
+.legal-draft {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--color-subtle-bg);
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
+.legal-updated {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.legal-section p {
+  margin: 4px 0 0;
+  line-height: 1.6;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.legal-heading {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}

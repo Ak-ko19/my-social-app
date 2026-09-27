@@ -3,7 +3,7 @@ import { Users } from 'lucide-react';
 import Avatar from '../common/Avatar';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import { useTranslation } from 'react-i18next';
-import { dateLocale } from '../../i18n';
+import { formatDate } from '../../i18n';
 
 // The API labels media/deleted previews in English (conversationController,
 // useConversations' messagePreviewText) -- shown in the app's language here.
@@ -71,7 +71,7 @@ function ConversationListItem({ conversation, isOnline = false, onClick }) {
             <time
               className="messages-time"
               dateTime={lastMessageAt}
-              title={new Date(lastMessageAt).toLocaleString(dateLocale())}
+              title={formatDate(lastMessageAt)}
             >
               {formatRelativeTime(lastMessageAt)}
             </time>

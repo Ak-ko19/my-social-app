@@ -646,3 +646,11 @@ textarea.form-input {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+/* C2: "By signing up, you agree to..." under the signup card. */
+.auth-legal {
+  margin: var(--space-4) 0 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}

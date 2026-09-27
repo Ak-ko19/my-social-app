@@ -3,7 +3,7 @@ import { CornerUpLeft, Pencil } from 'lucide-react';
 import MessageStatusIcon from './MessageStatusIcon';
 import VoiceMessagePlayer from './VoiceMessagePlayer';
 import { useTranslation } from 'react-i18next';
-import i18n, { dateLocale } from '../../i18n';
+import i18n, { formatDate } from '../../i18n';
 
 const PROGRESS_BAR_DELAY_MS = 1000;
 // Mirrors the backend's MESSAGE_EDIT_WINDOW_MS (messageService) -- the
@@ -201,8 +201,8 @@ function MessageBubble({
         )}
         <div className="messages-bubble-meta">
           {message.edited_at && !isDeleted && <span className="messages-edited">{t('messages.edited')}</span>}
-          <time dateTime={message.created_at} title={new Date(message.created_at).toLocaleString(dateLocale())}>
-            {new Date(message.created_at).toLocaleTimeString(dateLocale() || [], { hour: '2-digit', minute: '2-digit' })}
+          <time dateTime={message.created_at} title={formatDate(message.created_at)}>
+            {formatDate(message.created_at, 'time')}
           </time>
           {isOwn && !isFailed && <MessageStatusIcon status={message.status} />}
         </div>

@@ -5,7 +5,7 @@ import { ChevronLeft } from 'lucide-react';
 import { IconButton, Avatar } from './components/ui';
 import FeedErrorState from './components/feed/FeedErrorState';
 import { Trans, useTranslation } from 'react-i18next';
-import { dateLocale } from './i18n';
+import { formatDate } from './i18n';
 import './components/feed/Feed.css';
 
 // i18n key under notifications.types -- each is a whole sentence with the
@@ -124,7 +124,7 @@ function Notifications() {
                 <div className="card-row-body">
                   <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username }} components={{ b: <strong /> }} />
                   {n.post_content && <p className="card-row-quote">“{n.post_content}”</p>}
-                  <span className="card-row-meta">{new Date(n.created_at).toLocaleString(dateLocale())}</span>
+                  <span className="card-row-meta">{formatDate(n.created_at)}</span>
                   {!n.is_read && (
                     <div className="card-row-actions">
                       <button type="button" className="btn btn-secondary btn-sm" onClick={() => markAsRead(n.id)}>

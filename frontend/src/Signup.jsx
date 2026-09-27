@@ -2,7 +2,7 @@ import { useState } from 'react';
 import api from './api';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from './components/layout/Logo';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
 
 function Signup() {
@@ -78,6 +78,9 @@ function Signup() {
           <button type="submit" className="btn btn-primary btn-block">{t('auth.signUp')}</button>
         </form>
       </div>
+      <p className="auth-legal">
+        <Trans i18nKey="legal.agree" components={{ terms: <Link to="/terms" className="screen-link" />, privacy: <Link to="/privacy" className="screen-link" /> }} />
+      </p>
       <p className="auth-footer">{t('auth.haveAccount')} <Link to="/login" className="screen-link">{t('auth.logIn')}</Link></p>
     </div>
   );

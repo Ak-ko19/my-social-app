@@ -12,7 +12,7 @@ import { useFollowToggle } from './hooks/useFollowToggle';
 import FollowButton from './components/feed/FollowButton';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
-import { dateLocale } from './i18n';
+import { formatDate } from './i18n';
 
 // Search's own /search/users results don't include is_following (unlike
 // /feed's posts, which are already scoped to followed users by
@@ -167,7 +167,7 @@ function Search() {
                       <Link to={`/posts/${p.id}`} className="search-post-link">{p.content}</Link>
                     </p>
                     {p.image_url && <img className="image-preview" src={resolveImageUrl(p.image_url)} alt={t('search.attachment')} />}
-                    <span className="card-row-meta">{new Date(p.created_at).toLocaleString(dateLocale())}</span>
+                    <span className="card-row-meta">{formatDate(p.created_at)}</span>
                   </div>
                 </li>
               ))}
