@@ -14,13 +14,15 @@ import './index.css'
 import './styles/tokens.css'
 import './styles/global.css'
 import './styles/screens.css'
-import './i18n'
+import { i18nReady } from './i18n'
 import App from './App.jsx'
 import LanguageRoot from './i18n/LanguageRoot'
 import { ThemeProvider } from './context/ThemeProvider'
 import { SocketProvider } from './context/SocketProvider'
 
-createRoot(document.getElementById('root')).render(
+// Wait for the saved language's strings (a separate chunk for Myanmar/Arabic)
+// so the first paint is already in the right language.
+i18nReady.finally(() => createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ThemeProvider>
       <SocketProvider>
@@ -30,7 +32,7 @@ createRoot(document.getElementById('root')).render(
       </SocketProvider>
     </ThemeProvider>
   </StrictMode>,
-)
+))
 
 // Production only -- registering in dev would have the service worker
 // intercept and cache Vite's dev-server assets (which change on every hot

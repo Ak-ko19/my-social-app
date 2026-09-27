@@ -1,8 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
-import my from './locales/my.json';
-import ar from './locales/ar.json';
 
 // B15: English / Myanmar; B16: Arabic (right-to-left). Strings live in
 // locales/*.json, keyed by area (common, nav, settings, feed, ...). Missing
@@ -29,24 +27,54 @@ function initialLanguage() {
   return 'en';
 }
 
+// C4 audit: only English (the fallback) is bundled. Other languages are
+// separate chunks, fetched when chosen -- every visitor used to download all
+// three translation files on first load.
+const LOADERS = {
+  my: () => import('./locales/my.json'),
+  ar: () => import('./locales/ar.json')
+};
+
+async function loadLanguage(code) {
+  if (!LOADERS[code] || i18n.hasResourceBundle(code, 'translation')) return;
+  const mod = await LOADERS[code]();
+  i18n.addResourceBundle(code, 'translation', mod.default, true, true);
+}
+
+// Switch language (Settings, landing page): fetch its strings, switch, and
+// remember the choice. Only a successful switch is saved, so a failed
+// download never overwrites someone's saved language with English.
+export async function setLanguage(code) {
+  await loadLanguage(code);
+  await i18n.changeLanguage(code);
+  try {
+    localStorage.setItem(STORAGE_KEY, code);
+  } catch {
+    // not persisted; still applies for this visit
+  }
+}
+
+i18n.on('languageChanged', (lng) => {
+  document.documentElement.lang = lng;
+  document.documentElement.dir = dirOf(lng);
+});
+
+const startLanguage = initialLanguage();
 i18n.use(initReactI18next).init({
-  resources: { en: { translation: en }, my: { translation: my }, ar: { translation: ar } },
-  lng: initialLanguage(),
+  resources: { en: { translation: en } },
+  partialBundledLanguages: true,
+  lng: 'en',
   fallbackLng: 'en',
   interpolation: { escapeValue: false }, // React already escapes
   returnNull: false
 });
 
-document.documentElement.lang = i18n.language;
-document.documentElement.dir = dirOf(i18n.language);
-i18n.on('languageChanged', (lng) => {
-  document.documentElement.lang = lng;
-  document.documentElement.dir = dirOf(lng);
-  try {
-    localStorage.setItem(STORAGE_KEY, lng);
-  } catch {
-    // not persisted; still applies for this visit
-  }
+// main.jsx waits for this before the first render, so a saved Myanmar or
+// Arabic choice never flashes English first. If the chunk can't load
+// (e.g. offline on first visit), the app just starts in English.
+export const i18nReady = setLanguage(startLanguage).catch((err) => {
+  console.error(err);
+  return i18n.changeLanguage('en');
 });
 
 // Dates/times in the app's language. Chrome/Edge ship a reduced ICU with

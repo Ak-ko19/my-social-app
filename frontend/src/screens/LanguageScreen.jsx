@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Check } from 'lucide-react';
 import { IconButton } from '../components/ui';
-import { LANGUAGES } from '../i18n';
+import { LANGUAGES, setLanguage } from '../i18n';
 
 // B15: /settings/language -- English / Myanmar, saved on this device.
 function LanguageScreen() {
@@ -27,7 +27,7 @@ function LanguageScreen() {
                   name="language"
                   value={lang.code}
                   checked={selected}
-                  onChange={() => i18n.changeLanguage(lang.code)}
+                  onChange={() => setLanguage(lang.code)}
                 />
                 <span className="language-option-label">{lang.label}</span>
                 {selected && <Check size={18} aria-hidden="true" />}

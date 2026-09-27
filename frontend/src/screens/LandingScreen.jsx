@@ -4,7 +4,7 @@ import { Globe, Heart, Languages, MessageCircle, Newspaper, Shield, Sparkles, Us
 import Logo from '../components/layout/Logo';
 import ThemeToggle from '../components/common/ThemeToggle';
 import { useAuth } from '../hooks/useAuth';
-import { LANGUAGES } from '../i18n';
+import { LANGUAGES, setLanguage } from '../i18n';
 import './LandingScreen.css';
 
 // C3: /welcome -- a public explainer page for people who aren't users yet,
@@ -34,7 +34,7 @@ function LandingScreen() {
         <label className="landing-lang">
           <Globe size={15} aria-hidden="true" />
           <span className="landing-visually-hidden">{t('landing.footerLanguage')}</span>
-          <select className="landing-lang-select" value={i18n.language} onChange={(e) => i18n.changeLanguage(e.target.value)}>
+          <select className="landing-lang-select" value={i18n.language} onChange={(e) => setLanguage(e.target.value)}>
             {LANGUAGES.map((l) => (
               <option key={l.code} value={l.code} lang={l.code}>{l.label}</option>
             ))}
