@@ -40,7 +40,8 @@ async function searchPosts(req, res) {
       SELECT posts.id, posts.content, posts.visibility, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url
       FROM posts
       JOIN users ON posts.user_id = users.id
-      WHERE posts.content ILIKE $1
+      -- B13: community posts live in their community feed only.
+      WHERE posts.community_id IS NULL AND posts.content ILIKE $1
         AND ($4::int IS NULL OR NOT EXISTS (
           SELECT 1 FROM blocks
           WHERE (blocks.blocker_id = $4 AND blocks.blocked_id = posts.user_id)

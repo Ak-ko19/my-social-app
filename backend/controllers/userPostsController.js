@@ -81,7 +81,8 @@ async function getUserPosts(req, res) {
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me
       FROM posts
       JOIN users ON posts.user_id = users.id
-      WHERE ${tabCondition}
+      -- B13: community posts live in their community feed only.
+      WHERE posts.community_id IS NULL AND ${tabCondition}
         AND ($1::int IS NULL OR NOT EXISTS (
           SELECT 1 FROM blocks
           WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)

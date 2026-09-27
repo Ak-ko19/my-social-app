@@ -26,7 +26,8 @@ async function getPostsByHashtag(req, res) {
       JOIN hashtags ON hashtags.id = post_hashtags.hashtag_id
       JOIN posts ON posts.id = post_hashtags.post_id
       JOIN users ON users.id = posts.user_id
-      WHERE LOWER(hashtags.tag) = $2
+      -- B13: community posts live in their community feed only.
+      WHERE posts.community_id IS NULL AND LOWER(hashtags.tag) = $2
         AND ($1::int IS NULL OR NOT EXISTS (
           SELECT 1 FROM blocks
           WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)

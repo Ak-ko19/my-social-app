@@ -5,7 +5,7 @@ const { reactionColumnsSql, mediaColumnSql } = require('../services/reactionServ
 const POST_VISIBILITIES = ['public', 'followers'];
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
-const blockService = require('../services/blockService');
+const { getVisiblePost } = require('../services/postVisibilityService');
 const hashtagService = require('../services/hashtagService');
 const mentionService = require('../services/mentionService');
 
@@ -20,6 +20,23 @@ async function createPost(req, res) {
     if (!POST_VISIBILITIES.includes(visibility)) {
       return res.status(400).send(`visibility must be one of: ${POST_VISIBILITIES.join(', ')}`);
     }
+    // B13: posting inside a community requires being a (non-pending)
+    // member. (Images were already uploaded by the middleware at this point
+    // -- a refused non-member's upload is a harmless orphan.)
+    let communityId = null;
+    if (req.body.communityId !== undefined && req.body.communityId !== '') {
+      communityId = Number(req.body.communityId);
+      if (!Number.isInteger(communityId)) {
+        return res.status(400).send('Invalid communityId');
+      }
+      const membership = await db.query(
+        "SELECT 1 FROM community_members WHERE community_id = $1 AND user_id = $2 AND status = 'member'",
+        [communityId, req.userId]
+      );
+      if (membership.rows.length === 0) {
+        return res.status(403).send('Join this group to post in it');
+      }
+    }
     // B2: every uploaded image, in the order sent (see uploadManyToCloudinary).
     const imageUrls = (req.cloudinaryResults || []).map((r) => r.secure_url);
     // One statement inserts the post AND its post_media rows, so a post can
@@ -27,14 +44,14 @@ async function createPost(req, res) {
     // first image for older readers (see migration 017).
     const result = await db.query(
       `WITH new_post AS (
-         INSERT INTO posts (user_id, content, image_url, visibility) VALUES ($1, $2, $3, $5) RETURNING *
+         INSERT INTO posts (user_id, content, image_url, visibility, community_id) VALUES ($1, $2, $3, $5, $6) RETURNING *
        ), new_media AS (
          INSERT INTO post_media (post_id, url, position)
          SELECT new_post.id, m.url, (m.ord - 1)::smallint
          FROM new_post, unnest($4::text[]) WITH ORDINALITY AS m(url, ord)
        )
        SELECT * FROM new_post`,
-      [req.userId, content, imageUrls[0] || null, imageUrls, visibility]
+      [req.userId, content, imageUrls[0] || null, imageUrls, visibility, communityId]
     );
     const post = { ...result.rows[0], media: imageUrls.map((url) => ({ url })) };
     await hashtagService.syncPostHashtags(post.id, content);
@@ -67,7 +84,8 @@ async function getPosts(req, res) {
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me
       FROM posts
       JOIN users ON posts.user_id = users.id
-      WHERE ($1::int IS NULL OR NOT EXISTS (
+      -- B13: community posts live in their community feed only.
+      WHERE posts.community_id IS NULL AND ($1::int IS NULL OR NOT EXISTS (
         SELECT 1 FROM blocks
         WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
            OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
@@ -114,7 +132,8 @@ async function getFeed(req, res) {
         EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = posts.user_id AND follows.status = 'accepted') AS is_following
       FROM posts
       JOIN users ON posts.user_id = users.id
-      WHERE posts.user_id IN (
+      -- B13: community posts live in their community feed only.
+      WHERE posts.community_id IS NULL AND posts.user_id IN (
         SELECT following_id FROM follows WHERE follower_id = $1 AND status = 'accepted'
       )
       AND NOT EXISTS (
@@ -173,22 +192,12 @@ async function getPost(req, res) {
     }
 
     const post = result.rows[0];
-    // A deactivated account's posts are hidden from everyone but the owner
-    // themselves -- same treatment as a block/private-account gate below.
-    if (post.author_is_deactivated && viewerId !== post.user_id) {
-      return res.status(404).send('Post not found');
-    }
-    // Mutual invisibility: don't reveal a blocked post even exists.
-    if (viewerId && (await blockService.isBlocked(viewerId, post.user_id))) {
-      return res.status(404).send('Post not found');
-    }
-    // A private account's post is only visible to the author themselves or
-    // an accepted follower -- same "not found" (not 403) treatment as the
-    // block check above, so a direct-link/share doesn't leak that a
-    // private post exists at all to someone who can't see it.
-    // B5: a followers-only post gets the same gate even on a public account.
-    const followersOnly = post.author_is_private || post.visibility === 'followers';
-    if (followersOnly && viewerId !== post.user_id && !post.viewer_is_follower) {
+    // Every visibility rule (deactivated/banned author, blocks, private
+    // account / followers-only audience, B13 community privacy) lives in
+    // postVisibilityService -- the same check likes, comments and bookmarks
+    // use, so the post page can never disagree with them. Hidden -> 404
+    // (not 403), so a direct link doesn't confirm the post exists.
+    if (!(await getVisiblePost(post.id, viewerId))) {
       return res.status(404).send('Post not found');
     }
 
@@ -245,8 +254,20 @@ async function deletePost(req, res) {
     if (postCheck.rows.length === 0) {
       return res.status(404).send('Post not found');
     }
-    if (postCheck.rows[0].user_id !== req.userId) {
-      return res.status(403).send('You can only delete your own posts');
+    const target = postCheck.rows[0];
+    if (target.user_id !== req.userId) {
+      // B13: community admins can remove any post in their community.
+      let isCommunityAdmin = false;
+      if (target.community_id) {
+        const admin = await db.query(
+          "SELECT 1 FROM community_members WHERE community_id = $1 AND user_id = $2 AND role = 'admin' AND status = 'member'",
+          [target.community_id, req.userId]
+        );
+        isCommunityAdmin = admin.rows.length > 0;
+      }
+      if (!isCommunityAdmin) {
+        return res.status(403).send('You can only delete your own posts');
+      }
     }
     await db.query('DELETE FROM posts WHERE id = $1', [req.params.id]);
     res.send('Post deleted successfully');

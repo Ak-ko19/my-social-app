@@ -2,7 +2,7 @@ const db = require('../db');
 const { reactionColumnsSql, mediaColumnSql } = require('../services/reactionService');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
-const { getVisiblePost } = require('../services/postVisibilityService');
+const { getVisiblePost, communityVisibleSql } = require('../services/postVisibilityService');
 
 async function bookmarkPost(req, res) {
   try {
@@ -66,6 +66,8 @@ async function getBookmarks(req, res) {
       JOIN posts ON posts.id = bookmarks.post_id
       JOIN users ON users.id = posts.user_id
       WHERE bookmarks.user_id = $1
+        -- B13: a saved community post shows only while you can still see it.
+        AND ${communityVisibleSql('$1')}
         AND NOT EXISTS (
           SELECT 1 FROM blocks
           WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)

@@ -32,7 +32,8 @@ async function getTrendingHashtags(req, res) {
        JOIN hashtags ON hashtags.id = post_hashtags.hashtag_id
        JOIN posts ON posts.id = post_hashtags.post_id
        JOIN users ON users.id = posts.user_id
-       WHERE posts.created_at > now() - ${EXPLORE_WINDOW}
+       WHERE posts.community_id IS NULL -- B13: not in global explore
+         AND posts.created_at > now() - ${EXPLORE_WINDOW}
          AND ${PUBLICLY_VISIBLE_SQL}
          AND ${NOT_BLOCKED_SQL}
        GROUP BY hashtags.id, hashtags.tag
@@ -63,7 +64,8 @@ async function getPopularPosts(req, res) {
            (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id) AS comment_total
          FROM posts
          JOIN users ON users.id = posts.user_id
-         WHERE posts.created_at > now() - ${EXPLORE_WINDOW}
+         WHERE posts.community_id IS NULL -- B13: not in global explore
+         AND posts.created_at > now() - ${EXPLORE_WINDOW}
            AND ${NOT_BLOCKED_SQL}
            AND NOT users.is_deactivated
            AND (

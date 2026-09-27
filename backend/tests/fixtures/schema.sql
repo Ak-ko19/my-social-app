@@ -53,6 +53,27 @@ CREATE TABLE posts (
     CONSTRAINT chk_posts_visibility CHECK (visibility IN ('public', 'followers'))
 );
 
+-- Added by migration 026_add_communities (B13).
+CREATE TABLE communities (
+  id SERIAL PRIMARY KEY,
+  name varchar(100) NOT NULL CHECK (length(btrim(name)) > 0),
+  description text,
+  privacy varchar(10) NOT NULL DEFAULT 'public' CHECK (privacy IN ('public', 'private')),
+  created_by integer REFERENCES users(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE community_members (
+  community_id integer NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+  user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role varchar(10) NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+  status varchar(10) NOT NULL DEFAULT 'member' CHECK (status IN ('member', 'pending')),
+  joined_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (community_id, user_id)
+);
+
+ALTER TABLE posts ADD COLUMN community_id integer REFERENCES communities(id) ON DELETE CASCADE;
+
 CREATE TABLE hashtags (
   id SERIAL PRIMARY KEY,
   tag varchar(100) NOT NULL,
