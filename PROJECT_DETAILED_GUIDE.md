@@ -930,6 +930,12 @@ built and how to re-verify it.
   - A Menu row.
 - **Deploy:** migration 027 after 026.
 
+### C3 — Landing page ✅
+- `/welcome` (`screens/LandingScreen.jsx` and `.css`) is public and
+  outside PhoneShell, with its own `<Suspense>` in App.jsx.
+- Logged-out `/` redirects there (HomeFeed). Copy lives in
+  `landing.*` in both locale files.
+
 ### C2 — Terms & Privacy (draft) ✅
 - `screens/LegalScreen.jsx` renders `legal.terms` / `legal.privacy` from
   the locale files at `/terms` and `/privacy` (public).

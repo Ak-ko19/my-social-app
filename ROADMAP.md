@@ -1310,28 +1310,40 @@ confirmed present but non-functional as of 2026-09-23).
   email before public launch. See NEEDS OWNER.
 
 ### C3 — Landing page explaining the app
-**Status:** 🟡 PARTIAL (2026-09-27: built and committed in e0b4e17; final regression run not completed)
+**Status:** ✅ VERIFIED (2026-09-27)
 **Done when:** a public marketing/explainer page exists, separate from
 the logged-in app shell, for someone who isn't a user yet.
 **Notes:**
-- **Done:** `/welcome` (`screens/LandingScreen.jsx` and `.css`).
-  - It is full width and outside PhoneShell.
-  - Hero with sign-up/log-in CTAs, or "Open the app" when logged in.
-  - Six feature cards, a "Made for Myanmar" section, and a footer linking
-    Terms and Privacy.
-  - Bilingual (`landing.*`), with an English/မြန်မာ switch and the theme
-    toggle.
-  - Logged-out `/` now redirects to `/welcome` instead of `/login`
-    (session expiry and bans still go to `/login` via `forceLogout`).
-  - The C3 browser test passed 20/20 after the layout fixes: redirect,
-    CTAs, language switch, logged-in variant, and no horizontal scroll at
-    375/768/1280px in both themes and both languages.
-  - Lint, build and check:i18n pass.
-- **Remaining:** the final regression run was stopped by Claude Code
-  because the machine ran critically low on memory, and it has not been
-  rerun. That run is: A3 matrix in English and Burmese with `/welcome`
-  added, B12 (ban → `/login`), and the A2 walkthrough. Rerun it, then
-  mark ✅ and add the guide entry.
+- **Page:** `/welcome` (`screens/LandingScreen.jsx`). It is full width
+  and deliberately outside PhoneShell (no tab bar, no 480px column).
+  - A hero with "Create your free account" and "I already have an
+    account". Logged-in visitors see "Open the app" instead.
+  - A static feed-card and chat illustration (no real data).
+  - Six feature cards (feed/reactions, stories, messages and voice,
+    groups and pages, privacy controls, Myanmar/English).
+  - A "Made for Myanmar" section, a final call to action, and a footer
+    linking Terms and Privacy.
+- **Behaviour change (autonomous choice):** logged-out visitors to `/`
+  now land on `/welcome` instead of a bare login form. Session expiry and
+  bans still go straight to `/login`, via `forceLogout`.
+- **Language and theme:** the text is bilingual (`landing.*`), with a
+  quick English/မြန်မာ switch and the theme toggle in the header. It uses
+  the app's tokens, so light and dark mode both work.
+- **Verified:**
+  - C3 browser test 20/20: redirect, CTAs, language switch, logged-in
+    variant, and no horizontal scroll at 375/768/1280px in both themes
+    and both languages.
+  - A3 matrix 222/222 in English and in Burmese, with /welcome added
+    (rerun on 2026-09-27 after the first run was stopped for low memory).
+  - B12 (ban → /login) and the A2 walkthrough are still green.
+- **Found and fixed while checking screenshots:**
+  - Text was centred on desktop, inherited from the old global #root
+    styles.
+  - The chat bubbles overlapped the card on phones.
+  - The logo was squeezed on 375px Burmese screens.
+- **Not done:** real screenshots or app-store badges, and SEO meta tags
+  per language. A native app doesn't exist yet, and the PWA install flow
+  is the browser's own.
 
 ### C4 — Final end-to-end audit of every feature + report
 **Status:** ⬜ NOT CHECKED
