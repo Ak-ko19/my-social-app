@@ -930,6 +930,13 @@ built and how to re-verify it.
   - A Menu row.
 - **Deploy:** migration 027 after 026.
 
+### C2 — Terms & Privacy (draft) ✅
+- `screens/LegalScreen.jsx` renders `legal.terms` / `legal.privacy` from
+  the locale files at `/terms` and `/privacy` (public).
+- To edit the text, change both `en.json` and `my.json`. Bump
+  `LAST_UPDATED` in LegalScreen.
+- Linked from Settings and Signup.
+
 ### C1 — Demo seed ✅
 - `cd backend && npm run seed:demo` fills a **local** DB with a demo
   world.
@@ -953,6 +960,9 @@ built and how to re-verify it.
 - **API errors:** `serverErrorText(err, 'fallback.key')` (in
   `utils/serverError.js`). New user-facing server messages can be given a
   Burmese version in `i18n/serverMessages.js`.
+- **Dates:** always `formatDate(value, 'datetime'|'date'|'long'|'time')`
+  from `src/i18n`, never `toLocaleString` directly. Chromium has no
+  Burmese locale data, and `formatDate` handles that.
 - **Check:** `npm run check:i18n` (also in CI): key parity plus keys that
   are used but missing.
 - **UI:** Settings → Language (`screens/LanguageScreen.jsx`). The choice

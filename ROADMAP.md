@@ -1174,8 +1174,12 @@ a language toggle in Settings persists the choice.
     every screen.
   - Unknown messages still show in English rather than a vaguer generic
     one.
-- **Dates:** `dateLocale()` gives Burmese dates and times in Myanmar
+- **Dates:** `formatDate()` gives Burmese dates and times in Myanmar
   mode, and relative times ("5 မိနစ်က") are translated too.
+  - Correction, found in C2: Chrome/Edge lack Burmese ICU data, so the
+    original `toLocaleString('my')` approach still showed English there.
+  - `formatDate()` now falls back to hand-formatted Myanmar digits and
+    month names.
 - **Guard:** `npm run check:i18n` (added to CI) fails on any en/my key
   mismatch or any key used in code that doesn't exist.
 - **Fixed along the way:**
@@ -1252,12 +1256,34 @@ clearly separated from the real migration scripts; safe to re-run.
   uploads, and no external service was added. Everyone shows initials.
 
 ### C2 — Privacy Policy + Terms pages (draft)
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-27)
 **Done when:** two real routes/screens exist with actual (simple/
 template is fine) legal text, linked from the existing disabled stub
 rows in `SettingsScreen.jsx` ("Terms & Conditions", "Privacy Policy" —
 confirmed present but non-functional as of 2026-09-23).
-**Notes:** _(none yet)_
+**Notes:**
+- **Routes:** `/terms` and `/privacy` are public, with no login needed
+  (`screens/LegalScreen.jsx`).
+  - Each has 8 short sections, written to match what the app really does:
+    data kept, Cloudinary for media, localStorage (not tracking cookies),
+    IPs only held in memory for rate limiting, account deletion, no ads,
+    no data selling, 13+.
+  - Both exist in English and Myanmar (`legal.*` in the locale files).
+  - Each carries a visible "Draft — will be reviewed before launch" note.
+- **Linked from:** the Settings rows "Terms & Conditions" and "Privacy
+  Policy", and a new "By signing up, you agree to our Terms and Privacy
+  Policy" line on Signup. Each page also links to the other.
+- **Found and fixed:** Chrome/Edge have no Burmese date data
+  (`toLocaleString('my')` silently returned English). `i18n.formatDate()`
+  now formats Burmese dates and times by hand (Myanmar digits and month
+  names) when the browser can't. It is used everywhere dates are shown.
+- **Verified:**
+  - C2 browser test 8/8, including a Burmese date check in Chromium.
+  - A3 matrix (with /terms and /privacy added): 216/216 in English and
+    216/216 in Burmese.
+  - Chat, groups, language and walkthrough suites are green.
+- **Owner step:** have the text legally reviewed and add a real contact
+  email before public launch. See NEEDS OWNER.
 
 ### C3 — Landing page explaining the app
 **Status:** ⬜ NOT CHECKED
@@ -1275,6 +1301,11 @@ running app in one pass, with a written pass/fail report per item.
 
 ## NEEDS OWNER (Claude must skip these — require your own account/action)
 
+- C2: have a lawyer (or at least a careful read) review the draft
+  Terms (`/terms`) and Privacy Policy (`/privacy`) text in
+  `frontend/src/i18n/locales/en.json` and `my.json` (`legal.*`), add a
+  real contact email, then drop the "Draft" note (`legal.draftNote` in
+  `LegalScreen.jsx`).
 - (Optional, B15) Have a native Myanmar speaker skim
   `frontend/src/i18n/locales/my.json` for wording before public launch.
 
