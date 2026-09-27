@@ -1,0 +1,3 @@
+# Bash scripts must keep LF line endings -- with CRLF, bash fails on the
+# stray carriage return at the end of every line.
+*.sh text eol=lf

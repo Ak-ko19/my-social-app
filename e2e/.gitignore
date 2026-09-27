@@ -1,0 +1,9 @@
+node_modules/
+# Written by the suites while they run.
+*.token
+*.log
+*.png
+out-*.txt
+a3-shots*/
+c4/
+baseline*/

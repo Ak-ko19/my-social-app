@@ -930,6 +930,14 @@ built and how to re-verify it.
   - A Menu row.
 - **Deploy:** migration 027 after 026.
 
+### C4 — Final audit ✅
+- `AUDIT_REPORT.md` has the per-item pass/fail report and the owner
+  steps for going live.
+- `e2e/` holds every browser suite (headless Edge + a throwaway local
+  stack). Run `cd e2e && npm install && npm test`, or
+  `npm run test:audit` for the full C4 pass. Setup is in
+  `e2e/README.md`.
+
 ### B16 — Arabic (RTL) ✅
 - **Languages:** `LANGUAGES` in `src/i18n/index.js` carries each
   language's `dir`, and `<html dir>` follows it. Add a language =

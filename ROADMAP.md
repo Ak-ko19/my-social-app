@@ -1417,10 +1417,34 @@ the logged-in app shell, for someone who isn't a user yet.
   is the browser's own.
 
 ### C4 — Final end-to-end audit of every feature + report
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-27)
 **Done when:** every item in this roadmap re-verified against the actual
 running app in one pass, with a written pass/fail report per item.
 **Notes:** this is the gate before investor demo — do last.
+- **Report:** `AUDIT_REPORT.md` (repo root). One pass on `dev` @
+  `e0949a2` with a clean tree.
+  - 24 items pass, 3 are blocked on the owner (Phase 2 email, A4 first
+    GitHub run, A5 schedule), and no feature failed.
+  - Backend 233/233.
+  - 19 browser suites, 281/281 checks.
+  - A3 222/222 in each of EN, MY and AR.
+  - 13/13 audit checks: route auth table, Phase 1 fixes, API timings,
+    npm audit, keep-alive ping.
+  - Demo seed 8/8.
+- **Fixed during the audit:**
+  - First-load JS had grown to 234.5 kB gzipped (every visitor downloaded
+    all three translation files). Myanmar and Arabic now load on demand:
+    209.7 kB (`e0949a2`).
+  - The browser suites existed only in Claude's temporary workspace. They
+    are now committed under `e2e/` with portable paths, `run-all.sh`
+    and a README. `npm run test:audit` reruns the whole pass.
+- **Top finding for the owner:** the deployed backend still runs old code
+  (the A5 ping took 22.9 s from cold). None of B1–B16 or C1–C3 is live
+  until migrations 015 → 027 are run, then deploy, then merge. Owner
+  steps are listed at the end of the report.
+- **Environmental:** intermittent timeouts to Google Fonts on this
+  network; reruns were clean. Recommendation in the report: self-host the
+  fonts.
 
 ---
 

@@ -1,0 +1,14 @@
+{
+  "name": "mysocialapp-e2e",
+  "private": true,
+  "description": "Browser test suites (headless Microsoft Edge via playwright-core) -- see README.md",
+  "scripts": {
+    "up": "bash e2e-up.sh",
+    "down": "bash e2e-down.sh",
+    "test": "bash run-all.sh",
+    "test:audit": "bash run-all.sh --audit"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}
