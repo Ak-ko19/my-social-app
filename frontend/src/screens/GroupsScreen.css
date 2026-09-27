@@ -1,0 +1,141 @@
+/* B13 Groups: list rows, group page header, manage screen bits. */
+
+.group-list {
+  list-style: none;
+  margin: 0 0 var(--space-4, 16px);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 14px);
+}
+
+.group-row-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.group-row-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--badge-teal-bg);
+  color: var(--badge-teal-fg);
+}
+
+.group-row-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.group-row-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-row-meta,
+.community-meta {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.group-privacy-hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.community-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.community-hero-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+}
+
+.community-meta {
+  margin: 0;
+}
+
+.community-description {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.community-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.community-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.community-locked p {
+  margin: 0;
+}
+
+.community-more {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 24px;
+}
+
+.group-member-row {
+  gap: 10px;
+}
+
+.group-member-row .card-row-body {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group-admin-badge {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: var(--badge-teal-bg);
+  color: var(--badge-teal-fg);
+}

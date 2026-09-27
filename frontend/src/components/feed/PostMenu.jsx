@@ -11,7 +11,9 @@ import { deletePost } from '../../services/postService';
 // second menu component, so there's exactly one "more options" surface per
 // post card. onEdit puts PostCard into inline edit mode; the edit form
 // itself lives there, not here, since it needs to replace the post body.
-function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, onDeleted, onEdit }) {
+// canModerate (B13): the viewer is an admin of the post's group, so they
+// may delete someone else's post there.
+function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, onDeleted, onEdit, canModerate = false }) {
   const { token, userId } = useAuth();
   const isOwner = post.user_id === userId;
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -44,8 +46,7 @@ function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, 
     }
   };
 
-  const items = isOwner
-    ? [
+  const ownerItems = [
         {
           key: 'visibility',
           label: visibility === 'followers' ? 'Make public' : 'Make visible to followers only',
@@ -66,8 +67,11 @@ function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, 
           danger: true,
           onSelect: () => setConfirmDeleteOpen(true)
         }
-      ]
-    : [
+      ];
+
+  // B13: the Public/Followers audience doesn't apply inside a group.
+  const ownerMenu = post.community_id ? ownerItems.filter((i) => i.key !== 'visibility') : ownerItems;
+  const otherMenu = [
         {
           key: 'report-post',
           label: 'Report post',
@@ -88,6 +92,16 @@ function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, 
           onSelect: () => setConfirmBlockOpen(true)
         }
       ];
+  if (canModerate) {
+    otherMenu.unshift({
+      key: 'moderate-delete',
+      label: 'Delete post (group admin)',
+      icon: Trash2,
+      danger: true,
+      onSelect: () => setConfirmDeleteOpen(true)
+    });
+  }
+  const items = isOwner ? ownerMenu : otherMenu;
 
   return (
     <>

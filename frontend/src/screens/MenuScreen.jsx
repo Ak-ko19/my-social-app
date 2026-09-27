@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bookmark,
+  UsersRound,
   ChevronLeft,
   ChevronRight,
   Search,
@@ -121,6 +122,16 @@ function MenuScreen() {
           <span className="menu-category-text">
             <span className="menu-category-title">Saved Posts</span>
             <span className="menu-category-subtitle">Posts you've bookmarked</span>
+          </span>
+          <ChevronRight size={18} className="menu-category-chevron" aria-hidden="true" />
+        </button>
+        <button type="button" className="menu-category-row" onClick={() => navigate('/groups')}>
+          <span className="menu-category-icon-badge" style={{ background: 'var(--badge-teal-bg)', color: 'var(--badge-teal-fg)' }}>
+            <UsersRound size={20} aria-hidden="true" />
+          </span>
+          <span className="menu-category-text">
+            <span className="menu-category-title">Groups</span>
+            <span className="menu-category-subtitle">Communities you've joined or can discover</span>
           </span>
           <ChevronRight size={18} className="menu-category-chevron" aria-hidden="true" />
         </button>

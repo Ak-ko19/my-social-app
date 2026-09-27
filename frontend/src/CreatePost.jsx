@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import api from './api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Globe, Users, X } from 'lucide-react';
 import { IconButton } from './components/ui';
 import MentionAutocomplete from './components/feed/MentionAutocomplete';
@@ -16,6 +16,10 @@ function CreatePost() {
   const [visibility, setVisibility] = useState('public'); // B5 audience
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  // B13: /create-post?communityId=N posts inside that group.
+  const [searchParams] = useSearchParams();
+  const communityId = searchParams.get('communityId');
+  const backTo = communityId ? `/groups/${communityId}` : '/';
   const textareaRef = useRef(null);
   const mention = useMentionAutocomplete();
 
@@ -82,7 +86,8 @@ function CreatePost() {
 
     const formData = new FormData();
     formData.append('content', content);
-    formData.append('visibility', visibility);
+    if (communityId) formData.append('communityId', communityId);
+    else formData.append('visibility', visibility);
     images.forEach((img) => formData.append('images', img.file));
 
     setSubmitting(true);
@@ -91,7 +96,7 @@ function CreatePost() {
       { headers: { Authorization: `Bearer ${token}` } }
     )
     .then(() => {
-      navigate('/');
+      navigate(backTo);
     })
     .catch((err) => {
       console.error(err);
@@ -103,8 +108,8 @@ function CreatePost() {
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Home" onClick={() => navigate('/')} />
-        <h1 className="screen-header-title">Create Post</h1>
+        <IconButton icon={ChevronLeft} aria-label={communityId ? 'Back to the group' : 'Back to Home'} onClick={() => navigate(backTo)} />
+        <h1 className="screen-header-title">{communityId ? 'Post in group' : 'Create Post'}</h1>
       </header>
       <form className="screen-body form-stack" onSubmit={handleSubmit}>
         <label className="form-field">
@@ -133,6 +138,7 @@ function CreatePost() {
             disabled={images.length >= MAX_IMAGES || submitting}
           />
         </label>
+        {!communityId && (
         <fieldset className="audience-picker">
           <legend className="form-label">Who can see this?</legend>
           <label className={visibility === 'public' ? 'audience-option is-selected' : 'audience-option'}>
@@ -144,6 +150,7 @@ function CreatePost() {
             <Users size={15} aria-hidden="true" /> Followers
           </label>
         </fieldset>
+        )}
         {images.length > 0 && (
           <ul className="image-picker-grid" aria-label="Selected images">
             {images.map((img, i) => (

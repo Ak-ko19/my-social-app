@@ -32,6 +32,10 @@ const CreateGroupScreen = lazy(() => import('./screens/CreateGroupScreen'));
 const GroupInfoScreen = lazy(() => import('./screens/GroupInfoScreen'));
 const NotificationSettingsScreen = lazy(() => import('./screens/NotificationSettingsScreen'));
 const AdminScreen = lazy(() => import('./screens/AdminScreen'));
+const GroupsScreen = lazy(() => import('./screens/GroupsScreen'));
+const CreateCommunityScreen = lazy(() => import('./screens/CreateCommunityScreen'));
+const CommunityScreen = lazy(() => import('./screens/CommunityScreen'));
+const ManageCommunityScreen = lazy(() => import('./screens/ManageCommunityScreen'));
 
 function App() {
   return (
@@ -148,6 +152,10 @@ function App() {
         <Route path="/explore" element={<PhoneShell><ExploreScreen /></PhoneShell>} />
         <Route path="/settings/notifications" element={<PhoneShell><NotificationSettingsScreen /></PhoneShell>} />
         <Route path="/admin" element={<PhoneShell><AdminScreen /></PhoneShell>} />
+        <Route path="/groups" element={<PhoneShell><GroupsScreen /></PhoneShell>} />
+        <Route path="/groups/new" element={<PhoneShell hideTabBar><CreateCommunityScreen /></PhoneShell>} />
+        <Route path="/groups/:id" element={<PhoneShell><CommunityScreen /></PhoneShell>} />
+        <Route path="/groups/:id/manage" element={<PhoneShell hideTabBar><ManageCommunityScreen /></PhoneShell>} />
       </Routes>
     </BrowserRouter>
   );

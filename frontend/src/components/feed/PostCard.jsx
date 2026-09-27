@@ -37,7 +37,7 @@ import './PostCard.css';
 // server event the way a like/bookmark is), so it's omitted from the stats
 // row but the action itself is real: Web Share API where available,
 // clipboard-copy fallback otherwise (see handleShare below).
-function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost }) {
+function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canModerate = false }) {
   const { token, userId, username } = useAuth();
   const like = useLikeToggle(
     post.id,
@@ -166,11 +166,14 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost }) {
           <div className="post-card-meta">
             <span>{formatRelativeTime(post.created_at)}</span>
             {post.sponsored && <span> · Sponsored</span>}
-            <span className="post-card-audience" title={visibility === 'followers' ? 'Followers only' : 'Public'}>
-              {' · '}
-              {visibility === 'followers' ? <Users size={12} aria-hidden="true" /> : <Globe size={12} aria-hidden="true" />}
-              <span className="feed-visually-hidden">{visibility === 'followers' ? 'Followers only' : 'Public'}</span>
-            </span>
+            {/* B13: group posts follow the group's privacy, not an audience. */}
+            {!post.community_id && (
+              <span className="post-card-audience" title={visibility === 'followers' ? 'Followers only' : 'Public'}>
+                {' · '}
+                {visibility === 'followers' ? <Users size={12} aria-hidden="true" /> : <Globe size={12} aria-hidden="true" />}
+                <span className="feed-visually-hidden">{visibility === 'followers' ? 'Followers only' : 'Public'}</span>
+              </span>
+            )}
           </div>
         </div>
         <PostMenu
@@ -180,6 +183,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost }) {
           onBlocked={onRemovePostsByUser}
           onDeleted={onRemovePost}
           onEdit={startEditing}
+          canModerate={canModerate}
         />
       </header>
       {visibilityError && (
