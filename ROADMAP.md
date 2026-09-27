@@ -1207,6 +1207,30 @@ a language toggle in Settings persists the choice.
   native speaker should skim `my.json` before launch (listed under NEEDS
   OWNER as optional).
 
+### B16 — Arabic language (RTL)
+**Status:** ⬜ NOT CHECKED
+**Order (owner, 2026-09-27):** do this after C3 is finished, before
+continuing Section C (C4).
+**Scope:**
+- Add Arabic to the existing i18n system alongside English and Myanmar,
+  with every key translated, the same as the other languages.
+- Full right-to-left support when Arabic is selected:
+  - `dir="rtl"` and `lang="ar"` on `<html>`.
+  - Mirrored layouts: menus, drawer, chat bubbles, and directional icons
+    such as back arrows.
+  - Numbers and dates stay readable.
+- Use CSS logical properties (`margin-inline-start` etc.) instead of
+  left/right where needed.
+- Tests:
+  - All 3 languages have every key (extend `npm run check:i18n`).
+  - RTL is applied when Arabic is chosen.
+- English and Myanmar must look exactly as before (A3 matrix unchanged).
+- The Arabic translations need a native-speaker review later (see NEEDS
+  OWNER).
+**Done when:** a user can switch EN / MY / AR in Settings and the whole
+app displays correctly in each.
+**Notes:** _(none yet)_
+
 ---
 
 ## SECTION C — Investor prep
@@ -1286,10 +1310,28 @@ confirmed present but non-functional as of 2026-09-23).
   email before public launch. See NEEDS OWNER.
 
 ### C3 — Landing page explaining the app
-**Status:** ⬜ NOT CHECKED
+**Status:** 🟡 PARTIAL (2026-09-27: built and committed in e0b4e17; final regression run not completed)
 **Done when:** a public marketing/explainer page exists, separate from
 the logged-in app shell, for someone who isn't a user yet.
-**Notes:** _(none yet)_
+**Notes:**
+- **Done:** `/welcome` (`screens/LandingScreen.jsx` and `.css`).
+  - It is full width and outside PhoneShell.
+  - Hero with sign-up/log-in CTAs, or "Open the app" when logged in.
+  - Six feature cards, a "Made for Myanmar" section, and a footer linking
+    Terms and Privacy.
+  - Bilingual (`landing.*`), with an English/မြန်မာ switch and the theme
+    toggle.
+  - Logged-out `/` now redirects to `/welcome` instead of `/login`
+    (session expiry and bans still go to `/login` via `forceLogout`).
+  - The C3 browser test passed 20/20 after the layout fixes: redirect,
+    CTAs, language switch, logged-in variant, and no horizontal scroll at
+    375/768/1280px in both themes and both languages.
+  - Lint, build and check:i18n pass.
+- **Remaining:** the final regression run was stopped by Claude Code
+  because the machine ran critically low on memory, and it has not been
+  rerun. That run is: A3 matrix in English and Burmese with `/welcome`
+  added, B12 (ban → `/login`), and the A2 walkthrough. Rerun it, then
+  mark ✅ and add the guide entry.
 
 ### C4 — Final end-to-end audit of every feature + report
 **Status:** ⬜ NOT CHECKED
@@ -1306,6 +1348,8 @@ running app in one pass, with a written pass/fail report per item.
   `frontend/src/i18n/locales/en.json` and `my.json` (`legal.*`), add a
   real contact email, then drop the "Draft" note (`legal.draftNote` in
   `LegalScreen.jsx`).
+- B16: have a native Arabic speaker review the Arabic translations
+  (`frontend/src/i18n/locales/ar.json`) before launch.
 - (Optional, B15) Have a native Myanmar speaker skim
   `frontend/src/i18n/locales/my.json` for wording before public launch.
 
