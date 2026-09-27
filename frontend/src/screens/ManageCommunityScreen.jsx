@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Globe, Lock } from 'lucide-react';
-import { IconButton } from '../components/ui';
-import Avatar from '../components/common/Avatar';
+import { Avatar, IconButton } from '../components/ui';
+import { resolveImageUrl } from '../api';
 import { useAuth } from '../hooks/useAuth';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import {
@@ -141,7 +141,7 @@ function ManageCommunityScreen() {
           <ul className="card-list">
             {requests.map((r) => (
               <li key={r.id} className="card-row group-member-row">
-                <Avatar src={r.avatar_url} size={36} alt="" />
+                <Avatar src={resolveImageUrl(r.avatar_url)} initials={r.username.slice(0, 2).toUpperCase()} size={36} alt="" />
                 <span className="card-row-body">{r.username}</span>
                 <button type="button" className="btn btn-primary btn-sm" onClick={() => act(approveJoinRequest(id, r.id, token))}>Approve</button>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => act(removeCommunityMember(id, r.id, token))} aria-label={`Deny ${r.username}`}>Deny</button>
@@ -154,7 +154,7 @@ function ManageCommunityScreen() {
         <ul className="card-list">
           {members.map((m) => (
             <li key={m.id} className="card-row group-member-row">
-              <Avatar src={m.avatar_url} size={36} alt="" />
+              <Avatar src={resolveImageUrl(m.avatar_url)} initials={m.username.slice(0, 2).toUpperCase()} size={36} alt="" />
               <span className="card-row-body">
                 {m.id === userId ? 'You' : m.username}
                 {m.role === 'admin' && <span className="group-admin-badge">Admin</span>}

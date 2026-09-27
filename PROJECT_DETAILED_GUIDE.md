@@ -861,6 +861,39 @@ built and how to re-verify it.
 - **Deploy:** migrations through 025, then `make-admin.js` for your
   account.
 
+### B13 — Groups (communities) ✅
+- **Naming:** the DB and API say `communities`, to avoid clashing with
+  B10 group *chats*. The UI says "Groups".
+- **Schema (migration 026):**
+  - `communities` has a `privacy` of public or private.
+  - `community_members` has a `role` of admin or member and a
+    `status` of member or pending.
+  - `posts.community_id` is NULL for normal posts.
+- **API:** `controllers/communityController.js` and
+  `routes/communityRoutes.js`:
+  - `GET/POST /communities`, `GET/PATCH /communities/:id`,
+    `POST /communities/:id/join`.
+  - `DELETE /communities/:id/members/:userId` (leave, remove, deny or
+    cancel).
+  - `PUT .../members/:userId/role`, and `GET .../requests` with
+    `POST .../requests/:userId/approve`.
+  - `GET .../posts` and `GET .../members`.
+  - Group posts are created by `POST /posts` with `communityId`.
+- **Visibility:**
+  - `services/postVisibilityService.getVisiblePost` is the single
+    per-post check, including group membership.
+  - Listings use `communityVisibleSql()`, or simply
+    `community_id IS NULL` for global feeds. **Any new post listing must
+    exclude or filter group posts.**
+- **Frontend:**
+  - `services/communityService.js`.
+  - `screens/GroupsScreen.jsx`, `CreateCommunityScreen.jsx`,
+    `CommunityScreen.jsx` and `ManageCommunityScreen.jsx`.
+  - A Menu row.
+  - `CreatePost` `?communityId=`.
+  - The `PostMenu` `canModerate` prop.
+- **Deploy:** migration 026 after 025.
+
 ---
 
 ## How to use this file

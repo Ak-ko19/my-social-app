@@ -1048,10 +1048,51 @@ remove content, ban).
   temporary (timed) bans, and no bulk actions.
 
 ### B13 — Groups (create, join, post inside, admins)
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-27)
 **Done when:** `groups`/`group_members` tables exist, posts can be scoped
 to a group, group-admin permissions enforced.
-**Notes:** _(none yet)_
+**Notes:**
+- **Naming (autonomous choice):** the tables are `communities` and
+  `community_members`, because "group" already means B10 group chats
+  (`conversations.is_group`). The UI still calls them "Groups".
+- **Schema (migration 026):** `communities` (name, description, privacy
+  public|private, created_by) and `community_members` (role admin|member,
+  status member|pending). `posts.community_id` is nullable, with
+  `ON DELETE CASCADE` and a partial index.
+- **Rules:**
+  - Public groups can be read by anyone and joined instantly.
+  - Private groups are listed and searchable, but only members see
+    posts. Joining creates a request that an admin approves.
+  - Switching a group to public admits everyone pending.
+  - Only members can post. Group admins can delete any post in the group
+    and manage members and roles.
+  - If the last admin leaves, the oldest member is promoted. If the last
+    member leaves, the group is deleted.
+  - Group posts never appear in Home, profile, search, hashtag, explore
+    or trending listings. Bookmarks and `/posts/:id` go through
+    `postVisibilityService`, so saved group posts stay private to members.
+  - The Public/Followers audience is hidden for group posts.
+- **Frontend:**
+  - Menu → Groups (`/groups`: your groups, discover, search) and
+    `/groups/new`.
+  - `/groups/:id`: the group feed, Join/Request/Leave, and "Write a
+    post", which opens the composer with `?communityId`.
+  - `/groups/:id/manage`: details, requests, members and roles.
+  - The PostCard menu shows "Delete post (group admin)" to group admins.
+- **Verified:**
+  - Backend 217/217 (14 new community tests).
+  - B13 browser test 22/22, covering create, post, discover, request,
+    approve, admin delete, promote, make public, leave, search, 404 and
+    375px dark layouts.
+  - A3 matrix 174/174, with the 4 group routes added.
+  - Every earlier browser suite (A2, B1–B12) is green.
+  - Migration 026 up/down/up verified on a throwaway DB.
+- **Fix found by A3:** the `--badge-*` colors aren't dark-adapted, so
+  large group icons now use `--color-subtle-bg` / `--color-accent-2`.
+- **Deploy order (owner):** migration 026 after 025, before this backend.
+  See NEEDS OWNER.
+- **Not done:** group cover images, group notifications (join request or
+  new post), invite links, and pinned posts.
 
 ### B14 — Pages (business/creator pages, follow pages)
 **Status:** ⬜ NOT CHECKED
@@ -1133,7 +1174,7 @@ running app in one pass, with a written pass/fail report per item.
   (backfills existing single-image posts).
 - B3 migration 018 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/018_add_stories.up.sql`.
-  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → 024 → 025.
+  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → 024 → 025 → 026.
 - B4 migration 019 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/019_add_comment_replies_likes.up.sql`.
 - B5 migration 020 on production, **before deploying the new backend**:
@@ -1149,3 +1190,5 @@ running app in one pass, with a written pass/fail report per item.
   Then make yourself an admin (no UI can do this, by design):
   `node scripts/make-admin.js <your username>` -- Settings then shows
   Admin → Moderation.
+- B13 migration 026 on production, before deploying the new backend:
+  `node scripts/run-migration.js migrations/026_add_communities.up.sql`.

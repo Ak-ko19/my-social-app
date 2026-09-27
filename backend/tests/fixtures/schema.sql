@@ -73,6 +73,7 @@ CREATE TABLE community_members (
 );
 
 ALTER TABLE posts ADD COLUMN community_id integer REFERENCES communities(id) ON DELETE CASCADE;
+CREATE INDEX idx_posts_community_created ON posts (community_id, created_at DESC) WHERE community_id IS NOT NULL;
 
 CREATE TABLE hashtags (
   id SERIAL PRIMARY KEY,
