@@ -2,12 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { IconButton } from '../components/ui';
+import { useTranslation } from 'react-i18next';
+import { serverErrorText } from '../utils/serverError';
 import { verifyEmail } from '../services/accountService';
 import { useAuth, setEmailVerified } from '../hooks/useAuth';
 import './VerifyEmailScreen.css';
 
 function VerifyEmailScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { token } = useParams();
   const { userId } = useAuth();
   const [status, setStatus] = useState('pending'); // 'pending' | 'success' | 'error'
@@ -36,24 +39,24 @@ function VerifyEmailScreen() {
       .catch((err) => {
         console.error(err);
         setStatus('error');
-        setMessage(err.response?.data || 'Verification failed');
+        setMessage(serverErrorText(err, 'verify.failed'));
       });
   }, [token, userId]);
 
   return (
     <div className="screen-enter">
       <header className="verify-email-header">
-        <IconButton icon={ChevronLeft} aria-label="Back" onClick={() => navigate('/')} />
-        <h1 className="verify-email-header-title">Verify Email</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('verify.back')} onClick={() => navigate('/')} />
+        <h1 className="verify-email-header-title">{t('verify.title')}</h1>
       </header>
 
       <div className="verify-email-body">
-        {status === 'pending' && <p>Verifying your email…</p>}
+        {status === 'pending' && <p>{t('verify.verifying')}</p>}
         {status === 'success' && (
           <>
-            <p className="verify-email-success">Your email has been verified!</p>
+            <p className="verify-email-success">{t('verify.success')}</p>
             <button type="button" className="verify-email-btn" onClick={() => navigate('/')}>
-              Go to Home
+              {t('verify.goHome')}
             </button>
           </>
         )}
@@ -61,7 +64,7 @@ function VerifyEmailScreen() {
           <>
             <p className="verify-email-error">{message}</p>
             <button type="button" className="verify-email-btn" onClick={() => navigate('/')}>
-              Go to Home
+              {t('verify.goHome')}
             </button>
           </>
         )}

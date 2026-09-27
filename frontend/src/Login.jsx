@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import api from './api';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from './components/layout/Logo';
+import { useTranslation } from 'react-i18next';
+import { serverErrorText } from './utils/serverError';
 import { notifyAuthChange } from './hooks/useAuth';
 
 function Login() {
@@ -9,6 +11,7 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Already-logged-in users shouldn't land on the login form -- send them
   // straight to the real Home screen instead. A plain localStorage read
@@ -25,7 +28,7 @@ function Login() {
     setError('');
 
     if (!email.trim() || !password) {
-      setError('Email and password are required');
+      setError(t('auth.emailPasswordRequired'));
       return;
     }
 
@@ -46,7 +49,7 @@ function Login() {
     })
     .catch((err) => {
       console.error(err);
-      setError(err.response?.data || 'Login failed. Please check your email and password.');
+      setError(serverErrorText(err, 'auth.loginFailed'));
     });
   };
 
@@ -54,23 +57,23 @@ function Login() {
     <div className="auth-screen screen-enter">
       <div className="auth-logo"><Logo /></div>
       <div className="auth-card">
-        <h1 className="auth-title">Welcome back</h1>
-        <p className="auth-subtitle">Log in to continue.</p>
+        <h1 className="auth-title">{t('auth.welcomeBack')}</h1>
+        <p className="auth-subtitle">{t('auth.loginSubtitle')}</p>
         <form className="form-stack" onSubmit={handleSubmit} noValidate>
           <label className="form-field">
-            <span className="form-label">Email</span>
+            <span className="form-label">{t('auth.email')}</span>
             <input className="form-input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </label>
           <label className="form-field">
-            <span className="form-label">Password</span>
+            <span className="form-label">{t('auth.password')}</span>
             <input className="form-input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </label>
-          <Link to="/forgot-password" className="screen-link auth-inline-link">Forgot password?</Link>
+          <Link to="/forgot-password" className="screen-link auth-inline-link">{t('auth.forgotPasswordLink')}</Link>
           {error && <p className="form-error" role="alert">{error}</p>}
-          <button type="submit" className="btn btn-primary btn-block">Log in</button>
+          <button type="submit" className="btn btn-primary btn-block">{t('auth.logIn')}</button>
         </form>
       </div>
-      <p className="auth-footer">Don't have an account? <Link to="/signup" className="screen-link">Sign up</Link></p>
+      <p className="auth-footer">{t('auth.noAccount')} <Link to="/signup" className="screen-link">{t('auth.signUp')}</Link></p>
     </div>
   );
 }

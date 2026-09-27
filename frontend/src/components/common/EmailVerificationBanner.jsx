@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
+import { serverErrorText } from '../../utils/serverError';
 import { resendVerification } from '../../services/accountService';
 import './EmailVerificationBanner.css';
 
@@ -10,6 +12,7 @@ import './EmailVerificationBanner.css';
 // only a confirmed `false` does.
 function EmailVerificationBanner() {
   const { token, emailVerified } = useAuth();
+  const { t } = useTranslation();
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +26,7 @@ function EmailVerificationBanner() {
       .then(() => setSent(true))
       .catch((err) => {
         console.error(err);
-        setError(err.response?.data || 'Failed to resend email');
+        setError(serverErrorText(err, 'verify.resendFailed'));
       })
       .finally(() => setPending(false));
   };
@@ -31,11 +34,11 @@ function EmailVerificationBanner() {
   return (
     <div className="email-verify-banner" role="status">
       <span>
-        {sent ? 'Verification email sent — check your inbox.' : "Please verify your email address."}
+        {sent ? t('verify.bannerSent') : t('verify.bannerPrompt')}
       </span>
       {!sent && (
         <button type="button" onClick={handleResend} disabled={pending}>
-          {pending ? 'Sending…' : 'Resend email'}
+          {pending ? t('verify.sending') : t('verify.resend')}
         </button>
       )}
       {error && <span className="email-verify-banner-error">{error}</span>}

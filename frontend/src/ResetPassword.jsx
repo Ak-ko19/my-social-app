@@ -2,6 +2,8 @@ import { useState } from 'react';
 import api from './api';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Logo from './components/layout/Logo';
+import { useTranslation } from 'react-i18next';
+import { serverErrorText } from './utils/serverError';
 
 function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -9,17 +11,18 @@ function ResetPassword() {
   const [success, setSuccess] = useState(false);
   const { token } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
 
     if (!password) {
-      setError('New password is required');
+      setError(t('auth.newPasswordRequired'));
       return;
     }
     if (password.length < 8 || password.length > 72) {
-      setError('Password must be between 8 and 72 characters long');
+      setError(t('auth.passwordLength'));
       return;
     }
 
@@ -32,7 +35,7 @@ function ResetPassword() {
     })
     .catch((err) => {
       console.error(err);
-      setError(err.response?.data || 'Failed to reset password. Please try again.');
+      setError(serverErrorText(err, 'auth.resetFailed'));
     });
   };
 
@@ -40,19 +43,19 @@ function ResetPassword() {
     <div className="auth-screen screen-enter">
       <div className="auth-logo"><Logo /></div>
       <div className="auth-card">
-        <h1 className="auth-title">Reset password</h1>
-        <p className="auth-subtitle">Choose a new password (8–72 characters).</p>
+        <h1 className="auth-title">{t('auth.resetTitle')}</h1>
+        <p className="auth-subtitle">{t('auth.resetSubtitle')}</p>
         <form className="form-stack" onSubmit={handleSubmit} noValidate>
           <label className="form-field">
-            <span className="form-label">New password</span>
+            <span className="form-label">{t('auth.newPassword')}</span>
             <input className="form-input" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </label>
           {error && <p className="form-error" role="alert">{error}</p>}
-          {success && <p className="form-success" role="status">Password reset successfully! Redirecting to login...</p>}
-          <button type="submit" className="btn btn-primary btn-block">Reset password</button>
+          {success && <p className="form-success" role="status">{t('auth.resetSuccess')}</p>}
+          <button type="submit" className="btn btn-primary btn-block">{t('auth.resetButton')}</button>
         </form>
       </div>
-      <p className="auth-footer"><Link to="/login" className="screen-link">Back to login</Link></p>
+      <p className="auth-footer"><Link to="/login" className="screen-link">{t('auth.backToLogin')}</Link></p>
     </div>
   );
 }
