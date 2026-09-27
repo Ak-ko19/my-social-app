@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bookmark, Grid3x3, Image as ImageIcon, AtSign, Lock } from 'lucide-react';
 import clsx from 'clsx';
+import { arrowStep } from '../../utils/direction';
 import { useTranslation } from 'react-i18next';
 import PostCard from '../feed/PostCard';
 import PostCardSkeleton from '../feed/PostCardSkeleton';
@@ -40,8 +41,8 @@ function ProfileTabs({ userId, username, isOwn, token }) {
 
   const handleKeyDown = (e, index) => {
     let next = null;
-    if (e.key === 'ArrowRight') next = (index + 1) % tabs.length;
-    else if (e.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+    const step = arrowStep(e.key);
+    if (step) next = (index + step + tabs.length) % tabs.length;
     else if (e.key === 'Home') next = 0;
     else if (e.key === 'End') next = tabs.length - 1;
     if (next !== null) {

@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { ThumbsUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { REACTIONS, REACTION_BY_KEY } from '../../utils/reactions';
+import { arrowStep } from '../../utils/direction';
 
 const LONG_PRESS_MS = 450;
 const HOVER_OPEN_MS = 450;
@@ -105,9 +106,9 @@ function ReactionButton({ like }) {
     if (e.key === 'Escape') {
       e.preventDefault();
       closePicker(true);
-    } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    } else if (arrowStep(e.key)) {
       e.preventDefault();
-      const step = e.key === 'ArrowRight' ? 1 : -1;
+      const step = arrowStep(e.key);
       optionRefs.current[(index + step + REACTIONS.length) % REACTIONS.length]?.focus();
     }
   };

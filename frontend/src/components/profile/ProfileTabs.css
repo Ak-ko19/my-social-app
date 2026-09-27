@@ -3,7 +3,7 @@
 
 .profile-tabs {
   margin-top: var(--space-4);
-  text-align: left; /* #root centers text app-wide (index.css) */
+  text-align: start; /* #root centers text app-wide (index.css) */
 }
 
 .profile-tablist {
@@ -112,7 +112,7 @@
 .profile-photo-multi {
   position: absolute;
   top: 4px;
-  right: 4px;
+  inset-inline-end: 4px;
   min-width: 18px;
   padding: 1px 5px;
   border-radius: var(--radius-pill);

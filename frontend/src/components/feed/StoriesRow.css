@@ -64,7 +64,7 @@
 .stories-add-btn {
   position: absolute;
   top: 38px;
-  left: 42px;
+  inset-inline-start: 42px;
   width: 22px;
   height: 22px;
   display: flex;

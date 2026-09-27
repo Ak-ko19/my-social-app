@@ -388,7 +388,7 @@ textarea.form-input {
 .auth-card,
 .screen-body,
 .conversation-screen {
-  text-align: left;
+  text-align: start;
 }
 
 .auth-title,
@@ -427,7 +427,7 @@ textarea.form-input {
 .image-picker-remove {
   position: absolute;
   top: var(--space-1);
-  right: var(--space-1);
+  inset-inline-end: var(--space-1);
   width: 28px;
   height: 28px;
   display: inline-flex;
@@ -571,7 +571,7 @@ textarea.form-input {
 }
 
 .group-admin-badge {
-  margin-left: var(--space-2);
+  margin-inline-start: var(--space-2);
   padding: 1px 8px;
   border-radius: var(--radius-pill);
   background: var(--badge-indigo-bg);

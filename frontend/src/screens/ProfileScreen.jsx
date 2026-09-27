@@ -171,7 +171,7 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
       <div className="profile-screen-body">
         <Avatar size={84} src={resolveImageUrl(profile.avatar_url)} initials={initials} alt="" />
         <h2 className="profile-screen-username">{profile.username}</h2>
-        {profile.bio && <p className="profile-screen-bio">{profile.bio}</p>}
+        {profile.bio && <p className="profile-screen-bio" dir="auto">{profile.bio}</p>}
 
         {counts && (
           <div className="profile-screen-counts">

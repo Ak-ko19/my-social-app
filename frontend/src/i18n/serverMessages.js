@@ -87,12 +87,95 @@ const MY = {
   'Not found': 'မတွေ့ပါ'
 };
 
+// B16: the same messages in Arabic.
+const AR = {
+  'Email and password are required': 'البريد الإلكتروني وكلمة المرور مطلوبان',
+  'Email is required': 'البريد الإلكتروني مطلوب',
+  'Invalid email or password': 'البريد الإلكتروني أو كلمة المرور غير صحيحة',
+  'Invalid email format': 'صيغة البريد الإلكتروني غير صحيحة',
+  'Please enter a valid email address': 'يرجى إدخال بريد إلكتروني صالح',
+  'Email or username already exists': 'البريد الإلكتروني أو اسم المستخدم مستخدم بالفعل',
+  'Username, email, and password are all required': 'اسم المستخدم والبريد الإلكتروني وكلمة المرور كلها مطلوبة',
+  'Username and email are required': 'اسم المستخدم والبريد الإلكتروني مطلوبان',
+  'Password must be between 8 and 72 characters long': 'يجب أن تتكون كلمة المرور من 8 إلى 72 حرفًا',
+  'New password is required': 'كلمة المرور الجديدة مطلوبة',
+  'Current and new password are required': 'كلمة المرور الحالية والجديدة مطلوبتان',
+  'Current password is incorrect': 'كلمة المرور الحالية غير صحيحة',
+  'Incorrect password': 'كلمة المرور غير صحيحة',
+  'Password changed successfully': 'تم تغيير كلمة المرور بنجاح',
+  'Password reset successfully': 'تمت إعادة تعيين كلمة المرور بنجاح',
+  'Password is required to deactivate your account': 'كلمة المرور مطلوبة لإلغاء تفعيل حسابك',
+  'Password is required to delete your account': 'كلمة المرور مطلوبة لحذف حسابك',
+  'If that email exists, a password reset link has been sent': 'إذا كان هذا البريد الإلكتروني موجودًا، فقد أُرسل رابط لإعادة تعيين كلمة المرور',
+  'Link expired or invalid': 'الرابط منتهي الصلاحية أو غير صالح',
+  'Invalid or expired token': 'الرابط منتهي الصلاحية أو غير صالح',
+  'Verification email sent': 'تم إرسال رسالة التأكيد',
+  'Your email is already verified': 'بريدك الإلكتروني مؤكد بالفعل',
+  'Email verified successfully': 'تم تأكيد البريد الإلكتروني بنجاح',
+  'This account has been banned': 'تم حظر هذا الحساب',
+  'This account is private': 'هذا الحساب خاص',
+  'User not found': 'المستخدم غير موجود',
+  'Too many login attempts. Please try again in 15 minutes.': 'محاولات تسجيل دخول كثيرة جدًا. يرجى المحاولة بعد 15 دقيقة.',
+  'Too many attempts. Please try again in 15 minutes.': 'محاولات كثيرة جدًا. يرجى المحاولة بعد 15 دقيقة.',
+  'Too many password reset requests. Please try again in 15 minutes.': 'طلبات إعادة تعيين كلمة المرور كثيرة جدًا. يرجى المحاولة بعد 15 دقيقة.',
+  'Too many verification emails requested. Please try again in 15 minutes.': 'طلبات رسائل التأكيد كثيرة جدًا. يرجى المحاولة بعد 15 دقيقة.',
+  'Too many accounts created from this network. Please try again later.': 'تم إنشاء حسابات كثيرة جدًا من هذه الشبكة. يرجى المحاولة لاحقًا.',
+  'Too many follow requests. Please try again later.': 'طلبات متابعة كثيرة جدًا. يرجى المحاولة لاحقًا.',
+  'Too many reports submitted. Please try again later.': 'تم إرسال بلاغات كثيرة جدًا. يرجى المحاولة لاحقًا.',
+  'Too many requests. Please try again later.': 'طلبات كثيرة جدًا. يرجى المحاولة لاحقًا.',
+  'Post content cannot be empty': 'لا يمكن أن يكون المنشور فارغًا',
+  'Comment cannot be empty': 'لا يمكن أن يكون التعليق فارغًا',
+  'Post not found': 'المنشور غير موجود',
+  'Comment not found': 'التعليق غير موجود',
+  'Story not found': 'القصة غير موجودة',
+  'A story needs an image': 'تحتاج القصة إلى صورة',
+  'You can only edit your own posts': 'يمكنك تعديل منشوراتك فقط',
+  'You can only delete your own posts': 'يمكنك حذف منشوراتك فقط',
+  'You can only edit your own comments': 'يمكنك تعديل تعليقاتك فقط',
+  'You can only delete your own comments': 'يمكنك حذف تعليقاتك فقط',
+  'You cannot follow yourself': 'لا يمكنك متابعة نفسك',
+  'You cannot follow this user': 'لا يمكنك متابعة هذا المستخدم',
+  'You cannot block yourself': 'لا يمكنك حظر نفسك',
+  'You cannot message this user': 'لا يمكنك مراسلة هذا المستخدم',
+  'You cannot report yourself': 'لا يمكنك الإبلاغ عن نفسك',
+  'You cannot report your own post': 'لا يمكنك الإبلاغ عن منشورك',
+  'You cannot start a conversation with yourself': 'لا يمكنك بدء محادثة مع نفسك',
+  'You are not a participant in this conversation': 'أنت لست مشاركًا في هذه المحادثة',
+  'Search query is required': 'يرجى إدخال كلمة للبحث',
+  'Add at least one other person': 'أضف شخصًا آخر على الأقل',
+  'Choose at least one person to add': 'اختر شخصًا واحدًا على الأقل لإضافته',
+  'Only group admins can add people': 'يمكن لمشرفي المجموعة فقط إضافة أشخاص',
+  'Only group admins can remove people': 'يمكن لمشرفي المجموعة فقط إزالة أشخاص',
+  'Only group admins can rename the group': 'يمكن لمشرفي المجموعة فقط إعادة تسميتها',
+  'A group needs a name': 'تحتاج المجموعة إلى اسم',
+  'Group name must be 100 characters or fewer': 'يجب ألا يزيد اسم المجموعة عن 100 حرف',
+  'Description must be 1000 characters or fewer': 'يجب ألا يزيد الوصف عن 1000 حرف',
+  'Group not found': 'المجموعة غير موجودة',
+  'Join this group to post in it': 'انضم إلى هذه المجموعة للنشر فيها',
+  'Join this group to see its members': 'انضم إلى هذه المجموعة لرؤية أعضائها',
+  'This group is private. Join to see its posts.': 'هذه المجموعة خاصة. انضم لرؤية منشوراتها.',
+  'Only group admins can do that': 'يمكن لمشرفي المجموعة فقط القيام بذلك',
+  'That person is not in this group': 'هذا الشخص ليس في هذه المجموعة',
+  'A page needs a name': 'تحتاج الصفحة إلى اسم',
+  'Page name must be 100 characters or fewer': 'يجب ألا يزيد اسم الصفحة عن 100 حرف',
+  'Page not found': 'الصفحة غير موجودة',
+  'Only the page owner can do that': 'يمكن لمالك الصفحة فقط القيام بذلك',
+  'Only the page owner can post as this page': 'يمكن لمالك الصفحة فقط النشر باسمها',
+  'Server error': 'حدث خطأ في الخادم',
+  'Something went wrong. Please try again later.': 'حدث خطأ ما. يرجى المحاولة لاحقًا.',
+  'Not found': 'غير موجود'
+};
+
 // Every controller's 500 fallback reads "<Action> failed. Please try again later."
-const MY_PATTERNS = [[/ failed\. Please try again later\.$/, 'လုပ်ဆောင်မှု မအောင်မြင်ပါ။ နောက်မှ ထပ်စမ်းကြည့်ပါ။']];
+const FAILED = / failed\. Please try again later\.$/;
+const TABLES = {
+  my: { exact: MY, failed: 'လုပ်ဆောင်မှု မအောင်မြင်ပါ။ နောက်မှ ထပ်စမ်းကြည့်ပါ။' },
+  ar: { exact: AR, failed: 'فشلت العملية. يرجى المحاولة لاحقًا.' }
+};
 
 export function translateServerText(text, language) {
-  if (language !== 'my' || typeof text !== 'string') return text;
-  if (MY[text]) return MY[text];
-  const pattern = MY_PATTERNS.find(([re]) => re.test(text));
-  return pattern ? pattern[1] : text;
+  const table = TABLES[language];
+  if (!table || typeof text !== 'string') return text;
+  if (table.exact[text]) return table.exact[text];
+  return FAILED.test(text) ? table.failed : text;
 }

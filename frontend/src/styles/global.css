@@ -13,3 +13,35 @@ body {
   font-family: var(--font-sans);
   color: var(--color-text);
 }
+
+/* ---------- B16: right-to-left (Arabic) ----------
+   Layout mirrors on its own (logical properties + dir="rtl" on <html>);
+   these are the few things that don't. */
+
+/* Icons that point somewhere (back, forward, reply, send, log out). */
+[dir='rtl'] :is(
+  .lucide-chevron-left,
+  .lucide-chevron-right,
+  .lucide-arrow-left,
+  .lucide-arrow-right,
+  .lucide-corner-up-left,
+  .lucide-log-out,
+  .lucide-send
+) {
+  transform: scaleX(-1);
+}
+
+/* Switches: "on" slides the thumb toward the end, which is left in RTL. */
+[dir='rtl'] .theme-switch[aria-checked='true'] .theme-switch-thumb {
+  transform: translateX(-20px);
+}
+
+/* Story progress fills from the start edge. */
+[dir='rtl'] .story-viewer-segment-fill {
+  transform-origin: right center;
+}
+
+/* Arabic script needs a little more line height than Latin. */
+:lang(ar) body {
+  line-height: 1.6;
+}

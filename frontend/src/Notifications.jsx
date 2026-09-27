@@ -123,7 +123,7 @@ function Notifications() {
                 />
                 <div className="card-row-body">
                   <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username }} components={{ b: <strong /> }} />
-                  {n.post_content && <p className="card-row-quote">“{n.post_content}”</p>}
+                  {n.post_content && <p className="card-row-quote" dir="auto">“{n.post_content}”</p>}
                   <span className="card-row-meta">{formatDate(n.created_at)}</span>
                   {!n.is_read && (
                     <div className="card-row-actions">

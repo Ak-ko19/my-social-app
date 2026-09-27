@@ -4,7 +4,7 @@
 
 .post-card {
   /* #root (index.css) centers text app-wide; a post reads left-aligned. */
-  text-align: left;
+  text-align: start;
   background: var(--color-surface);
   padding: var(--space-4);
   margin-bottom: var(--space-2);
@@ -157,7 +157,7 @@
 
 .post-card-link-preview-cta {
   position: absolute;
-  right: var(--space-3);
+  inset-inline-end: var(--space-3);
   bottom: var(--space-3);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-pill);
@@ -336,7 +336,7 @@
 .reaction-picker {
   position: absolute;
   bottom: calc(100% + var(--space-1));
-  left: 0;
+  inset-inline-start: 0;
   z-index: 20;
   display: flex;
   gap: 2px;
@@ -433,7 +433,7 @@
 .media-carousel-counter {
   position: absolute;
   top: var(--space-2);
-  right: var(--space-2);
+  inset-inline-end: var(--space-2);
   padding: 2px var(--space-2);
   border-radius: var(--radius-pill);
   background: rgba(15, 16, 20, 0.65);
@@ -462,11 +462,11 @@
 }
 
 .media-carousel-prev {
-  left: var(--space-2);
+  inset-inline-start: var(--space-2);
 }
 
 .media-carousel-next {
-  right: var(--space-2);
+  inset-inline-end: var(--space-2);
 }
 
 .media-carousel-nav:focus-visible {
@@ -484,8 +484,8 @@
 .media-carousel-dots {
   position: absolute;
   bottom: var(--space-2);
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   display: flex;
   justify-content: center;
   gap: 5px;

@@ -38,8 +38,8 @@
 .story-viewer-progress {
   position: absolute;
   top: var(--space-2);
-  left: var(--space-2);
-  right: var(--space-2);
+  inset-inline-start: var(--space-2);
+  inset-inline-end: var(--space-2);
   z-index: 3;
   display: flex;
   gap: 4px;
@@ -89,8 +89,8 @@
 .story-viewer-header {
   position: absolute;
   top: calc(var(--space-2) + 10px);
-  left: var(--space-3);
-  right: var(--space-2);
+  inset-inline-start: var(--space-3);
+  inset-inline-end: var(--space-2);
   z-index: 3;
   display: flex;
   align-items: center;
@@ -152,12 +152,12 @@
 }
 
 .story-viewer-tap-prev {
-  left: 0;
+  inset-inline-start: 0;
   width: 33%;
 }
 
 .story-viewer-tap-next {
-  right: 0;
+  inset-inline-end: 0;
   width: 67%;
 }
 

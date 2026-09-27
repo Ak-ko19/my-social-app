@@ -30,7 +30,7 @@ function SearchUserResult({ user, token, onMessage }) {
       <Avatar size={40} src={resolveImageUrl(user.avatar_url)} initials={(user.username || '?').slice(0, 2).toUpperCase()} alt="" />
       <div className="card-row-body">
         <Link to={`/profile/${user.id}`} className="screen-link">{user.username}</Link>
-        {user.bio && <p className="card-row-quote">{user.bio}</p>}
+        {user.bio && <p className="card-row-quote" dir="auto">{user.bio}</p>}
         {token && (
           <div className="card-row-actions">
             <FollowButton follow={follow} />
@@ -164,7 +164,7 @@ function Search() {
                       <Link to={`/profile/${p.user_id}`} className="screen-link">{p.username}</Link>
                     )}
                     <p className="search-post-content">
-                      <Link to={`/posts/${p.id}`} className="search-post-link">{p.content}</Link>
+                      <Link to={`/posts/${p.id}`} className="search-post-link" dir="auto">{p.content}</Link>
                     </p>
                     {p.image_url && <img className="image-preview" src={resolveImageUrl(p.image_url)} alt={t('search.attachment')} />}
                     <span className="card-row-meta">{formatDate(p.created_at)}</span>

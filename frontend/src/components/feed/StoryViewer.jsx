@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Trash2, X } from 'lucide-react';
 import clsx from 'clsx';
+import { arrowStep } from '../../utils/direction';
 import { useTranslation } from 'react-i18next';
 import { Avatar, ConfirmDialog } from '../ui';
 import { resolveImageUrl } from '../../api';
@@ -75,8 +76,8 @@ function StoryViewer({ tray, startGroupIndex, onClose, onViewed, onDelete }) {
     const onKeyDown = (e) => {
       if (confirmOpen) return;
       if (e.key === 'Escape') onClose();
-      else if (e.key === 'ArrowRight') next();
-      else if (e.key === 'ArrowLeft') prev();
+      else if (arrowStep(e.key) === 1) next();
+      else if (arrowStep(e.key) === -1) prev();
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);

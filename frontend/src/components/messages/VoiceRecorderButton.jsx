@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
+import { isRtl } from '../../utils/direction';
 import { useTranslation } from 'react-i18next';
 
 const MAX_DURATION_SECONDS = 120; // matches the backend's 5MB (~2 min of compressed voice) upload limit
@@ -61,7 +62,9 @@ function VoiceRecorderButton({ onSend, onRecordingChange }) {
     if (!isRecording) return;
 
     const handleMove = (clientX) => {
-      dragXRef.current = Math.min(0, clientX - startXRef.current); // only leftward slide counts
+      // Only a slide toward the start of the line counts: leftward, or rightward in RTL (B16).
+      const delta = clientX - startXRef.current;
+      dragXRef.current = isRtl() ? Math.max(0, delta) : Math.min(0, delta);
       setSlideRatio(Math.min(1, Math.abs(dragXRef.current) / CANCEL_SLIDE_PX));
     };
     const handleMouseMove = (e) => handleMove(e.clientX);

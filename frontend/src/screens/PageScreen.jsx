@@ -102,7 +102,7 @@ function PageScreen() {
           <p className="community-meta">
             {categoryLabel(page.category)} · {t('pages.followerCount', { count: page.follower_count })}
           </p>
-          {page.description && <p className="community-description">{page.description}</p>}
+          {page.description && <p className="community-description" dir="auto">{page.description}</p>}
           <div className="community-actions">
             {page.is_owner ? (
               <button type="button" className="btn btn-primary" onClick={() => navigate(`/create-post?pageId=${id}`)}>

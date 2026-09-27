@@ -149,7 +149,7 @@ function CommunityScreen() {
             {group.privacy === 'private' ? <Lock size={13} aria-hidden="true" /> : <Globe size={13} aria-hidden="true" />}
             {' '}{group.privacy === 'private' ? t('groups.privateGroup') : t('groups.publicGroup')} · {t('groups.memberCount', { count: group.member_count })}
           </p>
-          {group.description && <p className="community-description">{group.description}</p>}
+          {group.description && <p className="community-description" dir="auto">{group.description}</p>}
 
           <div className="community-actions">
             {!group.my_status && (

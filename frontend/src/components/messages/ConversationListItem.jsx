@@ -78,7 +78,7 @@ function ConversationListItem({ conversation, isOnline = false, onClick }) {
           )}
         </span>
         <span className="messages-bottom-row">
-          <span className="messages-preview">{localizePreview(lastMessage, t) || t('messages.sayHello')}</span>
+          <span className="messages-preview" dir="auto">{localizePreview(lastMessage, t) || t('messages.sayHello')}</span>
           {hasUnread && (
             <span className="messages-unread-badge" aria-label={t('messages.unread', { count: unreadCount })}>
               {unreadCount > 99 ? '99+' : unreadCount}

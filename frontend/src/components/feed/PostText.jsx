@@ -4,7 +4,8 @@ import { renderTextWithLinks } from '../../utils/renderTextWithLinks';
 // linked to /profile/:username. Plain text otherwise -- used by PostCard
 // for the post body.
 function PostText({ content, className }) {
-  return <p className={className}>{renderTextWithLinks(content)}</p>;
+  // dir="auto": the post keeps its own writing direction in any UI language (B16).
+  return <p className={className} dir="auto">{renderTextWithLinks(content)}</p>;
 }
 
 export default PostText;

@@ -58,7 +58,7 @@ function CommentItem({ c, comments, currentUserId, onReply }) {
   return (
     <div className="comment-body">
       <p className="feed-comment-text">
-        <Username>{c.username}</Username>: {renderTextWithLinks(c.content)}
+        <Username>{c.username}</Username>: <bdi>{renderTextWithLinks(c.content)}</bdi>
         {c.pending && <span className="feed-comment-status"> {t('comments.pending')}</span>}
       </p>
       {/* A not-yet-confirmed comment has no real id to like/reply/edit

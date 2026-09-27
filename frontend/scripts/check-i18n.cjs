@@ -1,8 +1,11 @@
-// B15: `npm run check:i18n` (also runs in CI).
-//  1. en.json and my.json have exactly the same keys. i18next plural
-//     suffixes (_one/_other/...) count as one key, since Myanmar only uses
-//     _other while English needs _one too.
-//  2. Every literal key the code uses -- t('a.b'), i18n.t('a.b'),
+// `npm run check:i18n` (also runs in CI). B15, extended for B16 (Arabic).
+//  1. Every locale file (en, my, ar, ...) has exactly the keys en.json has.
+//     i18next plural suffixes (_zero/_one/_two/_few/_many/_other) count as
+//     one key for this comparison.
+//  2. Every plural key has every form its language's plural rules need
+//     (Intl.PluralRules): English one/other, Myanmar other, Arabic all six.
+//     A missing form would silently fall back to English text.
+//  3. Every literal key the code uses -- t('a.b'), i18n.t('a.b'),
 //     i18nKey="a.b", serverErrorText(err, 'a.b') -- exists in en.json.
 //     Template keys like t(`menu.categories.${key}.title`) are checked by
 //     their static prefix.
@@ -10,20 +13,49 @@ const fs = require('fs');
 const path = require('path');
 
 const SRC = path.join(__dirname, '..', 'src');
-const load = (lang) => JSON.parse(fs.readFileSync(path.join(SRC, 'i18n', 'locales', `${lang}.json`), 'utf8'));
+const LOCALES = path.join(SRC, 'i18n', 'locales');
 const flat = (o, p = '') =>
   Object.entries(o).flatMap(([k, v]) => (v && typeof v === 'object' ? flat(v, `${p}${k}.`) : [`${p}${k}`]));
 const PLURAL = /_(zero|one|two|few|many|other)$/;
 const base = (k) => k.replace(PLURAL, '');
 
-const en = new Set(flat(load('en')));
-const my = new Set(flat(load('my')));
-const enBase = new Set([...en].map(base));
-const myBase = new Set([...my].map(base));
+const langs = fs.readdirSync(LOCALES).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, '')).sort();
+const keys = Object.fromEntries(langs.map((l) => [l, new Set(flat(JSON.parse(fs.readFileSync(path.join(LOCALES, `${l}.json`), 'utf8'))))]));
+const bases = Object.fromEntries(langs.map((l) => [l, new Set([...keys[l]].map(base))]));
+const enBase = bases.en;
+const pluralBases = new Set([...keys.en].filter((k) => PLURAL.test(k)).map(base));
 
 const problems = [];
-for (const k of enBase) if (!myBase.has(k)) problems.push(`missing in my.json: ${k}`);
-for (const k of myBase) if (!enBase.has(k)) problems.push(`missing in en.json: ${k}`);
+for (const lang of langs) {
+  if (lang === 'en') continue;
+  for (const k of enBase) if (!bases[lang].has(k)) problems.push(`missing in ${lang}.json: ${k}`);
+  for (const k of bases[lang]) if (!enBase.has(k)) problems.push(`not in en.json (${lang}.json): ${k}`);
+}
+for (const lang of langs) {
+  const needed = new Intl.PluralRules(lang).resolvedOptions().pluralCategories;
+  for (const b of pluralBases) {
+    for (const cat of needed) {
+      if (!keys[lang].has(`${b}_${cat}`)) problems.push(`${lang}.json: plural "${b}" needs the _${cat} form`);
+    }
+  }
+}
+
+// Server-message translations (i18n/serverMessages.js): every language's
+// table must cover the same English messages as the others.
+{
+  const code = fs.readFileSync(path.join(SRC, 'i18n', 'serverMessages.js'), 'utf8');
+  const tables = {};
+  for (const m of code.matchAll(/^const ([A-Z]{2}) = \{\n([\s\S]*?)\n\};/gm)) {
+    tables[m[1]] = new Set([...m[2].matchAll(/^ {2}'((?:[^'\\]|\\.)+)':/gm)].map((x) => x[1]));
+  }
+  const names = Object.keys(tables);
+  if (names.length < 2) problems.push('serverMessages.js: expected a table per translated language');
+  for (const a of names) {
+    for (const b of names) {
+      for (const msg of tables[a]) if (!tables[b].has(msg)) problems.push(`serverMessages.js: ${b} is missing "${msg}"`);
+    }
+  }
+}
 
 const files = [];
 (function walk(dir) {
@@ -58,8 +90,8 @@ for (const file of files) {
 }
 
 if (problems.length) {
-  console.error(problems.join('\n'));
+  console.error(problems.slice(0, 50).join('\n') + (problems.length > 50 ? `\n... and ${problems.length - 50} more` : ''));
   console.error(`\ni18n check failed (${problems.length} problem${problems.length === 1 ? '' : 's'})`);
   process.exit(1);
 }
-console.log(`i18n OK: ${enBase.size} keys in both languages, ${used} key references checked`);
+console.log(`i18n OK: ${langs.join(', ')} -- ${enBase.size} keys each, ${pluralBases.size} plural keys with every form, ${used} key references checked`);

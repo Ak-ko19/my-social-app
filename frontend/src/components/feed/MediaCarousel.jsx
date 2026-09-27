@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import ProgressiveImage from '../common/ProgressiveImage';
+import { arrowStep, isRtl } from '../../utils/direction';
 
 // A post's images (B2). One image renders exactly like before (a single
 // ProgressiveImage); several become a swipeable carousel built on native
@@ -30,7 +31,8 @@ function MediaCarousel({ media, altPrefix: altPrefixProp, className }) {
     const track = trackRef.current;
     if (!track) return;
     const next = Math.max(0, Math.min(count - 1, target));
-    track.scrollTo({ left: next * track.clientWidth, behavior: reduceMotion ? 'auto' : 'smooth' });
+    const sign = isRtl() ? -1 : 1; // B16: RTL scrolls toward negative scrollLeft
+    track.scrollTo({ left: sign * next * track.clientWidth, behavior: reduceMotion ? 'auto' : 'smooth' });
   };
 
   // The scroll position is the source of truth (a swipe changes it without
@@ -38,17 +40,15 @@ function MediaCarousel({ media, altPrefix: altPrefixProp, className }) {
   const handleScroll = () => {
     const track = trackRef.current;
     if (!track || !track.clientWidth) return;
-    const next = Math.round(track.scrollLeft / track.clientWidth);
+    const next = Math.round(Math.abs(track.scrollLeft) / track.clientWidth);
     if (next !== index) setIndex(next);
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'ArrowRight') {
+    const step = arrowStep(e.key);
+    if (step) {
       e.preventDefault();
-      goTo(index + 1);
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      goTo(index - 1);
+      goTo(index + step);
     }
   };
 

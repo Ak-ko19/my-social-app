@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useVoicePlayback } from '../../hooks/useVoicePlayback';
+import { isRtl } from '../../utils/direction';
 import { useTranslation } from 'react-i18next';
 
 const WAVEFORM_BAR_COUNT = 24;
@@ -175,7 +176,9 @@ function VoiceMessagePlayer({ src, durationSeconds, seedKey }) {
       const bar = barRef.current;
       if (!audio || !bar || !duration) return;
       const rect = bar.getBoundingClientRect();
-      const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+      // B16: the waveform runs right-to-left in RTL (it's a flex row).
+      const offset = isRtl() ? rect.right - clientX : clientX - rect.left;
+      const ratio = Math.min(1, Math.max(0, offset / rect.width));
       const newTime = ratio * duration;
       audio.currentTime = newTime;
       setCurrentTime(newTime);

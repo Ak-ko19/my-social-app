@@ -23,7 +23,7 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 

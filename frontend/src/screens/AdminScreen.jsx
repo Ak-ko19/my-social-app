@@ -56,7 +56,7 @@ function ReportCard({ report, token, onDone }) {
           report.target_exists ? (
             <>
               <span className="admin-report-kind"><Trans i18nKey="admin.postBy" values={{ name: report.post_author_username }} components={{ link: <Link to={`/profile/${report.post_author_id}`} /> }} /></span>
-              <p className="admin-report-quote">“{report.post_content}”</p>
+              <p className="admin-report-quote" dir="auto">“{report.post_content}”</p>
               <Link to={`/posts/${report.target_id}`} className="admin-report-link">{t('admin.openPost')}</Link>
             </>
           ) : (
@@ -72,7 +72,7 @@ function ReportCard({ report, token, onDone }) {
         )}
       </div>
 
-      {report.details && <p className="admin-report-details">{report.details}</p>}
+      {report.details && <p className="admin-report-details" dir="auto">{report.details}</p>}
       <p className="admin-report-meta">{t('admin.reportedBy', { name: report.reporter_username })}</p>
 
       {!pending && (

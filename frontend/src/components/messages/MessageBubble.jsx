@@ -147,11 +147,11 @@ function MessageBubble({
         <a href={message.media_url} target="_blank" rel="noreferrer" className="messages-image-link" aria-label={t('messages.openPhoto')}>
           <img src={message.media_url} alt={message.content ? t('messages.preview.photoCaption', { caption: message.content }) : t('messages.preview.photo')} className="messages-image" loading="lazy" />
         </a>
-        {message.content && <p className="messages-bubble-text">{message.content}</p>}
+        {message.content && <p className="messages-bubble-text" dir="auto">{message.content}</p>}
       </>
     );
   } else {
-    body = <p className="messages-bubble-text">{message.content}</p>;
+    body = <p className="messages-bubble-text" dir="auto">{message.content}</p>;
   }
 
   return (
@@ -183,7 +183,7 @@ function MessageBubble({
         {message.reply_to && !isDeleted && (
           <div className="messages-reply-quote">
             <span className="messages-reply-quote-author">{replyAuthorLabel(message.reply_to.sender_id)}</span>
-            <span className="messages-reply-quote-text">{quoteText(message.reply_to)}</span>
+            <span className="messages-reply-quote-text" dir="auto">{quoteText(message.reply_to)}</span>
           </div>
         )}
         {body}

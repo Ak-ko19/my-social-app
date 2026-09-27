@@ -42,14 +42,14 @@
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
-  border-left: 4px solid var(--badge-orange-fg);
+  border-inline-start: 4px solid var(--badge-orange-fg);
   color: var(--color-text);
   font-size: 14px;
   overflow-wrap: anywhere;
 }
 
 .admin-report.is-reviewed {
-  border-left-color: var(--color-border);
+  border-inline-start-color: var(--color-border);
 }
 
 .admin-report-head {
@@ -74,7 +74,7 @@
 }
 
 .admin-report-time {
-  margin-left: auto;
+  margin-inline-start: auto;
   font-size: 12px;
   color: var(--color-text-muted);
 }
@@ -116,7 +116,7 @@
 }
 
 .admin-banned-tag {
-  margin-left: var(--space-2);
+  margin-inline-start: var(--space-2);
   padding: 1px 8px;
   border-radius: var(--radius-pill);
   background: var(--badge-red-bg);

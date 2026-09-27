@@ -56,6 +56,22 @@
   animation: screen-slide-in 220ms ease-out;
 }
 
+/* B16: in right-to-left layouts screens slide in from the other side. */
+@keyframes screen-slide-in-rtl {
+  from {
+    transform: translateX(-24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+[dir='rtl'] .screen-enter {
+  animation-name: screen-slide-in-rtl;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .screen-enter {
     animation: none;
@@ -186,7 +202,7 @@
 .bottom-tab-badge {
   position: absolute;
   top: -4px;
-  right: -8px;
+  inset-inline-end: -8px;
   min-width: 14px;
   height: 14px;
   padding: 0 var(--space-1);
@@ -211,7 +227,7 @@
   padding: var(--space-2) 0;
   border: none;
   background: none;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   font-family: var(--font-sans);
   border-radius: var(--radius-md);
