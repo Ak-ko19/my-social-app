@@ -4,10 +4,13 @@ import { ChevronLeft } from 'lucide-react';
 import { IconButton, ConfirmDialog } from '../components/ui';
 import { useAuth, forceLogout } from '../hooks/useAuth';
 import { changePassword, deactivateAccount, deleteAccount } from '../services/accountService';
+import { useTranslation } from 'react-i18next';
+import { serverErrorText } from '../utils/serverError';
 import './AccountManagementScreen.css';
 
 function AccountManagementScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { token, username } = useAuth();
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -30,20 +33,20 @@ function AccountManagementScreen() {
     setPasswordError('');
     setPasswordSuccess('');
     if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords do not match');
+      setPasswordError(t('account.passwordsDontMatch'));
       return;
     }
     setPasswordPending(true);
     changePassword(currentPassword, newPassword, token)
       .then(() => {
-        setPasswordSuccess('Password changed successfully');
+        setPasswordSuccess(t('account.passwordChanged'));
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
       })
       .catch((err) => {
         console.error(err);
-        setPasswordError(err.response?.data || 'Failed to change password');
+        setPasswordError(serverErrorText(err, 'account.changeFailed'));
       })
       .finally(() => setPasswordPending(false));
   };
@@ -56,7 +59,7 @@ function AccountManagementScreen() {
       forceLogout();
     } catch (err) {
       console.error(err);
-      setDeactivateError(err.response?.data || 'Failed to deactivate account');
+      setDeactivateError(serverErrorText(err, 'account.deactivateFailed'));
     }
   };
 
@@ -68,30 +71,32 @@ function AccountManagementScreen() {
       forceLogout();
     } catch (err) {
       console.error(err);
-      setDeleteError(err.response?.data || 'Failed to delete account');
+      setDeleteError(serverErrorText(err, 'account.deleteFailed'));
     }
   };
 
   return (
     <div className="screen-enter">
       <header className="account-mgmt-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Settings" onClick={() => navigate('/settings')} />
-        <h1 className="account-mgmt-header-title">Account Management</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('common.backToSettings')} onClick={() => navigate('/settings')} />
+        <h1 className="account-mgmt-header-title">{t('account.title')}</h1>
       </header>
 
       <section className="account-mgmt-section">
-        <h2 className="account-mgmt-section-title">Change Password</h2>
+        <h2 className="account-mgmt-section-title">{t('account.changePassword')}</h2>
         <form className="account-mgmt-form" onSubmit={handleChangePassword}>
           <input
             type="password"
-            placeholder="Current password"
+            placeholder={t('account.currentPassword')}
+            aria-label={t('account.currentPassword')}
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             required
           />
           <input
             type="password"
-            placeholder="New password"
+            placeholder={t('account.newPassword')}
+            aria-label={t('account.newPassword')}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             minLength={8}
@@ -99,7 +104,8 @@ function AccountManagementScreen() {
           />
           <input
             type="password"
-            placeholder="Confirm new password"
+            placeholder={t('account.confirmPassword')}
+            aria-label={t('account.confirmPassword')}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             minLength={8}
@@ -112,19 +118,20 @@ function AccountManagementScreen() {
           )}
           {passwordSuccess && <p className="account-mgmt-success">{passwordSuccess}</p>}
           <button type="submit" className="account-mgmt-btn account-mgmt-btn-primary" disabled={passwordPending}>
-            {passwordPending ? 'Saving…' : 'Change Password'}
+            {passwordPending ? t('common.saving') : t('account.changePassword')}
           </button>
         </form>
       </section>
 
       <section className="account-mgmt-section">
-        <h2 className="account-mgmt-section-title">Deactivate Account</h2>
+        <h2 className="account-mgmt-section-title">{t('account.deactivateTitle')}</h2>
         <p className="account-mgmt-description">
-          Temporarily hides your profile and posts. Log back in anytime to reactivate.
+          {t('account.deactivateText')}
         </p>
         <input
           type="password"
-          placeholder="Enter your password"
+          placeholder={t('account.enterPassword')}
+          aria-label={t('account.enterPassword')}
           value={deactivatePasswordInput}
           onChange={(e) => setDeactivatePasswordInput(e.target.value)}
         />
@@ -134,18 +141,19 @@ function AccountManagementScreen() {
           onClick={() => setConfirmDeactivateOpen(true)}
           disabled={!deactivatePasswordInput}
         >
-          Deactivate Account
+          {t('account.deactivateTitle')}
         </button>
       </section>
 
       <section className="account-mgmt-section account-mgmt-section-danger">
-        <h2 className="account-mgmt-section-title">Delete Account</h2>
+        <h2 className="account-mgmt-section-title">{t('account.deleteTitle')}</h2>
         <p className="account-mgmt-description">
-          Permanently deletes your account and all your content. This cannot be undone.
+          {t('account.deleteText')}
         </p>
         <input
           type="password"
-          placeholder="Enter your password"
+          placeholder={t('account.enterPassword')}
+          aria-label={t('account.enterPassword')}
           value={deletePasswordInput}
           onChange={(e) => setDeletePasswordInput(e.target.value)}
         />
@@ -155,7 +163,7 @@ function AccountManagementScreen() {
           onClick={() => setConfirmDeleteOpen(true)}
           disabled={!deletePasswordInput}
         >
-          Delete Account
+          {t('account.deleteTitle')}
         </button>
       </section>
 
@@ -166,9 +174,9 @@ function AccountManagementScreen() {
           setDeactivateError('');
         }}
         onConfirm={handleDeactivate}
-        title="Deactivate your account?"
-        description="Your profile and posts will be hidden until you log back in."
-        confirmLabel="Deactivate"
+        title={t('account.confirmDeactivateTitle')}
+        description={t('account.confirmDeactivateText')}
+        confirmLabel={t('account.deactivate')}
         danger
         error={deactivateError}
       />
@@ -179,9 +187,9 @@ function AccountManagementScreen() {
           setDeleteError('');
         }}
         onConfirm={handleDelete}
-        title="Delete your account?"
-        description="This permanently deletes your account and everything you've posted. This cannot be undone."
-        confirmLabel="Delete Forever"
+        title={t('account.confirmDeleteTitle')}
+        description={t('account.confirmDeleteText')}
+        confirmLabel={t('account.deleteForever')}
         danger
         requireTypedConfirmation={username}
         error={deleteError}

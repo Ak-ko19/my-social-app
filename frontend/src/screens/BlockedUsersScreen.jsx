@@ -6,11 +6,13 @@ import { useAuth } from '../hooks/useAuth';
 import { fetchBlockedUsers, unblockUser } from '../services/blockService';
 import { resolveImageUrl } from '../api';
 import FeedErrorState from '../components/feed/FeedErrorState';
+import { useTranslation } from 'react-i18next';
 import './BlockedUsersScreen.css';
 import '../components/feed/Feed.css';
 
 function BlockedUsersScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { token } = useAuth();
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,10 +29,10 @@ function BlockedUsersScreen() {
       .then((data) => setBlockedUsers(data.blockedUsers))
       .catch((err) => {
         console.error(err);
-        setError('Failed to load blocked users');
+        setError(t('blocked.loadFailed'));
       })
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, t]);
 
   useEffect(() => {
     if (token) load();
@@ -51,7 +53,7 @@ function BlockedUsersScreen() {
       .then(() => setBlockedUsers((current) => current.filter((u) => u.id !== userId)))
       .catch((err) => {
         console.error(err);
-        setActionError('Failed to unblock user. Please try again.');
+        setActionError(t('blocked.unblockFailed'));
       })
       .finally(() => setUnblockingId(null));
   };
@@ -59,15 +61,15 @@ function BlockedUsersScreen() {
   return (
     <div className="screen-enter">
       <header className="blocked-users-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Settings" onClick={() => navigate('/settings')} />
-        <h1 className="blocked-users-header-title">Blocked Users</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('common.backToSettings')} onClick={() => navigate('/settings')} />
+        <h1 className="blocked-users-header-title">{t('blocked.title')}</h1>
       </header>
 
-      {loading && <p className="blocked-users-status">Loading…</p>}
+      {loading && <p className="blocked-users-status">{t('common.loading')}</p>}
       {!loading && error && <FeedErrorState message={error} onRetry={retry} />}
       {actionError && <p className="blocked-users-status" role="alert">{actionError}</p>}
       {!loading && !error && blockedUsers.length === 0 && (
-        <p className="blocked-users-status">You haven't blocked anyone.</p>
+        <p className="blocked-users-status">{t('blocked.empty')}</p>
       )}
 
       <ul className="blocked-users-list">
@@ -81,7 +83,7 @@ function BlockedUsersScreen() {
               onClick={() => handleUnblock(user.id)}
               disabled={unblockingId === user.id}
             >
-              {unblockingId === user.id ? 'Unblocking…' : 'Unblock'}
+              {unblockingId === user.id ? t('blocked.unblocking') : t('blocked.unblock')}
             </button>
           </li>
         ))}

@@ -534,5 +534,73 @@
     "leaveDescription": "You'll stop getting its messages and won't see its history any more.",
     "removeDescription": "They will stop getting messages and lose access to the history.",
     "leave": "Leave"
+  },
+  "account": {
+    "title": "Account Management",
+    "passwordsDontMatch": "New passwords do not match",
+    "passwordChanged": "Password changed successfully",
+    "changeFailed": "Failed to change password",
+    "deactivateFailed": "Failed to deactivate account",
+    "deleteFailed": "Failed to delete account",
+    "changePassword": "Change Password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "deactivateTitle": "Deactivate Account",
+    "deactivateText": "Temporarily hides your profile and posts. Log back in anytime to reactivate.",
+    "enterPassword": "Enter your password",
+    "deleteTitle": "Delete Account",
+    "deleteText": "Permanently deletes your account and all your content. This cannot be undone.",
+    "confirmDeactivateTitle": "Deactivate your account?",
+    "confirmDeactivateText": "Your profile and posts will be hidden until you log back in.",
+    "deactivate": "Deactivate",
+    "confirmDeleteTitle": "Delete your account?",
+    "confirmDeleteText": "This permanently deletes your account and everything you've posted. This cannot be undone.",
+    "deleteForever": "Delete Forever"
+  },
+  "blocked": {
+    "title": "Blocked Users",
+    "loadFailed": "Failed to load blocked users",
+    "unblockFailed": "Failed to unblock user. Please try again.",
+    "empty": "You haven't blocked anyone.",
+    "unblocking": "Unblocking…",
+    "unblock": "Unblock"
+  },
+  "followRequests": {
+    "title": "Follow Requests",
+    "loadFailed": "Failed to load follow requests",
+    "approveFailed": "Failed to approve request. Please try again.",
+    "denyFailed": "Failed to deny request. Please try again.",
+    "empty": "No pending follow requests.",
+    "deny": "Deny",
+    "approve": "Approve"
+  },
+  "notifSettings": {
+    "title": "Notification Settings",
+    "loadFailed": "Could not load your notification settings",
+    "saveFailed": "Could not save that change. Please try again.",
+    "intro": "Choose what you get notified about. Turning something off won't remove notifications you already have.",
+    "items": {
+      "likes": {
+        "title": "Likes and reactions",
+        "description": "When someone reacts to your post or likes your comment"
+      },
+      "comments": {
+        "title": "Comments and replies",
+        "description": "When someone comments on your post or replies to you"
+      },
+      "mentions": {
+        "title": "Mentions",
+        "description": "When someone @mentions you in a post or comment"
+      },
+      "follows": {
+        "title": "New followers",
+        "description": "New followers and follow requests"
+      },
+      "follow_accepted": {
+        "title": "Accepted requests",
+        "description": "When someone accepts your follow request"
+      }
+    }
   }
 }

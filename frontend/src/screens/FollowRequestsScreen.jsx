@@ -6,11 +6,13 @@ import { useAuth } from '../hooks/useAuth';
 import { fetchFollowRequests, approveFollowRequest, denyFollowRequest } from '../services/postService';
 import { resolveImageUrl } from '../api';
 import FeedErrorState from '../components/feed/FeedErrorState';
+import { useTranslation } from 'react-i18next';
 import './FollowRequestsScreen.css';
 import '../components/feed/Feed.css';
 
 function FollowRequestsScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { token } = useAuth();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,10 +25,10 @@ function FollowRequestsScreen() {
       .then(setRequests)
       .catch((err) => {
         console.error(err);
-        setError('Failed to load follow requests');
+        setError(t('followRequests.loadFailed'));
       })
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, t]);
 
   useEffect(() => {
     if (token) load();
@@ -47,7 +49,7 @@ function FollowRequestsScreen() {
       .then(() => setRequests((current) => current.filter((r) => r.id !== userId)))
       .catch((err) => {
         console.error(err);
-        setActionError('Failed to approve request. Please try again.');
+        setActionError(t('followRequests.approveFailed'));
       })
       .finally(() => setActioningId(null));
   };
@@ -59,7 +61,7 @@ function FollowRequestsScreen() {
       .then(() => setRequests((current) => current.filter((r) => r.id !== userId)))
       .catch((err) => {
         console.error(err);
-        setActionError('Failed to deny request. Please try again.');
+        setActionError(t('followRequests.denyFailed'));
       })
       .finally(() => setActioningId(null));
   };
@@ -67,15 +69,15 @@ function FollowRequestsScreen() {
   return (
     <div className="screen-enter">
       <header className="follow-requests-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Settings" onClick={() => navigate('/settings')} />
-        <h1 className="follow-requests-header-title">Follow Requests</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('common.backToSettings')} onClick={() => navigate('/settings')} />
+        <h1 className="follow-requests-header-title">{t('followRequests.title')}</h1>
       </header>
 
-      {loading && <p className="follow-requests-status">Loading…</p>}
+      {loading && <p className="follow-requests-status">{t('common.loading')}</p>}
       {!loading && error && <FeedErrorState message={error} onRetry={retry} />}
       {actionError && <p className="follow-requests-status" role="alert">{actionError}</p>}
       {!loading && !error && requests.length === 0 && (
-        <p className="follow-requests-status">No pending follow requests.</p>
+        <p className="follow-requests-status">{t('followRequests.empty')}</p>
       )}
 
       <ul className="follow-requests-list">
@@ -89,7 +91,7 @@ function FollowRequestsScreen() {
               onClick={() => handleDeny(user.id)}
               disabled={actioningId === user.id}
             >
-              Deny
+              {t('followRequests.deny')}
             </button>
             <button
               type="button"
@@ -97,7 +99,7 @@ function FollowRequestsScreen() {
               onClick={() => handleApprove(user.id)}
               disabled={actioningId === user.id}
             >
-              Approve
+              {t('followRequests.approve')}
             </button>
           </li>
         ))}
