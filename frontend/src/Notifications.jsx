@@ -4,18 +4,22 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { IconButton, Avatar } from './components/ui';
 import FeedErrorState from './components/feed/FeedErrorState';
+import { Trans, useTranslation } from 'react-i18next';
+import { dateLocale } from './i18n';
 import './components/feed/Feed.css';
 
-function notificationText(n) {
-  if (n.type === 'like') return 'liked your post';
-  if (n.type === 'comment') return 'commented on your post';
-  if (n.type === 'follow') return 'started following you';
-  if (n.type === 'mention') return n.comment_id ? 'mentioned you in a comment' : 'mentioned you in a post';
-  if (n.type === 'follow_request') return 'requested to follow you';
-  if (n.type === 'follow_accepted') return 'accepted your follow request';
-  if (n.type === 'reply') return 'replied to your comment';
-  if (n.type === 'comment_like') return 'liked your comment';
-  return 'interacted with you';
+// i18n key under notifications.types -- each is a whole sentence with the
+// actor's name in it, since word order differs between languages.
+function notificationKey(n) {
+  if (n.type === 'like') return 'like';
+  if (n.type === 'comment') return 'comment';
+  if (n.type === 'follow') return 'follow';
+  if (n.type === 'mention') return n.comment_id ? 'mentionComment' : 'mentionPost';
+  if (n.type === 'follow_request') return 'followRequest';
+  if (n.type === 'follow_accepted') return 'followAccepted';
+  if (n.type === 'reply') return 'reply';
+  if (n.type === 'comment_like') return 'commentLike';
+  return 'other';
 }
 
 function Notifications() {
@@ -24,6 +28,7 @@ function Notifications() {
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const token = localStorage.getItem('token');
 
@@ -37,10 +42,10 @@ function Notifications() {
     })
     .catch((err) => {
       console.error(err);
-      setError('Failed to load notifications');
+      setError(t('notifications.loadFailed'));
     })
     .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, t]);
 
   useEffect(() => {
     if (!token) {
@@ -66,7 +71,7 @@ function Notifications() {
     })
     .catch((err) => {
       console.error(err);
-      setActionError('Failed to mark as read. Please try again.');
+      setActionError(t('notifications.markFailed'));
     });
   };
 
@@ -80,7 +85,7 @@ function Notifications() {
     })
     .catch((err) => {
       console.error(err);
-      setActionError('Failed to mark all as read. Please try again.');
+      setActionError(t('notifications.markAllFailed'));
     });
   };
 
@@ -89,21 +94,21 @@ function Notifications() {
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Home" onClick={() => navigate('/')} />
-        <h1 className="screen-header-title">Notifications</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('common.backToHome')} onClick={() => navigate('/')} />
+        <h1 className="screen-header-title">{t('notifications.title')}</h1>
         {!loading && !error && notifications.length > 0 && (
           <button type="button" className="btn btn-secondary btn-sm" onClick={markAllAsRead} disabled={allRead}>
-            Mark all read
+            {t('notifications.markAll')}
           </button>
         )}
       </header>
 
       <div className="screen-body">
-        {loading && <p className="screen-status" role="status">Loading notifications…</p>}
+        {loading && <p className="screen-status" role="status">{t('notifications.loading')}</p>}
         {!loading && error && <FeedErrorState message={error} onRetry={retry} />}
         {actionError && <p className="form-error" role="alert">{actionError}</p>}
         {!loading && !error && notifications.length === 0 && (
-          <p className="screen-status" role="status">No notifications yet.</p>
+          <p className="screen-status" role="status">{t('notifications.empty')}</p>
         )}
 
         {!loading && !error && notifications.length > 0 && (
@@ -117,13 +122,13 @@ function Notifications() {
                   alt=""
                 />
                 <div className="card-row-body">
-                  <strong>{n.actor_username}</strong> {notificationText(n)}
+                  <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username }} components={{ b: <strong /> }} />
                   {n.post_content && <p className="card-row-quote">“{n.post_content}”</p>}
-                  <span className="card-row-meta">{new Date(n.created_at).toLocaleString()}</span>
+                  <span className="card-row-meta">{new Date(n.created_at).toLocaleString(dateLocale())}</span>
                   {!n.is_read && (
                     <div className="card-row-actions">
                       <button type="button" className="btn btn-secondary btn-sm" onClick={() => markAsRead(n.id)}>
-                        Mark as read
+                        {t('notifications.markRead')}
                       </button>
                     </div>
                   )}

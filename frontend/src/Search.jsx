@@ -10,6 +10,9 @@ import PeopleYouMayKnow from './components/explore/PeopleYouMayKnow';
 import { Compass } from 'lucide-react';
 import { useFollowToggle } from './hooks/useFollowToggle';
 import FollowButton from './components/feed/FollowButton';
+import { useTranslation } from 'react-i18next';
+import { serverErrorText } from './utils/serverError';
+import { dateLocale } from './i18n';
 
 // Search's own /search/users results don't include is_following (unlike
 // /feed's posts, which are already scoped to followed users by
@@ -19,6 +22,7 @@ import FollowButton from './components/feed/FollowButton';
 // optimistic true state instead of rolling back, so a stray click just
 // self-corrects instead of actually breaking anything.
 function SearchUserResult({ user, token, onMessage }) {
+  const { t } = useTranslation();
   const follow = useFollowToggle(user.id, false, token);
 
   return (
@@ -30,7 +34,7 @@ function SearchUserResult({ user, token, onMessage }) {
         {token && (
           <div className="card-row-actions">
             <FollowButton follow={follow} />
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => onMessage(user.id)}>Message</button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => onMessage(user.id)}>{t('common.message')}</button>
           </div>
         )}
       </div>
@@ -48,6 +52,7 @@ function Search() {
   // Guards against an older, slower search overwriting a newer one's results.
   const requestIdRef = useRef(0);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const token = localStorage.getItem('token');
   // B7: shown before the first search, as a starting point.
@@ -62,7 +67,7 @@ function Search() {
       .then((conversation) => navigate(`/messages/${conversation.id}`))
       .catch((err) => {
         console.error(err);
-        setError(err.response?.data || 'Could not open a conversation. Please try again.');
+        setError(serverErrorText(err, 'search.openFailed'));
       });
   };
 
@@ -71,7 +76,7 @@ function Search() {
     setError('');
 
     if (!query.trim()) {
-      setError('Enter a search term');
+      setError(t('search.enterTerm'));
       return;
     }
 
@@ -96,7 +101,7 @@ function Search() {
       if (requestId !== requestIdRef.current) return;
       console.error(err);
       setSearched(false); // don't leave a previous query's results under this error
-      setError('Search failed. Please try again.');
+      setError(t('search.failed'));
     })
     .finally(() => {
       if (requestId === requestIdRef.current) setSearching(false);
@@ -106,8 +111,8 @@ function Search() {
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Home" onClick={() => navigate('/')} />
-        <h1 className="screen-header-title">Search</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('common.backToHome')} onClick={() => navigate('/')} />
+        <h1 className="screen-header-title">{t('search.title')}</h1>
       </header>
 
       <div className="screen-body">
@@ -115,50 +120,54 @@ function Search() {
           <input
             type="search"
             className="form-input"
-            aria-label="Search users or posts"
+            aria-label={t('search.label')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search users or posts..."
+            placeholder={t('search.placeholder')}
           />
           <button type="submit" className="btn btn-primary" disabled={searching}>
-            {searching ? 'Searching…' : 'Search'}
+            {searching ? t('search.searching') : t('common.search')}
           </button>
         </form>
         {error && <p className="form-error" role="alert" style={{ marginTop: 'var(--space-3)' }}>{error}</p>}
-        {searching && <p className="screen-status" role="status">Searching…</p>}
+        {searching && <p className="screen-status" role="status">{t('search.searching')}</p>}
 
         {!searched && !searching && (
           <>
             <PeopleYouMayKnow token={token} />
             <TrendingHashtags tags={trending.tags} loaded={trending.loaded} />
             <Link to="/explore" className="screen-link explore-link">
-              <Compass size={16} aria-hidden="true" /> Explore popular posts
+              <Compass size={16} aria-hidden="true" /> {t('search.explore')}
             </Link>
           </>
         )}
 
         {searched && !searching && (
           <>
-            <h2 className="section-heading">Users</h2>
-            {users.length === 0 && <p className="screen-status">No matching users.</p>}
+            <h2 className="section-heading">{t('search.users')}</h2>
+            {users.length === 0 && <p className="screen-status">{t('search.noUsers')}</p>}
             <ul className="card-list">
               {users.map((u) => (
                 <SearchUserResult key={u.id} user={u} token={token} onMessage={openConversation} />
               ))}
             </ul>
 
-            <h2 className="section-heading">Posts</h2>
-            {posts.length === 0 && <p className="screen-status">No matching posts.</p>}
+            <h2 className="section-heading">{t('search.posts')}</h2>
+            {posts.length === 0 && <p className="screen-status">{t('search.noPosts')}</p>}
             <ul className="card-list">
               {posts.map((p) => (
                 <li key={p.id} className="card-row">
                   <div className="card-row-body">
-                    <Link to={`/profile/${p.user_id}`} className="screen-link">{p.username}</Link>
+                    {p.page ? (
+                      <Link to={`/pages/${p.page.id}`} className="screen-link">{p.page.name}</Link>
+                    ) : (
+                      <Link to={`/profile/${p.user_id}`} className="screen-link">{p.username}</Link>
+                    )}
                     <p className="search-post-content">
                       <Link to={`/posts/${p.id}`} className="search-post-link">{p.content}</Link>
                     </p>
-                    {p.image_url && <img className="image-preview" src={resolveImageUrl(p.image_url)} alt="Post attachment" />}
-                    <span className="card-row-meta">{new Date(p.created_at).toLocaleString()}</span>
+                    {p.image_url && <img className="image-preview" src={resolveImageUrl(p.image_url)} alt={t('search.attachment')} />}
+                    <span className="card-row-meta">{new Date(p.created_at).toLocaleString(dateLocale())}</span>
                   </div>
                 </li>
               ))}

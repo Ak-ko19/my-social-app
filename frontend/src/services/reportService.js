@@ -4,13 +4,14 @@ function authHeaders(token) {
   return { headers: { Authorization: `Bearer ${token}` } };
 }
 
+// Labels are i18n keys: report.reasons.<value>.
 export const REPORT_REASONS = [
-  { value: 'spam', label: 'Spam' },
-  { value: 'harassment', label: 'Harassment or bullying' },
-  { value: 'inappropriate_content', label: 'Inappropriate content' },
-  { value: 'hate_speech', label: 'Hate speech' },
-  { value: 'misinformation', label: 'Misinformation' },
-  { value: 'other', label: 'Other' }
+  { value: 'spam' },
+  { value: 'harassment' },
+  { value: 'inappropriate_content' },
+  { value: 'hate_speech' },
+  { value: 'misinformation' },
+  { value: 'other' }
 ];
 
 export function submitReport({ targetType, targetId, reason, details }, token) {

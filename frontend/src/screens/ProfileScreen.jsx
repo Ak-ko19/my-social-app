@@ -11,6 +11,8 @@ import { fetchFollowCounts, followUser, unfollowUser } from '../services/postSer
 import { blockUser } from '../services/blockService';
 import { createConversation } from '../services/messageService';
 import { resolveImageUrl } from '../api';
+import { Trans, useTranslation } from 'react-i18next';
+import { serverErrorText } from '../utils/serverError';
 import './ProfileScreen.css';
 import '../components/feed/Feed.css';
 
@@ -20,6 +22,7 @@ import '../components/feed/Feed.css';
 // link) -- backend profileController.getProfile accepts either.
 function ProfileScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { id } = useParams();
   const { token, userId: viewerId } = useAuth();
 
@@ -41,9 +44,9 @@ function ProfileScreen() {
         console.error(err);
         const isNotFound = err.response?.status === 404;
         setNotFound(isNotFound);
-        setError(isNotFound ? 'User not found' : 'Failed to load profile');
+        setError(isNotFound ? t('profile.notFound') : t('profile.loadFailed'));
       });
-  }, [id, token, attempt]);
+  }, [id, token, attempt, t]);
 
   const retry = () => {
     setError('');
@@ -55,12 +58,12 @@ function ProfileScreen() {
     return (
       <div className="screen-enter">
         <header className="profile-screen-header">
-          <IconButton icon={ChevronLeft} aria-label="Back" onClick={() => navigate(-1)} />
+          <IconButton icon={ChevronLeft} aria-label={t('common.back')} onClick={() => navigate(-1)} />
         </header>
         {error && !notFound ? (
           <FeedErrorState message={error} onRetry={retry} />
         ) : (
-          <p className="profile-screen-status">{error || 'Loading…'}</p>
+          <p className="profile-screen-status">{error || t('common.loading')}</p>
         )}
       </div>
     );
@@ -89,6 +92,7 @@ function ProfileScreen() {
 // request lands as a third, distinct state the boolean toggle has no
 // concept of.
 function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
+  const { t } = useTranslation();
   const isOwnProfile = viewerId === profile.id;
   const [followState, setFollowState] = useState(
     profile.is_following ? 'following' : profile.follow_request_pending ? 'pending' : 'none'
@@ -116,12 +120,12 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
       })
       .catch((err) => {
         console.error(err);
-        setFollowError(err.response?.data || 'Something went wrong');
+        setFollowError(serverErrorText(err, 'common.somethingWentWrong'));
       })
       .finally(() => setFollowPending(false));
   };
 
-  const followLabel = { none: 'Follow', pending: 'Requested', following: 'Following' }[followState];
+  const followLabel = { none: t('follow.follow'), pending: t('follow.requested'), following: t('follow.following') }[followState];
 
   const handleMessage = () => {
     createConversation(profile.id, token)
@@ -137,7 +141,7 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
       setBlocked(true);
     } catch (err) {
       console.error(err);
-      setBlockError(err.response?.data || 'Failed to block user');
+      setBlockError(serverErrorText(err, 'postMenu.blockFailed'));
     }
   };
 
@@ -145,9 +149,9 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
     return (
       <div className="screen-enter">
         <header className="profile-screen-header">
-          <IconButton icon={ChevronLeft} aria-label="Back" onClick={() => navigate(-1)} />
+          <IconButton icon={ChevronLeft} aria-label={t('common.back')} onClick={() => navigate(-1)} />
         </header>
-        <p className="profile-screen-status">You've blocked {profile.username}.</p>
+        <p className="profile-screen-status">{t('profile.blocked', { name: profile.username })}</p>
       </div>
     );
   }
@@ -157,10 +161,10 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
   return (
     <div className="screen-enter">
       <header className="profile-screen-header">
-        <IconButton icon={ChevronLeft} aria-label="Back" onClick={() => navigate(-1)} />
+        <IconButton icon={ChevronLeft} aria-label={t('common.back')} onClick={() => navigate(-1)} />
         <h1 className="profile-screen-header-title">{profile.username}</h1>
         {!isOwnProfile && (
-          <IconButton icon={MoreHorizontal} aria-label="More options" onClick={() => setSheetOpen(true)} />
+          <IconButton icon={MoreHorizontal} aria-label={t('postMenu.moreOptions')} onClick={() => setSheetOpen(true)} />
         )}
       </header>
 
@@ -172,10 +176,10 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
         {counts && (
           <div className="profile-screen-counts">
             <span>
-              <strong>{counts.followersCount}</strong> followers
+              <Trans i18nKey="profile.followers" values={{ count: counts.followersCount }} components={{ b: <strong /> }} />
             </span>
             <span>
-              <strong>{counts.followingCount}</strong> following
+              <Trans i18nKey="profile.following" values={{ count: counts.followingCount }} components={{ b: <strong /> }} />
             </span>
           </div>
         )}
@@ -183,7 +187,7 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
         <div className="profile-screen-actions">
           {isOwnProfile ? (
             <button type="button" className="profile-screen-btn profile-screen-btn-primary" onClick={() => navigate('/edit-profile')}>
-              Edit Profile
+              {t('profile.editProfile')}
             </button>
           ) : (
             <>
@@ -196,7 +200,7 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
                 {followLabel}
               </button>
               <button type="button" className="profile-screen-btn profile-screen-btn-secondary" onClick={handleMessage}>
-                Message
+                {t('common.message')}
               </button>
             </>
           )}
@@ -213,10 +217,10 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
       <ActionSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
-        title="Profile options"
+        title={t('profile.options')}
         items={[
-          { key: 'report', label: `Report ${profile.username}`, icon: Flag, onSelect: () => setReportOpen(true) },
-          { key: 'block', label: `Block ${profile.username}`, icon: UserX, danger: true, onSelect: () => setConfirmBlockOpen(true) }
+          { key: 'report', label: t('postMenu.reportUser', { name: profile.username }), icon: Flag, onSelect: () => setReportOpen(true) },
+          { key: 'block', label: t('postMenu.block', { name: profile.username }), icon: UserX, danger: true, onSelect: () => setConfirmBlockOpen(true) }
         ]}
       />
       <ConfirmDialog
@@ -226,9 +230,9 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
           setBlockError('');
         }}
         onConfirm={handleBlock}
-        title={`Block ${profile.username}?`}
-        description={`You won't see posts, follows, or messages from ${profile.username} anymore, and they won't see yours.`}
-        confirmLabel="Block"
+        title={t('postMenu.blockTitle', { name: profile.username })}
+        description={t('postMenu.blockDescription', { name: profile.username })}
+        confirmLabel={t('postMenu.blockConfirm')}
         danger
         error={blockError}
       />

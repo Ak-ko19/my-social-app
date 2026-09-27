@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { setEmailVerified } from './hooks/useAuth';
 import { ChevronLeft } from 'lucide-react';
 import { IconButton, Avatar } from './components/ui';
+import { useTranslation } from 'react-i18next';
+import { serverErrorText } from './utils/serverError';
 
 function EditProfile() {
   const [username, setUsername] = useState('');
@@ -16,6 +18,7 @@ function EditProfile() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const token = localStorage.getItem('token');
 
@@ -40,10 +43,10 @@ function EditProfile() {
     })
     .catch((err) => {
       console.error(err);
-      setError('Failed to load profile');
+      setError(t('editProfile.loadFailed'));
       setLoading(false);
     });
-  }, [token, navigate]);
+  }, [token, navigate, t]);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0] || null;
@@ -69,24 +72,24 @@ function EditProfile() {
       { headers: { Authorization: `Bearer ${token}` } }
     )
     .then((response) => {
-      setSuccess('Profile updated successfully!');
+      setSuccess(t('editProfile.updated'));
       setAvatarUrl(response.data.avatar_url || null);
       setAvatar(null);
       setAvatarPreview(null);
     })
     .catch((err) => {
       console.error(err);
-      setError(err.response?.data || 'Failed to update profile. Please try again.');
+      setError(serverErrorText(err, 'editProfile.updateFailed'));
     });
   };
 
-  if (loading) return <p className="screen-status" role="status">Loading profile…</p>;
+  if (loading) return <p className="screen-status" role="status">{t('editProfile.loading')}</p>;
 
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Settings" onClick={() => navigate('/settings')} />
-        <h1 className="screen-header-title">Edit Profile</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('common.backToSettings')} onClick={() => navigate('/settings')} />
+        <h1 className="screen-header-title">{t('editProfile.title')}</h1>
       </header>
       <form className="screen-body form-stack" onSubmit={handleSubmit}>
         <div className="edit-profile-avatar">
@@ -94,34 +97,34 @@ function EditProfile() {
             size={96}
             src={avatarPreview || resolveImageUrl(avatarUrl)}
             initials={(username || '?').slice(0, 2).toUpperCase()}
-            alt="Avatar"
+            alt={t('editProfile.avatarAlt')}
           />
           <label className="form-field">
-            <span className="form-label">Profile picture</span>
+            <span className="form-label">{t('editProfile.picture')}</span>
             <input className="form-file" type="file" accept="image/*" onChange={handleAvatarChange} />
           </label>
         </div>
         <label className="form-field">
-          <span className="form-label">Username</span>
+          <span className="form-label">{t('auth.username')}</span>
           <input className="form-input" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
         </label>
         <label className="form-field">
-          <span className="form-label">Email</span>
+          <span className="form-label">{t('auth.email')}</span>
           <input className="form-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
         <label className="form-field">
-          <span className="form-label">Bio</span>
+          <span className="form-label">{t('editProfile.bio')}</span>
           <textarea
             className="form-input"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            placeholder="Tell people about yourself..."
+            placeholder={t('editProfile.bioPlaceholder')}
             rows="4"
           />
         </label>
         {error && <p className="form-error" role="alert">{error}</p>}
         {success && <p className="form-success" role="status">{success}</p>}
-        <button type="submit" className="btn btn-primary btn-block">Save changes</button>
+        <button type="submit" className="btn btn-primary btn-block">{t('common.saveChanges')}</button>
       </form>
     </div>
   );

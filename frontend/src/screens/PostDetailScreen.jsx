@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { IconButton } from '../components/ui';
+import { useTranslation } from 'react-i18next';
 import PostCard from '../components/feed/PostCard';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import { useAuth } from '../hooks/useAuth';
@@ -15,6 +16,7 @@ import './PostDetailScreen.css';
 // someone already using the app.
 function PostDetailScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { id } = useParams();
   const { token } = useAuth();
   const [post, setPost] = useState(null);
@@ -40,10 +42,10 @@ function PostDetailScreen() {
         console.error(err);
         const isNotFound = err.response?.status === 404;
         setNotFound(isNotFound);
-        setError(isNotFound ? 'Post not found' : 'Failed to load post');
+        setError(isNotFound ? t('postDetail.notFound') : t('postDetail.loadFailed'));
         setLoadedId(id);
       });
-  }, [id, token, attempt]);
+  }, [id, token, attempt, t]);
 
   const loading = loadedId !== id;
 
@@ -56,11 +58,11 @@ function PostDetailScreen() {
   return (
     <div className="screen-enter">
       <header className="post-detail-header">
-        <IconButton icon={ChevronLeft} aria-label="Back" onClick={() => navigate(-1)} />
-        <h1 className="post-detail-header-title">Post</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('common.back')} onClick={() => navigate(-1)} />
+        <h1 className="post-detail-header-title">{t('postDetail.title')}</h1>
       </header>
 
-      {loading && <p className="post-detail-status">Loading…</p>}
+      {loading && <p className="post-detail-status">{t('common.loading')}</p>}
       {!loading && error && notFound && <p className="post-detail-status">{error}</p>}
       {!loading && error && !notFound && <FeedErrorState message={error} onRetry={retry} />}
       {!loading && !error && post && <PostCard post={post} />}

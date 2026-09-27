@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bookmark, Grid3x3, Image as ImageIcon, AtSign, Lock } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import PostCard from '../feed/PostCard';
 import PostCardSkeleton from '../feed/PostCardSkeleton';
 import FeedErrorState from '../feed/FeedErrorState';
@@ -11,10 +12,10 @@ import '../feed/Feed.css';
 import './ProfileTabs.css';
 
 const ALL_TABS = [
-  { key: 'posts', label: 'Posts', icon: Grid3x3, empty: 'No posts yet.' },
-  { key: 'photos', label: 'Photos', icon: ImageIcon, empty: 'No photos yet.' },
-  { key: 'saved', label: 'Saved', icon: Bookmark, empty: 'Nothing saved yet.', ownOnly: true },
-  { key: 'tagged', label: 'Tagged', icon: AtSign, empty: 'No posts mention them yet.' }
+  { key: 'posts', icon: Grid3x3 },
+  { key: 'photos', icon: ImageIcon },
+  { key: 'saved', icon: Bookmark, ownOnly: true },
+  { key: 'tagged', icon: AtSign }
 ];
 
 // Profile tabs (B6): Posts / Photos / Saved (own profile only) / Tagged.
@@ -22,7 +23,8 @@ const ALL_TABS = [
 // and select. Photos is a thumbnail grid (tap -> the post); the other
 // tabs render full PostCards with "Load more".
 function ProfileTabs({ userId, username, isOwn, token }) {
-  const tabs = ALL_TABS.filter((t) => !t.ownOnly || isOwn);
+  const { t } = useTranslation();
+  const tabs = ALL_TABS.filter((tab) => !tab.ownOnly || isOwn);
   const [active, setActive] = useState('posts');
   const tabRefs = useRef({});
   const { posts, loading, loadingMore, error, isPrivate, hasMore, loadMore, reload, removePost } = useProfileTabPosts(
@@ -30,7 +32,6 @@ function ProfileTabs({ userId, username, isOwn, token }) {
     active,
     token
   );
-  const current = tabs.find((t) => t.key === active);
 
   const select = (key) => {
     setActive(key);
@@ -56,13 +57,13 @@ function ProfileTabs({ userId, username, isOwn, token }) {
     panel = (
       <div className="profile-tab-status">
         <Lock size={22} aria-hidden="true" />
-        <p>This account is private. Follow {username} to see their posts.</p>
+        <p>{t('profile.private', { name: username })}</p>
       </div>
     );
   } else if (error && posts.length === 0) {
     panel = <FeedErrorState message={error} onRetry={reload} />;
   } else if (posts.length === 0) {
-    panel = <p className="profile-tab-status">{current.empty}</p>;
+    panel = <p className="profile-tab-status">{t(`profile.empty.${active}`)}</p>;
   } else if (active === 'photos') {
     panel = (
       <ul className="profile-photos-grid">
@@ -70,7 +71,7 @@ function ProfileTabs({ userId, username, isOwn, token }) {
           const first = p.media?.[0]?.url || p.image_url;
           return (
             <li key={p.id}>
-              <Link to={`/posts/${p.id}`} className="profile-photo-link" aria-label={`Open post: ${p.content.slice(0, 60)}`}>
+              <Link to={`/posts/${p.id}`} className="profile-photo-link" aria-label={t('profile.openPost', { text: p.content.slice(0, 60) })}>
                 <img src={getOptimizedImageUrl(first, 300)} alt="" loading="lazy" />
                 {p.media?.length > 1 && <span className="profile-photo-multi" aria-hidden="true">{p.media.length}</span>}
               </Link>
@@ -91,26 +92,26 @@ function ProfileTabs({ userId, username, isOwn, token }) {
 
   return (
     <section className="profile-tabs">
-      <div role="tablist" aria-label="Profile sections" className="profile-tablist">
-        {tabs.map((t, i) => {
-          const Icon = t.icon;
-          const selected = t.key === active;
+      <div role="tablist" aria-label={t('profile.sections')} className="profile-tablist">
+        {tabs.map((tab, i) => {
+          const Icon = tab.icon;
+          const selected = tab.key === active;
           return (
             <button
-              key={t.key}
-              ref={(el) => { tabRefs.current[t.key] = el; }}
+              key={tab.key}
+              ref={(el) => { tabRefs.current[tab.key] = el; }}
               type="button"
               role="tab"
-              id={`profile-tab-${t.key}`}
+              id={`profile-tab-${tab.key}`}
               aria-selected={selected}
               aria-controls="profile-tabpanel"
               tabIndex={selected ? 0 : -1}
               className={clsx('profile-tab', selected && 'is-active')}
-              onClick={() => setActive(t.key)}
+              onClick={() => setActive(tab.key)}
               onKeyDown={(e) => handleKeyDown(e, i)}
             >
               <Icon size={16} aria-hidden="true" />
-              <span>{t.label}</span>
+              <span>{t(`profile.tabs.${tab.key}`)}</span>
             </button>
           );
         })}
@@ -121,7 +122,7 @@ function ProfileTabs({ userId, username, isOwn, token }) {
         {!loading && hasMore && (
           <div className="profile-tab-more">
             <button type="button" className="feed-btn" onClick={loadMore} disabled={loadingMore}>
-              {loadingMore ? 'Loading…' : 'Load more'}
+              {loadingMore ? t('common.loading') : t('common.loadMore')}
             </button>
           </div>
         )}

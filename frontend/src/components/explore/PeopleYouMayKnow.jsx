@@ -6,17 +6,19 @@ import { useFollowToggle } from '../../hooks/useFollowToggle';
 import { fetchSuggestions } from '../../services/suggestionService';
 import { resolveImageUrl } from '../../api';
 import './Explore.css';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 // Why this person is suggested, in plain words.
 function reasonText(s) {
-  if (s.reason === 'follows_you') return 'Follows you';
-  if (s.reason === 'popular') return s.follower_count ? `Popular · ${s.follower_count} followers` : 'New to MySocialApp';
+  if (s.reason === 'follows_you') return i18n.t('explore.reason.followsYou');
+  if (s.reason === 'popular') return s.follower_count ? i18n.t('explore.reason.popular', { count: s.follower_count }) : i18n.t('explore.reason.newHere');
   const [first, second] = s.mutual_sample || [];
   const others = s.mutual_count - (s.mutual_sample?.length || 0);
-  if (!first) return `${s.mutual_count} mutual`;
-  if (second && others <= 0) return `Followed by ${first} and ${second}`;
-  if (others > 0) return `Followed by ${first} and ${others + (second ? 1 : 0)} other${others + (second ? 1 : 0) === 1 ? '' : 's'}`;
-  return `Followed by ${first}`;
+  if (!first) return i18n.t('explore.reason.mutual', { count: s.mutual_count });
+  if (second && others <= 0) return i18n.t('explore.reason.followedByTwo', { first, second });
+  if (others > 0) return i18n.t('explore.reason.followedByOthers', { first, count: others + (second ? 1 : 0) });
+  return i18n.t('explore.reason.followedBy', { first });
 }
 
 function SuggestionCard({ s, token }) {
@@ -38,6 +40,7 @@ function SuggestionCard({ s, token }) {
 // nothing to suggest or the request fails (it's a discovery aid, not
 // primary content).
 function PeopleYouMayKnow({ token }) {
+  const { t } = useTranslation();
   const [suggestions, setSuggestions] = useState(null);
 
   useEffect(() => {
@@ -59,8 +62,8 @@ function PeopleYouMayKnow({ token }) {
   if (!suggestions || suggestions.length === 0) return null;
 
   return (
-    <section className="pymk" aria-label="People you may know">
-      <h2 className="section-heading">People you may know</h2>
+    <section className="pymk" aria-label={t('explore.pymk')}>
+      <h2 className="section-heading">{t('explore.pymk')}</h2>
       <ul className="pymk-row">
         {suggestions.map((s) => (
           <SuggestionCard key={s.id} s={s} token={token} />

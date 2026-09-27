@@ -25,7 +25,9 @@
     "edit": "Edit",
     "sending": "Sending…",
     "send": "Send",
-    "reply": "Reply"
+    "reply": "Reply",
+    "back": "Back",
+    "message": "Message"
   },
   "time": {
     "justNow": "just now",
@@ -326,5 +328,109 @@
     "micBlocked": "Microphone access is blocked on this page. Make sure you're using a secure (https) connection.",
     "micGeneric": "Could not access the microphone. Please check your device and try again.",
     "startFailed": "Could not start recording on this device."
+  },
+  "profile": {
+    "notFound": "User not found",
+    "loadFailed": "Failed to load profile",
+    "blocked": "You've blocked {{name}}.",
+    "followers": "<b>{{count}}</b> followers",
+    "following": "<b>{{count}}</b> following",
+    "editProfile": "Edit Profile",
+    "options": "Profile options",
+    "tabs": {
+      "posts": "Posts",
+      "photos": "Photos",
+      "saved": "Saved",
+      "tagged": "Tagged"
+    },
+    "empty": {
+      "posts": "No posts yet.",
+      "photos": "No photos yet.",
+      "saved": "Nothing saved yet.",
+      "tagged": "No posts mention them yet."
+    },
+    "private": "This account is private. Follow {{name}} to see their posts.",
+    "openPost": "Open post: {{text}}",
+    "sections": "Profile sections"
+  },
+  "editProfile": {
+    "title": "Edit Profile",
+    "loadFailed": "Failed to load profile",
+    "updateFailed": "Failed to update profile. Please try again.",
+    "updated": "Profile updated successfully!",
+    "loading": "Loading profile…",
+    "avatarAlt": "Avatar",
+    "picture": "Profile picture",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell people about yourself..."
+  },
+  "explore": {
+    "title": "Explore",
+    "empty": "No popular posts this week yet. Reactions and comments bring posts here.",
+    "popular": "Popular this week",
+    "trending": "Trending this week",
+    "trendingEmpty": "Nothing trending yet this week.",
+    "postCount_one": "{{count}} post",
+    "postCount_other": "{{count}} posts",
+    "pymk": "People you may know",
+    "reason": {
+      "followsYou": "Follows you",
+      "popular": "Popular · {{count}} followers",
+      "newHere": "New to MySocialApp",
+      "mutual": "{{count}} mutual",
+      "followedByTwo": "Followed by {{first}} and {{second}}",
+      "followedByOthers_one": "Followed by {{first}} and {{count}} other",
+      "followedByOthers_other": "Followed by {{first}} and {{count}} others",
+      "followedBy": "Followed by {{first}}"
+    }
+  },
+  "search": {
+    "title": "Search",
+    "openFailed": "Could not open a conversation. Please try again.",
+    "enterTerm": "Enter a search term",
+    "failed": "Search failed. Please try again.",
+    "label": "Search users or posts",
+    "placeholder": "Search users or posts...",
+    "searching": "Searching…",
+    "explore": "Explore popular posts",
+    "users": "Users",
+    "noUsers": "No matching users.",
+    "posts": "Posts",
+    "noPosts": "No matching posts.",
+    "attachment": "Post attachment"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "loadFailed": "Failed to load notifications",
+    "markFailed": "Failed to mark as read. Please try again.",
+    "markAllFailed": "Failed to mark all as read. Please try again.",
+    "markAll": "Mark all read",
+    "loading": "Loading notifications…",
+    "empty": "No notifications yet.",
+    "markRead": "Mark as read",
+    "types": {
+      "like": "<b>{{name}}</b> liked your post",
+      "comment": "<b>{{name}}</b> commented on your post",
+      "follow": "<b>{{name}}</b> started following you",
+      "mentionComment": "<b>{{name}}</b> mentioned you in a comment",
+      "mentionPost": "<b>{{name}}</b> mentioned you in a post",
+      "followRequest": "<b>{{name}}</b> requested to follow you",
+      "followAccepted": "<b>{{name}}</b> accepted your follow request",
+      "reply": "<b>{{name}}</b> replied to your comment",
+      "commentLike": "<b>{{name}}</b> liked your comment",
+      "other": "<b>{{name}}</b> interacted with you"
+    }
+  },
+  "saved": {
+    "title": "Saved Posts",
+    "empty": "You haven't saved any posts yet."
+  },
+  "hashtag": {
+    "empty": "No posts yet for #{{tag}}."
+  },
+  "postDetail": {
+    "title": "Post",
+    "notFound": "Post not found",
+    "loadFailed": "Failed to load post"
   }
 }

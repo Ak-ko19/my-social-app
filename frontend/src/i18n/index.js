@@ -40,4 +40,8 @@ i18n.on('languageChanged', (lng) => {
   }
 });
 
+// For toLocaleString()/toLocaleDateString(): Burmese dates in Myanmar mode,
+// the browser's own locale otherwise.
+export const dateLocale = () => (i18n.language === 'my' ? 'my-MM' : undefined);
+
 export default i18n;
