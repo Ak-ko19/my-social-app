@@ -23,7 +23,7 @@ function HashtagFeedScreen() {
     <div className="screen-enter">
       <header className="hashtag-feed-header">
         <IconButton icon={ChevronLeft} aria-label={t('common.back')} onClick={() => navigate(-1)} />
-        <h1 className="hashtag-feed-header-title">#{tag}</h1>
+        <h1 className="hashtag-feed-header-title"><bdi>#{tag}</bdi></h1>
       </header>
 
       {state === 'loading' && <FeedSkeleton />}

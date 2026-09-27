@@ -29,21 +29,17 @@ function LandingScreen() {
       <header className="landing-nav">
         <Logo />
         <span className="landing-nav-spacer" />
-        <div className="landing-lang" role="group" aria-label={t('landing.footerLanguage')}>
+        {/* A select (not one button per language) so the header still fits a
+            phone with three or more languages (B16). */}
+        <label className="landing-lang">
           <Globe size={15} aria-hidden="true" />
-          {LANGUAGES.map((l) => (
-            <button
-              key={l.code}
-              type="button"
-              lang={l.code}
-              className={i18n.language === l.code ? 'landing-lang-btn is-active' : 'landing-lang-btn'}
-              aria-pressed={i18n.language === l.code}
-              onClick={() => i18n.changeLanguage(l.code)}
-            >
-              {l.label}
-            </button>
-          ))}
-        </div>
+          <span className="landing-visually-hidden">{t('landing.footerLanguage')}</span>
+          <select className="landing-lang-select" value={i18n.language} onChange={(e) => i18n.changeLanguage(e.target.value)}>
+            {LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code} lang={l.code}>{l.label}</option>
+            ))}
+          </select>
+        </label>
         <ThemeToggle />
         {!token && (
           <Link to="/login" className="landing-nav-link">{t('landing.navLogin')}</Link>

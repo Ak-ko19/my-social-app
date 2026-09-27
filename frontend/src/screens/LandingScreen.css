@@ -31,21 +31,16 @@
   color: var(--color-text-muted);
 }
 
-.landing-lang-btn {
+.landing-lang-select {
   border: 0;
-  background: none;
   padding: 4px 6px;
   border-radius: 8px;
   font: inherit;
   font-size: 13px;
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-
-.landing-lang-btn.is-active {
-  color: var(--color-accent);
   font-weight: 700;
+  color: var(--color-accent);
   background: var(--color-subtle-bg);
+  cursor: pointer;
 }
 
 .landing-nav-link {

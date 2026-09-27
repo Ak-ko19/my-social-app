@@ -25,7 +25,7 @@ function ProfileSummaryRow({ user, src, size = 52, to, className }) {
           {user.verified && <VerifiedTick size={15} />}
         </div>
         <span className="profile-summary-tagline">
-          @{user.handle}
+          <bdi>@{user.handle}</bdi>
           {user.tagline ? ` · ${user.tagline}` : ''}
         </span>
       </div>

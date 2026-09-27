@@ -234,7 +234,7 @@
     "replyTo": "الرد على {{name}}",
     "section": "التعليقات",
     "repliesTo": "الردود على {{name}}",
-    "replyingTo": "الرد على <b>@{{name}}</b>",
+    "replyingTo": "الرد على <b>⁦@{{name}}⁩</b>",
     "cancelReply": "إلغاء الرد",
     "writeComment": "اكتب تعليقًا",
     "replyPlaceholder": "اكتب ردًا...",
@@ -446,7 +446,7 @@
     "empty": "لم تحفظ أي منشورات بعد."
   },
   "hashtag": {
-    "empty": "لا توجد منشورات بعد للوسم #{{tag}}."
+    "empty": "لا توجد منشورات بعد للوسم ⁦#{{tag}}⁩."
   },
   "postDetail": {
     "title": "منشور",
@@ -888,7 +888,7 @@
     "ctaLogin": "لدي حساب بالفعل",
     "ctaOpen": "افتح التطبيق",
     "previewCaption": "لمحة عن الصفحة الرئيسية",
-    "previewPost": "جلسة رسم يوم الأحد في مقهى الشاي ☕ #Yangon",
+    "previewPost": "جلسة رسم يوم الأحد في مقهى الشاي ☕ ⁦#Yangon⁩",
     "previewReactions": "24 تفاعلًا",
     "featuresTitle": "كل ما تحتاجه في تطبيق واحد",
     "features": {

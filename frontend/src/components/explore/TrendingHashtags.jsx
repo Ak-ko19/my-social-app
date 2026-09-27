@@ -22,7 +22,7 @@ function TrendingHashtags({ tags, loaded, title: titleProp }) {
           {tags.map((tag) => (
             <li key={tag.tag}>
               <Link to={`/hashtag/${encodeURIComponent(tag.tag)}`} className="trending-chip">
-                <span>#{tag.tag}</span>
+                <bdi>#{tag.tag}</bdi>
                 <span className="trending-chip-count">
                   {t('explore.postCount', { count: tag.post_count })}
                 </span>

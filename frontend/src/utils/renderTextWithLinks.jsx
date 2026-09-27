@@ -24,7 +24,8 @@ export function renderTextWithLinks(content) {
       const linkClass = part[0] === '#' ? 'post-text-hashtag' : 'post-text-mention';
       return (
         <Link key={i} to={to} className={linkClass} onClick={(e) => e.stopPropagation()}>
-          {part}
+          {/* <bdi>: keeps "#tag"/"@name" in order inside right-to-left text (B16). */}
+          <bdi>{part}</bdi>
         </Link>
       );
     }

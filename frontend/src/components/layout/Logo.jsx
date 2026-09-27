@@ -14,7 +14,8 @@ function Logo({ className }) {
         <span className="ui-logo-dot" style={{ background: 'var(--color-accent-2)' }} />
         <span className="ui-logo-dot" style={{ background: 'var(--color-accent-3)' }} />
       </span>
-      <span className="ui-logo-wordmark">MySocialApp</span>
+      {/* dir="ltr": the brand name stays left-to-right (and truncates at its end) in RTL. */}
+      <span className="ui-logo-wordmark" dir="ltr">MySocialApp</span>
     </span>
   );
 }
