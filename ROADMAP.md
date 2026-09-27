@@ -1208,11 +1208,48 @@ a language toggle in Settings persists the choice.
 ## SECTION C — Investor prep
 
 ### C1 — Demo seed script
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-27)
 **Done when:** a single command (e.g. `npm run seed`) populates a local
 dev database with realistic users, posts, comments, follows, and DMs;
 clearly separated from the real migration scripts; safe to re-run.
 **Notes:** local DB only, per your scope note.
+- **Command:** `npm run seed:demo` from backend/
+  (`scripts/seed-demo.js`). It is separate from the migrations and uses
+  `DATABASE_URL` the same way the app does.
+- **Safety (autonomous choice):**
+  - It refuses unless the DB host is localhost, 127.0.0.1 or ::1, and
+    refuses when `NODE_ENV=production`. There is no override flag.
+    Covered by `tests/api/seedDemoGuard.test.js`.
+  - Everything runs in a single transaction.
+  - Demo accounts all use `@demo.mysocialapp.test`. Each run first
+    deletes exactly those accounts (cascading), so re-running is safe.
+  - If a demo username belongs to a real account, it stops and changes
+    nothing.
+- **What you get:**
+  - 12 Myanmar-flavoured users, including one private account with a
+    pending request.
+  - A dense follow graph.
+  - 20 posts with hashtags (one followers-only), spread over 5 days.
+  - About 100 varied reactions, and 20 comments including replies and
+    comment likes.
+  - Bookmarks.
+  - 2 DMs (one unread) and a group chat.
+  - A public and a private group, with posts and a pending join request.
+  - The "Mingalar Tea House" page, with followers and posts.
+  - 3 unread notifications.
+  - One pending report for the Moderation screen.
+- **Login:** `thiri@demo.mysocialapp.test` (admin) or any
+  `<username>@demo.mysocialapp.test`, password `demo-password-123`.
+  This is a local demo only.
+- **Verified:**
+  - Ran twice on a throwaway DB: same counts, and the other accounts were
+    untouched.
+  - A remote URL is refused.
+  - Browser check 8/8: feed, page post, reactions, 3 unread
+    notifications, unread DM, groups, hashtag feed, admin report.
+  - Backend 233/233.
+- **Not seeded:** stories and avatar/post images. They need Cloudinary
+  uploads, and no external service was added. Everyone shows initials.
 
 ### C2 — Privacy Policy + Terms pages (draft)
 **Status:** ⬜ NOT CHECKED

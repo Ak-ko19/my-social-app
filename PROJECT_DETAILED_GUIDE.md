@@ -930,6 +930,15 @@ built and how to re-verify it.
   - A Menu row.
 - **Deploy:** migration 027 after 026.
 
+### C1 — Demo seed ✅
+- `cd backend && npm run seed:demo` fills a **local** DB with a demo
+  world.
+- Log in as `thiri@demo.mysocialapp.test` / `demo-password-123` (admin).
+- It refuses any non-local host or `NODE_ENV=production`, and is safe to
+  re-run: it only replaces `@demo.mysocialapp.test` accounts.
+- Edit `scripts/seed-demo.js` (USERS / POSTS / COMMENTS arrays) to
+  change the demo.
+
 ### B15 — Myanmar / English (i18n) ✅
 - **Setup:** `src/i18n/index.js` (i18next init, `LANGUAGES`,
   `dateLocale()`), `LanguageRoot.jsx` (remount on switch), and
