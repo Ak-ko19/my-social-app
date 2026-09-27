@@ -1208,7 +1208,7 @@ a language toggle in Settings persists the choice.
   OWNER as optional).
 
 ### B16 — Arabic language (RTL)
-**Status:** ⬜ NOT CHECKED
+**Status:** ✅ VERIFIED (2026-09-27)
 **Order (owner, 2026-09-27):** do this after C3 is finished, before
 continuing Section C (C4).
 **Scope:**
@@ -1229,7 +1229,78 @@ continuing Section C (C4).
   OWNER).
 **Done when:** a user can switch EN / MY / AR in Settings and the whole
 app displays correctly in each.
-**Notes:** _(none yet)_
+**Notes:**
+- **Language:** `frontend/src/i18n/locales/ar.json` has all 763 keys,
+  including all six Arabic plural forms (zero/one/two/few/many/other) for
+  the 8 counted strings.
+  - Arabic versions of the ~75 known server messages are in
+    `i18n/serverMessages.js`, plus the "… failed" pattern.
+  - Settings → Language offers English / မြန်မာ / العربية.
+  - The first visit follows the browser language (`ar*` → Arabic).
+- **RTL:** `<html dir="rtl" lang="ar">` is set from `LANGUAGES[].dir` in
+  `src/i18n`, on load and on every switch.
+  - **CSS:** all 55 physical left/right declarations in live CSS became
+    logical properties (`inset-inline-*`, `margin-inline-*`,
+    `text-align: start`…). These compute identically in LTR. `App.css`
+    isn't imported anywhere and was left alone.
+  - **`styles/global.css` RTL block:** mirrors directional lucide icons
+    (chevrons, arrows, reply, send, log out), the switch thumb and the
+    story progress origin. `layout.css` has an RTL slide-in.
+  - **JS (`utils/direction.js`):**
+    - Arrow keys follow the visual direction in the carousel, reaction
+      picker, stories and profile tabs.
+    - The media carousel handles negative `scrollLeft`.
+    - The voice-message seek bar measures from the right.
+    - Slide-to-cancel on the voice recorder goes rightward.
+  - **Mixed-direction text:** user-written text uses `dir="auto"` (posts,
+    messages, bios, descriptions, previews), so an English post stays LTR
+    inside the Arabic UI and vice versa.
+    - `#tags`, `@handles` and the MySocialApp wordmark are isolated
+      (`<bdi>` / `dir="ltr"`), so they don't flip to "welcome#".
+    - Arabic strings that embed a handle or hashtag use invisible LRI/PDI
+      marks.
+  - **Numbers and dates:** Arabic dates use the browser's Arabic data
+    with Western digits (`ar-u-nu-latn`), e.g. "27 سبتمبر 2026",
+    matching the counts elsewhere. Chromium does have Arabic data, unlike
+    Burmese.
+  - **Font:** Noto Sans Arabic, which downloads only when Arabic text is
+    shown.
+- **Tests:**
+  - `npm run check:i18n` (CI) now checks every locale file against
+    en.json, checks that every plural key has all the forms each
+    language's plural rules need, and checks that the server-message
+    tables cover the same messages. Each check was confirmed to fail on a
+    deliberately removed entry.
+  - The B16 browser test (16/16) checks:
+    - EN/MY/AR are offered, choosing Arabic sets `dir=rtl`/`lang=ar`,
+      and it persists.
+    - The tab bar is mirrored, the back arrow is flipped, and "@alice"
+      reads correctly.
+    - An English post stays LTR, hashtags are isolated, and my chat
+      bubble and the send button sit on the left.
+    - ArrowLeft selects the next tab.
+    - Arabic dates, font and server error work.
+    - Switching back to English restores LTR.
+  - The A3 matrix runs in Arabic (222/222), with new checks for `html
+    dir` and left-edge overflow. English and Myanmar are 222/222 each.
+  - The C3 landing test now covers Arabic too (27/27).
+  - Every earlier browser suite (A2, B1–B15, C1–C3) is green, and the
+    backend is 233/233.
+- **"English and Myanmar look exactly as before":** A3 screenshots of
+  every route in both themes were taken before B16 and compared pixel by
+  pixel afterwards.
+  - Identical, except the intended changes: the Language screen has a
+    third option, and the landing header uses a compact language select
+    instead of one button per language (a third button squeezed the logo
+    on phones; the select is height-matched so nothing below moves).
+  - Also different: timestamps and relative times, which depend on when
+    the test runs, plus 1px anti-aliasing noise on Burmese glyphs that
+    also shows up between two runs of unchanged code.
+- **Not done:** no bidi-aware text input (inputs follow the UI direction;
+  typed text still renders correctly per character), and no Arabic-Indic
+  digit option.
+- **Owner step:** a native Arabic speaker should review `ar.json` and the
+  Arabic server messages (see NEEDS OWNER).
 
 ---
 

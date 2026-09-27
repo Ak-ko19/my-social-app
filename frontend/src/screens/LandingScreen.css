@@ -32,6 +32,10 @@
 }
 
 .landing-lang-select {
+  /* Same height as the buttons it replaced (body line height + 4px padding
+     top and bottom), so the header -- and the page below it -- don't move. */
+  line-height: inherit;
+  height: calc(1lh + 8px);
   border: 0;
   padding: 4px 6px;
   border-radius: 8px;

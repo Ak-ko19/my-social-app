@@ -930,6 +930,23 @@ built and how to re-verify it.
   - A Menu row.
 - **Deploy:** migration 027 after 026.
 
+### B16 — Arabic (RTL) ✅
+- **Languages:** `LANGUAGES` in `src/i18n/index.js` carries each
+  language's `dir`, and `<html dir>` follows it. Add a language =
+  `locales/xx.json` + one `LANGUAGES` row (+ `serverMessages.js`
+  table). `npm run check:i18n` then tells you exactly what's missing,
+  including plural forms.
+- **Writing CSS:** use logical properties (`margin-inline-start`,
+  `inset-inline-end`, `text-align: start`), never left/right. Anything
+  that must flip visually in RTL goes in the RTL block in
+  `styles/global.css`. Directional lucide icons are already mirrored
+  there.
+- **Writing JS:** use `arrowStep(key)` / `isRtl()` from
+  `utils/direction.js` for arrow keys, scroll positions and pointer
+  maths.
+- **User text:** `dir="auto"` on elements showing it, and `<bdi>` around
+  inline #tags / @handles.
+
 ### C3 — Landing page ✅
 - `/welcome` (`screens/LandingScreen.jsx` and `.css`) is public and
   outside PhoneShell, with its own `<Suspense>` in App.jsx.
