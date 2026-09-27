@@ -894,6 +894,42 @@ built and how to re-verify it.
   - The `PostMenu` `canModerate` prop.
 - **Deploy:** migration 026 after 025.
 
+### B14 — Pages ✅
+- **Schema (migration 027):**
+  - `pages` (name, category, description, owner_id).
+  - `page_follows` (page_id, user_id).
+  - `posts.page_id`, with CHECK `posts_group_or_page`.
+- **Model:** one owner per page, who posts *as* the page. `posts.user_id`
+  is still the owner, so every ownership, block and ban rule applies
+  unchanged.
+- **API:** `controllers/pageController.js` and `routes/pageRoutes.js`:
+  - `GET/POST /pages` returns {owned, following, discover}, with `?q=`
+    search.
+  - `GET/PATCH/DELETE /pages/:id` and `GET /pages/:id/posts`.
+  - `POST/DELETE /pages/:id/follow`.
+  - Page posts are created by `POST /posts` with `pageId` (owner only,
+    forced public).
+- **Visibility:**
+  - Page posts are public, even for a private owner. Listings use
+    `(NOT users.is_private OR posts.page_id IS NOT NULL) AND
+    posts.visibility = 'public'`, and `getVisiblePost` returns early for
+    page posts after the deactivated and block checks.
+  - The Home feed is followed people's *personal* posts plus posts from
+    followed pages.
+  - Profile Posts/Photos tabs exclude page posts.
+- **Post rows:** `pageColumnSql()` (in `services/reactionService.js`,
+  next to `mediaColumnSql`) adds `page: {id, name} | null`. Add it to
+  any new post listing.
+- **Frontend:**
+  - `services/pageService.js`.
+  - `screens/PagesScreen.jsx`, `CreatePageScreen.jsx`,
+    `PageScreen.jsx` and `EditPageScreen.jsx`, which reuse
+    `GroupsScreen.css`.
+  - PostCard renders `post.page` as the author.
+  - `CreatePost` `?pageId=`.
+  - A Menu row.
+- **Deploy:** migration 027 after 026.
+
 ---
 
 ## How to use this file

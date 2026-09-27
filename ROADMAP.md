@@ -1084,7 +1084,7 @@ to a group, group-admin permissions enforced.
   - B13 browser test 22/22, covering create, post, discover, request,
     approve, admin delete, promote, make public, leave, search, 404 and
     375px dark layouts.
-  - A3 matrix 174/174, with the 4 group routes added.
+  - A3 matrix 174/174, with the 4 group routes added (198/198 after B14).
   - Every earlier browser suite (A2, B1–B12) is green.
   - Migration 026 up/down/up verified on a throwaway DB.
 - **Fix found by A3:** the `--badge-*` colors aren't dark-adapted, so
@@ -1095,10 +1095,55 @@ to a group, group-admin permissions enforced.
   new post), invite links, and pinned posts.
 
 ### B14 — Pages (business/creator pages, follow pages)
-**Status:** 🟡 PARTIAL (backend done 2026-09-27: migration 027, /pages API, post-as-page, 14 tests, suite 231/231; frontend screens + browser tests remain)
+**Status:** ✅ VERIFIED (2026-09-27)
 **Done when:** a page entity distinct from a user account exists, a
 follow-a-page flow, and page-authored posts.
-**Notes:** _(none yet)_
+**Notes:**
+- **Schema (migration 027):**
+  - `pages`: name, category (business, creator, brand, organization,
+    community or other), description and owner_id.
+  - `page_follows`.
+  - `posts.page_id`, with a CHECK that a post is never in a group and
+    on a page at the same time.
+- **Model (autonomous choice):** one owner per page, who posts *as* the
+  page. `posts.user_id` stays the owner, so blocks, edit and delete
+  rights, bans and account deletion all behave as before. Deleting the
+  account cascades to the owner's pages, following the existing cascade
+  policy.
+- **Rules:**
+  - Following a page needs no approval, and you can't follow your own
+    page.
+  - Page posts are always public, even when the owner's personal account
+    is private. The audience can't be changed (400), and the composer and
+    post menu hide it.
+  - Page posts reach page followers' Home feed, but not the owner's
+    personal followers. They show in public listings (All posts,
+    hashtags, search, explore) and not on the owner's profile
+    Posts/Photos tabs.
+  - A block with the owner, or an inactive owner, hides the page (404).
+- **API:** `GET/POST /pages`, `GET/PATCH/DELETE /pages/:id`,
+  `GET /pages/:id/posts`, `POST/DELETE /pages/:id/follow`, and
+  `POST /posts` with `pageId`. Every post listing now includes a
+  `page` field ({id, name} or null) through `pageColumnSql()`.
+- **Frontend:**
+  - Menu → Pages (`/pages`: your pages, following, discover, search)
+    and `/pages/new`.
+  - `/pages/:id`: Follow/Following, or "Post as page" for the owner.
+  - `/pages/:id/edit`: edit details; deleting requires typing the page
+    name.
+  - PostCard shows the page name as the author, linking to the page,
+    with "Page ·" in the meta line.
+  - A shared `.btn-danger` was added to screens.css.
+- **Verified:**
+  - Backend 231/231 (14 new page tests).
+  - B14 browser test 20/20.
+  - A3 matrix 198/198, with the 4 page routes added.
+  - Every earlier browser suite is green.
+  - Migration 027 up/down/up verified on a throwaway DB.
+- **Deploy order (owner):** migration 027 after 026, before this backend.
+  See NEEDS OWNER.
+- **Not done:** page avatars and covers, multiple page admins, a
+  "new follower" notification for page owners, and page insights.
 
 ### B15 — Myanmar / English language switch (i18n)
 **Status:** ⬜ NOT CHECKED
@@ -1174,7 +1219,7 @@ running app in one pass, with a written pass/fail report per item.
   (backfills existing single-image posts).
 - B3 migration 018 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/018_add_stories.up.sql`.
-  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → 024 → 025 → 026.
+  Run all pending migrations in order: 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → 024 → 025 → 026 → 027.
 - B4 migration 019 on production, **before deploying the new backend**:
   `node scripts/run-migration.js migrations/019_add_comment_replies_likes.up.sql`.
 - B5 migration 020 on production, **before deploying the new backend**:
@@ -1192,3 +1237,5 @@ running app in one pass, with a written pass/fail report per item.
   Admin → Moderation.
 - B13 migration 026 on production, before deploying the new backend:
   `node scripts/run-migration.js migrations/026_add_communities.up.sql`.
+- B14 migration 027 on production, before deploying the new backend:
+  `node scripts/run-migration.js migrations/027_add_pages.up.sql`.
