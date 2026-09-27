@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Flag, Pencil } from 'lucide-react';
 import { IconButton } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
@@ -14,6 +15,7 @@ import './GroupsScreen.css';
 // owner gets "Post as page" and an Edit button.
 function PageScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { id } = useParams();
   const { token } = useAuth();
   const [page, setPage] = useState(null);
@@ -39,12 +41,12 @@ function PageScreen() {
       .catch((err) => {
         if (cancelled) return;
         if (err.response?.status !== 404) console.error(err);
-        setPageError(err.response?.status === 404 ? 'This page is not available.' : 'Could not load the page.');
+        setPageError(err.response?.status === 404 ? t('pages.unavailable') : t('pages.pageLoadFailed'));
       });
     return () => {
       cancelled = true;
     };
-  }, [id, token, reloadKey]);
+  }, [id, token, reloadKey, t]);
 
   const loadMore = () =>
     fetchPagePosts(id, token, { page: pageNum + 1 })
@@ -56,7 +58,7 @@ function PageScreen() {
       })
       .catch((err) => {
         console.error(err);
-        setPostsError('Could not load more posts');
+        setPostsError(t('pages.loadMoreFailed'));
       });
 
   const toggleFollow = () => {
@@ -75,21 +77,21 @@ function PageScreen() {
     return (
       <div className="screen-enter">
         <header className="screen-header">
-          <IconButton icon={ChevronLeft} aria-label="Back to Pages" onClick={() => navigate('/pages')} />
-          <h1 className="screen-header-title">Page</h1>
+          <IconButton icon={ChevronLeft} aria-label={t('pages.backToPages')} onClick={() => navigate('/pages')} />
+          <h1 className="screen-header-title">{t('pages.page')}</h1>
         </header>
         <FeedErrorState message={pageError} onRetry={() => { setPageError(''); setReloadKey((k) => k + 1); }} />
       </div>
     );
   }
-  if (!page) return <p className="screen-status" role="status">Loading page…</p>;
+  if (!page) return <p className="screen-status" role="status">{t('pages.loadingPage')}</p>;
 
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Pages" onClick={() => navigate('/pages')} />
+        <IconButton icon={ChevronLeft} aria-label={t('pages.backToPages')} onClick={() => navigate('/pages')} />
         <h1 className="screen-header-title">{page.name}</h1>
-        {page.is_owner && <IconButton icon={Pencil} aria-label="Edit page" onClick={() => navigate(`/pages/${id}/edit`)} />}
+        {page.is_owner && <IconButton icon={Pencil} aria-label={t('pages.edit')} onClick={() => navigate(`/pages/${id}/edit`)} />}
       </header>
 
       <div className="screen-body">
@@ -98,13 +100,13 @@ function PageScreen() {
             <Flag size={26} />
           </span>
           <p className="community-meta">
-            {categoryLabel(page.category)} · {page.follower_count} {page.follower_count === 1 ? 'follower' : 'followers'}
+            {categoryLabel(page.category)} · {t('pages.followerCount', { count: page.follower_count })}
           </p>
           {page.description && <p className="community-description">{page.description}</p>}
           <div className="community-actions">
             {page.is_owner ? (
               <button type="button" className="btn btn-primary" onClick={() => navigate(`/create-post?pageId=${id}`)}>
-                Post as page
+                {t('pages.postAsPage')}
               </button>
             ) : (
               <button
@@ -114,7 +116,7 @@ function PageScreen() {
                 disabled={busy}
                 aria-pressed={page.is_following}
               >
-                {page.is_following ? 'Following' : 'Follow'}
+                {page.is_following ? t('follow.following') : t('follow.follow')}
               </button>
             )}
           </div>
@@ -123,7 +125,7 @@ function PageScreen() {
 
       <div className="community-feed">
         {posts === null && <PostCardSkeleton />}
-        {posts && posts.length === 0 && <p className="screen-status">No posts yet.</p>}
+        {posts && posts.length === 0 && <p className="screen-status">{t('pages.noPosts')}</p>}
         {posts &&
           posts.map((p) => (
             <PostCard key={p.id} post={p} onRemovePost={removePost} onRemovePostsByUser={ownerBlocked} onUpdatePost={() => {}} />
@@ -131,7 +133,7 @@ function PageScreen() {
         {postsError && <FeedErrorState message={postsError} onRetry={loadMore} />}
         {hasMore && (
           <div className="community-more">
-            <button type="button" className="feed-btn" onClick={loadMore}>Load more</button>
+            <button type="button" className="feed-btn" onClick={loadMore}>{t('common.loadMore')}</button>
           </div>
         )}
       </div>

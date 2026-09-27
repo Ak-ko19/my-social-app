@@ -1,18 +1,13 @@
 import api from '../api';
+import i18n from '../i18n';
 
 // B14 Pages -- see backend/controllers/pageController.js.
 const withAuth = (token) => (token ? { headers: { Authorization: `Bearer ${token}` } } : {});
 const data = (res) => res.data;
 
-export const PAGE_CATEGORIES = [
-  { value: 'business', label: 'Business' },
-  { value: 'creator', label: 'Creator' },
-  { value: 'brand', label: 'Brand' },
-  { value: 'organization', label: 'Organization' },
-  { value: 'community', label: 'Community' },
-  { value: 'other', label: 'Other' }
-];
-export const categoryLabel = (value) => PAGE_CATEGORIES.find((c) => c.value === value)?.label || value;
+// Keep in sync with the backend's CATEGORIES. Labels: pages.categories.<value>.
+export const PAGE_CATEGORIES = ['business', 'creator', 'brand', 'organization', 'community', 'other'];
+export const categoryLabel = (value) => i18n.t(`pages.categories.${value}`, { defaultValue: value });
 
 // { owned, following, discover } -- each { id, name, category, description, follower_count, is_following, is_owner, owner_id, owner_username }
 export const fetchPages = (token, q = '') => api.get('/pages', { ...withAuth(token), params: q ? { q } : {} }).then(data);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Flag, Plus } from 'lucide-react';
 import { IconButton } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
@@ -8,6 +9,7 @@ import { categoryLabel, fetchPages, followPage } from '../services/pageService';
 import './GroupsScreen.css';
 
 function PageRow({ page, token, onChanged }) {
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const follow = () => {
     setBusy(true);
@@ -25,13 +27,13 @@ function PageRow({ page, token, onChanged }) {
         <span className="group-row-text">
           <span className="group-row-name">{page.name}</span>
           <span className="group-row-meta">
-            {categoryLabel(page.category)} · {page.follower_count} {page.follower_count === 1 ? 'follower' : 'followers'}
+            {categoryLabel(page.category)} · {t('pages.followerCount', { count: page.follower_count })}
           </span>
         </span>
       </Link>
       {!page.is_owner && !page.is_following && (
-        <button type="button" className="btn btn-primary btn-sm" onClick={follow} disabled={busy} aria-label={`Follow ${page.name}`}>
-          Follow
+        <button type="button" className="btn btn-primary btn-sm" onClick={follow} disabled={busy} aria-label={t('pages.followName', { name: page.name })}>
+          {t('follow.follow')}
         </button>
       )}
     </li>
@@ -57,6 +59,7 @@ function Section({ title, pages, empty, token, onChanged }) {
 // with name search and a Create button.
 function PagesScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { token } = useAuth();
   const [query, setQuery] = useState('');
   const [data, setData] = useState(null);
@@ -65,7 +68,7 @@ function PagesScreen() {
 
   useEffect(() => {
     let cancelled = false;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       fetchPages(token, query.trim())
         .then((d) => {
           if (!cancelled) {
@@ -75,42 +78,42 @@ function PagesScreen() {
         })
         .catch((err) => {
           console.error(err);
-          if (!cancelled) setError('Could not load pages');
+          if (!cancelled) setError(t('pages.loadFailed'));
         });
     }, 200);
     return () => {
       cancelled = true;
-      clearTimeout(t);
+      clearTimeout(timer);
     };
-  }, [token, query, reloadKey]);
+  }, [token, query, reloadKey, t]);
 
   const reload = () => setReloadKey((k) => k + 1);
 
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Menu" onClick={() => navigate('/menu')} />
-        <h1 className="screen-header-title">Pages</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('common.backToMenu')} onClick={() => navigate('/menu')} />
+        <h1 className="screen-header-title">{t('pages.title')}</h1>
         <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate('/pages/new')}>
-          <Plus size={14} aria-hidden="true" /> Create
+          <Plus size={14} aria-hidden="true" /> {t('common.create')}
         </button>
       </header>
       <div className="screen-body">
-        <label className="feed-visually-hidden" htmlFor="pages-search">Search pages</label>
-        <input id="pages-search" type="search" className="form-input" placeholder="Search pages" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <label className="feed-visually-hidden" htmlFor="pages-search">{t('pages.search')}</label>
+        <input id="pages-search" type="search" className="form-input" placeholder={t('pages.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
 
         {error && <FeedErrorState message={error} onRetry={reload} />}
-        {!data && !error && <p className="screen-status" role="status">Loading pages…</p>}
+        {!data && !error && <p className="screen-status" role="status">{t('pages.loading')}</p>}
         {data && (
           <>
-            {data.owned.length > 0 && <Section title="Your pages" pages={data.owned} token={token} onChanged={reload} empty="" />}
-            <Section title="Following" pages={data.following} token={token} onChanged={reload} empty="You don't follow any pages yet." />
+            {data.owned.length > 0 && <Section title={t('pages.yours')} pages={data.owned} token={token} onChanged={reload} empty="" />}
+            <Section title={t('pages.following')} pages={data.following} token={token} onChanged={reload} empty={t('pages.notFollowing')} />
             <Section
-              title="Discover"
+              title={t('pages.discover')}
               pages={data.discover}
               token={token}
               onChanged={reload}
-              empty={query ? 'No pages match that search.' : 'No other pages yet. Create the first one!'}
+              empty={query ? t('pages.noMatch') : t('pages.noneYet')}
             />
           </>
         )}

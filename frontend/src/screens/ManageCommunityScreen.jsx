@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Globe, Lock } from 'lucide-react';
 import { Avatar, IconButton } from '../components/ui';
 import { resolveImageUrl } from '../api';
@@ -14,6 +15,7 @@ import {
   removeCommunityMember,
   setCommunityRole
 } from '../services/communityService';
+import { serverErrorText } from '../utils/serverError';
 import './GroupsScreen.css';
 
 // B13: /groups/:id/manage -- admins only (the API enforces it; this screen
@@ -21,6 +23,7 @@ import './GroupsScreen.css';
 // manage members and roles.
 function ManageCommunityScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { id } = useParams();
   const { token, userId } = useAuth();
   const [group, setGroup] = useState(null);
@@ -43,9 +46,9 @@ function ManageCommunityScreen() {
       setError('');
     } catch (err) {
       console.error(err);
-      setError('Could not load the group');
+      setError(t('groups.manageLoadFailed'));
     }
-  }, [id, token]);
+  }, [id, token, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,33 +66,33 @@ function ManageCommunityScreen() {
         }
       } catch (err) {
         console.error(err);
-        if (!cancelled) setError('Could not load the group');
+        if (!cancelled) setError(t('groups.manageLoadFailed'));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [id, token]);
+  }, [id, token, t]);
 
   const act = (promise) => {
     setActionError('');
     setSaved(false);
     return promise.then(loadAll).catch((err) => {
       console.error(err);
-      setActionError(err.response?.data || 'That action failed. Please try again.');
+      setActionError(serverErrorText(err, 'groups.actionFailed'));
     });
   };
 
   if (error) return <FeedErrorState message={error} onRetry={loadAll} />;
-  if (!group || !form) return <p className="screen-status" role="status">Loading…</p>;
+  if (!group || !form) return <p className="screen-status" role="status">{t('common.loading')}</p>;
   if (!group.is_admin) {
     return (
       <div className="screen-enter">
         <header className="screen-header">
-          <IconButton icon={ChevronLeft} aria-label="Back to the group" onClick={() => navigate(`/groups/${id}`)} />
-          <h1 className="screen-header-title">Manage group</h1>
+          <IconButton icon={ChevronLeft} aria-label={t('groups.backToGroup')} onClick={() => navigate(`/groups/${id}`)} />
+          <h1 className="screen-header-title">{t('groups.manage')}</h1>
         </header>
-        <p className="screen-status">Only group admins can manage this group.</p>
+        <p className="screen-status">{t('groups.adminsOnly')}</p>
       </div>
     );
   }
@@ -98,74 +101,75 @@ function ManageCommunityScreen() {
     e.preventDefault();
     act(updateCommunity(id, form, token)).then(() => setSaved(true));
   };
+  const initials = (name) => (name || '?').slice(0, 2).toUpperCase();
 
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to the group" onClick={() => navigate(`/groups/${id}`)} />
-        <h1 className="screen-header-title">Manage group</h1>
+        <IconButton icon={ChevronLeft} aria-label={t('groups.backToGroup')} onClick={() => navigate(`/groups/${id}`)} />
+        <h1 className="screen-header-title">{t('groups.manage')}</h1>
       </header>
       <div className="screen-body">
         {actionError && <p className="form-error" role="alert">{actionError}</p>}
 
-        <h2 className="section-heading">Details</h2>
+        <h2 className="section-heading">{t('groups.details')}</h2>
         <form className="form-stack" onSubmit={saveDetails}>
           <label className="form-field">
-            <span className="form-label">Name</span>
+            <span className="form-label">{t('groups.name')}</span>
             <input className="form-input" maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
           </label>
           <label className="form-field">
-            <span className="form-label">Description</span>
+            <span className="form-label">{t('groups.description')}</span>
             <textarea className="form-input" rows="3" maxLength={1000} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </label>
           <fieldset className="audience-picker">
-            <legend className="form-label">Privacy</legend>
+            <legend className="form-label">{t('groups.privacy')}</legend>
             {['public', 'private'].map((p) => (
               <label key={p} className={form.privacy === p ? 'audience-option is-selected' : 'audience-option'}>
                 <input type="radio" name="privacy" value={p} checked={form.privacy === p} onChange={() => setForm({ ...form, privacy: p })} />
-                {p === 'public' ? <Globe size={15} aria-hidden="true" /> : <Lock size={15} aria-hidden="true" />} {p === 'public' ? 'Public' : 'Private'}
+                {p === 'public' ? <Globe size={15} aria-hidden="true" /> : <Lock size={15} aria-hidden="true" />} {p === 'public' ? t('groups.public') : t('groups.private')}
               </label>
             ))}
           </fieldset>
           {group.privacy === 'private' && form.privacy === 'public' && requests.length > 0 && (
-            <p className="group-privacy-hint">Making the group public will also admit the {requests.length} pending request(s).</p>
+            <p className="group-privacy-hint">{t('groups.admitHint', { count: requests.length })}</p>
           )}
-          <button type="submit" className="btn btn-primary btn-block" disabled={!form.name.trim()}>Save changes</button>
-          {saved && <p className="form-success" role="status">Saved.</p>}
+          <button type="submit" className="btn btn-primary btn-block" disabled={!form.name.trim()}>{t('common.saveChanges')}</button>
+          {saved && <p className="form-success" role="status">{t('common.saved')}</p>}
         </form>
 
-        <h2 className="section-heading">Join requests ({requests.length})</h2>
+        <h2 className="section-heading">{t('groups.requests', { count: requests.length })}</h2>
         {requests.length === 0 ? (
-          <p className="screen-status">No pending requests.</p>
+          <p className="screen-status">{t('groups.noRequests')}</p>
         ) : (
           <ul className="card-list">
             {requests.map((r) => (
               <li key={r.id} className="card-row group-member-row">
-                <Avatar src={resolveImageUrl(r.avatar_url)} initials={r.username.slice(0, 2).toUpperCase()} size={36} alt="" />
+                <Avatar src={resolveImageUrl(r.avatar_url)} initials={initials(r.username)} size={36} alt="" />
                 <span className="card-row-body">{r.username}</span>
-                <button type="button" className="btn btn-primary btn-sm" onClick={() => act(approveJoinRequest(id, r.id, token))}>Approve</button>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => act(removeCommunityMember(id, r.id, token))} aria-label={`Deny ${r.username}`}>Deny</button>
+                <button type="button" className="btn btn-primary btn-sm" onClick={() => act(approveJoinRequest(id, r.id, token))}>{t('groups.approve')}</button>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => act(removeCommunityMember(id, r.id, token))} aria-label={t('groups.denyName', { name: r.username })}>{t('groups.deny')}</button>
               </li>
             ))}
           </ul>
         )}
 
-        <h2 className="section-heading">Members ({members.length})</h2>
+        <h2 className="section-heading">{t('groups.members', { count: members.length })}</h2>
         <ul className="card-list">
           {members.map((m) => (
             <li key={m.id} className="card-row group-member-row">
-              <Avatar src={resolveImageUrl(m.avatar_url)} initials={m.username.slice(0, 2).toUpperCase()} size={36} alt="" />
+              <Avatar src={resolveImageUrl(m.avatar_url)} initials={initials(m.username)} size={36} alt="" />
               <span className="card-row-body">
-                {m.id === userId ? 'You' : m.username}
-                {m.role === 'admin' && <span className="group-admin-badge">Admin</span>}
+                {m.id === userId ? t('groups.you') : m.username}
+                {m.role === 'admin' && <span className="group-admin-badge">{t('groups.admin')}</span>}
               </span>
               {m.id !== userId && (
                 <>
                   <button type="button" className="btn btn-secondary btn-sm" onClick={() => act(setCommunityRole(id, m.id, m.role === 'admin' ? 'member' : 'admin', token))}>
-                    {m.role === 'admin' ? 'Remove admin' : 'Make admin'}
+                    {m.role === 'admin' ? t('groups.removeAdmin') : t('groups.makeAdmin')}
                   </button>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => act(removeCommunityMember(id, m.id, token))} aria-label={`Remove ${m.username}`}>
-                    Remove
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => act(removeCommunityMember(id, m.id, token))} aria-label={t('groups.removeName', { name: m.username })}>
+                    {t('groups.remove')}
                   </button>
                 </>
               )}

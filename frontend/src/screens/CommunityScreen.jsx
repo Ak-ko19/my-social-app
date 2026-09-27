@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Globe, Lock, Settings2, UsersRound } from 'lucide-react';
 import { IconButton, ConfirmDialog } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
@@ -15,6 +16,7 @@ import './GroupsScreen.css';
 // post here (PostCard's canModerate).
 function CommunityScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { id } = useParams();
   const { token, userId } = useAuth();
   const [group, setGroup] = useState(null);
@@ -36,10 +38,10 @@ function CommunityScreen() {
         })
         .catch((err) => {
           if (err.response?.status !== 404) console.error(err);
-          setGroupError(err.response?.status === 404 ? 'This group no longer exists.' : 'Could not load the group.');
+          setGroupError(err.response?.status === 404 ? t('groups.gone') : t('groups.groupLoadFailed'));
           return null;
         }),
-    [id, token]
+    [id, token, t]
   );
 
   const loadPosts = useCallback(
@@ -57,9 +59,9 @@ function CommunityScreen() {
             return;
           }
           console.error(err);
-          setPostsError('Could not load posts');
+          setPostsError(t('groups.postsFailed'));
         }),
-    [id, token]
+    [id, token, t]
   );
 
   useEffect(() => {
@@ -82,12 +84,12 @@ function CommunityScreen() {
       .catch((err) => {
         if (cancelled) return;
         if (err.response?.status !== 404) console.error(err);
-        setGroupError(err.response?.status === 404 ? 'This group no longer exists.' : 'Could not load the group.');
+        setGroupError(err.response?.status === 404 ? t('groups.gone') : t('groups.groupLoadFailed'));
       });
     return () => {
       cancelled = true;
     };
-  }, [id, token]);
+  }, [id, token, t]);
 
   const join = () => {
     setBusy(true);
@@ -117,24 +119,24 @@ function CommunityScreen() {
     return (
       <div className="screen-enter">
         <header className="screen-header">
-          <IconButton icon={ChevronLeft} aria-label="Back to Groups" onClick={() => navigate('/groups')} />
-          <h1 className="screen-header-title">Group</h1>
+          <IconButton icon={ChevronLeft} aria-label={t('groups.backToGroups')} onClick={() => navigate('/groups')} />
+          <h1 className="screen-header-title">{t('groups.group')}</h1>
         </header>
         <FeedErrorState message={groupError} onRetry={() => { setGroupError(''); loadGroup(); }} />
       </div>
     );
   }
-  if (!group) return <p className="screen-status" role="status">Loading group…</p>;
+  if (!group) return <p className="screen-status" role="status">{t('groups.loadingGroup')}</p>;
 
   const pending = group.my_status === 'pending';
 
   return (
     <div className="screen-enter">
       <header className="screen-header">
-        <IconButton icon={ChevronLeft} aria-label="Back to Groups" onClick={() => navigate('/groups')} />
+        <IconButton icon={ChevronLeft} aria-label={t('groups.backToGroups')} onClick={() => navigate('/groups')} />
         <h1 className="screen-header-title">{group.name}</h1>
         {group.is_admin && (
-          <IconButton icon={Settings2} aria-label="Manage group" onClick={() => navigate(`/groups/${id}/manage`)} />
+          <IconButton icon={Settings2} aria-label={t('groups.manage')} onClick={() => navigate(`/groups/${id}/manage`)} />
         )}
       </header>
 
@@ -145,28 +147,28 @@ function CommunityScreen() {
           </span>
           <p className="community-meta">
             {group.privacy === 'private' ? <Lock size={13} aria-hidden="true" /> : <Globe size={13} aria-hidden="true" />}
-            {group.privacy === 'private' ? ' Private group' : ' Public group'} · {group.member_count} {group.member_count === 1 ? 'member' : 'members'}
+            {' '}{group.privacy === 'private' ? t('groups.privateGroup') : t('groups.publicGroup')} · {t('groups.memberCount', { count: group.member_count })}
           </p>
           {group.description && <p className="community-description">{group.description}</p>}
 
           <div className="community-actions">
             {!group.my_status && (
               <button type="button" className="btn btn-primary" onClick={join} disabled={busy}>
-                {group.privacy === 'private' ? 'Request to join' : 'Join group'}
+                {group.privacy === 'private' ? t('groups.requestToJoin') : t('groups.joinGroup')}
               </button>
             )}
             {pending && (
               <button type="button" className="btn btn-secondary" onClick={() => setConfirmLeave(true)}>
-                Requested · Cancel
+                {t('groups.requestedCancel')}
               </button>
             )}
             {group.is_member && (
               <>
                 <button type="button" className="btn btn-primary" onClick={() => navigate(`/create-post?communityId=${id}`)}>
-                  Write a post
+                  {t('groups.writePost')}
                 </button>
                 <button type="button" className="btn btn-secondary" onClick={() => setConfirmLeave(true)}>
-                  Leave
+                  {t('groups.leave')}
                 </button>
               </>
             )}
@@ -176,7 +178,7 @@ function CommunityScreen() {
         {!group.can_read && (
           <div className="community-locked">
             <Lock size={22} aria-hidden="true" />
-            <p>{pending ? 'Your request is waiting for an admin.' : 'This group is private. Join to see its posts.'}</p>
+            <p>{pending ? t('groups.waiting') : t('groups.privateLocked')}</p>
           </div>
         )}
       </div>
@@ -185,14 +187,16 @@ function CommunityScreen() {
         <div className="community-feed">
           {posts === null && <PostCardSkeleton />}
           {postsError && <FeedErrorState message={postsError} onRetry={() => loadPosts(1)} />}
-          {posts && posts.length === 0 && !postsError && <p className="screen-status">No posts yet{group.is_member ? ' — be the first!' : '.'}</p>}
+          {posts && posts.length === 0 && !postsError && (
+            <p className="screen-status">{group.is_member ? t('groups.noPostsMember') : t('groups.noPosts')}</p>
+          )}
           {posts &&
             posts.map((p) => (
               <PostCard key={p.id} post={p} onRemovePost={removePost} onRemovePostsByUser={() => loadPosts(1)} onUpdatePost={() => {}} canModerate={group.is_admin} />
             ))}
           {hasMore && (
             <div className="community-more">
-              <button type="button" className="feed-btn" onClick={() => loadPosts(page + 1)}>Load more</button>
+              <button type="button" className="feed-btn" onClick={() => loadPosts(page + 1)}>{t('common.loadMore')}</button>
             </div>
           )}
         </div>
@@ -202,9 +206,9 @@ function CommunityScreen() {
         open={confirmLeave}
         onClose={() => setConfirmLeave(false)}
         onConfirm={leave}
-        title={pending ? 'Cancel your request?' : `Leave ${group.name}?`}
-        description={pending ? '' : group.privacy === 'private' ? "You'll need an admin's approval to rejoin." : 'You can rejoin any time.'}
-        confirmLabel={pending ? 'Cancel request' : 'Leave'}
+        title={pending ? t('groups.cancelRequestTitle') : t('groups.leaveTitle', { name: group.name })}
+        description={pending ? '' : group.privacy === 'private' ? t('groups.leavePrivate') : t('groups.leavePublic')}
+        confirmLabel={pending ? t('groups.cancelRequest') : t('groups.leave')}
         danger={!pending}
       />
     </div>
