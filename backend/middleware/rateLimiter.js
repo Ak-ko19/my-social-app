@@ -48,7 +48,10 @@ function createLimiter({ windowMs, max, message, keyBy, skipSuccessfulRequests =
   // "IP", so limits meant to bound a single real client would otherwise
   // trip across unrelated test cases in the same run. Jest sets
   // NODE_ENV=test automatically, so this never applies outside tests.
-  if (process.env.NODE_ENV === 'test') {
+  // tests/api/rateLimit.test.js sets RATE_LIMIT_IN_TESTS=1 to run the real
+  // limiters, so a keying bug like the shared-proxy-IP one can't slip
+  // through again.
+  if (process.env.NODE_ENV === 'test' && process.env.RATE_LIMIT_IN_TESTS !== '1') {
     return (req, res, next) => next();
   }
   return rateLimit({

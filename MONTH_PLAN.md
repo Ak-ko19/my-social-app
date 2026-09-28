@@ -68,7 +68,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 2 — Rate limiter + own posts
 - [x] Set `trust proxy` correctly for Render so each client IP is seen.
 - [x] Rate-limit authenticated routes per user ID, anonymous routes per IP.
-- [ ] Enable rate limiting in a dedicated test so this bug cannot return (7 users must not block each other).
+- [x] Enable rate limiting in a dedicated test so this bug cannot return (7 users must not block each other).
 - [ ] GET /feed includes the viewer's own posts; a new post appears at the top immediately.
 
 ### Day 3 — Startup safety + small bugs

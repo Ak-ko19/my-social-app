@@ -1,54 +1,44 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 2 — Rate limiter + own posts
-**Step:** 2 — Rate-limit authenticated routes per user ID, anonymous routes per IP.
+**Step:** 3 — Enable rate limiting in a dedicated test so this bug cannot return (7 users must not block each other).
 
 ## Done this Day
 - Step 1 DONE (`30b1dba`): trust proxy for Render.
+- Step 2 DONE (`9c78b40`): per-user / per-IP limiter keys (+ b12 flake fix).
 
 ## Plan
-- Why: after step 1 each IP has its own bucket, but many real users share
-  one IP (mobile carrier CGNAT, campus/office Wi-Fi). Per-IP budgets for
-  logged-in traffic throttle whole networks; per-user budgets follow the
-  account instead.
-- `middleware/rateLimiter.js`, `createLimiter({ keyBy })`:
-  - `'ip'`   → `ip:<ipKeyGenerator(req.ip)>` (IPv6 grouped per /56, the
-    library's own default, so one host can't rotate addresses).
-  - `'user'` → `user:<req.userId>`; used only behind authMiddleware; if
-    userId is somehow missing, falls back to the IP key (never a shared
-    `user:undefined` bucket).
-  - `'userOrIp'` → verifies the Bearer JWT (jwt.verify, never decode —
-    an unverified token would let anyone invent user IDs and get fresh
-    buckets); valid → user key, otherwise IP key.
-  - Key prefixes keep user 7 and IP "7..." from ever colliding.
-- Mapping:
-  - global (runs before auth) → `userOrIp`
-  - login, signup, forgot-password, reset-password → `ip` ALWAYS
-    (credential-guessing / account-creation surfaces; a token must not
-    move an attacker to a different bucket)
-  - follow, report, account actions, resend-verification → `user`
-- No message or status changes → frontend + MY/AR translations unchanged.
-- Socket.io sends already have their own per-(user, conversation) limit.
-- Tests: key functions (valid/invalid/expired/wrong-secret/malformed
-  token, no header, IPv6 grouping, missing userId, no collisions) and
-  that createLimiter rejects an unknown keyBy. Limiter-on integration
-  tests belong to step 3.
-- Verify: real-server probe with limiters ON — two users behind one IP
-  get separate global budgets; anonymous traffic from that IP has its
-  own; login stays per-IP even with a token; follow is per user.
+- Root cause of the audit miss: `createLimiter` returns a passthrough under
+  NODE_ENV=test, so no test ever ran a real limiter.
+- `RATE_LIMIT_IN_TESTS=1` → real limiters even under NODE_ENV=test. Read
+  at limiter creation (module load). Outside tests limiters are always
+  on, so the flag is meaningless there. Default stays off, so the other
+  27 suites are unaffected.
+- `tests/api/rateLimit.test.js`: sets the flag + RENDER=true (trust proxy
+  1 hop) before `setupTestApp()`, restores env afterwards.
+  - Users are created with their own X-Forwarded-For IPs (the signup
+    limiter is 10/h per IP).
+  - One DB reset for the whole file (not per test): the limiter store
+    lives for the file, so each case uses its own IPs/users and IDs must
+    not repeat.
+  - Cases:
+    1. 7 users on 7 IPs, one wrong password each → all 401; then all
+       log in (the audit's scenario).
+    2. One IP: 5 wrong → 401, 6th → 429 + Retry-After 900 + message;
+       switching tokens doesn't reset it; another IP still logs in.
+    3. Spoofed X-Forwarded-For prefixes don't escape the login limit.
+    4. Global 300/15min per user: alice exhausts hers → 429 (also from
+       another IP); bob, anonymous and a forged token on the same IP → 200.
+    5. Follow 60/15min per user across rotating IPs; another user on the
+       same IP unaffected.
+    6. Guard: without the flag, limiters stay off under NODE_ENV=test.
+- Performance: ~400 requests, all in-process via supertest.
 
 ## Progress
-- [x] key functions + keyBy option
-- [x] limiter mapping
-- [x] tests (9 new)
-- [x] Backend suite 251/251
-- [x] Probe (limiters ON): login per IP even when switching tokens;
-  follow per user even when rotating IPs; global per user (her 429
-  follows her to another IP; bob / anonymous / forged token on the same
-  IP unaffected); 0 limiter validation warnings
-- [x] Related browser suites: a2 22/22, b11 9/9, b12 13/13
-- [x] FIX: b12 was flaky (3/7 runs): dave's in-flight Socket.io poll got
-  a 400 "Session ID unknown" when his ban dropped the socket, before the
-  suite's expected-error window. Allowed 400/401 on dave's tab only from
-  the ban click on. 5/5 green after.
-- STEP 2 DONE
+- [x] RATE_LIMIT_IN_TESTS switch
+- [x] rateLimit.test.js (6 tests, ~5 s)
+- [x] Mutation checks: TRUST_PROXY=0 → 5/6 fail; global keyed by IP →
+  1/6 fails. So the test really guards both bugs.
+- [x] Backend suite x2: 257/257 both runs
+- [x] a2-walkthrough 22/22; diff review clean
+- STEP 3 DONE
