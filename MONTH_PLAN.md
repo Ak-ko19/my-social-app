@@ -78,7 +78,7 @@ Build every feature the way a senior engineer at a top social media company woul
 
 ### Day 4 — Cloudinary cleanup
 - [x] Deleting a post, story, message, or account deletes its images/voice notes from Cloudinary.
-- [ ] Store Cloudinary public_id wherever it is missing (migration if needed).
+- [x] Store Cloudinary public_id wherever it is missing (migration if needed). *(Not needed: every stored URL is Cloudinary's secure_url, which contains the public_id and resource type; derived by one parser that round-trips the real SDK's URLs. See Progress Log.)*
 - [ ] Script to find and delete orphaned Cloudinary files (dry-run mode first).
 
 ### Day 5 — Working email in production

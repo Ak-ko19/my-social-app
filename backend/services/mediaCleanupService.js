@@ -28,7 +28,8 @@ function cloudName() {
 function cloudinaryAsset(url, cloud = cloudName()) {
   if (!cloud || typeof url !== 'string') return null;
   const escaped = cloud.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const match = url.match(new RegExp(`^https://res\\.cloudinary\\.com/${escaped}/(image|video)/upload/v\\d+/([^?#]+?)\\.[a-z0-9]+$`, 'i'));
+  // A query/fragment (e.g. the SDK's "?_a=" analytics tag) is ignored.
+  const match = url.match(new RegExp(`^https://res\\.cloudinary\\.com/${escaped}/(image|video)/upload/v\\d+/([^?#]+?)\\.[a-z0-9]+(?:[?#].*)?$`, 'i'));
   if (!match) return null;
   return { resourceType: match[1].toLowerCase(), publicId: decodeURIComponent(match[2]) };
 }

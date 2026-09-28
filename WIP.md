@@ -78,4 +78,11 @@
 - [x] No code copies media URLs between rows, so a delete can't break
   something still in use
 - [x] Backend 308/308; b2 b3 b9 b11 b13 b14 green
-- STEP 1 DONE
+- STEP 1 DONE (`10a7eca`)
+
+## Step 2 — public_id (DONE)
+- No migration: derived from secure_url (all 5 upload paths store it).
+- Verified by round-tripping URLs built by the real Cloudinary SDK
+  (folders, spaces, unicode, dots, video/mp3). Found + fixed: the SDK
+  adds a "?_a=" query to built URLs; the parser now ignores query and
+  fragment. Backend 309/309.

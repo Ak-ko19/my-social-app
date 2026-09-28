@@ -63,12 +63,30 @@ describe('media cleanup', () => {
         'https://res.cloudinary.com/demo/raw/upload/v1/file.txt',
         'http://res.cloudinary.com/demo/image/upload/v1/posts/a.jpg',
         'https://evil.example/demo/image/upload/v1/posts/a.jpg',
-        'https://res.cloudinary.com/demo/image/upload/v1/posts/a.jpg?x=1',
+        'https://res.cloudinary.com/demo.evil/image/upload/v1/posts/a.jpg',
         '/uploads/a.jpg', '', null, 42
       ]) {
         expect(cloudinaryAsset(url, 'demo')).toBeNull();
       }
       expect(cloudinaryAsset('https://res.cloudinary.com/demo/image/upload/v1/a.jpg', null)).toBeNull();
+    });
+
+    // Day 4 step 2: public_id is derived, not stored. Prove the parser reads
+    // back exactly what the real Cloudinary SDK puts in a URL (built offline).
+    it('round-trips URLs built by the real Cloudinary SDK', () => {
+      const sdk = jest.requireActual('cloudinary').v2;
+      const cases = [
+        ['posts/abc123', 'image', 'jpg'],
+        ['voice-messages/x_y', 'video', 'mp3'],
+        ['a/b/my pic', 'image', 'png'],
+        ['avatars/ünïcode-名前', 'image', 'webp'],
+        ['stories/s.1', 'image', 'jpg'],
+        ['message-images/IMG_0001', 'image', 'gif']
+      ];
+      for (const [publicId, resourceType, format] of cases) {
+        const url = sdk.url(publicId, { cloud_name: 'demo', secure: true, version: 1712345678, resource_type: resourceType, format });
+        expect(cloudinaryAsset(url, 'demo')).toEqual({ publicId, resourceType });
+      }
     });
   });
 
