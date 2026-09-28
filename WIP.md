@@ -1,46 +1,54 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 2 — Rate limiter + own posts
-**Step:** 1 — Set `trust proxy` correctly for Render so each client IP is seen.
+**Step:** 2 — Rate-limit authenticated routes per user ID, anonymous routes per IP.
+
+## Done this Day
+- Step 1 DONE (`30b1dba`): trust proxy for Render.
 
 ## Plan
-- Stack: Express 5.2.1, express-rate-limit 8.7.0. `server.js` never sets
-  `trust proxy`, so behind Render's proxy `req.ip` = the proxy, and every
-  client shares one limiter bucket (audit bug #1, Critical).
-- New `backend/config/trustProxy.js` → `resolveTrustProxy(env)`:
-  - `TRUST_PROXY` set → must be a non-negative integer hop count
-    (0 = off). Anything else throws at startup with a clear message.
-  - Otherwise: 1 hop when `RENDER=true` (Render sets it automatically) or
-    `NODE_ENV=production`; else `false` (local dev has no proxy).
-  - Never `true`: that trusts the whole X-Forwarded-For chain, so a client
-    could spoof its IP and dodge or poison limits (express-rate-limit
-    also rejects it with ERR_ERL_PERMISSIVE_TRUST_PROXY).
-- `server.js`: `app.set('trust proxy', resolveTrustProxy(process.env))`
-  right after `express()`.
-- Security: with 1 hop, `req.ip` = the rightmost X-Forwarded-For entry
-  (added by Render), so client-prepended fake entries are ignored.
-- Tests (`tests/api/trustProxy.test.js`):
-  - resolver: defaults, Render, production, override, 0, invalid values;
-  - the server's app is wired to the resolver (the compiled
-    `trust proxy fn` trusts exactly 1 hop under RENDER=true);
-  - behaviour: with 1 hop, a spoofed X-Forwarded-For prefix is ignored
-    and the real client IP is used; with trust off, XFF is ignored.
-- Docs: `TRUST_PROXY` in `.env.example` (name + explanation only).
-- Not in this step: per-user keys (step 2), limiter test (step 3).
+- Why: after step 1 each IP has its own bucket, but many real users share
+  one IP (mobile carrier CGNAT, campus/office Wi-Fi). Per-IP budgets for
+  logged-in traffic throttle whole networks; per-user budgets follow the
+  account instead.
+- `middleware/rateLimiter.js`, `createLimiter({ keyBy })`:
+  - `'ip'`   → `ip:<ipKeyGenerator(req.ip)>` (IPv6 grouped per /56, the
+    library's own default, so one host can't rotate addresses).
+  - `'user'` → `user:<req.userId>`; used only behind authMiddleware; if
+    userId is somehow missing, falls back to the IP key (never a shared
+    `user:undefined` bucket).
+  - `'userOrIp'` → verifies the Bearer JWT (jwt.verify, never decode —
+    an unverified token would let anyone invent user IDs and get fresh
+    buckets); valid → user key, otherwise IP key.
+  - Key prefixes keep user 7 and IP "7..." from ever colliding.
+- Mapping:
+  - global (runs before auth) → `userOrIp`
+  - login, signup, forgot-password, reset-password → `ip` ALWAYS
+    (credential-guessing / account-creation surfaces; a token must not
+    move an attacker to a different bucket)
+  - follow, report, account actions, resend-verification → `user`
+- No message or status changes → frontend + MY/AR translations unchanged.
+- Socket.io sends already have their own per-(user, conversation) limit.
+- Tests: key functions (valid/invalid/expired/wrong-secret/malformed
+  token, no header, IPv6 grouping, missing userId, no collisions) and
+  that createLimiter rejects an unknown keyBy. Limiter-on integration
+  tests belong to step 3.
+- Verify: real-server probe with limiters ON — two users behind one IP
+  get separate global budgets; anonymous traffic from that IP has its
+  own; login stays per-IP even with a token; follow is per user.
 
 ## Progress
-- [x] config/trustProxy.js
-- [x] server.js wiring
-- [x] tests (9 new, pass)
-- [x] .env.example
-- [x] Full backend suite: 242/242 (27 suites)
-- [x] Real-server probe (non-test mode, limiters ON, e2e DB):
-  fix → 7 IPs all 401, same IP 6th → 429, spoofed prefix still 429,
-  fresh client 200; TRUST_PROXY=0 control reproduces the bug (strangers
-  lock out a correct login). Invalid TRUST_PROXY refuses to start.
-- [x] 1 hop matches Render's setup per public fixes; Day 6 checklist
-  must include a post-deploy check (two networks, wrong logins).
-- [x] Diff review: clean, no debug code
-- [x] Browser suites (run-all.sh): ALL PASSED — 19 suites / 301 checks,
-  A3 visual 222/222 in EN, MY, AR
-- STEP 1 DONE (committed with the owner's new VERIFY/foreground-test rule)
+- [x] key functions + keyBy option
+- [x] limiter mapping
+- [x] tests (9 new)
+- [x] Backend suite 251/251
+- [x] Probe (limiters ON): login per IP even when switching tokens;
+  follow per user even when rotating IPs; global per user (her 429
+  follows her to another IP; bob / anonymous / forged token on the same
+  IP unaffected); 0 limiter validation warnings
+- [x] Related browser suites: a2 22/22, b11 9/9, b12 13/13
+- [x] FIX: b12 was flaky (3/7 runs): dave's in-flight Socket.io poll got
+  a 400 "Session ID unknown" when his ban dropped the socket, before the
+  suite's expected-error window. Allowed 400/401 on dave's tab only from
+  the ban click on. 5/5 green after.
+- STEP 2 DONE

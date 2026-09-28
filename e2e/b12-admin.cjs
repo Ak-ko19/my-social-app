@@ -12,6 +12,11 @@ const bobToken = fs.readFileSync(path.join(SP, 'bob.token'), 'utf8').trim();
 const results = [];
 const errors = [];
 let expectedErrors = null; // regex allowed during a step that expects them
+// Once dave's ban starts, the server drops his socket; his tab's in-flight
+// Socket.io long-poll then gets a 400 ("Session ID unknown") before the
+// client reconnects, gets a 401 and logs out. Allowed on his tab only, from
+// the ban click on, so it isn't a race with the admin's clicks.
+let daveBanStarted = false;
 const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  -- ' + extra : ''}`);
 const sql = (q) => execSync(`"${PG}/psql.exe" -h localhost -p 55433 -U testuser -d mysocialapp_e2e -At -c "${q}"`).toString().trim();
 const call = (method, url, token, body) => fetch(API + url, {
@@ -43,6 +48,7 @@ async function signup(name) {
     page.on('console', (m) => {
       if (m.type() !== 'error') return;
       if (expectedErrors && expectedErrors.test(m.text())) return;
+      if (name === 'dave' && daveBanStarted && /status of 40[01]\b/.test(m.text())) return;
       errors.push(m.text());
     });
     page.on('pageerror', (e) => errors.push(e.message));
@@ -83,6 +89,7 @@ async function signup(name) {
   check('server: post gone', (await fetch(`${API}/posts/${spam.id}`)).status === 404);
 
   // Ban dave with a reason.
+  daveBanStarted = true;
   await admin.getByRole('button', { name: 'Ban dave' }).click();
   await admin.getByLabel(/Reason for banning dave/).fill('spam account');
   await admin.getByRole('button', { name: 'Confirm ban' }).click();
