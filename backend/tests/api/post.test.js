@@ -1,6 +1,7 @@
 const request = require('supertest');
 const { setupTestApp } = require('../helpers/setupTestApp');
 const { registerAndLogin } = require('../helpers/auth');
+const { pool } = require('../helpers/testDb');
 
 async function createPost(app, token, content = 'hello world') {
   const res = await request(app).post('/posts').set('Authorization', `Bearer ${token}`).field('content', content);
@@ -80,6 +81,84 @@ describe('posts + feed', () => {
       const contents = res.body.posts.map((p) => p.content);
       expect(contents).toContain('from someone I follow');
       expect(contents).not.toContain('from a stranger');
+    });
+
+    // Audit bug #3: your own posts never appeared on Home, so a new post
+    // seemed to vanish right after posting.
+    it("includes the viewer's own posts, newest first, a new post at the top", async () => {
+      const viewer = await registerAndLogin(app);
+      const followed = await registerAndLogin(app);
+      await request(app).post(`/users/${followed.id}/follow`).set('Authorization', `Bearer ${viewer.token}`);
+      await createPost(app, followed.token, 'older, from a friend');
+      const followersOnly = await request(app).post('/posts').set('Authorization', `Bearer ${viewer.token}`)
+        .field('content', 'mine, followers only').field('visibility', 'followers');
+      expect(followersOnly.status).toBe(201);
+      const fresh = await createPost(app, viewer.token, 'just posted');
+
+      const res = await request(app).get('/feed').set('Authorization', `Bearer ${viewer.token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.posts.map((p) => p.content)).toEqual(['just posted', 'mine, followers only', 'older, from a friend']);
+      expect(res.body.posts[0]).toMatchObject({ id: fresh.id, user_id: viewer.id, is_following: false });
+    });
+
+    it("shows a brand-new user's first post even though they follow nobody", async () => {
+      const newbie = await registerAndLogin(app);
+      await createPost(app, newbie.token, 'hello world, first post');
+      const res = await request(app).get('/feed').set('Authorization', `Bearer ${newbie.token}`);
+      expect(res.body.posts.map((p) => p.content)).toEqual(['hello world, first post']);
+    });
+
+    it("does not put the viewer's posts in anyone else's feed without a follow", async () => {
+      const author = await registerAndLogin(app);
+      const stranger = await registerAndLogin(app);
+      await createPost(app, author.token, 'not for strangers');
+      const res = await request(app).get('/feed').set('Authorization', `Bearer ${stranger.token}`);
+      expect(res.body.posts).toEqual([]);
+    });
+
+    it('pages through own + followed posts without duplicates or gaps', async () => {
+      const viewer = await registerAndLogin(app);
+      const followed = await registerAndLogin(app);
+      await request(app).post(`/users/${followed.id}/follow`).set('Authorization', `Bearer ${viewer.token}`);
+      const created = [];
+      for (let i = 0; i < 5; i += 1) {
+        created.push((await createPost(app, (i % 2 ? followed : viewer).token, `post ${i}`)).id);
+      }
+      const page = async (n) => (await request(app).get(`/feed?page=${n}&limit=2`).set('Authorization', `Bearer ${viewer.token}`)).body;
+      const [p1, p2, p3] = [await page(1), await page(2), await page(3)];
+      expect([p1.hasMore, p2.hasMore, p3.hasMore]).toEqual([true, true, false]);
+      expect([...p1.posts, ...p2.posts, ...p3.posts].map((p) => p.id)).toEqual(created.reverse());
+    });
+
+    it('keeps a stable order when posts share a timestamp', async () => {
+      const viewer = await registerAndLogin(app);
+      const ids = [];
+      for (let i = 0; i < 3; i += 1) ids.push((await createPost(app, viewer.token, `tie ${i}`)).id);
+      // As rows written in one transaction (e.g. the demo seed) would be.
+      await pool.query("UPDATE posts SET created_at = '2026-01-01 12:00:00' WHERE id = ANY($1)", [ids]);
+      const seen = [];
+      for (let n = 1; n <= 3; n += 1) {
+        const res = await request(app).get(`/feed?page=${n}&limit=1`).set('Authorization', `Bearer ${viewer.token}`);
+        seen.push(...res.body.posts.map((p) => p.id));
+      }
+      expect(seen).toEqual([...ids].reverse());
+    });
+
+    it("leaves the viewer's own page and group posts to their usual rules", async () => {
+      const owner = await registerAndLogin(app);
+      const page = (await request(app).post('/pages').set('Authorization', `Bearer ${owner.token}`)
+        .send({ name: 'My Cafe', category: 'business' })).body;
+      const group = (await request(app).post('/communities').set('Authorization', `Bearer ${owner.token}`)
+        .send({ name: 'My Group' })).body;
+      await request(app).post('/posts').set('Authorization', `Bearer ${owner.token}`)
+        .field('content', 'as the page').field('pageId', String(page.id));
+      await request(app).post('/posts').set('Authorization', `Bearer ${owner.token}`)
+        .field('content', 'in the group').field('communityId', String(group.id));
+      await createPost(app, owner.token, 'personal');
+
+      const res = await request(app).get('/feed').set('Authorization', `Bearer ${owner.token}`);
+      // Page posts reach Home through page follows; group posts stay in the group.
+      expect(res.body.posts.map((p) => p.content)).toEqual(['personal']);
     });
   });
 

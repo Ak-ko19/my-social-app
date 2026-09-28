@@ -69,7 +69,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Set `trust proxy` correctly for Render so each client IP is seen.
 - [x] Rate-limit authenticated routes per user ID, anonymous routes per IP.
 - [x] Enable rate limiting in a dedicated test so this bug cannot return (7 users must not block each other).
-- [ ] GET /feed includes the viewer's own posts; a new post appears at the top immediately.
+- [x] GET /feed includes the viewer's own posts; a new post appears at the top immediately.
 
 ### Day 3 — Startup safety + small bugs
 - [ ] Validate all required env vars at startup with a clear error message; read PORT from env.

@@ -152,7 +152,10 @@ async function getFeed(req, res) {
       JOIN users ON posts.user_id = users.id
       -- B13: community posts live in their community feed only.
       WHERE posts.community_id IS NULL AND (
-        (posts.page_id IS NULL AND posts.user_id IN (
+        -- Your own posts, so a new post is at the top of Home right away
+        -- (every audience: you can always see your own).
+        (posts.page_id IS NULL AND posts.user_id = $1)
+        OR (posts.page_id IS NULL AND posts.user_id IN (
           SELECT following_id FROM follows WHERE follower_id = $1 AND status = 'accepted'
         ))
         -- B14: posts from pages you follow.
@@ -164,7 +167,9 @@ async function getFeed(req, res) {
            OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
       )
       AND NOT users.is_deactivated
-      ORDER BY posts.created_at DESC
+      -- id breaks created_at ties (e.g. rows from one transaction) so pages
+      -- never overlap or skip a post.
+      ORDER BY posts.created_at DESC, posts.id DESC
       LIMIT $2 OFFSET $3
     `;
 
