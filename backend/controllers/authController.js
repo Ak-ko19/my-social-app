@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { mediaOfUser, deleteMedia } = require('../services/mediaCleanupService');
-const { sendEmail } = require('../utils/email');
+const { sendEmail, emailEnabled } = require('../utils/email');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -126,6 +126,9 @@ async function resendVerification(req, res) {
     if (result.rows[0].email_verified) {
       return res.status(400).send('Your email is already verified');
     }
+    if (!emailEnabled()) {
+      return res.status(503).send('Email verification is not available right now.');
+    }
     await issueVerificationEmail(req.userId, result.rows[0].email);
     res.status(200).send('Verification email sent');
   } catch (err) {
@@ -185,6 +188,12 @@ async function forgotPassword(req, res) {
     const email = (req.body.email || '').trim();
     if (!email) {
       return res.status(400).send('Email is required');
+    }
+    // No way to deliver the link: say so honestly. Checked before looking
+    // the address up, so every address gets the same answer (no account
+    // enumeration) and no reset token is written.
+    if (!emailEnabled()) {
+      return res.status(503).send('Password reset by email is not available right now. Please try again later.');
     }
 
     const genericMessage = 'If that email exists, a password reset link has been sent';

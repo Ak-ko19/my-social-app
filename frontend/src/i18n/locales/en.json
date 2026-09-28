@@ -117,6 +117,7 @@
     "signupSuccess": "Signup successful! Check your email to verify your account. Redirecting to login...",
     "forgotTitle": "Forgot password",
     "forgotSubtitle": "We'll email you a link to reset it.",
+    "resetUnavailable": "Password reset by email isn't available right now. Please try again later.",
     "emailRequired": "Email is required",
     "sendResetLink": "Send reset link",
     "backToLogin": "Back to login",

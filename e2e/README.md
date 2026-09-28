@@ -55,6 +55,7 @@ error. Full output goes to `out-<suite>.txt`, and screenshots to `*.png` /
 | `c3-landing` | The public landing page |
 | `c4-audit-checks` | Route auth table, Phase 1 fixes, API timings, `npm audit`, the deployed keep-alive ping |
 | `day2-own-post` | Day 2: a new post is the first card on Home (EN/MY/AR, light/dark, 375px–desktop) |
+| `day5-email-off` | Day 5: with no email provider the verify banner hides and forgot-password explains itself (EN/MY/AR); with email on both still work |
 | `pixel-compare` | `node pixel-compare.cjs <baselineDir> <currentDir>`: pixel diff of two sets of A3 screenshots |
 
 **Timing noise:** timestamps ("5m ago") depend on when a suite runs, and

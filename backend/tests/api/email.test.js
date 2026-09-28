@@ -162,13 +162,72 @@ describe('email delivery', () => {
       process.env.RENDER = 'true';
       errors.mockClear(); logs.mockClear(); warns.mockClear();
 
-      expect((await request(app).post('/forgot-password').send({ email: creds.email })).status).toBe(200);
+      // 503: reset is honestly unavailable without a provider (step 3).
+      expect((await request(app).post('/forgot-password').send({ email: creds.email })).status).toBe(503);
       const other = uniqueUser();
       expect((await request(app).post('/signup').send(other)).status).toBe(201);
       const everything = logged();
       expect(everything).toMatch(/Not sent/);
       expect(everything).not.toMatch(/reset-password|verify-email|[a-f0-9]{64}/);
       expect(everything).not.toContain(creds.email);
+    });
+  });
+
+  describe('no provider in production: honest, no lock-out (Day 5)', () => {
+    const { pool } = require('../helpers/testDb');
+    const { registerAndLogin } = require('../helpers/auth');
+    const savedRender = process.env.RENDER;
+    beforeEach(() => { process.env.RENDER = 'true'; });
+    afterEach(() => {
+      if (savedRender === undefined) delete process.env.RENDER;
+      else process.env.RENDER = savedRender;
+    });
+
+    it('GET /config says whether email works', async () => {
+      const off = await request(app).get('/config');
+      expect(off.status).toBe(200);
+      expect(off.body).toEqual({ emailEnabled: false });
+      expect(off.headers['cache-control']).toBe('public, max-age=300');
+      useBrevo();
+      expect((await request(app).get('/config')).body).toEqual({ emailEnabled: true });
+      delete process.env.RENDER; // local dev prints emails, so they "work"
+      process.env.BREVO_API_KEY = '';
+      expect((await request(app).get('/config')).body).toEqual({ emailEnabled: true });
+    });
+
+    it('forgot password answers every address the same 503, and writes no token', async () => {
+      const user = await registerAndLogin(app);
+      const known = await request(app).post('/forgot-password').send({ email: user.email });
+      const unknown = await request(app).post('/forgot-password').send({ email: 'nobody@example.com' });
+      for (const res of [known, unknown]) {
+        expect(res.status).toBe(503);
+        expect(res.text).toBe('Password reset by email is not available right now. Please try again later.');
+      }
+      const row = (await pool.query('SELECT reset_token FROM users WHERE id = $1', [user.id])).rows[0];
+      expect(row.reset_token).toBeNull();
+    });
+
+    it('resend verification answers 503; signup and login still work unverified', async () => {
+      const creds = uniqueUser();
+      expect((await request(app).post('/signup').send(creds)).status).toBe(201);
+      const login = await request(app).post('/login').send({ email: creds.email, password: creds.password });
+      expect(login.status).toBe(200);
+      expect(login.body.emailVerified).toBe(false);
+      const resend = await request(app).post('/resend-verification').set('Authorization', `Bearer ${login.body.token}`);
+      expect(resend.status).toBe(503);
+      expect(resend.text).toBe('Email verification is not available right now.');
+      // Unverified accounts can use the app (nothing requires verification).
+      const post = await request(app).post('/posts').set('Authorization', `Bearer ${login.body.token}`).field('content', 'still works');
+      expect(post.status).toBe(201);
+    });
+
+    it('with Brevo configured, forgot password sends the link as before', async () => {
+      useBrevo();
+      const user = await registerAndLogin(app);
+      fetchMock.mockClear();
+      const res = await request(app).post('/forgot-password').send({ email: user.email });
+      expect(res.status).toBe(200);
+      expect(JSON.parse(fetchMock.mock.calls[0][1].body).textContent).toMatch(/\/reset-password\/[a-f0-9]{64}/);
     });
   });
 

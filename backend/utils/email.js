@@ -21,6 +21,14 @@ function emailProvider(env = process.env) {
   return null;
 }
 
+// Whether emails actually reach people: a provider is configured, or this
+// is local dev (where the email is printed to the console instead). False
+// only in production without a provider; the app then hides flows that
+// depend on email (see GET /config).
+function emailEnabled(env = process.env) {
+  return emailProvider(env) !== null || !isProduction(env);
+}
+
 // "MySocialApp <hello@example.com>" or "hello@example.com" -> { name, email },
 // or null if it isn't an address.
 function parseSender(value) {
@@ -105,4 +113,4 @@ async function sendEmail({ to, subject, text }) {
   return false;
 }
 
-module.exports = { sendEmail, emailProvider, parseSender, maskEmail };
+module.exports = { sendEmail, emailProvider, emailEnabled, parseSender, maskEmail };

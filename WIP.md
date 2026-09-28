@@ -1,7 +1,32 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 5 — Working email in production
-**Step:** 1 — HTTP email adapter (Brevo API) that turns on only when its env var exists; keep Nodemailer for local dev.
+**Step:** 3 — Graceful fallback when no email provider is configured (no breakage, no lock-out).
+
+## Step 3 plan
+- Backend: `emailEnabled()` in utils/email.js = a provider is configured
+  OR not production (local dev "delivers" by printing the email).
+  - `GET /config` (public, `Cache-Control: public, max-age=300`) →
+    `{ emailEnabled }`; new routes/configRoutes.js.
+  - POST /forgot-password when disabled: 503 "Password reset by email is
+    not available right now. Please try again later." — checked BEFORE
+    the address lookup, so every address gets the same answer
+    (enumeration-safe) and no reset token is written.
+  - POST /resend-verification when disabled: 503 "Email verification is
+    not available right now."
+  - Verification is never required anywhere (checked), so nobody is
+    locked out; signup/login unchanged.
+- Frontend: `useEmailEnabled()` (fetches /config once per page load,
+  module-level cache; unknown/failed = true, i.e. today's behaviour).
+  - EmailVerificationBanner hidden when email is off.
+  - ForgotPassword: when off, a translated notice replaces the form
+    (form hidden, "Back to login" stays).
+- i18n: 1 new UI key (auth.resetUnavailable) in EN/MY/AR + the 2 server
+  messages in MY/AR (check:i18n enforces parity).
+- Tests: API (config on/off, 503s, same answer for unknown address, no
+  token written, resend 503); browser suite day5-email-off.cjs (config
+  mocked via page.route): banner hidden, forgot notice in EN/MY/AR incl.
+  RTL, dark, 375px; and with email on the form + banner still work.
 
 ## Carry-over notes
 - Day 6 GO_LIVE_CHECKLIST.md must include:
@@ -56,6 +81,14 @@
   server launches (same real-email risk as setupEnv)
 - [x] Backend 328/328; a2 22/22, b11 9/9; diff review clean
 - STEP 1 DONE (`53fa111`)
+
+## Step 3 — graceful no-email fallback (DONE)
+- GET /config {emailEnabled}; forgot-password + resend 503 when off
+  (checked before the lookup: same answer for every address, no token).
+- Banner hidden / forgot notice via useEmailEnabled(); i18n EN/MY/AR.
+- Tests: email.test.js 19/19 (+4); backend 336/336; new browser suite
+  day5-email-off 19/19 (in run-all); a2 b11 b15 b16 green; lint, i18n
+  (764 keys), build, check:headers green.
 
 ## Step 2 — no links in production logs (DONE)
 - No-provider fallback: production (NODE_ENV=production or RENDER=true)
