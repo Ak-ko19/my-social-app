@@ -322,3 +322,40 @@ Build every feature the way a senior engineer at a top social media company woul
 - **LATER.md:** nothing new. Day 6's GO LIVE checklist must include a
   post-deploy rate-limit check from two networks, which is the only way
   to confirm Render's hop count.
+
+### 2026-09-28 — Day 3: Startup safety + small bugs
+- **Step 1 (`5283798`):** `config/env.js` checks the environment at
+  startup and exits listing every problem. Audit bug #7 is fixed.
+  - Always required: `DATABASE_URL`, `JWT_SECRET`.
+  - Required in production: `ALLOWED_ORIGINS`, `FRONTEND_URL`.
+  - Also checked: origin format, `PORT`, `TRUST_PROXY`.
+  - Warnings only for a short secret or partial Cloudinary/email setup.
+  - Secrets are never printed.
+  - `PORT` comes from env. I fixed my own `PORT=0` bug in review.
+- **Step 2 (`9945631`):** security headers for Vercel. Audit bug #12 is
+  fixed.
+  - Strict CSP (no unsafe-inline/eval, theme script allowed by hash),
+    X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy, COOP.
+  - **Better approach than the plan:**
+    - `check:headers` in CI keeps the CSP in sync with the build.
+    - `.gitattributes` pins `index.html` to LF. A CRLF checkout would have
+      given a hash that is wrong on Vercel.
+    - New `E2E_FRONTEND=dist` mode runs the browser suites on the
+      production bundle with the real headers. The full run there passed
+      with 0 CSP violations.
+- **Step 3 (`8ce90a7`):** audit Low bugs #10 and #11.
+  - New error handler:
+    - 400 for bad uploads;
+    - 502 with generic text when Cloudinary fails (provider text logged
+      only);
+    - 403 for CORS;
+    - 500 for anything unexpected.
+  - Upload messages translated into MY and AR.
+  - Link previews render only for http(s) URLs.
+- **Tests at close:**
+  - backend 289/289 (31 suites);
+  - full browser run ALL PASSED: 20 suites, 321 checks, plus A3 visual
+    222/222 × EN/MY/AR (also passed in dist mode during step 2).
+- **LATER.md:** nothing new.
+- **Deferred to Day 13 (Vitest):** a unit test for `utils/safeUrl.js`
+  (a node check covers it for now).
