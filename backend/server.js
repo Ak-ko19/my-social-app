@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const db = require('./db');
 const allowedOrigins = require('./config/allowedOrigins');
+const { resolveTrustProxy } = require('./config/trustProxy');
 const { globalLimiter } = require('./middleware/rateLimiter');
 const { initSocket } = require('./sockets');
 
@@ -31,6 +32,10 @@ const pageRoutes = require('./routes/pageRoutes');
 
 const app = express();
 const PORT = 3000;
+
+// Before any middleware reads req.ip (the rate limiters): behind Render's
+// proxy it must resolve to the real client, not the proxy.
+app.set('trust proxy', resolveTrustProxy(process.env));
 
 app.use(helmet({
   // Post/avatar images used to be served locally under /uploads and needed

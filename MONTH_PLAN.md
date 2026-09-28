@@ -10,7 +10,7 @@ For EVERY step, follow this cycle:
 1. PLAN — Read all related code first. Write in WIP.md: current Day, current step, and a short plan (data model, API, UI, edge cases, security, tests).
 2. BUILD — Implement carefully in small pieces. Run the related tests after each piece. If unsure about anything, read more code before writing.
 3. VERIFY — When the step looks finished, check it thoroughly:
-   - run the FULL test suite (backend tests + browser checks) — all must pass;
+   - run the FULL backend test suite plus the browser suites related to this step — all must pass (the FULL browser suite, `e2e/run-all.sh`, runs once at the end of each Day, before the Day's Progress Log entry);
    - try the feature yourself in the running app: main flow, failure cases, edge cases;
    - check light/dark theme, mobile width, and EN/MY/AR + RTL (once i18n exists);
    - re-read your whole diff as a strict reviewer against the Quality bar.
@@ -19,6 +19,8 @@ For EVERY step, follow this cycle:
 6. PAUSE — Stop and take stock before moving on: print a short step report (what was built, what was verified, any concerns), re-read MONTH_PLAN.md and the next step, and only then start the next step's PLAN.
 
 Commit and push ONLY at step 5 (once per finished step). Do not commit half-finished work.
+
+Never end the turn while waiting for tests: run them in the foreground and wait for the result (long runs: use a wait loop in the same turn), then continue.
 
 ## When the owner presses Esc
 The owner may press Esc for an emergency, when the usage limit is near, or to end the day's work. So:
@@ -64,7 +66,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Confirm the Render keep-alive workflow is present (it will run once on main).
 
 ### Day 2 — Rate limiter + own posts
-- [ ] Set `trust proxy` correctly for Render so each client IP is seen.
+- [x] Set `trust proxy` correctly for Render so each client IP is seen.
 - [ ] Rate-limit authenticated routes per user ID, anonymous routes per IP.
 - [ ] Enable rate limiting in a dedicated test so this bug cannot return (7 users must not block each other).
 - [ ] GET /feed includes the viewer's own posts; a new post appears at the top immediately.
