@@ -19,6 +19,7 @@ describe('email delivery', () => {
   let fetchMock;
   let errors;
   let logs;
+  let warns;
   beforeEach(async () => {
     await reset();
     saved = Object.fromEntries(EMAIL_VARS.map((k) => [k, process.env[k]]));
@@ -26,6 +27,7 @@ describe('email delivery', () => {
     fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue(new Response(JSON.stringify({ messageId: '<m1>' }), { status: 201 }));
     errors = jest.spyOn(console, 'error').mockImplementation(() => {});
     logs = jest.spyOn(console, 'log').mockImplementation(() => {});
+    warns = jest.spyOn(console, 'warn').mockImplementation(() => {});
     mockSendMail.mockReset().mockResolvedValue({});
   });
   afterEach(() => {
@@ -33,7 +35,7 @@ describe('email delivery', () => {
     jest.restoreAllMocks();
   });
   const useBrevo = () => Object.assign(process.env, { BREVO_API_KEY: KEY, EMAIL_FROM: 'MySocialApp <hello@mysocialapp.example>' });
-  const logged = () => [...errors.mock.calls, ...logs.mock.calls].flat().map(String).join('\n');
+  const logged = () => [...errors.mock.calls, ...logs.mock.calls, ...warns.mock.calls].flat().map(String).join('\n');
 
   it('parses the sender', () => {
     expect(parseSender('MySocialApp <hello@x.example>')).toEqual({ name: 'MySocialApp', email: 'hello@x.example' });
@@ -73,6 +75,8 @@ describe('email delivery', () => {
       expect(logged()).toMatch(/HTTP 401 unauthorized Key not found/);
       expect(logged()).not.toContain(KEY);
       expect(logged()).not.toContain('secret link');
+      expect(logged()).toContain('a***@example.com');
+      expect(logged()).not.toContain('ana@example.com');
     });
 
     it('survives network errors and timeouts', async () => {
@@ -124,6 +128,48 @@ describe('email delivery', () => {
     await expect(sendEmail({ to: 'a@example.com', subject: 's', text: 't' })).resolves.toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mockSendMail).not.toHaveBeenCalled();
+  });
+
+  describe('no provider: links never reach production logs (Day 5)', () => {
+    const { maskEmail } = require('../../utils/email');
+    const savedRender = process.env.RENDER;
+    afterEach(() => {
+      if (savedRender === undefined) delete process.env.RENDER;
+      else process.env.RENDER = savedRender;
+    });
+
+    it('masks addresses', () => {
+      expect(maskEmail('ana@example.com')).toBe('a***@example.com');
+      expect(maskEmail('not-an-address')).toBe('***');
+    });
+
+    it('local dev prints the whole email so the link can be used', async () => {
+      delete process.env.RENDER;
+      await sendEmail({ to: 'ana@example.com', subject: 'Reset', text: 'Reset link: http://localhost:5173/reset-password/abc' });
+      expect(logged()).toContain('/reset-password/abc');
+    });
+
+    it('production logs only that it was not sent, without the text or the address', async () => {
+      process.env.RENDER = 'true';
+      await expect(sendEmail({ to: 'ana@example.com', subject: 'Reset your password', text: 'Reset link: https://app/reset-password/abc' })).resolves.toBe(false);
+      expect(logged()).toMatch(/Not sent, no email provider configured .*"Reset your password" to a\*\*\*@example.com/);
+      expect(logged()).not.toMatch(/reset-password|abc|ana@example\.com/);
+    });
+
+    it('the real forgot-password and signup flows leak no token or link in production', async () => {
+      const creds = uniqueUser();
+      await request(app).post('/signup').send(creds);
+      process.env.RENDER = 'true';
+      errors.mockClear(); logs.mockClear(); warns.mockClear();
+
+      expect((await request(app).post('/forgot-password').send({ email: creds.email })).status).toBe(200);
+      const other = uniqueUser();
+      expect((await request(app).post('/signup').send(other)).status).toBe(201);
+      const everything = logged();
+      expect(everything).toMatch(/Not sent/);
+      expect(everything).not.toMatch(/reset-password|verify-email|[a-f0-9]{64}/);
+      expect(everything).not.toContain(creds.email);
+    });
   });
 
   it('warns at startup when Brevo has no usable sender', () => {

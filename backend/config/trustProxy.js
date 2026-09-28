@@ -14,6 +14,8 @@
 // - TRUST_PROXY set: a non-negative integer hop count (0 = off).
 // - Otherwise: 1 hop on Render (it sets RENDER=true on every service) or
 //   in production; off in local dev, where nothing sits in front.
+const { isProduction } = require('./runtime');
+
 function resolveTrustProxy(env) {
   const raw = env.TRUST_PROXY;
   if (raw !== undefined && raw.trim() !== '') {
@@ -26,8 +28,7 @@ function resolveTrustProxy(env) {
     const hops = Number(value);
     return hops === 0 ? false : hops;
   }
-  if (env.RENDER === 'true' || env.NODE_ENV === 'production') return 1;
-  return false;
+  return isProduction(env) ? 1 : false;
 }
 
 module.exports = { resolveTrustProxy };

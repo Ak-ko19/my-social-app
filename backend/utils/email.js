@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const { isProduction } = require('../config/runtime');
 
 // Single "send an email" choke point: every caller (signup and resend
 // verification, forgot password) goes through sendEmail(). The provider is
@@ -7,7 +8,8 @@ const nodemailer = require('nodemailer');
 //      tier blocks outbound SMTP, so an HTTP API is the only way out.
 //   2. EMAIL_HOST/EMAIL_USER/EMAIL_PASS set -> SMTP via Nodemailer (local
 //      dev, e.g. Gmail + an App Password).
-//   3. Neither -> not configured: nothing is sent (see sendEmail).
+//   3. Neither -> not configured: nothing is sent. Local dev prints the
+//      email instead; production never logs it (it holds live links).
 // See backend/.env.example.
 
 const BREVO_URL = 'https://api.brevo.com/v3/smtp/email';
@@ -29,6 +31,13 @@ function parseSender(value) {
   return { email: match[2] || match[3], ...(name ? { name } : {}) };
 }
 
+// "ana@example.com" -> "a***@example.com": enough to tell recipients apart
+// in logs without writing their address down.
+function maskEmail(address) {
+  const [local, domain] = String(address).split('@');
+  return domain ? `${local.slice(0, 1)}***@${domain}` : '***';
+}
+
 async function sendWithBrevo({ to, subject, text }) {
   const sender = parseSender(process.env.EMAIL_FROM);
   if (!sender) {
@@ -44,13 +53,13 @@ async function sendWithBrevo({ to, subject, text }) {
       signal: AbortSignal.timeout(TIMEOUT_MS)
     });
   } catch (err) {
-    console.error(`[email] Brevo request failed (${err.name === 'TimeoutError' ? 'timed out' : err.message}); email to ${to} not sent.`);
+    console.error(`[email] Brevo request failed (${err.name === 'TimeoutError' ? 'timed out' : err.message}); email to ${maskEmail(to)} not sent.`);
     return false;
   }
   if (res.status === 201 || res.status === 202) return true;
   // Brevo answers errors as { code, message }; neither contains the key.
   const body = await res.json().catch(() => ({}));
-  console.error(`[email] Brevo refused the email to ${to}: HTTP ${res.status} ${body.code || ''} ${body.message || ''}`.trim());
+  console.error(`[email] Brevo refused the email to ${maskEmail(to)}: HTTP ${res.status} ${body.code || ''} ${body.message || ''}`.trim());
   return false;
 }
 
@@ -73,7 +82,7 @@ async function sendWithSmtp({ to, subject, text }) {
     await smtp.transporter.sendMail({ from: process.env.EMAIL_FROM || EMAIL_USER, to, subject, text });
     return true;
   } catch (err) {
-    console.error(`[email] SMTP failed to send to ${to}: ${err.message}`);
+    console.error(`[email] SMTP failed to send to ${maskEmail(to)}: ${err.message}`);
     return false;
   }
 }
@@ -84,8 +93,16 @@ async function sendEmail({ to, subject, text }) {
   const provider = emailProvider();
   if (provider === 'brevo') return sendWithBrevo({ to, subject, text });
   if (provider === 'smtp') return sendWithSmtp({ to, subject, text });
-  console.log(`[email] (no email provider configured -- logging instead) To: ${to} | Subject: ${subject}\n${text}`);
+  if (isProduction()) {
+    // The text holds live reset/verification links: in production it must
+    // never reach the logs (anyone with log access could take over the
+    // account).
+    console.warn(`[email] Not sent, no email provider configured (set BREVO_API_KEY): "${subject}" to ${maskEmail(to)}.`);
+    return false;
+  }
+  // Local dev without a provider: print the email so the link can be used.
+  console.log(`[email] (local dev, no email provider -- logging instead) To: ${to} | Subject: ${subject}\n${text}`);
   return false;
 }
 
-module.exports = { sendEmail, emailProvider, parseSender };
+module.exports = { sendEmail, emailProvider, parseSender, maskEmail };

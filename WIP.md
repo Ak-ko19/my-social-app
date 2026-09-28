@@ -55,7 +55,18 @@
 - [x] Also pinned BREVO_API_KEY blank in e2e/e2e-up.sh and env.test.js's
   server launches (same real-email risk as setupEnv)
 - [x] Backend 328/328; a2 22/22, b11 9/9; diff review clean
-- STEP 1 DONE
+- STEP 1 DONE (`53fa111`)
+
+## Step 2 — no links in production logs (DONE)
+- No-provider fallback: production (NODE_ENV=production or RENDER=true)
+  logs only "not sent" + subject + masked recipient; local dev keeps the
+  full email. Provider error logs mask recipients too.
+- `config/runtime.js` isProduction(): one definition, now used by
+  trustProxy, env.js and email.js.
+- Only this fallback ever logged a link (grep of every console call).
+- Tests +4 incl. the real forgot-password + signup flows in production
+  mode: no token/link/address in any log; mutation-checked (2 fail
+  without the guard). Backend 332/332; a2 22/22, b11 9/9.
 - Note: signup awaits sendEmail, so a slow Brevo delays signup up to the
   10 s timeout (Brevo is normally ~0.2 s). Acceptable for now.
 

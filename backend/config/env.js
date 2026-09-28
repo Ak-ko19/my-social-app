@@ -8,6 +8,7 @@
 // Messages name the variable and never include a secret's value (only
 // ALLOWED_ORIGINS entries, which are public URLs, are quoted back).
 const { resolveTrustProxy } = require('./trustProxy');
+const { isProduction } = require('./runtime');
 const { parseSender } = require('../utils/email');
 
 const isSet = (value) => typeof value === 'string' && value.trim() !== '';
@@ -27,7 +28,7 @@ function isOrigin(value) {
 function checkEnv(env) {
   const errors = [];
   const warnings = [];
-  const production = env.NODE_ENV === 'production' || env.RENDER === 'true';
+  const production = isProduction(env);
 
   if (!isSet(env.DATABASE_URL)) {
     errors.push('DATABASE_URL is not set. Set it to your PostgreSQL connection string (postgresql://...).');
