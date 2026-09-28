@@ -359,3 +359,38 @@ Build every feature the way a senior engineer at a top social media company woul
 - **LATER.md:** nothing new.
 - **Deferred to Day 13 (Vitest):** a unit test for `utils/safeUrl.js`
   (a node check covers it for now).
+
+### 2026-09-28 — Day 4: Cloudinary cleanup
+- **Step 1 (`10a7eca`):** media is deleted from Cloudinary with its
+  content. Audit bug #5 (High) is fixed.
+  - `mediaCleanupService` covers 9 delete paths: post, admin
+    remove-post, story, message (REST and socket), account (avatar,
+    posts, stories, sent media), replaced avatar, page, group, group
+    chat.
+  - Runs after the delete, not awaited, and never fails the user's
+    action. `invalidate` also stops CDN copies.
+  - **Better than the plan:** the upload middleware also deletes
+    just-uploaded files when the request is refused (4xx), and a partly
+    failed multi-image upload deletes the images that did upload.
+- **Step 2 (`a97d547`):** public_id storage is not needed, so there is no
+  migration.
+  - **Better approach:** the ID and resource type are derived from the
+    stored `secure_url`, which saves a backfill on a production DB already
+    13 migrations behind and can't drift.
+  - Verified by round-tripping URLs built by the real SDK. That found and
+    fixed an issue: the parser now ignores a query string.
+- **Step 3 (`f765d31`):** `npm run cloudinary:orphans` is a dry run by
+  default.
+  - It only touches the app's own folders and skips files under 24 h old.
+  - `--delete` refuses, unless `--force` is given, on an empty DB or when
+    more than 50% of files would go.
+- **Tests at close:**
+  - backend 317/317 (33 suites);
+  - full browser run ALL PASSED: 20 suites, 321 checks, plus A3
+    222/222 × EN/MY/AR.
+- **Not verifiable here:** real Cloudinary deletes, since local dev has
+  no credentials; the tests use the SDK's shapes and a mock API. Day 6's
+  checklist gets a live check: delete a test post, then confirm its image
+  URL stops loading and run the orphan scan.
+- **LATER.md:** nothing new. Running the orphan scan against production
+  is an owner step on the GO LIVE checklist.
