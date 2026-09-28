@@ -1,4 +1,4 @@
-# MONTH_PLAN.md — Long-term autonomous plan (continuous work, no end date)
+﻿# MONTH_PLAN.md — Long-term autonomous plan (continuous work, no end date)
 
 Source of truth for priorities: AUDIT_REPORT.md (commit b582d92).
 The owner does NOT write code. Claude Code works alone and continuously, Day after Day, until the owner presses Esc. "Day" means a unit of work, not a calendar day.
@@ -59,7 +59,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ## WEEK 1 — Back up, fix critical bugs, go live
 
 ### Day 1 — Back up everything
-- [ ] Push `dev` to GitHub (all 66+ commits). Confirm the remote has them.
+- [x] Push `dev` to GitHub (all 66+ commits). Confirm the remote has them.
 - [ ] Confirm CI runs on GitHub Actions; fix any CI failures.
 - [ ] Confirm the Render keep-alive workflow is present (it will run once on main).
 
