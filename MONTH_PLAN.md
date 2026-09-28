@@ -287,3 +287,38 @@ Build every feature the way a senior engineer at a top social media company woul
 - **Commits:** `45aa29c`, `40fdd95`, BOM fix, and this entry.
 - **LATER.md:** #1 check the first CI run; #2 merge to master / GO LIVE
   days are owner actions.
+
+### 2026-09-28 — Day 2: Rate limiter + own posts
+- **Step 1 (`30b1dba`):** `trust proxy` set from `config/trustProxy.js`.
+  - 1 hop on Render (`RENDER=true`) or in production, off in local dev,
+    overridable with `TRUST_PROXY`. Never `true`, which would let clients
+    spoof their IP.
+  - A real-server probe proved the fix: 7 clients no longer share one
+    bucket, and spoofed X-Forwarded-For prefixes are ignored.
+  - Audit bug #1 (Critical) is fixed on `dev`. It goes live with the next
+    deploy.
+- **Step 2 (`9c78b40`):** every limiter declares its key.
+  - Anonymous surfaces are keyed per IP, even when a token is sent.
+  - Logged-in limiters are keyed per user.
+  - The global limiter keys per user when the JWT verifies, else per IP.
+    It verifies the token and never just decodes it.
+  - Also fixed a pre-existing flaky failure in e2e b12 (a Socket.io poll
+    400 after a ban).
+- **Step 3 (`c1f5faf`):** `RATE_LIMIT_IN_TESTS=1` runs the real limiters
+  in `tests/api/rateLimit.test.js`.
+  - Covers the audit's 7-user scenario plus each keying rule.
+  - Mutation-checked: putting either bug back fails the tests.
+- **Step 4 (`5e7edec`):** GET /feed now includes your own posts, with an
+  id tie-breaker for stable paging. Audit bug #3 (High) is fixed.
+  - New browser suite `day2-own-post`: a new post is the first card on
+    Home in about 0.4 s, in EN/MY/AR, light/dark, 375–1280 px.
+- **Better approach than the plan:** none needed. Also changed the Work
+  rhythm on the owner's instruction: VERIFY runs related browser suites,
+  and the full run happens once a Day.
+- **Tests at close:**
+  - backend 263/263 (29 suites);
+  - full browser run ALL PASSED: 20 suites, 321 checks, plus A3 visual
+    222/222 in each of EN, MY and AR.
+- **LATER.md:** nothing new. Day 6's GO LIVE checklist must include a
+  post-deploy rate-limit check from two networks, which is the only way
+  to confirm Render's hop count.
