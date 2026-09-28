@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check:i18n": "node scripts/check-i18n.cjs"
+    "check:i18n": "node scripts/check-i18n.cjs",
+    "check:headers": "node scripts/check-headers.cjs"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.13",

@@ -1,0 +1,5 @@
+# index.html's inline theme script is allowed by its sha256 hash in
+# vercel.json's Content-Security-Policy. The hash covers the exact bytes,
+# so the file must have the same (LF) line endings in every checkout --
+# local Windows, CI and Vercel -- or the script is blocked in production.
+index.html text eol=lf

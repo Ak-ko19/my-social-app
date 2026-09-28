@@ -32,6 +32,15 @@ npm run test:audit    # also the demo-seed check and the C4 audit checks
 To run a single suite: `npm run up`, then `node b16-rtl.cjs`, then
 `npm run down`.
 
+**Production build + real headers:** prefix any of the above with
+`E2E_FRONTEND=dist` (e.g. `E2E_FRONTEND=dist bash run-all.sh`). The stack
+then builds the frontend for production and serves it with
+`serve-dist.cjs`, which applies `frontend/vercel.json`'s headers (CSP and
+the rest) and SPA rewrite like Vercel. The only difference is that the
+production API origin in `connect-src` is swapped for the local API. Any
+CSP violation is a console error, so it fails the suite. The default
+(no variable) is the Vite dev server.
+
 Each suite prints `PASS`/`FAIL` lines and fails on any browser console
 error. Full output goes to `out-<suite>.txt`, and screenshots to `*.png` /
 `a3-shots*/` (all gitignored).

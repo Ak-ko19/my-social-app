@@ -7,3 +7,4 @@ out-*.txt
 a3-shots*/
 c4/
 baseline*/
+dist-e2e/

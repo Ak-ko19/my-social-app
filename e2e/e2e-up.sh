@@ -16,7 +16,14 @@ NODE_ENV=test DATABASE_URL=postgresql://testuser@localhost:55433/mysocialapp_e2e
 ALLOWED_ORIGINS=http://localhost:5173 FRONTEND_URL=http://localhost:5173 EMAIL_HOST= EMAIL_USER= EMAIL_PASS= \
 CLOUDINARY_CLOUD_NAME= CLOUDINARY_API_KEY= CLOUDINARY_API_SECRET= nohup node server.js > "$SP/backend.log" 2>&1 &
 cd ../frontend
-VITE_API_URL=http://localhost:3000 nohup npx vite --port 5173 --strictPort > "$SP/vite.log" 2>&1 &
+if [ "$E2E_FRONTEND" = dist ]; then
+  # The production bundle served with frontend/vercel.json's real headers
+  # (serve-dist.cjs), so CSP violations fail the suites. Default: vite dev.
+  VITE_API_URL=http://localhost:3000 npx vite build --outDir "$SP/dist-e2e" --emptyOutDir > "$SP/vite.log" 2>&1
+  nohup node "$SP/serve-dist.cjs" "$SP/dist-e2e" 5173 http://localhost:3000 >> "$SP/vite.log" 2>&1 &
+else
+  VITE_API_URL=http://localhost:3000 nohup npx vite --port 5173 --strictPort > "$SP/vite.log" 2>&1 &
+fi
 for i in $(seq 1 40); do curl -s -o /dev/null localhost:3000/ && curl -s -o /dev/null localhost:5173/ && break; sleep 0.5; done
 # Seed: alice(1), bob(2), a conversation, a post.
 for u in alice bob; do curl -s -X POST localhost:3000/signup -H 'Content-Type: application/json' \
