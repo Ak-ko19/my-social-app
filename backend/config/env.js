@@ -8,6 +8,7 @@
 // Messages name the variable and never include a secret's value (only
 // ALLOWED_ORIGINS entries, which are public URLs, are quoted back).
 const { resolveTrustProxy } = require('./trustProxy');
+const { parseSender } = require('../utils/email');
 
 const isSet = (value) => typeof value === 'string' && value.trim() !== '';
 
@@ -83,9 +84,13 @@ function checkEnv(env) {
     warnings.push('Cloudinary is not configured. Image and voice uploads will fail.');
   }
 
+  if (isSet(env.BREVO_API_KEY) && !parseSender(env.EMAIL_FROM)) {
+    warnings.push('BREVO_API_KEY is set but EMAIL_FROM is not a sender address (e.g. "MySocialApp <hello@example.com>", verified in Brevo), so no emails will be sent.');
+  }
+
   const email = ['EMAIL_HOST', 'EMAIL_USER', 'EMAIL_PASS'];
   const emailSet = email.filter((name) => isSet(env[name]));
-  if (emailSet.length > 0 && emailSet.length < email.length) {
+  if (!isSet(env.BREVO_API_KEY) && emailSet.length > 0 && emailSet.length < email.length) {
     const missing = email.filter((name) => !isSet(env[name]));
     warnings.push(`Email is only partly configured (missing ${missing.join(', ')}), so no emails will be sent.`);
   }

@@ -93,7 +93,7 @@ describe('node server.js', () => {
     DATABASE_URL: 'postgresql://nobody@localhost:1/none', JWT_SECRET: 'x'.repeat(40),
     ALLOWED_ORIGINS: '', FRONTEND_URL: '',
     CLOUDINARY_CLOUD_NAME: '', CLOUDINARY_API_KEY: '', CLOUDINARY_API_SECRET: '',
-    EMAIL_HOST: '', EMAIL_USER: '', EMAIL_PASS: '', EMAIL_FROM: '', EMAIL_PORT: ''
+    BREVO_API_KEY: '', EMAIL_HOST: '', EMAIL_USER: '', EMAIL_PASS: '', EMAIL_FROM: '', EMAIL_PORT: ''
   };
 
   // Resolves once the process exits or prints its "running" line.

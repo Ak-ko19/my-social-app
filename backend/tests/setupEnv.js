@@ -11,6 +11,8 @@ process.env.ALLOWED_ORIGINS = 'http://localhost:5173';
 process.env.FRONTEND_URL = 'http://localhost:5173';
 
 // Blank = "not configured": utils/email.js falls back to console logging.
+// BREVO_API_KEY too: a real key in .env would otherwise send real emails.
+process.env.BREVO_API_KEY = '';
 process.env.EMAIL_HOST = '';
 process.env.EMAIL_USER = '';
 process.env.EMAIL_PASS = '';

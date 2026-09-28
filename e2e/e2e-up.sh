@@ -13,7 +13,7 @@ set -e
 "$PG/psql.exe" -q -h localhost -p 55433 -U testuser -d mysocialapp_e2e -v ON_ERROR_STOP=1 -f "$B/tests/fixtures/schema.sql"
 cd "$B"
 NODE_ENV=test DATABASE_URL=postgresql://testuser@localhost:55433/mysocialapp_e2e JWT_SECRET=e2e-local-only-secret \
-ALLOWED_ORIGINS=http://localhost:5173 FRONTEND_URL=http://localhost:5173 EMAIL_HOST= EMAIL_USER= EMAIL_PASS= \
+ALLOWED_ORIGINS=http://localhost:5173 FRONTEND_URL=http://localhost:5173 BREVO_API_KEY= EMAIL_HOST= EMAIL_USER= EMAIL_PASS= \
 CLOUDINARY_CLOUD_NAME= CLOUDINARY_API_KEY= CLOUDINARY_API_SECRET= nohup node server.js > "$SP/backend.log" 2>&1 &
 cd ../frontend
 if [ "$E2E_FRONTEND" = dist ]; then

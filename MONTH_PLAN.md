@@ -82,7 +82,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Script to find and delete orphaned Cloudinary files (dry-run mode first).
 
 ### Day 5 — Working email in production
-- [ ] Add an HTTP email adapter (Brevo API) that turns on automatically only when its env var exists. Keep Nodemailer for local dev.
+- [x] Add an HTTP email adapter (Brevo API) that turns on automatically only when its env var exists. Keep Nodemailer for local dev.
 - [ ] In production, NEVER write reset/verification links to logs.
 - [ ] Graceful fallback when no email provider is configured: the app must not break or lock users out (e.g. skip the verification requirement and show a friendly message on forgot-password).
 - [ ] Note in LATER.md: "Add Brevo API key to turn on real emails."
