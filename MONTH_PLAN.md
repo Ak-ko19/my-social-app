@@ -60,8 +60,8 @@ Build every feature the way a senior engineer at a top social media company woul
 
 ### Day 1 — Back up everything
 - [x] Push `dev` to GitHub (all 66+ commits). Confirm the remote has them.
-- [ ] Confirm CI runs on GitHub Actions; fix any CI failures.
-- [ ] Confirm the Render keep-alive workflow is present (it will run once on main).
+- [ ] Confirm CI runs on GitHub Actions; fix any CI failures. *(Both CI jobs pass locally — 233/233 API tests, lint, i18n, build. The remote run can't be seen from this machine; owner check in LATER.md #1.)*
+- [x] Confirm the Render keep-alive workflow is present (it will run once on main).
 
 ### Day 2 — Rate limiter + own posts
 - [ ] Set `trust proxy` correctly for Render so each client IP is seen.
@@ -268,3 +268,20 @@ Build every feature the way a senior engineer at a top social media company woul
 
 ## Progress Log
 (Claude Code adds one entry per Day: date, Day number, what was done, commits, tests passing, anything added to LATER.md.)
+
+### 2026-09-28 — Day 1: Back up everything
+- **Done:**
+  - Pushed `dev` to GitHub with upstream: `origin/dev` == local, 68 commits
+    ahead of `origin/master`. A secret scan before the push was clean.
+  - Keep-alive workflow is present and valid. Its target returned 200
+    after a 22.1 s cold start.
+- **CI:** both jobs reproduced locally and green: 233/233 API tests (26
+  suites), eslint, `check:i18n` (763 keys × 3), production build. The
+  remote run couldn't be observed (private repo, no `gh`, browser extension
+  offline), so step 2 stays unticked until the owner confirms it.
+- **Rule conflict:** CLAUDE.md's hard limits (no merge to master, no
+  production DB) override MONTH_PLAN's GO LIVE steps. Those steps are now
+  owner items.
+- **Commits:** `45aa29c`, `40fdd95`, BOM fix, and this entry.
+- **LATER.md:** #1 check the first CI run; #2 merge to master / GO LIVE
+  days are owner actions.
