@@ -34,28 +34,40 @@ function cloudinaryAsset(url, cloud = cloudName()) {
   return { resourceType: match[1].toLowerCase(), publicId: decodeURIComponent(match[2]) };
 }
 
-// Fire-and-forget: resolves when done, never rejects.
-async function deleteMedia(urls) {
-  const cloud = cloudName();
-  if (!cloud) return;
+// Deletes [{ publicId, resourceType }] (duplicates skipped), grouped by
+// type in batches of 100. Never rejects: failed batches are logged and
+// counted. Also used by scripts/cloudinary-orphans.js.
+async function deleteAssets(assets, api = cloudinary.api) {
   const byType = new Map();
-  for (const url of new Set(urls.filter(Boolean))) {
-    const asset = cloudinaryAsset(url, cloud);
-    if (!asset) continue;
-    if (!byType.has(asset.resourceType)) byType.set(asset.resourceType, []);
-    byType.get(asset.resourceType).push(asset.publicId);
+  for (const { publicId, resourceType } of assets) {
+    if (!byType.has(resourceType)) byType.set(resourceType, new Set());
+    byType.get(resourceType).add(publicId);
   }
-  for (const [resourceType, ids] of byType) {
+  let deleted = 0;
+  let failed = 0;
+  for (const [resourceType, idSet] of byType) {
+    const ids = [...idSet];
     for (let i = 0; i < ids.length; i += BATCH_SIZE) {
       const batch = ids.slice(i, i + BATCH_SIZE);
       try {
         // invalidate: CDN copies stop being served too, not just the origin.
-        await cloudinary.api.delete_resources(batch, { resource_type: resourceType, type: 'upload', invalidate: true });
+        await api.delete_resources(batch, { resource_type: resourceType, type: 'upload', invalidate: true });
+        deleted += batch.length;
       } catch (err) {
+        failed += batch.length;
         console.error(`Cloudinary cleanup failed for ${batch.length} ${resourceType} file(s):`, err.message || err);
       }
     }
   }
+  return { deleted, failed };
+}
+
+// Fire-and-forget: resolves when done, never rejects.
+async function deleteMedia(urls) {
+  const cloud = cloudName();
+  if (!cloud) return;
+  const assets = urls.map((url) => cloudinaryAsset(url, cloud)).filter(Boolean);
+  await deleteAssets(assets);
 }
 
 // ---- Which media a delete takes with it (query BEFORE deleting). ----
@@ -99,6 +111,7 @@ async function mediaOfUser(userId) {
 
 module.exports = {
   cloudinaryAsset,
+  deleteAssets,
   deleteMedia,
   mediaOfPost,
   mediaOfCommunity,
