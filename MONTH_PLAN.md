@@ -72,7 +72,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] GET /feed includes the viewer's own posts; a new post appears at the top immediately.
 
 ### Day 3 — Startup safety + small bugs
-- [ ] Validate all required env vars at startup with a clear error message; read PORT from env.
+- [x] Validate all required env vars at startup with a clear error message; read PORT from env.
 - [ ] Add security headers on the frontend (Vercel config).
 - [ ] Fix the remaining Low bugs from the audit.
 

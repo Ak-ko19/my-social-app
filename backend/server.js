@@ -1,4 +1,8 @@
 require('dotenv').config();
+// Before anything else reads the environment: refuse to start with a clear
+// message if required settings are missing. Only when run as the server,
+// not when the test suite require()s this file.
+if (require.main === module) require('./config/env').assertEnv();
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
@@ -31,7 +35,9 @@ const communityRoutes = require('./routes/communityRoutes');
 const pageRoutes = require('./routes/pageRoutes');
 
 const app = express();
-const PORT = 3000;
+// Hosts like Render tell the app which port to listen on (validated by
+// config/env.js; 0 = any free port).
+const PORT = process.env.PORT?.trim() ? Number(process.env.PORT) : 3000;
 
 // Before any middleware reads req.ip (the rate limiters): behind Render's
 // proxy it must resolve to the real client, not the proxy.
@@ -130,6 +136,6 @@ if (require.main === module) {
   initSocket(httpServer);
 
   httpServer.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on port ${httpServer.address().port}`);
   });
 }
