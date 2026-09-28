@@ -1,4 +1,4 @@
-﻿# MONTH_PLAN.md — Long-term autonomous plan (continuous work, no end date)
+# MONTH_PLAN.md — Long-term autonomous plan (continuous work, no end date)
 
 Source of truth for priorities: AUDIT_REPORT.md (commit b582d92).
 The owner does NOT write code. Claude Code works alone and continuously, Day after Day, until the owner presses Esc. "Day" means a unit of work, not a calendar day.
