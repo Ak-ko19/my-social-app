@@ -1,5 +1,6 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const { mediaOfStory, deleteMedia } = require('../services/mediaCleanupService');
 
 // B3 Stories. Visibility follows the Instagram model: you see your own
 // stories plus those of accounts you follow (accepted follows only),
@@ -137,7 +138,9 @@ async function deleteStory(req, res) {
     if (existing.rows[0].user_id !== req.userId) {
       return res.status(403).send('You can only delete your own story');
     }
+    const media = await mediaOfStory(req.params.id);
     await db.query('DELETE FROM stories WHERE id = $1', [req.params.id]);
+    deleteMedia(media);
     res.status(200).send('Story deleted');
   } catch (err) {
     sendServerError(res, err, 'Deleting story failed. Please try again later.');

@@ -7,25 +7,26 @@ const { registerAndLogin } = require('../helpers/auth');
 // stay 400 with our message; provider failures are 502 with generic text.
 //
 // Own mocks instead of setupTestApp(): Cloudinary has to be able to fail.
-let mockUploadError = null;
+let mockUploadError = null; // every upload fails with this
+let mockFailNth = 0; // or only the Nth upload (counted by mockUploads) fails
+let mockUploads = 0;
 jest.mock('../../db', () => ({ query: (...args) => require('../helpers/testDb').pool.query(...args) }));
-jest.mock('../../config/cloudinary', () => {
-  let seq = 0;
-  return {
-    uploader: {
-      upload_stream: (options, callback) => ({
-        end: () => {
-          if (mockUploadError) return callback(mockUploadError);
-          seq += 1;
-          return callback(null, {
-            secure_url: `https://res.cloudinary.com/test/${options.folder}/f${seq}`,
-            public_id: `${options.folder}/f${seq}`
-          });
-        }
-      })
-    }
-  };
-});
+jest.mock('../../config/cloudinary', () => ({
+  uploader: {
+    upload_stream: (options, callback) => ({
+      end: () => {
+        mockUploads += 1;
+        if (mockUploadError) return callback(mockUploadError);
+        if (mockUploads === mockFailNth) return callback(new Error('timeout'));
+        return callback(null, {
+          secure_url: `https://res.cloudinary.com/test/image/upload/v1/${options.folder}/f${mockUploads}.jpg`,
+          public_id: `${options.folder}/f${mockUploads}`
+        });
+      }
+    })
+  },
+  api: { delete_resources: jest.fn(async () => ({ deleted: {} })) }
+}));
 
 const app = require('../../server');
 const { errorHandler } = require('../../middleware/errorHandler');
@@ -41,6 +42,7 @@ describe('upload errors', () => {
   beforeEach(async () => {
     await resetDb();
     mockUploadError = null;
+    mockFailNth = 0;
     user = await registerAndLogin(app);
     logged = jest.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -79,6 +81,26 @@ describe('upload errors', () => {
       expect(res.text).toBe(UPLOAD_FAILED);
       expect(res.text).not.toContain(PROVIDER_TEXT);
     });
+  });
+
+  it('removes the images that did upload when another image of the post fails', async () => {
+    const cloudinary = require('../../config/cloudinary');
+    const env = { CLOUDINARY_CLOUD_NAME: 'test', CLOUDINARY_API_KEY: 'k', CLOUDINARY_API_SECRET: 's' };
+    const saved = Object.fromEntries(Object.keys(env).map((k) => [k, process.env[k]]));
+    Object.assign(process.env, env);
+    try {
+      cloudinary.api.delete_resources.mockClear();
+      mockFailNth = mockUploads + 2; // the 2nd of 3 images fails
+      let req = request(app).post('/posts').set(auth(user)).field('content', 'hi');
+      for (let i = 0; i < 3; i += 1) req = req.attach('images', png, { filename: `${i}.png`, contentType: 'image/png' });
+      const res = await req;
+      expect(res.status).toBe(502);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      const ids = cloudinary.api.delete_resources.mock.calls.flatMap(([batch]) => batch);
+      expect(ids).toEqual([`posts/f${mockFailNth - 1}`, `posts/f${mockFailNth + 1}`]);
+    } finally {
+      Object.assign(process.env, saved);
+    }
   });
 
   it('still uploads normally when Cloudinary works', async () => {

@@ -4,6 +4,7 @@ const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../servic
 // B5: keep in sync with migration 020's CHECK constraint.
 const POST_VISIBILITIES = ['public', 'followers'];
 const { sendServerError } = require('../utils/sendError');
+const { mediaOfPost, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
 const { getVisiblePost } = require('../services/postVisibilityService');
 const hashtagService = require('../services/hashtagService');
@@ -21,8 +22,8 @@ async function createPost(req, res) {
       return res.status(400).send(`visibility must be one of: ${POST_VISIBILITIES.join(', ')}`);
     }
     // B13: posting inside a community requires being a (non-pending)
-    // member. (Images were already uploaded by the middleware at this point
-    // -- a refused non-member's upload is a harmless orphan.)
+    // member. (Images were already uploaded by the middleware at this point;
+    // it deletes them again when the request is refused.)
     let communityId = null;
     if (req.body.communityId !== undefined && req.body.communityId !== '') {
       communityId = Number(req.body.communityId);
@@ -300,7 +301,9 @@ async function deletePost(req, res) {
         return res.status(403).send('You can only delete your own posts');
       }
     }
+    const media = await mediaOfPost(target.id);
     await db.query('DELETE FROM posts WHERE id = $1', [req.params.id]);
+    deleteMedia(media); // not awaited: see mediaCleanupService
     res.send('Post deleted successfully');
   } catch (err) {
     sendServerError(res, err, 'Delete post failed. Please try again later.');

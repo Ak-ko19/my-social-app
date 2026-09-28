@@ -1,5 +1,6 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const { deleteMedia } = require('../services/mediaCleanupService');
 const blockService = require('../services/blockService');
 
 // Same check signup uses (authController.EMAIL_REGEX).
@@ -73,6 +74,8 @@ async function getProfile(req, res) {
 }
 
 async function updateProfile(req, res) {
+  // A new avatar is already on Cloudinary by the time this runs.
+  const avatarUrl = req.cloudinaryResult ? req.cloudinaryResult.secure_url : null;
   try {
     const username = (req.body.username || '').trim();
     const email = (req.body.email || '').trim();
@@ -83,7 +86,9 @@ async function updateProfile(req, res) {
     if (!EMAIL_REGEX.test(email)) {
       return res.status(400).send('Invalid email format');
     }
-    const avatarUrl = req.cloudinaryResult ? req.cloudinaryResult.secure_url : null;
+    const previous = avatarUrl
+      ? (await db.query('SELECT avatar_url FROM users WHERE id = $1', [req.userId])).rows[0]?.avatar_url
+      : null;
     const result = await db.query(
       // Changing the email drops verification: the account hasn't proven it
       // owns the NEW address. (SET expressions see the row's old values, so
@@ -96,8 +101,11 @@ async function updateProfile(req, res) {
        RETURNING id, username, email, bio, avatar_url, email_verified, created_at`,
       [username, email, bio || null, avatarUrl, req.userId, email]
     );
+    // Replaced: the old picture is no longer used anywhere.
+    if (previous && previous !== avatarUrl) deleteMedia([previous]);
     res.status(200).json(result.rows[0]);
   } catch (err) {
+    // (A refused update's new picture is removed by the upload middleware.)
     if (err.code === '23505') {
       return res.status(400).send('Email or username already exists');
     }

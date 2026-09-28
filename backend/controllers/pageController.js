@@ -1,5 +1,6 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const { mediaOfPage, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 
@@ -144,7 +145,9 @@ async function updatePage(req, res) {
 async function deletePage(req, res) {
   try {
     const page = await loadOwnedPage(Number(req.params.id), req.userId);
+    const media = await mediaOfPage(page.id);
     await db.query('DELETE FROM pages WHERE id = $1', [page.id]);
+    deleteMedia(media);
     res.json({ deleted: true });
   } catch (err) {
     handle(res, err, 'Deleting the page failed. Please try again later.');

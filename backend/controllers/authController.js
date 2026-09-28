@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const { mediaOfUser, deleteMedia } = require('../services/mediaCleanupService');
 const { sendEmail } = require('../utils/email');
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -332,7 +333,11 @@ async function deleteAccount(req, res) {
       return res.status(401).send('Incorrect password');
     }
 
+    // Everything the cascade takes with it: avatar, posts, stories, sent
+    // photos and voice notes ("deleting your account removes your data").
+    const media = await mediaOfUser(req.userId);
     await db.query('DELETE FROM users WHERE id = $1', [req.userId]);
+    deleteMedia(media);
     res.status(200).send('Account deleted');
   } catch (err) {
     sendServerError(res, err, 'Delete account failed. Please try again later.');

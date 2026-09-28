@@ -1,5 +1,6 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const { mediaOfCommunity, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 
@@ -75,7 +76,10 @@ async function ensureAdminOrDelete(communityId) {
     [communityId]
   );
   if (members.rows.length === 0) {
+    // Its posts (anyone's) cascade with it, so their images go too.
+    const media = await mediaOfCommunity(communityId);
     await db.query('DELETE FROM communities WHERE id = $1', [communityId]);
+    deleteMedia(media);
     return { deleted: true };
   }
   if (!members.rows.some((m) => m.role === 'admin')) {

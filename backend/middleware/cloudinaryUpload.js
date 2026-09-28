@@ -1,6 +1,18 @@
 const multer = require('multer');
 const cloudinary = require('../config/cloudinary');
 const { clientError, uploadFailed } = require('./errorHandler');
+const { deleteMedia } = require('../services/mediaCleanupService');
+
+// Files are uploaded before the route handler runs, so a request the
+// handler then refuses (4xx: validation, not a member, blocked, ...) would
+// leave them on Cloudinary, unused. Delete them when that happens. Not on
+// 5xx: a server error can come after the row was saved, and deleting then
+// would break it; the orphan scan (which checks the database) covers those.
+function deleteIfRefused(res, urls) {
+  res.on('finish', () => {
+    if (res.statusCode >= 400 && res.statusCode < 500) deleteMedia(urls);
+  });
+}
 
 const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const ALLOWED_AUDIO_MIME_TYPES = ['audio/webm', 'audio/mp4', 'audio/ogg', 'audio/mpeg'];
@@ -68,6 +80,7 @@ function uploadToCloudinary(folder = 'mysocialapp', resourceType = 'image', form
     const stream = cloudinary.uploader.upload_stream(uploadOptions, (err, result) => {
       if (err) return next(uploadFailed(err));
       req.cloudinaryResult = result;
+      deleteIfRefused(res, [result.secure_url]);
       next();
     });
     stream.end(req.file.buffer);
@@ -108,19 +121,21 @@ function uploadBufferToCloudinary(buffer, options) {
 
 // Use after uploadPostImages. Uploads every file in parallel and attaches
 // the results IN THE ORDER THE FILES WERE SENT as req.cloudinaryResults
-// (empty array when no images). If any upload fails the request fails --
-// images that already finished uploading stay in Cloudinary unreferenced
-// (a rare, harmless orphan; not worth a compensating delete here).
+// (empty array when no images). If any upload fails the request fails, and
+// the images that did finish uploading are deleted again.
 function uploadManyToCloudinary(folder = 'mysocialapp') {
   return async (req, res, next) => {
     const files = req.postImageFiles || [];
-    try {
-      req.cloudinaryResults = await Promise.all(
-        files.map((file) => uploadBufferToCloudinary(file.buffer, { folder, resource_type: 'image' }))
-      );
-    } catch (err) {
-      return next(uploadFailed(err));
+    const settled = await Promise.allSettled(
+      files.map((file) => uploadBufferToCloudinary(file.buffer, { folder, resource_type: 'image' }))
+    );
+    const failed = settled.find((s) => s.status === 'rejected');
+    if (failed) {
+      deleteMedia(settled.filter((s) => s.status === 'fulfilled').map((s) => s.value.secure_url));
+      return next(uploadFailed(failed.reason));
     }
+    req.cloudinaryResults = settled.map((s) => s.value);
+    deleteIfRefused(res, req.cloudinaryResults.map((r) => r.secure_url));
     next();
   };
 }

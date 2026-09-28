@@ -8,6 +8,7 @@ const sanitizeHtml = require('sanitize-html');
 const db = require('../db');
 const { isRateLimited } = require('./rateLimiter');
 const blockService = require('./blockService');
+const { deleteMedia } = require('./mediaCleanupService');
 
 const MAX_MESSAGE_LENGTH = 5000;
 const MAX_CLIENT_TEMP_ID_LENGTH = 255;
@@ -339,6 +340,9 @@ async function deleteMessage({ conversationId, messageId, userId }) {
     `UPDATE messages SET deleted_at = now() WHERE id = $1 RETURNING *`,
     [msgId]
   );
+  // The row stays (soft delete; the API no longer exposes its media_url),
+  // but the photo / voice note itself is removed from Cloudinary.
+  deleteMedia([message.media_url]);
   return result.rows[0];
 }
 

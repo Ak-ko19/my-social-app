@@ -1,5 +1,6 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const { mediaOfConversation, deleteMedia } = require('../services/mediaCleanupService');
 const { getIO } = require('../sockets');
 
 // B10 group chat. Rules:
@@ -207,7 +208,10 @@ async function removeMember(req, res) {
 
     const remaining = await getMembers(conversationId);
     if (remaining.length === 0) {
+      // The last member left: the chat and every photo/voice note in it go.
+      const media = await mediaOfConversation(conversationId);
       await db.query('DELETE FROM conversations WHERE id = $1', [conversationId]);
+      deleteMedia(media);
       return res.json({ members: [], deleted: true });
     }
     // Never leave a group without an admin.

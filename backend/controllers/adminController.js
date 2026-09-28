@@ -1,5 +1,6 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const { mediaOfPost, deleteMedia } = require('../services/mediaCleanupService');
 const { getIO } = require('../sockets');
 
 // B12 admin moderation. All routes sit behind authMiddleware + requireAdmin.
@@ -81,7 +82,9 @@ async function removeReportedContent(req, res) {
     const report = await getReport(req.params.id);
     if (!report) return res.status(404).send('Report not found');
     if (report.target_type !== 'post') return res.status(400).send('Only posts can be removed; ban the user instead');
+    const media = await mediaOfPost(report.target_id);
     await db.query('DELETE FROM posts WHERE id = $1', [report.target_id]);
+    deleteMedia(media);
     await resolvePending("target_type = 'post' AND target_id = $1", [report.target_id], req.userId, 'content_removed');
     res.json({ ok: true });
   } catch (err) {

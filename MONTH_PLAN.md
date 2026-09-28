@@ -77,7 +77,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Fix the remaining Low bugs from the audit.
 
 ### Day 4 — Cloudinary cleanup
-- [ ] Deleting a post, story, message, or account deletes its images/voice notes from Cloudinary.
+- [x] Deleting a post, story, message, or account deletes its images/voice notes from Cloudinary.
 - [ ] Store Cloudinary public_id wherever it is missing (migration if needed).
 - [ ] Script to find and delete orphaned Cloudinary files (dry-run mode first).
 
