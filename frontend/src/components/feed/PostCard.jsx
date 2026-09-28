@@ -14,6 +14,7 @@ import { useComments } from '../../hooks/useComments';
 import { resolveImageUrl } from '../../api';
 import { getOptimizedImageUrl } from '../../utils/cloudinaryImage';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
+import { safeHttpUrl } from '../../utils/safeUrl';
 import { updatePost, updatePostVisibility } from '../../services/postService';
 import { Avatar, VerifiedTick } from '../ui';
 import MediaCarousel from './MediaCarousel';
@@ -160,6 +161,9 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
   // for things like Report/Block, which act on the real person).
   const page = post.page || null;
   const initials = ((page ? page.name : post.username) || '?').slice(0, 2).toUpperCase();
+  // Link previews render only for http(s) URLs (never javascript:/data:).
+  const linkUrl = safeHttpUrl(post.linkPreview?.url);
+  const linkImage = safeHttpUrl(post.linkPreview?.image);
 
   return (
     <article className="post-card">
@@ -240,11 +244,11 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
         className="post-card-media"
       />
 
-      {post.linkPreview && (
-        <a className="post-card-link-preview" href={post.linkPreview.url} target="_blank" rel="noreferrer">
-          {post.linkPreview.image && (
+      {linkUrl && (
+        <a className="post-card-link-preview" href={linkUrl} target="_blank" rel="noreferrer">
+          {linkImage && (
             <div className="post-card-link-preview-media">
-              <img src={post.linkPreview.image} alt="" />
+              <img src={linkImage} alt="" />
               {post.linkPreview.cta && <span className="post-card-link-preview-cta">{post.linkPreview.cta}</span>}
             </div>
           )}

@@ -1,19 +1,20 @@
 const multer = require('multer');
 const cloudinary = require('../config/cloudinary');
+const { clientError, uploadFailed } = require('./errorHandler');
 
 const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const ALLOWED_AUDIO_MIME_TYPES = ['audio/webm', 'audio/mp4', 'audio/ogg', 'audio/mpeg'];
 
 function imageFileFilter(req, file, cb) {
   if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
-    return cb(new Error('Only JPEG, PNG, GIF, and WEBP images are allowed'));
+    return cb(clientError('Only JPEG, PNG, GIF, and WEBP images are allowed'));
   }
   cb(null, true);
 }
 
 function audioFileFilter(req, file, cb) {
   if (!ALLOWED_AUDIO_MIME_TYPES.includes(file.mimetype)) {
-    return cb(new Error('Only WEBM, MP4, OGG, and MPEG audio files are allowed'));
+    return cb(clientError('Only WEBM, MP4, OGG, and MPEG audio files are allowed'));
   }
   cb(null, true);
 }
@@ -65,7 +66,7 @@ function uploadToCloudinary(folder = 'mysocialapp', resourceType = 'image', form
     if (format) uploadOptions.format = format;
 
     const stream = cloudinary.uploader.upload_stream(uploadOptions, (err, result) => {
-      if (err) return next(err);
+      if (err) return next(uploadFailed(err));
       req.cloudinaryResult = result;
       next();
     });
@@ -86,12 +87,12 @@ function uploadPostImages(req, res, next) {
   ])(req, res, (err) => {
     if (err && err.code === 'LIMIT_UNEXPECTED_FILE') {
       // multer's own message here is just "Unexpected field".
-      return next(new Error(TOO_MANY_IMAGES));
+      return next(clientError(TOO_MANY_IMAGES));
     }
     if (err) return next(err);
     const files = [...(req.files?.images || []), ...(req.files?.image || [])];
     if (files.length > MAX_POST_IMAGES) {
-      return next(new Error(TOO_MANY_IMAGES));
+      return next(clientError(TOO_MANY_IMAGES));
     }
     req.postImageFiles = files;
     next();
@@ -117,10 +118,10 @@ function uploadManyToCloudinary(folder = 'mysocialapp') {
       req.cloudinaryResults = await Promise.all(
         files.map((file) => uploadBufferToCloudinary(file.buffer, { folder, resource_type: 'image' }))
       );
-      next();
     } catch (err) {
-      next(err);
+      return next(uploadFailed(err));
     }
+    next();
   };
 }
 

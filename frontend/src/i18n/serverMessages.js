@@ -81,6 +81,11 @@ const MY = {
   'Page not found': 'စာမျက်နှာ မတွေ့ပါ',
   'Only the page owner can do that': 'စာမျက်နှာ ပိုင်ရှင်သာ ပြုလုပ်နိုင်ပါသည်',
   'Only the page owner can post as this page': 'စာမျက်နှာ ပိုင်ရှင်သာ ဤစာမျက်နှာအဖြစ် ပို့စ်တင်နိုင်ပါသည်',
+  // uploads (a failed upload itself is covered by the "... failed" rule below)
+  'Only JPEG, PNG, GIF, and WEBP images are allowed': 'JPEG၊ PNG၊ GIF နှင့် WEBP ပုံများကိုသာ တင်နိုင်ပါသည်',
+  'Only WEBM, MP4, OGG, and MPEG audio files are allowed': 'WEBM၊ MP4၊ OGG နှင့် MPEG အသံဖိုင်များကိုသာ တင်နိုင်ပါသည်',
+  'File is too large (max 5 MB)': 'ဖိုင် အရွယ်အစား ကြီးလွန်းပါသည် (အများဆုံး ၅ MB)',
+  'You can attach up to 10 images': 'ပုံ အများဆုံး ၁၀ ပုံအထိသာ တွဲတင်နိုင်ပါသည်',
   // generic
   'Server error': 'ဆာဗာ အမှား ဖြစ်ပေါ်ခဲ့ပါသည်',
   'Something went wrong. Please try again later.': 'တစ်ခုခု မှားယွင်းသွားပါသည်။ နောက်မှ ထပ်စမ်းကြည့်ပါ။',
@@ -161,6 +166,10 @@ const AR = {
   'Page not found': 'الصفحة غير موجودة',
   'Only the page owner can do that': 'يمكن لمالك الصفحة فقط القيام بذلك',
   'Only the page owner can post as this page': 'يمكن لمالك الصفحة فقط النشر باسمها',
+  'Only JPEG, PNG, GIF, and WEBP images are allowed': 'يُسمح فقط بصور JPEG وPNG وGIF وWEBP',
+  'Only WEBM, MP4, OGG, and MPEG audio files are allowed': 'يُسمح فقط بملفات الصوت WEBM وMP4 وOGG وMPEG',
+  'File is too large (max 5 MB)': 'الملف كبير جدًا (الحد الأقصى 5 ميغابايت)',
+  'You can attach up to 10 images': 'يمكنك إرفاق 10 صور كحد أقصى',
   'Server error': 'حدث خطأ في الخادم',
   'Something went wrong. Please try again later.': 'حدث خطأ ما. يرجى المحاولة لاحقًا.',
   'Not found': 'غير موجود'

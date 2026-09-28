@@ -74,7 +74,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 3 — Startup safety + small bugs
 - [x] Validate all required env vars at startup with a clear error message; read PORT from env.
 - [x] Add security headers on the frontend (Vercel config).
-- [ ] Fix the remaining Low bugs from the audit.
+- [x] Fix the remaining Low bugs from the audit.
 
 ### Day 4 — Cloudinary cleanup
 - [ ] Deleting a post, story, message, or account deletes its images/voice notes from Cloudinary.

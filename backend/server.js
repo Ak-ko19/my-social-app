@@ -11,6 +11,7 @@ const db = require('./db');
 const allowedOrigins = require('./config/allowedOrigins');
 const { resolveTrustProxy } = require('./config/trustProxy');
 const { globalLimiter } = require('./middleware/rateLimiter');
+const { errorHandler } = require('./middleware/errorHandler');
 const { initSocket } = require('./sockets');
 
 const authRoutes = require('./routes/authRoutes');
@@ -70,7 +71,10 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    callback(new Error('Not allowed by CORS'));
+    const err = new Error('Not allowed by CORS');
+    err.status = 403;
+    err.expose = true;
+    callback(err);
   }
 }));
 
@@ -116,13 +120,9 @@ app.use(adminRoutes);
 app.use(communityRoutes);
 app.use(pageRoutes);
 
-// Handle multer upload errors (wrong file type, too large) with a clear message
-app.use((err, req, res, next) => {
-  if (err) {
-    return res.status(400).send(err.message || 'Upload failed');
-  }
-  next();
-});
+// Last: upload rejections (400), upload provider failures (502), CORS (403),
+// anything unexpected (500, logged). See middleware/errorHandler.js.
+app.use(errorHandler);
 
 module.exports = app;
 
