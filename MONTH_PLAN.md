@@ -85,7 +85,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Add an HTTP email adapter (Brevo API) that turns on automatically only when its env var exists. Keep Nodemailer for local dev.
 - [x] In production, NEVER write reset/verification links to logs.
 - [x] Graceful fallback when no email provider is configured: the app must not break or lock users out (e.g. skip the verification requirement and show a friendly message on forgot-password).
-- [ ] Note in LATER.md: "Add Brevo API key to turn on real emails."
+- [x] Note in LATER.md: "Add Brevo API key to turn on real emails."
 
 ### Day 6 — Go-live preparation
 - [ ] Write GO_LIVE_CHECKLIST.md: backup, migrations 015–027, env vars, deploy order, rollback steps.
