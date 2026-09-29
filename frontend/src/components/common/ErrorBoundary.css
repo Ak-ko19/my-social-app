@@ -1,0 +1,45 @@
+/* Day 10: the "something went wrong" screen shown instead of a blank page. */
+.error-boundary {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.error-boundary-card {
+  width: 100%;
+  max-width: 400px;
+  padding: var(--space-6) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+
+.error-boundary-icon {
+  color: var(--badge-amber-fg);
+}
+
+.error-boundary-title {
+  margin: var(--space-3) 0 var(--space-2);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.error-boundary-body {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.error-boundary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}

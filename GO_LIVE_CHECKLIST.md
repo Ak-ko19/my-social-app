@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 029, check the environment variables,
+database, run migrations 015 → 030, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -26,8 +26,8 @@ the production database or merging to `master`.
   migration on a local copy of the live schema (never production):
   `cd e2e && bash golive-rehearsal.sh --old` must end with
   `REHEARSAL PASSED`.
-  - Last run 2026-09-29, 015 → 029, all passed:
-    - the result matches the app's schema exactly (157 columns, 93
+  - Last run 2026-09-29, 015 → 030, all passed:
+    - the result matches the app's schema exactly (168 columns, 96
       constraints);
     - all old rows are kept, and old images and likes carry over;
     - the new code and the old live code both work on the migrated
@@ -84,6 +84,7 @@ failed and keeps the old version running. It's still better to check now.
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | needed for uploads | already set (photos work today) |
 | `BREVO_API_KEY`, `EMAIL_FROM` | optional | turns on real emails; see LATER.md #3. Without them the app says "reset by email isn't available" |
 | `CLEANUP_SECRET` | optional | turns on the daily cleanup job (32+ random characters); the same value goes into a GitHub Actions secret, see LATER.md #4 |
+| `SENTRY_DSN` | optional | also sends server errors to Sentry (see LATER.md #5). Errors are always kept in Admin → Errors anyway |
 | `TRUST_PROXY` | leave unset | defaults to 1 on Render |
 | `PORT`, `RENDER` | don't touch | Render sets these itself |
 
@@ -95,7 +96,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 029 on production
+## 3. Run migrations 015 → 030 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -112,7 +113,7 @@ they run.
 - [ ] Confirm none of the new tables exist yet (this should print `0`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions')"
+    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups')"
   ```
 - [ ] Run them **one at a time, in this order**, from `backend/`. Each
   prints `Migration applied successfully`.
@@ -125,14 +126,15 @@ they run.
   for m in 015_add_fk_lookup_indexes 016_add_reactions 017_add_post_media 018_add_stories \
            019_add_comment_replies_likes 020_add_post_visibility 021_add_message_image_type \
            022_add_message_replies_images 023_add_group_chats 024_add_notification_preferences \
-           025_add_admin_moderation 026_add_communities 027_add_pages 028_add_sessions 029_add_cleanup_indexes; do
+           025_add_admin_moderation 026_add_communities 027_add_pages 028_add_sessions \
+           029_add_cleanup_indexes 030_add_error_log; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
-- [ ] Check the result (this should print `5`):
+- [ ] Check the result (this should print `6`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions')"
+    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups')"
   ```
 
 ## 4. Deploy the backend, then the frontend
@@ -195,6 +197,10 @@ Do this in a normal browser window, then again on a phone.
     signed in. The phone is sent to the login screen on its next tap.
   - Sign in on the phone again. Settings → **Where You're Logged In**
     lists both devices. "Log out" on the phone's row signs it out.
+- [ ] **Error log (Day 10):** Settings → Moderation → **Errors**. It
+  should be empty or nearly so. Anything listed there is a real error
+  from the live site: open "Details", and paste it into the next session
+  if it looks unexpected.
 - [ ] **Security headers (Day 3):** open the site. No page is broken, and
   the browser console (F12) shows no "Content Security Policy" errors.
 - [ ] **Clean up old Cloudinary leftovers (Day 4).** Dry run first:

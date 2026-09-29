@@ -85,6 +85,11 @@ function checkEnv(env) {
     warnings.push('Cloudinary is not configured. Image and voice uploads will fail.');
   }
 
+  // Day 10: optional Sentry. A DSN looks like https://<key>@<host>/<project>.
+  if (isSet(env.SENTRY_DSN) && !/^https:\/\/[^@\s]+@[^/\s]+\/\S+$/.test(env.SENTRY_DSN.trim())) {
+    warnings.push('SENTRY_DSN does not look like a Sentry DSN (https://<key>@<host>/<project>), so Sentry may not receive errors.');
+  }
+
   // Day 9: the daily cleanup job's shared secret (POST /internal/cleanup).
   if (isSet(env.CLEANUP_SECRET)) {
     if (env.CLEANUP_SECRET.length < 32) {

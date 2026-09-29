@@ -106,6 +106,11 @@ smoke() { # $1 = new|old
 }
 
 echo "Migrations: $(echo $MIGRATIONS)"
+# The owner runs the migration list written in GO_LIVE_CHECKLIST.md: it
+# must be exactly these files, in this order.
+CHECKLIST_LIST=$(awk '/^  for m in 015/,/; do$/' "$REPO/GO_LIVE_CHECKLIST.md" | tr -d '\\' | sed 's/for m in//; s/; do//' | tr -s ' \n' '\n' | grep -E '^[0-9]{3}_' | tr '\n' ' ')
+[ "$CHECKLIST_LIST" = "$(echo $MIGRATIONS) " ] && ok "GO_LIVE_CHECKLIST lists exactly these migrations" \
+  || { bad "GO_LIVE_CHECKLIST's migration list differs:"; echo "  checklist: $CHECKLIST_LIST"; }
 # 1-3. Migrate a live-shaped copy and compare with the dev schema.
 fresh_db $DB live
 psql_ "$URL" -At -c "$COLS" > "$WORK/cols-live.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-live.txt"

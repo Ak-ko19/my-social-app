@@ -12,6 +12,7 @@ const allowedOrigins = require('./config/allowedOrigins');
 const { resolveTrustProxy } = require('./config/trustProxy');
 const { globalLimiter } = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
+const { report, startMonitoring, whenIdle } = require('./services/errorLogService');
 const { initSocket } = require('./sockets');
 
 const authRoutes = require('./routes/authRoutes');
@@ -37,6 +38,7 @@ const pageRoutes = require('./routes/pageRoutes');
 const configRoutes = require('./routes/configRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
 const internalRoutes = require('./routes/internalRoutes');
+const clientErrorRoutes = require('./routes/clientErrorRoutes');
 
 const app = express();
 // Hosts like Render tell the app which port to listen on (validated by
@@ -103,6 +105,7 @@ app.get('/test-db', async (req, res) => {
 
 app.use(configRoutes);
 app.use(internalRoutes);
+app.use(clientErrorRoutes);
 // Before followRoutes/userPostsRoutes: literal /users/suggestions must win over /users/:id/... patterns.
 app.use(suggestionRoutes);
 app.use(authRoutes);
@@ -138,6 +141,20 @@ module.exports = app;
 // which starts its own ephemeral server per request and must not also
 // trigger a real network listener or Socket.io init.
 if (require.main === module) {
+  // Day 10: errors outside any request end up in the error log too.
+  startMonitoring();
+  process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled promise rejection:', reason);
+    report(reason, { source: 'process', route: 'unhandledRejection' });
+  });
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught exception:', err);
+    report(err, { source: 'process', route: 'uncaughtException' });
+    // The process is in an unknown state: exit (Render restarts a clean
+    // one) as soon as the report is saved -- at most 2 s later.
+    Promise.race([whenIdle(), new Promise((resolve) => setTimeout(resolve, 2000))]).finally(() => process.exit(1));
+  });
+
   const httpServer = http.createServer(app);
   initSocket(httpServer);
 

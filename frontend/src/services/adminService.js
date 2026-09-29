@@ -23,3 +23,12 @@ export function banUser(userId, reason, token) {
 export function unbanUser(userId, token) {
   return api.post(`/admin/users/${userId}/unban`, {}, withAuth(token));
 }
+
+// Day 10: built-in error log.
+export function fetchErrors(token, { status = 'open', page = 1 } = {}) {
+  return api.get('/admin/errors', { ...withAuth(token), params: { status, page } }).then((res) => res.data);
+}
+
+export function resolveError(fingerprint, token) {
+  return api.post(`/admin/errors/${fingerprint}/resolve`, {}, withAuth(token));
+}

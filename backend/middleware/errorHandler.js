@@ -1,4 +1,6 @@
 const multer = require('multer');
+const { report } = require('../services/errorLogService');
+const { routeOf } = require('../utils/sendError');
 
 // Errors that reach Express's error handler: upload rejections from multer
 // and the file filters, upload failures at Cloudinary, the CORS rejection,
@@ -39,10 +41,13 @@ function errorHandler(err, req, res, next) {
   if (err.expose && err.status >= 400 && err.status < 600) {
     if (err.status >= 500) {
       console.error(`${req.method} ${req.path} failed:`, err.cause?.message || err.message);
+      // e.g. an upload provider failure: the provider's own error is logged.
+      report(err.cause || err, { source: 'api', route: routeOf(req), status: err.status, userId: req.userId });
     }
     return res.status(err.status).send(err.message);
   }
   console.error(`${req.method} ${req.path} failed:`, err);
+  report(err, { source: 'api', route: routeOf(req), status: 500, userId: req.userId });
   return res.status(500).send('Something went wrong. Please try again later.');
 }
 

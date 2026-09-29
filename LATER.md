@@ -100,3 +100,18 @@ without them. Newest items at the bottom.
      let the daily schedule (03:17 UTC) do it.
 - To preview from your own computer instead:
   `DATABASE_URL="$PROD_DB" npm run cleanup -- --dry-run` (in `backend/`).
+
+## 5. (Optional) Send server errors to Sentry too (Day 10)
+- **Not needed:** every error is already saved in the app's own error log
+  (Settings → Moderation → Errors), with counts and details.
+- **What Sentry adds:** email alerts and richer grouping. Its free plan
+  is enough.
+- **Owner steps:**
+  1. Create a free account at https://sentry.io and a **Node.js**
+     project.
+  2. Copy its **DSN** (it looks like
+     `https://<key>@<something>.ingest.sentry.io/<id>`).
+  3. Render → backend service → **Environment** → add `SENTRY_DSN` =
+     that DSN. Save; Render redeploys.
+- **Check it worked:** the Render logs show
+  `[errors] Sentry reporting is on.` at startup.

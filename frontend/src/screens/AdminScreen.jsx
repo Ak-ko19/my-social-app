@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { IconButton } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import FeedErrorState from '../components/feed/FeedErrorState';
+import AdminErrorsPanel from '../components/admin/AdminErrorsPanel';
 import { fetchReports, dismissReport, removeReportedContent, banUser, unbanUser } from '../services/adminService';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
 import { Trans, useTranslation } from 'react-i18next';
@@ -146,6 +147,7 @@ function AdminScreen() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { token } = useAuth();
+  const [section, setSection] = useState('reports');
   const [status, setStatus] = useState('pending');
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -203,38 +205,58 @@ function AdminScreen() {
         <h1 className="screen-header-title">{t('admin.title')}</h1>
       </header>
       <div className="screen-body">
-        <div role="tablist" aria-label={t('admin.statusTabs')} className="admin-tabs">
-          {['pending', 'reviewed'].map((s) => (
+        {/* Day 10: Reports | Errors. */}
+        <div role="tablist" aria-label={t('admin.sections')} className="admin-tabs admin-sections">
+          {['reports', 'errors'].map((s) => (
             <button
               key={s}
               type="button"
               role="tab"
-              aria-selected={status === s}
-              className={clsx('admin-tab', status === s && 'is-active')}
-              onClick={() => {
-                setData(null);
-                setStatus(s);
-              }}
+              aria-selected={section === s}
+              className={clsx('admin-tab', section === s && 'is-active')}
+              onClick={() => setSection(s)}
             >
-              {s === 'pending' ? t('admin.pending') : t('admin.reviewedTab')}
+              {t(`admin.section.${s}`)}
             </button>
           ))}
         </div>
 
-        {error && <FeedErrorState message={error} onRetry={load} />}
-        {!data && !error && <p className="screen-status" role="status">{t('admin.loading')}</p>}
-        {data && data.reports.length === 0 && (
-          <div className="admin-empty">
-            <ShieldAlert size={28} aria-hidden="true" />
-            <p>{status === 'pending' ? t('admin.emptyPending') : t('admin.emptyReviewed')}</p>
-          </div>
-        )}
-        {data && data.reports.length > 0 && (
-          <ul className="admin-report-list">
-            {data.reports.map((r) => (
-              <ReportCard key={r.id} report={r} token={token} onDone={load} />
-            ))}
-          </ul>
+        {section === 'errors' ? <AdminErrorsPanel token={token} /> : (
+          <>
+            <div role="tablist" aria-label={t('admin.statusTabs')} className="admin-tabs">
+              {['pending', 'reviewed'].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  role="tab"
+                  aria-selected={status === s}
+                  className={clsx('admin-tab', status === s && 'is-active')}
+                  onClick={() => {
+                    setData(null);
+                    setStatus(s);
+                  }}
+                >
+                  {s === 'pending' ? t('admin.pending') : t('admin.reviewedTab')}
+                </button>
+              ))}
+            </div>
+
+            {error && <FeedErrorState message={error} onRetry={load} />}
+            {!data && !error && <p className="screen-status" role="status">{t('admin.loading')}</p>}
+            {data && data.reports.length === 0 && (
+              <div className="admin-empty">
+                <ShieldAlert size={28} aria-hidden="true" />
+                <p>{status === 'pending' ? t('admin.emptyPending') : t('admin.emptyReviewed')}</p>
+              </div>
+            )}
+            {data && data.reports.length > 0 && (
+              <ul className="admin-report-list">
+                {data.reports.map((r) => (
+                  <ReportCard key={r.id} report={r} token={token} onDone={load} />
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
     </div>

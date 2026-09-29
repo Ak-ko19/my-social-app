@@ -1,0 +1,120 @@
+/* Day 10: admin error log. Same card language as the reports list
+   (AdminScreen.css); logical properties so it mirrors in RTL. */
+.admin-error-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.admin-error {
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  border-inline-start: 4px solid var(--badge-red-fg);
+  color: var(--color-text);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.admin-error-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.admin-error-source {
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--badge-slate-bg);
+  color: var(--badge-slate-fg);
+}
+
+.admin-error-source.is-api {
+  background: var(--badge-orange-bg);
+  color: var(--badge-orange-fg);
+}
+
+.admin-error-source.is-socket {
+  background: var(--badge-blue-bg);
+  color: var(--badge-blue-fg);
+}
+
+.admin-error-source.is-process {
+  background: var(--badge-red-bg);
+  color: var(--badge-red-fg);
+}
+
+.admin-error-source.is-client {
+  background: var(--badge-purple-bg);
+  color: var(--badge-purple-fg);
+}
+
+.admin-error-route {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-error-count {
+  margin-inline-start: auto;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.admin-error-message {
+  margin: 0;
+  font-weight: 700;
+  text-align: start;
+}
+
+.admin-error-meta {
+  margin: var(--space-2) 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.admin-error-details {
+  margin-top: var(--space-2);
+  font-size: 12px;
+}
+
+.admin-error-details summary {
+  cursor: pointer;
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.admin-error-details pre {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  max-height: 240px;
+  overflow: auto;
+  border-radius: var(--radius-sm);
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.admin-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.admin-errors-more {
+  justify-content: center;
+}

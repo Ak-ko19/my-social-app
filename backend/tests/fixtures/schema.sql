@@ -315,3 +315,19 @@ CREATE INDEX idx_sessions_user_active ON sessions (user_id) WHERE revoked_at IS 
 CREATE INDEX idx_stories_expires_at ON stories (expires_at);
 CREATE INDEX idx_notifications_created_at ON notifications (created_at);
 CREATE INDEX idx_sessions_expires_at ON sessions (expires_at);
+
+-- Day 10 (migration 030): built-in error log, one row per distinct error.
+CREATE TABLE error_groups (
+  fingerprint char(40) PRIMARY KEY,
+  source varchar(10) NOT NULL CHECK (source IN ('api', 'socket', 'process', 'client')),
+  route text,
+  message text NOT NULL,
+  stack text,
+  status integer,
+  count integer NOT NULL DEFAULT 1,
+  first_seen timestamptz NOT NULL DEFAULT now(),
+  last_seen timestamptz NOT NULL DEFAULT now(),
+  last_user_id integer REFERENCES users(id) ON DELETE SET NULL,
+  resolved_at timestamptz
+);
+CREATE INDEX idx_error_groups_last_seen ON error_groups (last_seen DESC);

@@ -11,11 +11,14 @@ SP="$(cd "$(dirname "$0")" && pwd)"
 cd "$SP" || exit 1
 
 SUITES="a2-walkthrough b1-reactions b2-media b3-stories b4-comments b5-audience b6-tabs b7-explore b8-pymk b9-dm b10-groups b11-settings b12-admin b13-groups b14-pages b15-lang b16-rtl c2-legal c3-landing day2-own-post day5-email-off day8-sessions day8-sessions-list"
+# Suites that test production-only behaviour (e.g. browser error reporting,
+# off in dev): always run on the production build with the real headers.
+DIST_SUITES="day10-errors"
 failed=0
 
-fresh_stack() {
+fresh_stack() { # [dist]
   bash e2e-down.sh >/dev/null 2>&1
-  bash e2e-up.sh >/dev/null 2>&1
+  if [ "$1" = dist ]; then E2E_FRONTEND=dist bash e2e-up.sh >/dev/null 2>&1; else bash e2e-up.sh >/dev/null 2>&1; fi
 }
 
 report() { # name exit-code output-file
@@ -28,6 +31,12 @@ report() { # name exit-code output-file
 
 for s in $SUITES; do
   fresh_stack
+  node "$s.cjs" > "out-$s.txt" 2>&1
+  report "$s" $? "out-$s.txt"
+done
+
+for s in $DIST_SUITES; do
+  fresh_stack dist
   node "$s.cjs" > "out-$s.txt" 2>&1
   report "$s" $? "out-$s.txt"
 done

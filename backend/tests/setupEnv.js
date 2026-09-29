@@ -20,6 +20,8 @@ process.env.EMAIL_FROM = '';
 
 // Day 9: tests that need the cleanup endpoint set their own secret.
 process.env.CLEANUP_SECRET = '';
+// Day 10: a real Sentry DSN in .env must never receive test errors.
+process.env.SENTRY_DSN = '';
 
 process.env.CLOUDINARY_CLOUD_NAME = '';
 process.env.CLOUDINARY_API_KEY = '';

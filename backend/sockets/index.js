@@ -4,6 +4,14 @@ const allowedOrigins = require('../config/allowedOrigins');
 const socketAuthMiddleware = require('./socketAuth');
 const messageService = require('../services/messageService');
 const presence = require('./presence');
+const { report } = require('../services/errorLogService');
+
+// A socket handler hit a real server error (not a validation error): log
+// it and record it in the error log (Day 10), grouped by event name.
+function socketFailure(event, socket, err) {
+  console.error(`${event} failed for user ${socket.userId}:`, err.message);
+  report(err, { source: 'socket', route: event, userId: socket.userId });
+}
 
 // message_error's code lets the frontend tell "edit and resend" (validation),
 // "can't be sent here" (not a participant) apart from "retry the same send"
@@ -79,7 +87,7 @@ function initSocket(httpServer) {
         socket.emit('message_ack', { clientTempId, message });
       } catch (err) {
         if (errorCodeFor(err) === 'SERVER_ERROR') {
-          console.error(`send_message failed for user ${socket.userId}:`, err.message);
+          socketFailure('send_message', socket, err);
         }
         socket.emit('message_error', { clientTempId, error: err.message, code: errorCodeFor(err) });
       }
@@ -112,7 +120,7 @@ function initSocket(httpServer) {
         });
       } catch (err) {
         if (errorCodeFor(err) === 'SERVER_ERROR') {
-          console.error(`delete_message failed for user ${socket.userId}:`, err.message);
+          socketFailure('delete_message', socket, err);
         }
         socket.emit('message_error', { messageId, error: err.message, code: errorCodeFor(err) });
       }
@@ -133,7 +141,7 @@ function initSocket(httpServer) {
         io.to(`conv_${message.conversation_id}`).emit('message_edited', { conversationId: message.conversation_id, message });
       } catch (err) {
         if (errorCodeFor(err) === 'SERVER_ERROR') {
-          console.error(`edit_message failed for user ${socket.userId}:`, err.message);
+          socketFailure('edit_message', socket, err);
         }
         socket.emit('message_error', { messageId, error: err.message, code: errorCodeFor(err) });
       }
@@ -157,7 +165,7 @@ function initSocket(httpServer) {
         }
       } catch (err) {
         if (errorCodeFor(err) === 'SERVER_ERROR') {
-          console.error(`mark_delivered failed for user ${socket.userId}:`, err.message);
+          socketFailure('mark_delivered', socket, err);
         }
         socket.emit('message_error', { error: err.message, code: errorCodeFor(err) });
       }
@@ -185,7 +193,7 @@ function initSocket(httpServer) {
         }
       } catch (err) {
         if (errorCodeFor(err) === 'SERVER_ERROR') {
-          console.error(`mark_read failed for user ${socket.userId}:`, err.message);
+          socketFailure('mark_read', socket, err);
         }
         socket.emit('message_error', { error: err.message, code: errorCodeFor(err) });
       }
@@ -207,7 +215,7 @@ function initSocket(httpServer) {
         if (!(await messageService.isParticipant(conversationId, socket.userId))) return;
         socket.to(`conv_${conversationId}`).emit('user_typing', { conversationId, userId: socket.userId });
       } catch (err) {
-        console.error(`typing event failed for user ${socket.userId}:`, err.message);
+        socketFailure('typing', socket, err);
       }
     });
 
@@ -223,7 +231,7 @@ function initSocket(httpServer) {
       try {
         await db.query('UPDATE users SET last_seen = NOW() WHERE id = $1', [socket.userId]);
       } catch (err) {
-        console.error(`Failed to update last_seen for user ${socket.userId}:`, err.message);
+        socketFailure('disconnect (last_seen)', socket, err);
       }
 
       // Only announce offline once this was the user's LAST connected
@@ -258,7 +266,7 @@ function initSocket(httpServer) {
           });
         }
       } catch (err) {
-        console.error(`Failed to join conversation rooms for user ${socket.userId}:`, err.message);
+        socketFailure('connect (join rooms)', socket, err);
       }
     })();
   });

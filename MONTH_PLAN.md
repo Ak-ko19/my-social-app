@@ -112,7 +112,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Scheduled job (GitHub Actions cron calling a protected endpoint) to delete expired stories and old notifications, including their Cloudinary media.
 
 ### Day 10 — Monitoring
-- [ ] Built-in error logging (errors saved to a DB table + admin view). Add a Sentry hook that turns on only if its env var exists.
+- [x] Built-in error logging (errors saved to a DB table + admin view). Add a Sentry hook that turns on only if its env var exists.
 - [ ] /health endpoint checks DB connectivity; structured logging; remove stray console.logs.
 
 ### Day 11 — Bot protection

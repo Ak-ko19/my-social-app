@@ -11,6 +11,7 @@ const { deleteMedia } = require('./mediaCleanupService');
 const STORY_GRACE = '1 hour'; // past expires_at (stories already vanish from reads at expiry)
 const NOTIFICATION_RETENTION = '90 days';
 const REVOKED_SESSION_RETENTION = '1 day';
+const ERROR_RETENTION = '90 days';
 const STORY_BATCH = 500;
 const ROW_BATCH = 5000;
 const MAX_BATCHES = 20;
@@ -36,6 +37,8 @@ async function countWhere(table, where) {
 const STORIES_EXPIRED = `expires_at < now() - interval '${STORY_GRACE}'`;
 const NOTIFICATIONS_OLD = `created_at < now() - interval '${NOTIFICATION_RETENTION}'`;
 const SESSIONS_DEAD = `expires_at < now() OR revoked_at < now() - interval '${REVOKED_SESSION_RETENTION}'`;
+// Day 10: error groups nobody has hit for 90 days.
+const ERRORS_STALE = `last_seen < now() - interval '${ERROR_RETENTION}'`;
 
 // Expired stories: rows first (their views cascade), then the media of
 // exactly the rows that were deleted.
@@ -63,13 +66,15 @@ async function run({ dryRun = false } = {}) {
       stories: await countWhere('stories', STORIES_EXPIRED),
       notifications: await countWhere('notifications', NOTIFICATIONS_OLD),
       sessions: await countWhere('sessions', SESSIONS_DEAD),
+      errorGroups: await countWhere('error_groups', ERRORS_STALE),
       durationMs: Date.now() - started
     };
   }
   const { stories, storyMedia } = await deleteExpiredStories();
   const notifications = await deleteInBatches('notifications', NOTIFICATIONS_OLD, ROW_BATCH);
   const sessions = await deleteInBatches('sessions', SESSIONS_DEAD, ROW_BATCH);
-  return { dryRun: false, stories, storyMedia, notifications, sessions, durationMs: Date.now() - started };
+  const errorGroups = await deleteInBatches('error_groups', ERRORS_STALE, ROW_BATCH);
+  return { dryRun: false, stories, storyMedia, notifications, sessions, errorGroups, durationMs: Date.now() - started };
 }
 
 module.exports = { run, NOTIFICATION_RETENTION };

@@ -19,6 +19,11 @@ import App from './App.jsx'
 import LanguageRoot from './i18n/LanguageRoot'
 import { ThemeProvider } from './context/ThemeProvider'
 import { SocketProvider } from './context/SocketProvider'
+import ErrorBoundary from './components/common/ErrorBoundary'
+import { installGlobalErrorReporting } from './utils/errorReporter'
+
+// Day 10: browser errors go to the admin error log (production builds).
+installGlobalErrorReporting()
 
 // Wait for the saved language's strings (a separate chunk for Myanmar/Arabic)
 // so the first paint is already in the right language.
@@ -27,7 +32,10 @@ i18nReady.finally(() => createRoot(document.getElementById('root')).render(
     <ThemeProvider>
       <SocketProvider>
         <LanguageRoot>
-          <App />
+          {/* Inside LanguageRoot, so the crash screen is translated and RTL. */}
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
         </LanguageRoot>
       </SocketProvider>
     </ThemeProvider>

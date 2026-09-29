@@ -638,7 +638,35 @@
     "reviewedTab": "Reviewed",
     "loading": "Loading reports…",
     "emptyPending": "No pending reports. All clear.",
-    "emptyReviewed": "Nothing reviewed yet."
+    "emptyReviewed": "Nothing reviewed yet.",
+    "sections": "Moderation sections",
+    "section": {
+      "reports": "Reports",
+      "errors": "Errors"
+    },
+    "errors": {
+      "statusTabs": "Error status",
+      "open": "Open",
+      "resolved": "Resolved",
+      "loading": "Loading errors…",
+      "loadFailed": "Could not load the error log",
+      "emptyOpen": "No open errors. All clear.",
+      "emptyResolved": "Nothing resolved yet.",
+      "source": {
+        "api": "Server",
+        "socket": "Live chat",
+        "process": "Server crash",
+        "client": "Browser"
+      },
+      "countTitle": "How many times this happened",
+      "lastSeen": "Last seen {{time}}",
+      "firstSeen": "first seen {{time}}",
+      "lastUser": "last user: {{name}}",
+      "details": "Details",
+      "resolve": "Mark resolved",
+      "resolving": "Resolving…",
+      "loadMore": "Load more"
+    }
   },
   "groups": {
     "title": "Groups",
@@ -998,5 +1026,11 @@
     "loggedOutOthers": "Your other devices have been logged out.",
     "loadFailed": "Couldn't load your devices.",
     "actionFailed": "Couldn't log that out. Please try again."
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "body": "This page ran into a problem. Reloading usually fixes it — we have been told about it.",
+    "reload": "Reload",
+    "home": "Go to Home"
   }
 }

@@ -58,6 +58,7 @@ error. Full output goes to `out-<suite>.txt`, and screenshots to `*.png` /
 | `day5-email-off` | Day 5: with no email provider the verify banner hides and forgot-password explains itself (EN/MY/AR); with email on both still work |
 | `day8-sessions` | Day 8: changing the password in Settings signs out the other devices (sent to login), keeps this one signed in; a mistyped password no longer logs you out (EN, AR RTL) |
 | `day8-sessions-list` | Day 8: Settings → Where you're logged in: lists devices, logs one or all others out, and Log Out ends the session on the server (EN, AR RTL incl. word order, MY) |
+| `day10-errors` | Day 10 (production build only, run by run-all on a dist stack): a render crash shows a translated "Something went wrong" screen instead of a blank page, is reported, grouped with a count, and can be read and resolved in Admin → Errors (EN, AR RTL) |
 | `golive-rehearsal.sh` | `bash golive-rehearsal.sh [--old]`: GO LIVE rehearsal. It runs every migration from 015 on a local copy of the live (014) schema, compares the result with the dev schema, smoke-tests the new backend (and with `--old`, the live `master` backend) on it, and checks that the `.down.sql` files restore the live schema (see `../GO_LIVE_CHECKLIST.md`) |
 | `pixel-compare` | `node pixel-compare.cjs <baselineDir> <currentDir>`: pixel diff of two sets of A3 screenshots |
 
