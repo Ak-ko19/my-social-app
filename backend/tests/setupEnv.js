@@ -18,6 +18,9 @@ process.env.EMAIL_USER = '';
 process.env.EMAIL_PASS = '';
 process.env.EMAIL_FROM = '';
 
+// Day 9: tests that need the cleanup endpoint set their own secret.
+process.env.CLEANUP_SECRET = '';
+
 process.env.CLOUDINARY_CLOUD_NAME = '';
 process.env.CLOUDINARY_API_KEY = '';
 process.env.CLOUDINARY_API_SECRET = '';

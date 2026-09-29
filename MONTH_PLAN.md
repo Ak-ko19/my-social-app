@@ -109,7 +109,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] "Log out of all devices" in Settings; active sessions list.
 
 ### Day 9 — Cleanup jobs
-- [ ] Scheduled job (GitHub Actions cron calling a protected endpoint) to delete expired stories and old notifications, including their Cloudinary media.
+- [x] Scheduled job (GitHub Actions cron calling a protected endpoint) to delete expired stories and old notifications, including their Cloudinary media.
 
 ### Day 10 — Monitoring
 - [ ] Built-in error logging (errors saved to a DB table + admin view). Add a Sentry hook that turns on only if its env var exists.

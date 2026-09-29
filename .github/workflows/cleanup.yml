@@ -1,0 +1,56 @@
+# Day 9 daily cleanup: asks the backend to delete expired stories (and their
+# photos on Cloudinary), notifications older than 90 days, and dead login
+# sessions (backend/services/cleanupService.js).
+#
+# Needs the same long random value in two places (see LATER.md):
+# - Render -> backend service -> Environment: CLEANUP_SECRET
+# - GitHub -> Settings -> Secrets and variables -> Actions -> Secrets:
+#   CLEANUP_SECRET
+# Until the GitHub secret exists every run just prints a notice and passes.
+#
+# Notes:
+# - GitHub only runs `schedule` workflows from the DEFAULT branch (master),
+#   so this starts once merged there; `workflow_dispatch` allows a manual
+#   run from the Actions tab (it also offers a dry run).
+# - Override the URL with a repository variable CLEANUP_URL if the backend
+#   moves.
+name: Cleanup
+
+on:
+  schedule:
+    - cron: '17 3 * * *'  # daily 03:17 UTC, off the top of the hour
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Only count what would be deleted'
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Run cleanup
+        env:
+          SECRET: ${{ secrets.CLEANUP_SECRET }}
+          URL: ${{ vars.CLEANUP_URL || 'https://my-social-app-ecjg.onrender.com/internal/cleanup' }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: |
+          if [ -z "$SECRET" ]; then
+            echo "::notice::CLEANUP_SECRET is not set yet -- skipping (see LATER.md)."
+            exit 0
+          fi
+          # --retry covers a cold start of the free Render instance; the
+          # response is the JSON summary of what was deleted.
+          curl --fail-with-body --silent --show-error --max-time 120 \
+               --retry 3 --retry-delay 15 --retry-all-errors \
+               -X POST -H "Authorization: Bearer $SECRET" \
+               "$URL?dryRun=$DRY_RUN"
+          echo

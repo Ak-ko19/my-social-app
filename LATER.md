@@ -76,3 +76,27 @@ without them. Newest items at the bottom.
   - Render → Logs shows `[email] Brevo refused …` with Brevo's reason
     (for example, the sender isn't verified).
   - The key and the email text are never written to the logs.
+
+## 4. Turn on the daily cleanup job (Day 9)
+- **Why:** once a day it deletes, so tables don't fill Neon's 0.5 GB and
+  expired photos don't stay public:
+  - expired stories (and their photos on Cloudinary);
+  - notifications older than 90 days;
+  - dead login sessions.
+- **Until then:** nothing breaks. The data just isn't pruned. The GitHub
+  job skips itself with a notice.
+- **Needs:** this version deployed and merged to `master` (GitHub only
+  runs schedules from the default branch).
+- **Owner steps (about 5 minutes, free):**
+  1. Make a long random value, e.g. in Git Bash:
+     `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+  2. Render → backend service → **Environment** → add `CLEANUP_SECRET`
+     = that value. Save; Render redeploys.
+  3. GitHub → the repo → **Settings → Secrets and variables → Actions →
+     New repository secret** → name `CLEANUP_SECRET`, same value.
+  4. GitHub → **Actions → Cleanup → Run workflow**, and tick "Only count"
+     for a first dry run. The log shows how many stories, notifications
+     and sessions it would delete. Then run it without the tick, or just
+     let the daily schedule (03:17 UTC) do it.
+- To preview from your own computer instead:
+  `DATABASE_URL="$PROD_DB" npm run cleanup -- --dry-run` (in `backend/`).

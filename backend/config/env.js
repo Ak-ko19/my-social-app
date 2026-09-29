@@ -85,6 +85,15 @@ function checkEnv(env) {
     warnings.push('Cloudinary is not configured. Image and voice uploads will fail.');
   }
 
+  // Day 9: the daily cleanup job's shared secret (POST /internal/cleanup).
+  if (isSet(env.CLEANUP_SECRET)) {
+    if (env.CLEANUP_SECRET.length < 32) {
+      errors.push('CLEANUP_SECRET must be at least 32 characters (a long random value, e.g. 64 hex characters).');
+    }
+  } else if (production) {
+    warnings.push('CLEANUP_SECRET is not set, so the daily cleanup job is off (expired stories and old notifications pile up).');
+  }
+
   if (isSet(env.BREVO_API_KEY) && !parseSender(env.EMAIL_FROM)) {
     warnings.push('BREVO_API_KEY is set but EMAIL_FROM is not a sender address (e.g. "MySocialApp <hello@example.com>", verified in Brevo), so no emails will be sent.');
   }

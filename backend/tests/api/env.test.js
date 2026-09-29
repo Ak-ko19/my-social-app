@@ -15,7 +15,8 @@ const PROD = {
   FRONTEND_URL: 'https://my-app.vercel.app',
   CLOUDINARY_CLOUD_NAME: 'c',
   CLOUDINARY_API_KEY: 'k',
-  CLOUDINARY_API_SECRET: 's'
+  CLOUDINARY_API_SECRET: 's',
+  CLEANUP_SECRET: 'c'.repeat(64)
 };
 
 const errorsOf = (env) => checkEnv(env).errors.join('\n');

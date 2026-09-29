@@ -310,3 +310,8 @@ CREATE TABLE sessions (
   user_agent text
 );
 CREATE INDEX idx_sessions_user_active ON sessions (user_id) WHERE revoked_at IS NULL;
+
+-- Day 9 (migration 029): the cleanup job's time-based scans.
+CREATE INDEX idx_stories_expires_at ON stories (expires_at);
+CREATE INDEX idx_notifications_created_at ON notifications (created_at);
+CREATE INDEX idx_sessions_expires_at ON sessions (expires_at);

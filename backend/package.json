@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest --runInBand",
     "seed:demo": "node scripts/seed-demo.js",
-    "cloudinary:orphans": "node scripts/cloudinary-orphans.js"
+    "cloudinary:orphans": "node scripts/cloudinary-orphans.js",
+    "cleanup": "node scripts/cleanup.js"
   },
   "keywords": [],
   "author": "",
