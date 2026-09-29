@@ -513,3 +513,29 @@ Build every feature the way a senior engineer at a top social media company woul
   revoked sessions (one row per login).
 - **LATER.md:** nothing new. GO_LIVE_CHECKLIST now lists migration 028
   and a live Day 8 check.
+
+### 2026-09-29 — Day 9: Cleanup jobs
+- **Step 1 (`932ff0b`):** daily cleanup. Audit bug #8 is fixed.
+  - Deletes stories expired over 1 h ago (their views cascade, their
+    photos are deleted from Cloudinary), notifications older than 90 days,
+    and sessions expired or revoked over a day ago (the Day 8
+    carry-over).
+  - Works in bounded batches.
+  - `POST /internal/cleanup[?dryRun=1]`, authorized by `CLEANUP_SECRET`
+    (constant-time compare). It answers 404 when the secret is unset or
+    wrong.
+  - `.github/workflows/cleanup.yml` runs daily at 03:17 UTC, with a
+    manual run and dry-run option. It skips with a notice until the
+    secret exists.
+  - `npm run cleanup [-- --dry-run]` runs the same work from a computer.
+  - Migration 029 adds indexes for the time-based scans.
+  - **Better than the plan:** dry-run mode and a command-line version,
+    so the owner can preview before the first real run.
+- **Tests at close:**
+  - backend 366/366 (36 suites);
+  - full browser run ALL PASSED: 23 suites, 375 checks, plus A3
+    228/228 × EN/MY/AR;
+  - golive-rehearsal --old PASSED (015→029).
+- **LATER.md:** #4 added. The owner puts the same `CLEANUP_SECRET` on
+  Render and in GitHub Actions secrets (after GO LIVE, since schedules
+  run from `master`).
