@@ -47,7 +47,7 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   const pid = bob.url().match(/pages\/(\d+)/)[1];
   await bob.getByRole('heading', { name: 'Mingalar Tea House' }).waitFor();
   check('page shows category + 0 followers', /Business · 0 followers/.test(await bob.locator('.community-meta').innerText()));
-  check('owner sees Edit, not Follow', (await bob.getByRole('button', { name: 'Edit page' }).count()) === 1 && (await bob.getByRole('button', { name: 'Follow' }).count()) === 0);
+  check('owner sees Edit, not Follow', (await bob.getByRole('button', { name: 'Edit page' }).count()) === 1 && (await bob.getByRole('button', { name: /^Follow(ing)?$/ }).count()) === 0);
 
   // Post as the page.
   await bob.getByRole('button', { name: 'Post as page' }).click();
@@ -84,7 +84,10 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await alice.getByRole('button', { name: 'Following' }).waitFor();
   check('page name on a post links to the page (Following state)', /1 follower\b/.test(await alice.locator('.community-meta').innerText()));
   await alice.getByRole('button', { name: 'Following' }).click();
-  await alice.getByRole('button', { name: 'Follow' }).waitFor();
+  // exact: a plain name match is a substring match, and "Following"
+  // contains "Follow" -- this used to pass at once, before the unfollow
+  // response arrived, and read the old follower count now and then.
+  await alice.getByRole('button', { name: 'Follow', exact: true }).waitFor();
   check('unfollow from the page', /0 followers/.test(await alice.locator('.community-meta').innerText()));
 
   // Search.

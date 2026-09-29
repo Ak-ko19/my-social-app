@@ -1,32 +1,27 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 5 — Working email in production
-**Step:** 3 — Graceful fallback when no email provider is configured (no breakage, no lock-out).
+**Step:** Day close-out (all 4 steps done and pushed: `53fa111`, `756c953`,
+`ca60e8c`, `49c44c7`).
 
-## Step 3 plan
-- Backend: `emailEnabled()` in utils/email.js = a provider is configured
-  OR not production (local dev "delivers" by printing the email).
-  - `GET /config` (public, `Cache-Control: public, max-age=300`) →
-    `{ emailEnabled }`; new routes/configRoutes.js.
-  - POST /forgot-password when disabled: 503 "Password reset by email is
-    not available right now. Please try again later." — checked BEFORE
-    the address lookup, so every address gets the same answer
-    (enumeration-safe) and no reset token is written.
-  - POST /resend-verification when disabled: 503 "Email verification is
-    not available right now."
-  - Verification is never required anywhere (checked), so nobody is
-    locked out; signup/login unchanged.
-- Frontend: `useEmailEnabled()` (fetches /config once per page load,
-  module-level cache; unknown/failed = true, i.e. today's behaviour).
-  - EmailVerificationBanner hidden when email is off.
-  - ForgotPassword: when off, a translated notice replaces the form
-    (form hidden, "Back to login" stays).
-- i18n: 1 new UI key (auth.resetUnavailable) in EN/MY/AR + the 2 server
-  messages in MY/AR (check:i18n enforces parity).
-- Tests: API (config on/off, 503s, same answer for unknown address, no
-  token written, resend 503); browser suite day5-email-off.cjs (config
-  mocked via page.route): banner hidden, forgot notice in EN/MY/AR incl.
-  RTL, dark, 375px; and with email on the form + banner still work.
+## Close-out status
+- Full browser run (2026-09-28): everything green EXCEPT b14-pages
+  "unfollow from the page" (1 check), which had passed in every earlier
+  run.
+- Cause (test bug, not app): `getByRole('button', { name: 'Follow' })` is
+  a substring match, and "Following" contains "Follow", so the wait
+  passed at once and read the follower count before the unfollow
+  response arrived. PageScreen updates button + count from the same
+  server response, so the app is right.
+- Fix (uncommitted, reviewed): `exact: true` on that wait; the owner
+  check uses /^Follow(ing)?$/.
+- Other suites checked for the same trap: b8 (clicks "Follow" before any
+  "Following" exists) and b10 ("Save") are fine.
+
+## Progress
+- [x] Fix written
+- [x] VERIFY: b14 five runs in a row: 20/20 each time
+- [ ] Full browser run, Progress Log, clear WIP, commit, push
 
 ## Carry-over notes
 - Day 6 GO_LIVE_CHECKLIST.md must include:
@@ -37,88 +32,8 @@
     loading (Cloudinary cleanup can't be tested locally: no credentials);
   - run `npm run cloudinary:orphans` (dry run) once, then with --delete;
   - required env vars now enforced at startup (config/env.js):
-    DATABASE_URL, JWT_SECRET, ALLOWED_ORIGINS, FRONTEND_URL (production).
+    DATABASE_URL, JWT_SECRET, ALLOWED_ORIGINS, FRONTEND_URL (production);
+  - optional: BREVO_API_KEY + EMAIL_FROM (LATER.md #3); check GET /config.
 - Day 13 (Vitest): add a unit test for frontend `utils/safeUrl.js`.
 - Tip: `E2E_FRONTEND=dist bash run-all.sh` runs the browser suites on the
   production build with vercel.json's real headers.
-
-## Plan
-- Why: Render's free tier blocks outbound SMTP, so Nodemailer can't
-  deliver in production. Brevo's free tier (300/day) has an HTTPS API.
-- `utils/email.js`: pick the provider on every call (env read at call
-  time → testable, no restart ordering issues):
-  1. `BREVO_API_KEY` set → Brevo HTTP API:
-     POST https://api.brevo.com/v3/smtp/email, header `api-key`,
-     body { sender: {email, name}, to: [{email}], subject, textContent }
-     (contract checked against Brevo's API reference). 10 s timeout
-     (AbortSignal.timeout). 201 = sent.
-  2. else EMAIL_HOST/USER/PASS → Nodemailer SMTP (local dev, unchanged).
-  3. else not configured → today's fallback (step 2/3 change it).
-- Sender: EMAIL_FROM "Name <addr>" or "addr" (parsed; Brevo needs a
-  sender verified in the Brevo account). Missing/invalid with Brevo →
-  not sent, clear log + startup warning.
-- `sendEmail()` still never throws; now returns true/false (sent or not)
-  and exports `emailProvider()` ('brevo' | 'smtp' | null) for step 3.
-- Logs never contain the API key or the email body; failures log the
-  provider, HTTP status and Brevo's error code/message.
-- config/env.js warnings: BREVO_API_KEY without a valid EMAIL_FROM.
-- .env.example: BREVO_API_KEY + sender note.
-- Tests (tests/api/email.test.js): exact Brevo request; sender parsing;
-  Brevo error / network error / timeout → false, logged, no key in logs;
-  Brevo wins over SMTP; SMTP path via mocked nodemailer; signup sends
-  the verification email through Brevo (mocked fetch); env warnings.
-- Not verifiable here: a real Brevo send (no account/key) → LATER.md
-  (step 4 of this Day).
-
-## Progress
-- [x] email.js providers (Brevo contract checked against Brevo's API
-  reference: POST /v3/smtp/email, api-key header, 201 {messageId})
-- [x] env.js warning + .env.example
-- [x] tests/setupEnv.js pins BREVO_API_KEY='' (a real key in .env would
-  otherwise make the test suite send real emails)
-- [x] tests/api/email.test.js 11/11
-- [x] Also pinned BREVO_API_KEY blank in e2e/e2e-up.sh and env.test.js's
-  server launches (same real-email risk as setupEnv)
-- [x] Backend 328/328; a2 22/22, b11 9/9; diff review clean
-- STEP 1 DONE (`53fa111`)
-
-## Step 3 — graceful no-email fallback (DONE)
-- GET /config {emailEnabled}; forgot-password + resend 503 when off
-  (checked before the lookup: same answer for every address, no token).
-- Banner hidden / forgot notice via useEmailEnabled(); i18n EN/MY/AR.
-- Tests: email.test.js 19/19 (+4); backend 336/336; new browser suite
-  day5-email-off 19/19 (in run-all); a2 b11 b15 b16 green; lint, i18n
-  (764 keys), build, check:headers green.
-
-## Step 2 — no links in production logs (DONE)
-- No-provider fallback: production (NODE_ENV=production or RENDER=true)
-  logs only "not sent" + subject + masked recipient; local dev keeps the
-  full email. Provider error logs mask recipients too.
-- `config/runtime.js` isProduction(): one definition, now used by
-  trustProxy, env.js and email.js.
-- Only this fallback ever logged a link (grep of every console call).
-- Tests +4 incl. the real forgot-password + signup flows in production
-  mode: no token/link/address in any log; mutation-checked (2 fail
-  without the guard). Backend 332/332; a2 22/22, b11 9/9.
-- Note: signup awaits sendEmail, so a slow Brevo delays signup up to the
-  10 s timeout (Brevo is normally ~0.2 s). Acceptable for now.
-
-## Prep for steps 2–3 (read-only, done while the permission check was down)
-- Verification is NEVER enforced (login, posting, etc. all work
-  unverified); the only UI is EmailVerificationBanner on Home (prompt +
-  "Resend" button).
-- ForgotPassword.jsx shows the server's message (serverText) or a
-  generic error; the server answers the same enumeration-safe text
-  whether or not the email exists.
-- Step 2: sendEmail's no-provider fallback logs the whole email (live
-  reset/verify link). In production (NODE_ENV=production or RENDER=true)
-  log only "email not sent: no provider" + recipient domain at most,
-  never the text; keep the full log in local dev.
-- Step 3 idea: expose "can we send email?" (e.g. `emailEnabled` on login
-  / GET /profile/me, or a tiny public GET /config), then:
-  - hide the verify banner when email is disabled (don't promise an
-    email that never comes);
-  - forgot-password: when disabled, answer with a clear, translated
-    message ("Password reset by email isn't available yet …") instead of
-    the "link sent" text; keep it enumeration-safe (same answer for
-    every address).
