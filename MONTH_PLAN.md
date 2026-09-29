@@ -434,3 +434,44 @@ Build every feature the way a senior engineer at a top social media company woul
 - **Not verifiable here:** a real Brevo send (it needs the owner's
   account and key; see LATER.md #3).
 - **LATER.md:** #3 added (Brevo key).
+
+### 2026-09-29 — Day 6: Go-live preparation
+- **Step 1 (`490a936`):** `GO_LIVE_CHECKLIST.md` for the owner.
+  - Covers: backup (a pg_dump file plus a Neon branch), the env var
+    table, migrations 015→027 with pre- and post-checks, deploy order,
+    make-admin, and smoke tests (incl. live checks for the Day 2/3/4
+    work).
+  - Rollback plans A/B/C.
+  - **Found:** `master`'s code ignores post audience, group privacy and
+    bans. A code-only rollback after people use those features would
+    leak private posts, so B is time-boxed with a warning and C says fix
+    forward or restore the backup.
+  - `*.dump` files are gitignored.
+  - The backup, check and restore commands were verified on a local
+    throwaway DB.
+- **Step 2 (`dee6b63`):** **Better than the plan:** a reusable
+  `e2e/golive-rehearsal.sh`, since production can't be copied.
+  - It rebuilds the live schema from the repo (the fixture at 014 plus
+    001/002) with realistic data.
+  - It runs every migration from 015 exactly as the checklist does.
+  - **Result:** REHEARSAL PASSED (37 checks).
+    - The result matches the dev schema (149 columns, 91 constraints).
+    - Data is kept and the backfills are correct.
+    - The new AND old backends both work on the migrated DB.
+    - The downs restore 014 exactly.
+    - Positive control: a broken migration fails the rehearsal.
+  - The checklist now requires the rehearsal to pass.
+- **Step 3 (`c186f0c`):** access check without opening any secret.
+  - Claude Code has no production DB access (CLAUDE.md) and no
+    Render/Vercel access; auto-deploy can't be confirmed here.
+  - **Day 7 (GO LIVE #1) was skipped**, noted in LATER.md #2, and work
+    continues with Day 8.
+- **Tests at close:**
+  - backend 336/336 (no app code changed today);
+  - full browser run ALL PASSED: 21 suites, 340 checks, plus A3
+    222/222 × EN/MY/AR.
+- **LATER.md:** #2 extended with the access findings and the Day 7 skip.
+
+### 2026-09-29 — Day 7: GO LIVE #1 — skipped
+- No production access (CLAUDE.md hard limits). Everything needed is in
+  `GO_LIVE_CHECKLIST.md` for the owner (LATER.md #2).
