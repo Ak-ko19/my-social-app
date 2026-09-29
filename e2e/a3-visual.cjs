@@ -27,7 +27,8 @@ const AUTHED = [
   '/settings/account', '/saved', '/posts/1', '/hashtag/welcome', '/profile/2',
   '/create-post', '/edit-profile', '/notifications', '/messages', '/messages/1', '/search', '/explore', '/profile/1', '/messages/new-group', '/settings/notifications', '/admin',
   '/groups', '/groups/new', '/groups/1', '/groups/1/manage',
-  '/pages', '/pages/new', '/pages/1', '/pages/1/edit', '/settings/language'
+  '/pages', '/pages/new', '/pages/1', '/pages/1/edit', '/settings/language',
+  '/settings/sessions'
 ];
 const PUBLIC = ['/login', '/signup', '/forgot-password', '/reset-password/sometoken', '/terms', '/privacy', '/welcome'];
 const WIDTHS = [375, 390, 430];

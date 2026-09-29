@@ -10,7 +10,7 @@
 SP="$(cd "$(dirname "$0")" && pwd)"
 cd "$SP" || exit 1
 
-SUITES="a2-walkthrough b1-reactions b2-media b3-stories b4-comments b5-audience b6-tabs b7-explore b8-pymk b9-dm b10-groups b11-settings b12-admin b13-groups b14-pages b15-lang b16-rtl c2-legal c3-landing day2-own-post day5-email-off day8-sessions"
+SUITES="a2-walkthrough b1-reactions b2-media b3-stories b4-comments b5-audience b6-tabs b7-explore b8-pymk b9-dm b10-groups b11-settings b12-admin b13-groups b14-pages b15-lang b16-rtl c2-legal c3-landing day2-own-post day5-email-off day8-sessions day8-sessions-list"
 failed=0
 
 fresh_stack() {

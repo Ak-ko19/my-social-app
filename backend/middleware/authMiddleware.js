@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
-const { authorize } = require('../services/sessionService');
+const { authorize, touchSession } = require('../services/sessionService');
 
 async function authMiddleware(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -33,6 +33,11 @@ async function authMiddleware(req, res, next) {
   }
   req.userId = decoded.userId;
   req.sessionId = decoded.sid || null; // null for tokens from before sessions
+  // "Last active" in the sessions list; at most one write per 5 minutes,
+  // and the request never waits for it.
+  if (req.sessionId) {
+    touchSession(req.sessionId).catch((err) => console.error('Session touch failed:', err.message));
+  }
   next();
 }
 

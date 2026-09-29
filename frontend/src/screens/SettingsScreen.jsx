@@ -27,7 +27,8 @@ import {
   LifeBuoy,
   FileText,
   ScrollText,
-  Info
+  Info,
+  MonitorSmartphone
 } from 'lucide-react';
 import { IconButton, SectionLabel, Badge } from '../components/ui';
 import ProfileSummaryRow from '../components/layout/ProfileSummaryRow';
@@ -37,6 +38,7 @@ import PrivacyToggle from '../components/common/PrivacyToggle';
 import { useCurrentUserSummary } from '../hooks/useCurrentUserSummary';
 import { forceLogout, useAuth } from '../hooks/useAuth';
 import { useUnreadCount } from '../hooks/useUnreadCount';
+import { logoutOnServer } from '../services/sessionService';
 import './SettingsScreen.css';
 
 // Explicit icon imports + inline component refs, not a string name +
@@ -57,6 +59,8 @@ const SETTINGS_SECTIONS = [
     rows: [
       { key: 'personal-info', icon: User, to: '/edit-profile' },
       { key: 'security', icon: ShieldCheck, to: '/settings/account' },
+      // Day 8: devices signed in to this account.
+      { key: 'sessions', icon: MonitorSmartphone, to: '/settings/sessions' },
       // badgeCount isn't set here -- it's static config, but the
       // notifications count is live data, so it's injected at render
       // time below (the one row key this component special-cases).
@@ -111,6 +115,15 @@ function SettingsScreen() {
   const languageLabel = LANGUAGES.find((l) => l.code === i18n.language)?.label;
   const { unreadCount } = useUnreadCount(token);
   const currentUser = useCurrentUserSummary();
+
+  // Day 8: end this device's session on the server too (so it disappears
+  // from "Where you're logged in"), then sign out here whatever the network
+  // says -- logging out must always work.
+  const handleLogout = () => {
+    logoutOnServer(token)
+      .catch((err) => console.warn('Server logout failed; signing out locally.', err.message))
+      .finally(forceLogout);
+  };
 
   return (
     <div className="screen-enter">
@@ -191,7 +204,7 @@ function SettingsScreen() {
       ))}
 
       <div className="settings-logout-wrap">
-        <button type="button" className="settings-logout-button" onClick={forceLogout}>
+        <button type="button" className="settings-logout-button" onClick={handleLogout}>
           <LogOut size={16} aria-hidden="true" />
           {t('settings.logOut')}
         </button>

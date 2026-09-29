@@ -106,7 +106,7 @@ Build every feature the way a senior engineer at a top social media company woul
 
 ### Day 8 — Session revocation
 - [x] Changing the password signs out other devices (token version or refresh-token table).
-- [ ] "Log out of all devices" in Settings; active sessions list.
+- [x] "Log out of all devices" in Settings; active sessions list.
 
 ### Day 9 — Cleanup jobs
 - [ ] Scheduled job (GitHub Actions cron calling a protected endpoint) to delete expired stories and old notifications, including their Cloudinary media.

@@ -67,6 +67,7 @@
       "moderation": "Moderation",
       "personal-info": "Personal Information",
       "security": "Security & Privacy",
+      "sessions": "Where You're Logged In",
       "notifications": "Notifications",
       "notification-settings": "Notification Settings",
       "blocked-users": "Blocked Users",
@@ -976,5 +977,26 @@
     "footerLanguage": "Language",
     "previewMsgIn": "Mount Popa this weekend? 🥾",
     "previewMsgOut": "I’m in!"
+  },
+  "sessions": {
+    "title": "Where you're logged in",
+    "intro": "These devices are signed in to your account. If you don't recognise one, log it out and change your password.",
+    "thisDevice": "This device",
+    "activeNow": "Active now",
+    "lastActive": "Last active {{time}}",
+    "signedIn": "Signed in {{date}}",
+    "device": "{{browser}} on {{os}}",
+    "unknownBrowser": "Unknown browser",
+    "unknownDevice": "Unknown device",
+    "logOut": "Log out",
+    "loggingOut": "Logging out…",
+    "logOutOthers": "Log out of all other devices",
+    "confirmTitle": "Log out of all other devices?",
+    "confirmBody": "Every other device signed in to your account will have to log in again. This device stays signed in.",
+    "confirm": "Log out",
+    "onlyThisDevice": "You're only logged in on this device.",
+    "loggedOutOthers": "Your other devices have been logged out.",
+    "loadFailed": "Couldn't load your devices.",
+    "actionFailed": "Couldn't log that out. Please try again."
   }
 }

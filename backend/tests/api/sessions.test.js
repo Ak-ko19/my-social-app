@@ -128,6 +128,114 @@ describe('sessions', () => {
     expect(await likedBy(deviceB)).toBe(false); // anonymous now, not an error
   });
 
+  describe('where you\'re logged in (Day 8 step 2)', () => {
+    const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+    const WIN_EDGE = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0';
+    const list = async (token) => (await request(app).get('/sessions').set(auth(token))).body.sessions;
+
+    it('lists active sessions: this device first, then the most recent; device described', async () => {
+      const user = await registerAndLogin(app);
+      const phone = await loginAgain(user, IPHONE);
+      const laptop = await loginAgain(user, WIN_EDGE);
+      await pool.query("UPDATE sessions SET last_seen_at = now() - interval '2 hours' WHERE id = $1", [jwt.decode(phone).sid]);
+      const sessions = await list(laptop);
+      expect(sessions.map((s) => s.id)).toEqual([jwt.decode(laptop).sid, jwt.decode(user.token).sid, jwt.decode(phone).sid]);
+      expect(sessions.map((s) => s.current)).toEqual([true, false, false]);
+      expect(sessions[0].device).toEqual({ browser: 'Edge', os: 'Windows', kind: 'desktop' });
+      expect(sessions[2].device).toEqual({ browser: 'Safari', os: 'iOS', kind: 'mobile' });
+      expect(Object.keys(sessions[0]).sort()).toEqual(['created_at', 'current', 'device', 'id', 'last_seen_at']); // no raw user agent, no user id
+      // Only the owner's sessions, and never revoked or expired ones.
+      const other = await registerAndLogin(app);
+      expect(await list(other.token)).toHaveLength(1);
+      await pool.query("UPDATE sessions SET expires_at = now() - interval '1 second' WHERE id = $1", [jwt.decode(phone).sid]);
+      expect((await list(laptop)).map((s) => s.id)).not.toContain(jwt.decode(phone).sid);
+    });
+
+    it('describes common browsers and systems', () => {
+      const { describeDevice } = require('../../services/sessionService');
+      const cases = [
+        [WIN_EDGE, 'Edge', 'Windows', 'desktop'],
+        [IPHONE, 'Safari', 'iOS', 'mobile'],
+        ['Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/25.0 Chrome/121.0.0.0 Mobile Safari/537.36', 'Samsung Internet', 'Android', 'mobile'],
+        ['Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36', 'Chrome', 'Android', 'mobile'],
+        ['Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15', 'Safari', 'macOS', 'desktop'],
+        ['Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0', 'Firefox', 'Linux', 'desktop'],
+        ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 OPR/114.0.0.0', 'Opera', 'Windows', 'desktop'],
+        ['node-fetch/3.0', null, null, 'desktop'],
+        [null, null, null, 'desktop']
+      ];
+      for (const [ua, browser, os, kind] of cases) expect(describeDevice(ua)).toEqual({ browser, os, kind });
+    });
+
+    it('signs out one other device', async () => {
+      const user = await registerAndLogin(app);
+      const phone = await loginAgain(user, IPHONE);
+      const res = await request(app).delete(`/sessions/${jwt.decode(phone).sid}`).set(auth(user.token));
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ current: false });
+      expect((await me(phone)).status).toBe(401);
+      expect((await me(user.token)).status).toBe(200);
+      expect((await list(user.token)).map((s) => s.current)).toEqual([true]);
+    });
+
+    it('signing out this device from the list says so', async () => {
+      const user = await registerAndLogin(app);
+      const res = await request(app).delete(`/sessions/${jwt.decode(user.token).sid}`).set(auth(user.token));
+      expect(res.body).toEqual({ current: true });
+      expect((await me(user.token)).status).toBe(401);
+    });
+
+    it('can not touch someone else\'s session, or a made-up one', async () => {
+      const user = await registerAndLogin(app);
+      const other = await registerAndLogin(app);
+      for (const id of [jwt.decode(other.token).sid, '00000000-0000-4000-8000-000000000000', 'not-a-uuid']) {
+        const res = await request(app).delete(`/sessions/${id}`).set(auth(user.token));
+        expect(res.status).toBe(404);
+      }
+      expect((await me(other.token)).status).toBe(200);
+    });
+
+    it('"log out of all other devices" signs them all out and says how many', async () => {
+      const user = await registerAndLogin(app);
+      const others = [await loginAgain(user, IPHONE), await loginAgain(user, WIN_EDGE)];
+      const old = legacyToken(user.id);
+      const res = await request(app).post('/sessions/revoke-others').set(auth(user.token));
+      expect(res.body).toEqual({ revoked: 2 });
+      for (const token of [...others, old]) expect((await me(token)).status).toBe(401);
+      expect((await me(user.token)).status).toBe(200);
+      expect(await list(user.token)).toHaveLength(1);
+    });
+
+    it('logging out ends the session on the server, not just in the browser', async () => {
+      const user = await registerAndLogin(app);
+      const phone = await loginAgain(user, IPHONE);
+      expect((await request(app).post('/logout').set(auth(phone))).body).toEqual({ ok: true });
+      expect((await me(phone)).status).toBe(401);
+      expect((await list(user.token)).map((s) => s.id)).toEqual([jwt.decode(user.token).sid]);
+      // A token from before sessions: nothing to end, still fine.
+      expect((await request(app).post('/logout').set(auth(legacyToken(user.id)))).status).toBe(200);
+    });
+
+    it('keeps "last active" fresh without a write on every request', async () => {
+      const user = await registerAndLogin(app);
+      const { sid } = jwt.decode(user.token);
+      const lastSeen = async () => (await pool.query('SELECT last_seen_at FROM sessions WHERE id = $1', [sid])).rows[0].last_seen_at.getTime();
+      const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
+      const first = await lastSeen();
+      await me(user.token); await settle();
+      expect(await lastSeen()).toBe(first); // used moments ago: no write
+      await pool.query("UPDATE sessions SET last_seen_at = now() - interval '10 minutes' WHERE id = $1", [sid]);
+      const stale = await lastSeen();
+      await me(user.token); await settle();
+      expect(await lastSeen()).toBeGreaterThan(stale + 9 * 60 * 1000);
+    });
+
+    it('needs a login', async () => {
+      expect((await request(app).get('/sessions')).status).toBe(401);
+      expect((await request(app).post('/sessions/revoke-others')).status).toBe(401);
+    });
+  });
+
   it('deleting the account removes its sessions', async () => {
     const user = await registerAndLogin(app);
     await loginAgain(user);
@@ -154,6 +262,19 @@ describe('sessions', () => {
       const socket = connect(url, { auth: { token }, transports: ['websocket'], reconnection: false });
       socket.on('connect', () => resolve(socket));
       socket.on('connect_error', (err) => { socket.close(); reject(err); });
+    });
+
+    it('signing out one device from the list disconnects only its socket', async () => {
+      const user = await registerAndLogin(app);
+      const deviceB = await loginAgain(user);
+      const a = await open(user.token);
+      const b = await open(deviceB);
+      const bGone = new Promise((resolve) => b.on('disconnect', resolve));
+      await request(app).delete(`/sessions/${jwt.decode(deviceB).sid}`).set(auth(user.token));
+      expect(await bGone).toBe('io server disconnect');
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(a.connected).toBe(true);
+      a.close();
     });
 
     it('password change disconnects the other devices\' sockets, not this one\'s', async () => {

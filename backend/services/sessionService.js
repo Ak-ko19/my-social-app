@@ -50,30 +50,104 @@ async function authorize(decoded) {
 }
 
 // Signs out every device except `keepSid` (null = all of them): revokes
-// their sessions and cuts off pre-sessions tokens.
+// their sessions and cuts off pre-sessions tokens. Returns how many
+// sessions were revoked.
 async function revokeOtherSessions(userId, keepSid) {
-  await db.query(
+  const result = await db.query(
     'UPDATE sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL AND ($2::uuid IS NULL OR id <> $2::uuid)',
     [userId, keepSid || null]
   );
   await db.query('UPDATE users SET tokens_valid_after = now() WHERE id = $1', [userId]);
+  return result.rowCount;
 }
 
-// Revoked sessions' live sockets would otherwise stay connected (sockets
-// are only authorized when they connect).
-async function disconnectOtherSockets(userId, keepSid) {
+// A user's live sockets. Revoked sessions' sockets must be disconnected by
+// hand: sockets are only authorized when they connect.
+async function userSockets(userId) {
   // Lazy require: sockets/ -> socketAuth -> this module would be circular.
   const { getIO } = require('../sockets');
   let io;
   try {
     io = getIO();
   } catch {
-    return; // no socket server running (API tests, scripts)
+    return []; // no socket server running (API tests, scripts)
   }
-  const sockets = await io.in(`user_${userId}`).fetchSockets();
-  for (const socket of sockets) {
+  return io.in(`user_${userId}`).fetchSockets();
+}
+
+async function disconnectOtherSockets(userId, keepSid) {
+  for (const socket of await userSockets(userId)) {
     if (!keepSid || socket.data.sessionId !== keepSid) socket.disconnect(true);
   }
+}
+
+// The live sockets of one session (after signing out that one device).
+async function disconnectSession(userId, sid) {
+  for (const socket of await userSockets(userId)) {
+    if (socket.data.sessionId === sid) socket.disconnect(true);
+  }
+}
+
+// last_seen_at for the sessions list, written at most every 5 minutes per
+// session so an active user doesn't cause a write on every request.
+async function touchSession(sid) {
+  await db.query(
+    "UPDATE sessions SET last_seen_at = now() WHERE id = $1 AND last_seen_at < now() - interval '5 minutes'",
+    [sid]
+  );
+}
+
+// "Chrome" / "Windows" / "desktop" from a user agent -- just enough to
+// recognise your own devices in the list (null when unknown). Order
+// matters: Edge and Opera also say "Chrome", Chrome also says "Safari".
+function describeDevice(userAgent) {
+  const ua = userAgent || '';
+  const browser =
+    /Edg(e|A|iOS)?\//.test(ua) ? 'Edge'
+      : /OPR\/|Opera/.test(ua) ? 'Opera'
+        : /SamsungBrowser\//.test(ua) ? 'Samsung Internet'
+          : /Firefox\/|FxiOS\//.test(ua) ? 'Firefox'
+            : /Chrome\/|CriOS\//.test(ua) ? 'Chrome'
+              : /Safari\//.test(ua) && /Version\//.test(ua) ? 'Safari'
+                : null;
+  const os =
+    /Windows NT/.test(ua) ? 'Windows'
+      : /Android/.test(ua) ? 'Android'
+        : /iPhone|iPad|iPod/.test(ua) ? 'iOS'
+          : /CrOS/.test(ua) ? 'ChromeOS'
+            : /Mac OS X|Macintosh/.test(ua) ? 'macOS'
+              : /Linux/.test(ua) ? 'Linux'
+                : null;
+  const kind = /Mobi|Android|iPhone|iPad|iPod/.test(ua) ? 'mobile' : 'desktop';
+  return { browser, os, kind };
+}
+
+// Active sessions, this device first, then the most recently used.
+async function listSessions(userId, currentSid) {
+  const result = await db.query(
+    `SELECT id, created_at, last_seen_at, user_agent FROM sessions
+     WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > now()
+     ORDER BY id = $2::uuid DESC NULLS LAST, last_seen_at DESC
+     LIMIT 50`,
+    [userId, currentSid || null]
+  );
+  return result.rows.map((row) => ({
+    id: row.id,
+    created_at: row.created_at,
+    last_seen_at: row.last_seen_at,
+    current: row.id === currentSid,
+    device: describeDevice(row.user_agent)
+  }));
+}
+
+// Signs out one of the user's own sessions. false = not found / not theirs.
+async function revokeSession(userId, sid) {
+  if (!isUuid(sid)) return false;
+  const result = await db.query(
+    'UPDATE sessions SET revoked_at = now() WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL RETURNING id',
+    [sid, userId]
+  );
+  return result.rows.length > 0;
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -81,4 +155,15 @@ function isUuid(value) {
   return typeof value === 'string' && UUID_RE.test(value);
 }
 
-module.exports = { createSession, authorize, revokeOtherSessions, disconnectOtherSockets, TOKEN_TTL_SECONDS };
+module.exports = {
+  createSession,
+  authorize,
+  revokeOtherSessions,
+  disconnectOtherSockets,
+  disconnectSession,
+  touchSession,
+  describeDevice,
+  listSessions,
+  revokeSession,
+  TOKEN_TTL_SECONDS
+};

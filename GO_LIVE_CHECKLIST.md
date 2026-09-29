@@ -192,6 +192,8 @@ Do this in a normal browser window, then again on a phone.
     password (Settings → Account).
   - The computer shows "…signed out on your other devices" and stays
     signed in. The phone is sent to the login screen on its next tap.
+  - Sign in on the phone again. Settings → **Where You're Logged In**
+    lists both devices. "Log out" on the phone's row signs it out.
 - [ ] **Security headers (Day 3):** open the site. No page is broken, and
   the browser console (F12) shows no "Content Security Policy" errors.
 - [ ] **Clean up old Cloudinary leftovers (Day 4).** Dry run first:

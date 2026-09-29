@@ -20,6 +20,7 @@ const Search = lazy(() => import('./Search'));
 const MenuScreen = lazy(() => import('./screens/MenuScreen'));
 const SettingsScreen = lazy(() => import('./screens/SettingsScreen'));
 const BlockedUsersScreen = lazy(() => import('./screens/BlockedUsersScreen'));
+const SessionsScreen = lazy(() => import('./screens/SessionsScreen'));
 const SavedPostsScreen = lazy(() => import('./screens/SavedPostsScreen'));
 const PostDetailScreen = lazy(() => import('./screens/PostDetailScreen'));
 const HashtagFeedScreen = lazy(() => import('./screens/HashtagFeedScreen'));
@@ -71,6 +72,14 @@ function App() {
           element={
             <PhoneShell>
               <SettingsScreen />
+            </PhoneShell>
+          }
+        />
+        <Route
+          path="/settings/sessions"
+          element={
+            <PhoneShell>
+              <SessionsScreen />
             </PhoneShell>
           }
         />

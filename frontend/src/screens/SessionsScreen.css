@@ -1,0 +1,168 @@
+/* Day 8: "Where you're logged in". Same layout language as the other
+   Settings sub-screens (BlockedUsersScreen); logical properties so it
+   mirrors in right-to-left languages by itself. */
+.sessions-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.sessions-header-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.sessions-intro {
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-3);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.sessions-status {
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.sessions-status-error {
+  color: var(--color-error);
+}
+
+.sessions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sessions-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.sessions-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+}
+
+.sessions-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sessions-device {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.sessions-meta {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.sessions-logout-btn {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sessions-logout-btn:hover:not(:disabled) {
+  background: var(--color-border);
+}
+
+.sessions-logout-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sessions-footer {
+  padding: var(--space-4);
+}
+
+.sessions-logout-all-btn {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-error);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sessions-logout-all-btn:hover {
+  background: var(--color-subtle-bg);
+}
+
+.sessions-logout-btn:focus-visible,
+.sessions-logout-all-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Loading: the same static shapes + gentle pulse as the feed skeleton. */
+.sessions-skeleton-block {
+  background: var(--color-border);
+  animation: sessions-skeleton-pulse var(--duration-slow) ease-in-out infinite alternate;
+}
+
+.sessions-skeleton-line {
+  display: block;
+  height: 12px;
+  width: 60%;
+  border-radius: var(--radius-sm);
+}
+
+.sessions-skeleton-short {
+  width: 35%;
+}
+
+@keyframes sessions-skeleton-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sessions-skeleton-block {
+    animation: none;
+  }
+}
