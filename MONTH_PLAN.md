@@ -394,3 +394,42 @@ Build every feature the way a senior engineer at a top social media company woul
   URL stops loading and run the orphan scan.
 - **LATER.md:** nothing new. Running the orphan scan against production
   is an owner step on the GO LIVE checklist.
+
+### 2026-09-28/29 — Day 5: Working email in production
+- **Step 1 (`53fa111`):** Brevo HTTPS email adapter. It switches on when
+  `BREVO_API_KEY` is set; SMTP is kept for local dev.
+  - The contract was checked against Brevo's API reference.
+  - Sender comes from `EMAIL_FROM`, with a startup warning if it's
+    missing.
+  - Logs never contain the key or the body.
+  - **Safety:** `BREVO_API_KEY` is pinned blank in the test setup, the
+    e2e stack and `env.test.js`, so a real key in `.env` can never make
+    the test suites send real emails.
+- **Step 2 (`756c953`):** reset and verification links are never logged
+  in production. Only "not sent", the subject and a masked recipient are.
+  - Local dev still prints the email.
+  - `config/runtime.js` `isProduction()` is now the single definition.
+  - The real reset and signup flows were tested in production mode, and
+    the test is mutation-checked.
+- **Step 3 (`ca60e8c`):** graceful no-email fallback.
+  - `GET /config {emailEnabled}`.
+  - Forgot-password and resend-verification return an honest 503,
+    checked before the address lookup so it doesn't reveal which emails
+    have accounts.
+  - The verify banner hides and forgot-password shows a translated
+    notice (EN/MY/AR).
+  - Nobody is locked out: verification is never required.
+  - New browser suite `day5-email-off`.
+- **Step 4 (`49c44c7`):** LATER.md #3 has step-by-step owner
+  instructions for turning on Brevo, plus how to check it worked.
+- **Flaky test fixed (`1eef2f5`):** b14 "unfollow from the page" failed
+  once in the close-out run. `getByRole` name matching is a substring
+  match, so "Follow" also matched "Following". It now uses
+  `exact: true` and passed 5/5.
+- **Tests at close:**
+  - backend 336/336 (34 suites);
+  - full browser run ALL PASSED: 21 suites, 340 checks, plus A3
+    222/222 × EN/MY/AR.
+- **Not verifiable here:** a real Brevo send (it needs the owner's
+  account and key; see LATER.md #3).
+- **LATER.md:** #3 added (Brevo key).

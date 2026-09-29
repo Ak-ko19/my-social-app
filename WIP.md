@@ -1,27 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 5 — Working email in production
-**Step:** Day close-out (all 4 steps done and pushed: `53fa111`, `756c953`,
-`ca60e8c`, `49c44c7`).
-
-## Close-out status
-- Full browser run (2026-09-28): everything green EXCEPT b14-pages
-  "unfollow from the page" (1 check), which had passed in every earlier
-  run.
-- Cause (test bug, not app): `getByRole('button', { name: 'Follow' })` is
-  a substring match, and "Following" contains "Follow", so the wait
-  passed at once and read the follower count before the unfollow
-  response arrived. PageScreen updates button + count from the same
-  server response, so the app is right.
-- Fix (uncommitted, reviewed): `exact: true` on that wait; the owner
-  check uses /^Follow(ing)?$/.
-- Other suites checked for the same trap: b8 (clicks "Follow" before any
-  "Following" exists) and b10 ("Save") are fine.
-
-## Progress
-- [x] Fix written
-- [x] VERIFY: b14 five runs in a row: 20/20 each time
-- [ ] Full browser run, Progress Log, clear WIP, commit, push
+**Day:** 6 — Go-live preparation (not started)
+**Step:** —
 
 ## Carry-over notes
 - Day 6 GO_LIVE_CHECKLIST.md must include:
@@ -34,6 +14,15 @@
   - required env vars now enforced at startup (config/env.js):
     DATABASE_URL, JWT_SECRET, ALLOWED_ORIGINS, FRONTEND_URL (production);
   - optional: BREVO_API_KEY + EMAIL_FROM (LATER.md #3); check GET /config.
+- CLAUDE.md hard limits: Claude Code never touches the production DB or
+  .env and never merges to master → Day 6 step 3 ("check what access
+  exists") must only look at what's in the repo, never read .env.
 - Day 13 (Vitest): add a unit test for frontend `utils/safeUrl.js`.
 - Tip: `E2E_FRONTEND=dist bash run-all.sh` runs the browser suites on the
   production build with vercel.json's real headers.
+
+## Plan
+(written at the start of each step)
+
+## Progress
+(nothing in progress — Day 5 closed 2026-09-29)
