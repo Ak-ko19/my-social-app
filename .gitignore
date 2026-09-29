@@ -12,3 +12,7 @@ Thumbs.db
 # Env files (backend/ and frontend/ have their own, this covers the root)
 .env
 .env.local
+
+# Database backups (GO_LIVE_CHECKLIST.md step 1): real user data, never commit
+*.dump
+*.sql.gz

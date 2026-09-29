@@ -88,7 +88,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Note in LATER.md: "Add Brevo API key to turn on real emails."
 
 ### Day 6 — Go-live preparation
-- [ ] Write GO_LIVE_CHECKLIST.md: backup, migrations 015–027, env vars, deploy order, rollback steps.
+- [x] Write GO_LIVE_CHECKLIST.md: backup, migrations 015–027, env vars, deploy order, rollback steps.
 - [ ] Test migrations 015–027 on a fresh local DB copied from the production schema.
 - [ ] Check what access exists: production DATABASE_URL, whether pushing to main auto-deploys on Render/Vercel.
 

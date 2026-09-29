@@ -21,8 +21,20 @@
 - Tip: `E2E_FRONTEND=dist bash run-all.sh` runs the browser suites on the
   production build with vercel.json's real headers.
 
-## Plan
-(written at the start of each step)
+## Step 1 — GO_LIVE_CHECKLIST.md (DONE)
+- Sections: before you start, backup (pg_dump file + Neon branch), env
+  vars table, migrations 015→027 (pre-checks, one-file loop, post-check),
+  deploy order (backend then frontend), make-admin, smoke tests (incl.
+  Day 2/3/4 live checks), rollback A/B/C.
+- Found: master's code ignores posts.visibility, community_id and bans,
+  so a code-only rollback after people use those features leaks private
+  posts and unbans users → rollback B is time-boxed with a warning, C
+  says fix forward or restore the backup.
+- Added `*.dump` / `*.sql.gz` to .gitignore (backups hold user data).
+- Verified locally on the throwaway e2e DB: pg_dump, both check
+  queries, pg_restore --clean --if-exists (restored deleted posts).
+  The migration loop is Day 6 step 2's test.
 
 ## Progress
-(nothing in progress — Day 5 closed 2026-09-29)
+- Step 1 DONE; next: step 2 (test migrations 015–027 on a fresh DB with
+  the production schema, i.e. master @ 014).
