@@ -1,12 +1,11 @@
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { mediaOfUser, deleteMedia } = require('../services/mediaCleanupService');
 const { sendEmail, emailEnabled } = require('../utils/email');
+const { createSession, revokeOtherSessions, disconnectOtherSockets } = require('../services/sessionService');
 
-const JWT_SECRET = process.env.JWT_SECRET;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Base URL of the frontend that verify-email/reset-password links point
 // at -- was hardcoded to localhost, which meant these links only ever
@@ -169,7 +168,8 @@ async function login(req, res) {
       reactivated = true;
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+    // Day 8: a session per login, so this device can later be signed out.
+    const { token } = await createSession(user.id, req);
     res.status(200).json({
       token,
       id: user.id,
@@ -253,6 +253,9 @@ async function resetPassword(req, res) {
       'UPDATE users SET password = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2',
       [hashedPassword, user.id]
     );
+    // Whoever knew the old password is signed out everywhere.
+    await revokeOtherSessions(user.id, null);
+    await disconnectOtherSockets(user.id, null);
 
     res.status(200).send('Password reset successfully');
   } catch (err) {
@@ -279,12 +282,23 @@ async function changePassword(req, res) {
 
     const isMatch = await bcrypt.compare(currentPassword, result.rows[0].password);
     if (!isMatch) {
-      return res.status(401).send('Current password is incorrect');
+      // 403, not 401: the frontend logs out on any 401, and a mistyped
+      // password must not sign you out.
+      return res.status(403).send('Current password is incorrect');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, req.userId]);
-    res.status(200).send('Password changed successfully');
+
+    // Day 8: every OTHER device is signed out (someone who knew the old
+    // password loses access). This device stays signed in: a session token
+    // keeps working; a token from before sessions existed is cut off with
+    // the rest, so this device gets a fresh one.
+    await revokeOtherSessions(req.userId, req.sessionId);
+    await disconnectOtherSockets(req.userId, req.sessionId);
+    const body = { message: 'Password changed successfully' };
+    if (!req.sessionId) body.token = (await createSession(req.userId, req)).token;
+    res.status(200).json(body);
   } catch (err) {
     sendServerError(res, err, 'Change password failed. Please try again later.');
   }
@@ -309,7 +323,7 @@ async function deactivateAccount(req, res) {
 
     const isMatch = await bcrypt.compare(password, result.rows[0].password);
     if (!isMatch) {
-      return res.status(401).send('Incorrect password');
+      return res.status(403).send('Incorrect password'); // 403: see changePassword
     }
 
     await db.query('UPDATE users SET is_deactivated = true, deactivated_at = now() WHERE id = $1', [req.userId]);
@@ -339,7 +353,7 @@ async function deleteAccount(req, res) {
 
     const isMatch = await bcrypt.compare(password, result.rows[0].password);
     if (!isMatch) {
-      return res.status(401).send('Incorrect password');
+      return res.status(403).send('Incorrect password'); // 403: see changePassword
     }
 
     // Everything the cascade takes with it: avatar, posts, stories, sent

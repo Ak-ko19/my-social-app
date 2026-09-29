@@ -34,6 +34,15 @@ export function notifyAuthChange() {
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
 }
 
+// A fresh token for the same signed-in account -- e.g. after a password
+// change, when the server signs every other session out and hands this
+// device a new one. SocketProvider reconnects with it via the auth-change
+// event.
+export function replaceToken(token) {
+  localStorage.setItem('token', token);
+  notifyAuthChange();
+}
+
 // Single place that clears a dead session and sends the user back to
 // login -- used by both api.js's 401 interceptor and SocketProvider's
 // AUTH_FAILED handling, so the two can't drift into slightly different

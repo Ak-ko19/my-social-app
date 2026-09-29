@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { IconButton, ConfirmDialog } from '../components/ui';
-import { useAuth, forceLogout } from '../hooks/useAuth';
+import { useAuth, forceLogout, replaceToken } from '../hooks/useAuth';
 import { changePassword, deactivateAccount, deleteAccount } from '../services/accountService';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from '../utils/serverError';
@@ -38,7 +38,10 @@ function AccountManagementScreen() {
     }
     setPasswordPending(true);
     changePassword(currentPassword, newPassword, token)
-      .then(() => {
+      .then((res) => {
+        // Other devices are now signed out; if this device's token was
+        // cut off too (one from before sessions), the server sent a new one.
+        if (res.data?.token) replaceToken(res.data.token);
         setPasswordSuccess(t('account.passwordChanged'));
         setCurrentPassword('');
         setNewPassword('');
@@ -116,7 +119,7 @@ function AccountManagementScreen() {
               {passwordError}
             </p>
           )}
-          {passwordSuccess && <p className="account-mgmt-success">{passwordSuccess}</p>}
+          {passwordSuccess && <p className="account-mgmt-success" role="status">{passwordSuccess}</p>}
           <button type="submit" className="account-mgmt-btn account-mgmt-btn-primary" disabled={passwordPending}>
             {passwordPending ? t('common.saving') : t('account.changePassword')}
           </button>

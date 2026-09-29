@@ -99,12 +99,14 @@ describe('auth', () => {
         .send({ password: user.password });
       expect(deleteRes.status).toBe(200);
 
-      // Same token is now for a user row that no longer exists -- the JWT
-      // itself is still validly signed (authMiddleware only checks the
-      // signature/expiry, not DB existence), so this reaches the DB query
-      // and correctly 404s there rather than crashing.
+      // The token is still validly signed, but its account (and session,
+      // by cascade) is gone: since Day 8 authMiddleware checks the session
+      // in the database, so it's rejected as a dead token (401 -> the
+      // frontend signs that device out) instead of reaching the route.
       const meRes = await request(app).get('/profile/me').set('Authorization', `Bearer ${user.token}`);
-      expect(meRes.status).toBe(404);
+      expect(meRes.status).toBe(401);
+      const posts = await request(app).get('/posts');
+      expect(posts.body.posts.find((p) => p.content === 'a post that should disappear with its author')).toBeUndefined();
     });
   });
 });

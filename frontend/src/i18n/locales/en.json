@@ -539,7 +539,7 @@
   "account": {
     "title": "Account Management",
     "passwordsDontMatch": "New passwords do not match",
-    "passwordChanged": "Password changed successfully",
+    "passwordChanged": "Password changed. You have been signed out on your other devices.",
     "changeFailed": "Failed to change password",
     "deactivateFailed": "Failed to deactivate account",
     "deleteFailed": "Failed to delete account",

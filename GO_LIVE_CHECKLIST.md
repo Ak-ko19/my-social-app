@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 027, check the environment variables,
+database, run migrations 015 → 028, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -26,8 +26,8 @@ the production database or merging to `master`.
   migration on a local copy of the live schema (never production):
   `cd e2e && bash golive-rehearsal.sh --old` must end with
   `REHEARSAL PASSED`.
-  - Last run 2026-09-29, 015 → 027, all passed:
-    - the result matches the app's schema exactly (149 columns, 91
+  - Last run 2026-09-29, 015 → 028, all passed:
+    - the result matches the app's schema exactly (157 columns, 93
       constraints);
     - all old rows are kept, and old images and likes carry over;
     - the new code and the old live code both work on the migrated
@@ -94,7 +94,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 027 on production
+## 3. Run migrations 015 → 028 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -111,7 +111,7 @@ they run.
 - [ ] Confirm none of the new tables exist yet (this should print `0`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities')"
+    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions')"
   ```
 - [ ] Run them **one at a time, in this order**, from `backend/`. Each
   prints `Migration applied successfully`.
@@ -124,14 +124,14 @@ they run.
   for m in 015_add_fk_lookup_indexes 016_add_reactions 017_add_post_media 018_add_stories \
            019_add_comment_replies_likes 020_add_post_visibility 021_add_message_image_type \
            022_add_message_replies_images 023_add_group_chats 024_add_notification_preferences \
-           025_add_admin_moderation 026_add_communities 027_add_pages; do
+           025_add_admin_moderation 026_add_communities 027_add_pages 028_add_sessions; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
-- [ ] Check the result (this should print `4`):
+- [ ] Check the result (this should print `5`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities')"
+    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions')"
   ```
 
 ## 4. Deploy the backend, then the frontend
@@ -186,6 +186,12 @@ Do this in a normal browser window, then again on a phone.
   - [ ] On network B, log in **correctly** at the same time. It works.
     If B is also blocked, set `TRUST_PROXY=2` on Render, redeploy and
     repeat.
+- [ ] **Signing out other devices (Day 8):**
+  - People who were already signed in stay signed in after the deploy.
+  - Sign in on a phone and a computer. On the computer, change the
+    password (Settings → Account).
+  - The computer shows "…signed out on your other devices" and stays
+    signed in. The phone is sent to the login screen on its next tap.
 - [ ] **Security headers (Day 3):** open the site. No page is broken, and
   the browser console (F12) shows no "Content Security Policy" errors.
 - [ ] **Clean up old Cloudinary leftovers (Day 4).** Dry run first:

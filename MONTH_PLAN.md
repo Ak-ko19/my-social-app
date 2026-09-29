@@ -105,7 +105,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ## WEEK 2 — Security and reliability
 
 ### Day 8 — Session revocation
-- [ ] Changing the password signs out other devices (token version or refresh-token table).
+- [x] Changing the password signs out other devices (token version or refresh-token table).
 - [ ] "Log out of all devices" in Settings; active sessions list.
 
 ### Day 9 — Cleanup jobs

@@ -563,7 +563,7 @@
   "account": {
     "title": "إدارة الحساب",
     "passwordsDontMatch": "كلمتا المرور الجديدتان غير متطابقتين",
-    "passwordChanged": "تم تغيير كلمة المرور بنجاح",
+    "passwordChanged": "تم تغيير كلمة المرور. تم تسجيل خروجك من أجهزتك الأخرى.",
     "changeFailed": "تعذّر تغيير كلمة المرور",
     "deactivateFailed": "تعذّر إلغاء تفعيل الحساب",
     "deleteFailed": "تعذّر حذف الحساب",

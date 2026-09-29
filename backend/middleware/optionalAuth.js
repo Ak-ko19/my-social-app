@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
-const { isBanned } = require('../services/accountStatusService');
+const { authorize } = require('../services/sessionService');
 
 // Same token check as authMiddleware, but never rejects the request --
 // public endpoints (GET /posts, GET /posts/:id, GET /profile/:id, search)
@@ -22,12 +22,13 @@ async function optionalAuth(req, res, next) {
     // An expired/invalid token on a public route is not an error -- just
     // treat the request as anonymous rather than rejecting it.
   }
-  // B12: a banned account browses as anonymous (never as itself).
+  // B12 / Day 8: a banned account, or a signed-out session, browses as
+  // anonymous (never as itself).
   if (decoded) {
     try {
-      if (!(await isBanned(decoded.userId))) req.userId = decoded.userId;
+      if ((await authorize(decoded)) === 'ok') req.userId = decoded.userId;
     } catch (err) {
-      console.error('Ban check failed:', err.message);
+      console.error('Auth check failed:', err.message);
     }
   }
   next();

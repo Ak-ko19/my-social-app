@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
-const { isBanned } = require('../services/accountStatusService');
+const { authorize } = require('../services/sessionService');
 
 // Socket.io handshake middleware -- mirrors middleware/authMiddleware.js, but
 // reads the token from handshake.auth (set by the client as
@@ -30,12 +30,19 @@ async function socketAuthMiddleware(socket, next) {
     // this app issues has one -- see authController's jwt.sign), throwing
     // TokenExpiredError for an expired one, which lands in this same catch.
     const decoded = jwt.verify(token, JWT_SECRET);
-    // B12: same code as a dead token, so the client stops retrying and
-    // logs out instead of reconnecting forever.
-    if (await isBanned(decoded.userId)) {
+    // B12 ban / Day 8 revoked session: same code as a dead token, so the
+    // client stops retrying and logs out instead of reconnecting forever.
+    const verdict = await authorize(decoded);
+    if (verdict === 'banned') {
       return next(authFailure('This account has been banned'));
     }
+    if (verdict !== 'ok') {
+      return next(authFailure('Invalid or expired token'));
+    }
     socket.userId = decoded.userId;
+    // socket.data survives fetchSockets(), so "sign out other devices" can
+    // tell this device's socket apart from the others.
+    socket.data.sessionId = decoded.sid || null;
     next();
   } catch (err) {
     next(authFailure('Invalid or expired token'));

@@ -39,7 +39,9 @@ CREATE TABLE users (
   deactivated_at timestamptz,
   email_verified boolean DEFAULT false NOT NULL,
   verification_token text,
-  verification_token_expiry timestamptz
+  verification_token_expiry timestamptz,
+  -- Added by migration 028_add_sessions (Day 8).
+  tokens_valid_after timestamptz
 );
 
 CREATE TABLE posts (
@@ -296,3 +298,15 @@ CREATE TABLE messages_dm_legacy (
   is_read boolean DEFAULT false,
   created_at timestamp DEFAULT now()
 );
+
+-- Day 8 (migration 028): login sessions, so tokens can be revoked.
+CREATE TABLE sessions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  last_seen_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  revoked_at timestamptz,
+  user_agent text
+);
+CREATE INDEX idx_sessions_user_active ON sessions (user_id) WHERE revoked_at IS NULL;
