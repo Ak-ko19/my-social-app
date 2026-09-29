@@ -475,3 +475,41 @@ Build every feature the way a senior engineer at a top social media company woul
 ### 2026-09-29 — Day 7: GO LIVE #1 — skipped
 - No production access (CLAUDE.md hard limits). Everything needed is in
   `GO_LIVE_CHECKLIST.md` for the owner (LATER.md #2).
+
+### 2026-09-29 — Day 8: Session revocation
+- **Step 1 (`aac4976`):** changing the password signs out your other
+  devices. Audit bug #6 is fixed.
+  - Migration 028 adds a `sessions` table and `users.tokens_valid_after`.
+    It was rehearsed: schema = fixture, down restores, old code works.
+  - The JWT carries a session id. `authorize()` checks the ban AND the
+    session in one query (the same cost as the old ban check), for REST,
+    optional auth and sockets.
+  - Tokens from before sessions keep working, so the deploy logs nobody
+    out, until revoked.
+  - Password change: other sessions are revoked, pre-sessions tokens cut
+    off, other devices' sockets kicked, and this device keeps (or gets) a
+    valid token.
+  - Password reset signs out every device.
+  - **Found:** a mistyped confirmation password answered 401, which the
+    frontend treats as logout. Change password, deactivate and delete now
+    answer 403.
+  - **Better than the plan:** a sessions table rather than a token
+    counter, because step 2 needs a list.
+- **Step 2 (`368775f`):** Settings → "Where You're Logged In".
+  - Covers: the device list (browser and OS from the user agent), log out
+    one, log out all others, and last-active times throttled to 5 min.
+  - Settings → Log Out now ends the session on the server too; before,
+    it only cleared the browser.
+  - EN/MY/AR.
+  - **Found:** the Arabic label read "Windows on Edge". Fixed with
+    per-name bidi isolation, and the browser suite measures word order.
+  - New route added to the A3 matrix.
+- **Tests at close:**
+  - backend 357/357 (35 suites);
+  - full browser run ALL PASSED: 23 suites, 375 checks, plus A3
+    228/228 × EN/MY/AR;
+  - golive-rehearsal --old PASSED (015→028).
+- **Carry-over:** Day 9's cleanup job must also delete expired or
+  revoked sessions (one row per login).
+- **LATER.md:** nothing new. GO_LIVE_CHECKLIST now lists migration 028
+  and a live Day 8 check.
