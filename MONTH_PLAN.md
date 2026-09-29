@@ -89,7 +89,7 @@ Build every feature the way a senior engineer at a top social media company woul
 
 ### Day 6 — Go-live preparation
 - [x] Write GO_LIVE_CHECKLIST.md: backup, migrations 015–027, env vars, deploy order, rollback steps.
-- [ ] Test migrations 015–027 on a fresh local DB copied from the production schema.
+- [x] Test migrations 015–027 on a fresh local DB copied from the production schema. *(Rebuilt from the repo, since production can't be touched: `e2e/golive-rehearsal.sh`.)*
 - [ ] Check what access exists: production DATABASE_URL, whether pushing to main auto-deploys on Render/Vercel.
 
 ### Day 7 — GO LIVE #1 (only if you have the access)

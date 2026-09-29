@@ -56,6 +56,7 @@ error. Full output goes to `out-<suite>.txt`, and screenshots to `*.png` /
 | `c4-audit-checks` | Route auth table, Phase 1 fixes, API timings, `npm audit`, the deployed keep-alive ping |
 | `day2-own-post` | Day 2: a new post is the first card on Home (EN/MY/AR, light/dark, 375px–desktop) |
 | `day5-email-off` | Day 5: with no email provider the verify banner hides and forgot-password explains itself (EN/MY/AR); with email on both still work |
+| `golive-rehearsal.sh` | `bash golive-rehearsal.sh [--old]`: GO LIVE rehearsal. It runs every migration from 015 on a local copy of the live (014) schema, compares the result with the dev schema, smoke-tests the new backend (and with `--old`, the live `master` backend) on it, and checks that the `.down.sql` files restore the live schema (see `../GO_LIVE_CHECKLIST.md`) |
 | `pixel-compare` | `node pixel-compare.cjs <baselineDir> <currentDir>`: pixel diff of two sets of A3 screenshots |
 
 **Timing noise:** timestamps ("5m ago") depend on when a suite runs, and

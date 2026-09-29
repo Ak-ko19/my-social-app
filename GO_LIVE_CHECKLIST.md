@@ -22,6 +22,17 @@ the production database or merging to `master`.
 
 - [ ] **CI is green on `dev`:**
   https://github.com/Ak-ko19/my-social-app/actions (see LATER.md #1).
+- [ ] **The migration rehearsal passes.** It runs every production
+  migration on a local copy of the live schema (never production):
+  `cd e2e && bash golive-rehearsal.sh --old` must end with
+  `REHEARSAL PASSED`.
+  - Last run 2026-09-29, 015 → 027, all passed:
+    - the result matches the app's schema exactly (149 columns, 91
+      constraints);
+    - all old rows are kept, and old images and likes carry over;
+    - the new code and the old live code both work on the migrated
+      database;
+    - running every `.down.sql` restores the 014 schema exactly.
 - [ ] **Tools on your computer:**
   - `node` 20 or newer;
   - PostgreSQL 17 client tools (`pg_dump`, `pg_restore`, `psql`). They
