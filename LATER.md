@@ -27,6 +27,21 @@ without them. Newest items at the bottom.
 - **Owner:** when ready, follow GO_LIVE_CHECKLIST.md (written on Day 6).
   To let Claude Code do GO LIVE steps itself, change the hard limits in
   CLAUDE.md.
+- **Access check (Day 6, 2026-09-29):**
+  - **Production database:** Claude Code has none, by design.
+    `backend/.env` exists but wasn't opened, and CLAUDE.md forbids using
+    production.
+  - **Render and Vercel dashboards:** no access (no accounts or tokens
+    here). Whether a push to `master` auto-deploys is unknown here.
+    GO_LIVE_CHECKLIST step 2 asks you to note it, and step 4 covers both
+    cases.
+  - **Live backend today:** the `master`-era code. `/config` answers 404
+    because this work isn't deployed yet.
+  - **Live frontend URL:** not recorded in the repo. It's what
+    `ALLOWED_ORIGINS` must be set to (checklist step 2).
+  - **So Day 7 (GO LIVE #1) was skipped** and the work continued with
+    Day 8, as MONTH_PLAN says. The same applies to every later GO LIVE
+    day until you run the checklist.
 
 ## 3. Add a Brevo API key to turn on real emails (Day 5)
 - **Why:** password reset and email verification need to send emails.

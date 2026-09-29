@@ -90,9 +90,10 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 6 — Go-live preparation
 - [x] Write GO_LIVE_CHECKLIST.md: backup, migrations 015–027, env vars, deploy order, rollback steps.
 - [x] Test migrations 015–027 on a fresh local DB copied from the production schema. *(Rebuilt from the repo, since production can't be touched: `e2e/golive-rehearsal.sh`.)*
-- [ ] Check what access exists: production DATABASE_URL, whether pushing to main auto-deploys on Render/Vercel.
+- [x] Check what access exists: production DATABASE_URL, whether pushing to main auto-deploys on Render/Vercel. *(None for Claude Code: CLAUDE.md forbids the production DB; no Render/Vercel access. Details in LATER.md #2.)*
 
 ### Day 7 — GO LIVE #1 (only if you have the access)
+*Skipped 2026-09-29: no production access (CLAUDE.md hard limits). The owner runs GO_LIVE_CHECKLIST.md (LATER.md #2); the boxes below stay open for that.*
 - [ ] If you have production DB access: take your own backup with pg_dump to a local file first. If no access, skip GO LIVE, note it in LATER.md, and continue with Day 8.
 - [ ] Follow GO_LIVE_CHECKLIST.md: run migrations, deploy backend and frontend, merge dev → main.
 - [ ] If anything fails on live: roll back immediately (revert main, restore backup) and note it in LATER.md.
