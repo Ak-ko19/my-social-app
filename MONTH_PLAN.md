@@ -618,3 +618,49 @@ Build every feature the way a senior engineer at a top social media company woul
 - **GO_LIVE_CHECKLIST:** Turnstile rows in the env table, a Day 11 smoke
   check, and a note that the Day 2 login check is now slower after 3
   wrong passwords.
+
+### 2026-09-30 — Day 12: Moderation
+- **Step 1 (`6518fd9`):** report comments and messages.
+  - **Migration 031:** `report_target_type` gains `comment` and
+    `message`. Reports also keep `target_owner_id` and
+    `target_snapshot`, the text as it was when reported, so editing or
+    unsending doesn't erase the evidence. Posts keep them too.
+  - **Messages:** only someone in that conversation can report one.
+    Anyone else gets the same 404 as for a missing message, so nobody
+    can probe private chats.
+  - **Moderator view:** only the reported item is shown, never the rest
+    of the chat. Voice and photos show inline. Banning the author
+    resolves reports on everything they wrote.
+  - **UI:** "Report" under other people's comments, and a flag beside
+    their messages, in EN/MY/AR.
+- **Step 2 (`d7d9903`):** admin report review.
+  - The admin role, the list, dismiss, remove post and ban already
+    existed (B12).
+  - **Added:** removing a reported comment (its replies go with it) or
+    message (removed like an unsend: media deleted from Cloudinary, and
+    it disappears live from the open chat).
+  - **Temporary suspensions (1/3/7/30 days, migration 032
+    `users.banned_until`):**
+    - A suspension lifts itself on the person's next request or login,
+      or via the daily cleanup job.
+    - A suspended login is told until when, in their language.
+    - "Lift suspension" ends it early.
+  - **Better than a separate suspension table:** a suspension is a ban
+    with an end time. Every existing ban check (REST, optional auth,
+    sockets, content hiding) covers suspensions with no new query.
+  - **Rollback:** migration 032's down turns suspensions into permanent
+    bans rather than silently unbanning people.
+- **Tests at close:**
+  - backend 445/445 (42 suites);
+  - mutation checks: 16 backend, all caught;
+  - golive-rehearsal --old PASSED (015→032). Both downs were also
+    tested with live data;
+  - full browser run ALL PASSED: 28 suites and 499 checks, plus A3
+    228/228 × EN/MY/AR.
+- **Found and fixed on the way:** the in-memory DM rate limiter's
+  counters outlived test DB resets. Tests now get a reset hook.
+- **Process note:** running mutation checks while a browser stack was
+  booting crashed two suites. They passed on a clean rerun; that
+  practice is now avoided.
+- **GO_LIVE_CHECKLIST:** migrations 015 → 032, a post-check for the new
+  columns, and a Day 12 smoke item.
