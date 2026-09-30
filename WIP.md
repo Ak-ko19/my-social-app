@@ -1,39 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 11 — Bot protection
-**Step:** 2 — Turnstile hook, on only if its env var exists (step 1 done).
-
-## Step 1 plan
-- `services/botProtection.js`:
-  - form token = `<issuedAtMs>.<hmac>` (HMAC-SHA256, key derived from
-    JWT_SECRET with a purpose label, so it can't be confused with a JWT).
-    `GET /form-token` → { token }. checkFormToken(token, minMs): missing /
-    forged / older than 2 h → 'Please reload the page and try again.';
-    younger than minMs → 'Please wait a moment and try again.'
-    Signup min 3 s, forgot-password min 2 s. Login: no token (password
-    managers, future mobile app).
-  - honeypot: body.website non-empty → same generic reload message.
-  - login throttle (in memory, per lower-cased email, 15 min window):
-    failures 0-2 → no delay; then 1 s, 2 s, 4 s, max 8 s before answering
-    (right or wrong password); reset on success; map capped at 10k keys.
-  - All of it off under NODE_ENV=test unless BOT_CHECKS_IN_TESTS=1
-    (same pattern as RATE_LIMIT_IN_TESTS) so the 396 existing tests keep
-    working without tokens.
-- Limits: signup 10/h → 5/h per IP + new 20/day per IP; forgot-password
-  new per-EMAIL limiter 3/h (keyBy 'email' = sha256 of the lower-cased
-  address; falls back to IP) on top of the per-IP one.
-- Frontend: Signup, Login, ForgotPassword get a visually hidden honeypot
-  input (aria-hidden, tabIndex -1, autocomplete off); Signup +
-  ForgotPassword fetch a form token on mount (useFormToken) and, if the
-  user submits before the minimum time, wait out the rest (a fast real
-  user never sees an error); an expired token is re-fetched once.
-- New server messages (MY/AR): reload / wait / per-email reset limit.
-- e2e-up.sh: optional E2E_BACKEND_ENV passthrough so a browser suite can
-  run the backend with BOT_CHECKS_IN_TESTS=1.
-- Tests: token valid / forged / expired / too fast / missing; honeypot;
-  throttle curve + reset + cap; per-email limiter; routes wired;
-  browser: real forms still work with checks ON (and a bot-style POST
-  without token is refused).
+**Day:** 12 — Moderation (not started)
+**Step:** —
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -44,8 +12,14 @@
   (+ testDb TABLES), GO_LIVE_CHECKLIST loop, and the rehearsal must pass.
 - Logging: use utils/logger (a test forbids console.* in backend
   sources); 500s via sendServerError so they reach the error log.
-- Suites that need the production build go in DIST_SUITES (run-all.sh).
-- Day 13 (Vitest): add a unit test for frontend `utils/safeUrl.js`.
+- Suites that need the production build go in DIST_SUITES (run-all.sh);
+  ones that need the real bot checks in BOT_SUITES; Turnstile-on ones in
+  TURNSTILE_SUITES.
+- Day 11: bot checks (form token, honeypot, login delay) are OFF under
+  NODE_ENV=test unless BOT_CHECKS_IN_TESTS=1. Suites that sign users up
+  straight through the API only work on the default stack.
+- Day 13 (Vitest): add a unit test for frontend `utils/safeUrl.js`, and
+  consider one for `hooks/useFormGuard.jsx` (wait + stale-token retry).
 - Tip: `E2E_FRONTEND=dist bash run-all.sh` runs the browser suites on the
   production build with vercel.json's real headers.
 - Playwright gotcha seen 4× now: getByRole/getByLabel/getByText name
@@ -53,45 +27,7 @@
   contained in another.
 
 ## Plan
-Step 2 — Turnstile, dormant until the owner adds keys (no account made here):
-- Backend services/turnstile.js: on only when BOTH TURNSTILE_SITE_KEY and
-  TURNSTILE_SECRET_KEY are set (env.js warns if only one is).
-  turnstileGuard on signup + forgot password (not login: password
-  managers / future mobile app). Missing or rejected token → 400
-  "Please complete the security check." Cloudflare unreachable (5 s
-  timeout) → let it through + logger.warn (fail open: honeypot, form
-  token and rate limits still apply; a Cloudflare outage must not stop
-  signups). TURNSTILE_VERIFY_URL override for the local test stub only.
-- GET /config adds turnstileSiteKey (public) or null.
-- Frontend: useFormGuard loads Cloudflare's script only when the site key
-  exists, renders the widget (theme follows the app), sends
-  turnstileToken, resets the widget after each attempt (tokens are
-  single-use); "complete the security check" message in EN/MY/AR.
-- CSP: script-src + frame-src https://challenges.cloudflare.com.
-- Pins: setupEnv / e2e-up / env.test CLEAN blank the two keys.
-- Tests: jest (fetch mocked: off / missing / pass / fail / unreachable,
-  env warnings, /config); browser suite day11-turnstile on a stack with
-  keys + a local stub verifier (e2e/turnstile-stub.cjs, port 3901) and a
-  fake widget script served by page.route; dist build to prove the CSP.
-- Docs: .env.example, LATER.md (optional owner item).
+(written at the start of each step)
 
 ## Progress
-- Step 1 DONE (2026-09-30): built as planned. Deviations/decisions:
-  - Login throttle also caps waiting attempts per account at 3 (more →
-    429 "Too many login attempts for this account…"): a delay alone
-    doesn't slow a bot firing guesses in parallel.
-  - Honeypot is clipped (clip-path), not moved off-screen: a far-left
-    offset would scroll sideways in Arabic.
-  - Browser suites keep bot checks OFF (several sign users up straight
-    via the API); `day11-bots` runs on its own stack with
-    BOT_CHECKS_IN_TESTS=1 (run-all.sh BOT_SUITES). golive rehearsal runs
-    NODE_ENV=test, so its API smoke is unaffected.
-  - Verified: backend 412/412; mutation checks (9) all caught; day11-bots
-    all green EN/MY/AR incl. stale-token retry and a frontend mutation;
-    related suites day5/c2/c3/day8/b15/b16/a3 en+ar green.
-- Step 2 DONE (2026-09-30): built as planned (see Plan above). Verified:
-  backend 421/421; 6 mutation checks caught; day11-turnstile 31/31 on
-  the dist build (fake widget from Cloudflare's URL + local stub
-  verifier), CSP mutations (frame-src, script-src) both caught;
-  day11-bots/day10-errors/day5/c2/c3 green. Owner item: LATER.md #6.
-- Next: Day 11 close — full browser run, Progress Log, reset WIP.
+(nothing in progress — Day 11 closed 2026-09-30)

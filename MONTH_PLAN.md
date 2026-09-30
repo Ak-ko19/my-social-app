@@ -576,3 +576,45 @@ Build every feature the way a senior engineer at a top social media company woul
   - golive-rehearsal --old PASSED (015→030).
 - **LATER.md:** #5 added (optional Sentry). GO_LIVE_CHECKLIST lists
   migration 030 and checks `/health` and Admin → Errors.
+
+### 2026-09-30 — Day 11: Bot protection
+- **Step 1 (`43f2564`):** bot protection that needs no outside account.
+  - **Honeypot field** on signup, login and forgot password. It is
+    clipped rather than moved off-screen: a far-left offset scrolls
+    sideways in Arabic.
+  - **Signed form tokens** (HMAC with a purpose-derived key) with a
+    minimum fill time: signup 3 s, forgot password 2 s. The forms wait
+    out the rest themselves, and a stale token is replaced once without
+    the person noticing.
+  - **Login slows down** after 3 wrong passwords for one account: 1, 2, 4
+    and 8 s. It resets on success.
+    - **Better than the plan:** a delay alone doesn't stop parallel
+      guessing, so at most 3 attempts per account may wait at once;
+      extra ones get a 429.
+    - Nobody is ever locked out: the right password always gets in.
+  - **Tighter limits:** signup is now 5 an hour (was 10) plus 20 a day per
+    network. Forgot password is also limited to 3 an hour per address,
+    whatever network asks, which stops inbox-bombing.
+  - **Where the checks run:** they are off under `NODE_ENV=test` unless
+    `BOT_CHECKS_IN_TESTS=1`, like the rate limiters. The browser suite
+    `day11-bots` runs its own stack with them on.
+- **Step 2 (`0541c71`):** optional Cloudflare Turnstile, off until both
+  keys are set (LATER.md #6).
+  - It covers signup and forgot password, not login.
+  - A missing or rejected token gets a 400. If Cloudflare can't be
+    reached, the request goes through with a warning, so an outage
+    can't stop signups.
+  - Cloudflare's script loads only when the check is on.
+  - The CSP allows its script and frame.
+  - Tested without contacting Cloudflare: a fake widget is served from
+    Cloudflare's URL on the production build, and a local stub does the
+    verifying. Removing either CSP entry fails the suite.
+- **Tests at close:**
+  - backend 421/421 (40 suites);
+  - mutation checks: 15 backend, 3 browser/CSP, all caught;
+  - full browser run ALL PASSED: 26 suites and 447 checks (day10-errors
+    and day11-turnstile on the production build, day11-bots with the
+    checks on), plus A3 228/228 × EN/MY/AR.
+- **GO_LIVE_CHECKLIST:** Turnstile rows in the env table, a Day 11 smoke
+  check, and a note that the Day 2 login check is now slower after 3
+  wrong passwords.

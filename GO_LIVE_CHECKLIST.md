@@ -85,6 +85,7 @@ failed and keeps the old version running. It's still better to check now.
 | `BREVO_API_KEY`, `EMAIL_FROM` | optional | turns on real emails; see LATER.md #3. Without them the app says "reset by email isn't available" |
 | `CLEANUP_SECRET` | optional | turns on the daily cleanup job (32+ random characters); the same value goes into a GitHub Actions secret, see LATER.md #4 |
 | `SENTRY_DSN` | optional | also sends server errors to Sentry (see LATER.md #5). Errors are always kept in Admin → Errors anyway |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | optional | Cloudflare "are you human?" check on signup and forgot password. It's on only with both keys (see LATER.md #6) |
 | `TRUST_PROXY` | leave unset | defaults to 1 on Render |
 | `PORT`, `RENDER` | don't touch | Render sets these itself |
 
@@ -193,6 +194,15 @@ Do this in a normal browser window, then again on a phone.
   - [ ] On network B, log in **correctly** at the same time. It works.
     If B is also blocked, set `TRUST_PROXY=2` on Render, redeploy and
     repeat.
+  - Since Day 11, attempts on that account after the 3rd wrong password
+    take a few seconds to answer, on every network. That is expected, as
+    long as B still gets in.
+- [ ] **Bot protection (Day 11):**
+  - Signing up at normal speed shows no extra step and no error.
+  - Signup and Forgot password take up to 3 seconds if you submit very
+    fast.
+  - If `TURNSTILE_*` keys are set (LATER.md #6), the Cloudflare box
+    appears on those two pages and must be ticked.
 - [ ] **Signing out other devices (Day 8):**
   - People who were already signed in stay signed in after the deploy.
   - Sign in on a phone and a computer. On the computer, change the
