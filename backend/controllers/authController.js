@@ -5,6 +5,7 @@ const { sendServerError } = require('../utils/sendError');
 const { mediaOfUser, deleteMedia } = require('../services/mediaCleanupService');
 const { sendEmail, emailEnabled } = require('../utils/email');
 const { createSession, revokeOtherSessions, disconnectOtherSockets } = require('../services/sessionService');
+const botProtection = require('../services/botProtection');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Base URL of the frontend that verify-email/reset-password links point
@@ -143,14 +144,22 @@ async function login(req, res) {
     if (!email || !password) {
       return res.status(400).send('Email and password are required');
     }
+    // Day 11: after a few wrong passwords for this address, each further
+    // attempt waits (1 s up to 8 s) before it is checked -- right or wrong
+    // password alike, so the wait itself reveals nothing.
+    if (!(await botProtection.waitLoginTurn(email))) {
+      return res.status(429).send(botProtection.TOO_MANY_LOGINS);
+    }
     const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
 
     const isMatch = await bcrypt.compare(password, user ? user.password : DUMMY_PASSWORD_HASH);
 
     if (!user || !isMatch) {
+      botProtection.recordLoginFailure(email);
       return res.status(401).send('Invalid email or password');
     }
+    botProtection.recordLoginSuccess(email);
 
     // B12: checked BEFORE the auto-reactivation below -- a ban also sets
     // is_deactivated, and logging in must not undo it.

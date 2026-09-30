@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import api from './api';
 import { Link, useNavigate } from 'react-router-dom';
+import { useFormGuard } from './hooks/useFormGuard';
 import Logo from './components/layout/Logo';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
@@ -10,8 +10,11 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
+  // Honeypot only: login has no minimum fill time (password managers).
+  const { honeypot, guardedPost } = useFormGuard();
 
   // Already-logged-in users shouldn't land on the login form -- send them
   // straight to the real Home screen instead. A plain localStorage read
@@ -32,10 +35,12 @@ function Login() {
       return;
     }
 
-    api.post('/login', {
+    setBusy(true);
+    guardedPost('/login', {
       email: email.trim(),
       password: password
     })
+    .finally(() => setBusy(false))
     .then((response) => {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('userId', response.data.id);
@@ -69,8 +74,9 @@ function Login() {
             <input className="form-input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </label>
           <Link to="/forgot-password" className="screen-link auth-inline-link">{t('auth.forgotPasswordLink')}</Link>
+          {honeypot}
           {error && <p className="form-error" role="alert">{error}</p>}
-          <button type="submit" className="btn btn-primary btn-block">{t('auth.logIn')}</button>
+          <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{t('auth.logIn')}</button>
         </form>
       </div>
       <p className="auth-footer">{t('auth.noAccount')} <Link to="/signup" className="screen-link">{t('auth.signUp')}</Link></p>

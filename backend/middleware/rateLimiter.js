@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 
@@ -37,7 +38,17 @@ function userOrIpKey(req) {
   return ipKey(req);
 }
 
-const KEY_GENERATORS = { ip: ipKey, user: userKey, userOrIp: userOrIpKey };
+// Day 11: for limits that protect one email address whichever network the
+// requests come from (forgot password: stops bombing a victim's inbox from
+// many IPs). Hashed so the limiter's memory holds no addresses. No usable
+// email -> the IP (the controller rejects the request anyway).
+function emailKey(req) {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  if (!email) return ipKey(req);
+  return `email:${crypto.createHash('sha256').update(email).digest('hex')}`;
+}
+
+const KEY_GENERATORS = { ip: ipKey, user: userKey, userOrIp: userOrIpKey, email: emailKey };
 
 function createLimiter({ windowMs, max, message, keyBy, skipSuccessfulRequests = false }) {
   const keyGenerator = KEY_GENERATORS[keyBy];
@@ -102,11 +113,20 @@ const loginLimiter = createLimiter({
   skipSuccessfulRequests: true
 });
 
-// Mass-account-creation / abuse surface: looser window, still bounded.
+// Mass-account-creation / abuse surface. Day 11: tightened from 10/hour to
+// 5/hour, plus a daily cap so a script can't just pace itself at 5 an hour
+// around the clock. Failed attempts count too (a bot probing names).
 const signupLimiter = createLimiter({
   keyBy: 'ip',
   windowMs: 60 * 60 * 1000,
-  max: 10,
+  max: 5,
+  message: 'Too many accounts created from this network. Please try again later.'
+});
+
+const signupDailyLimiter = createLimiter({
+  keyBy: 'ip',
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 20,
   message: 'Too many accounts created from this network. Please try again later.'
 });
 
@@ -117,6 +137,15 @@ const forgotPasswordLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
   max: 5,
   message: 'Too many password reset requests. Please try again in 15 minutes.'
+});
+
+// Day 11: per address, across all networks -- at most 3 reset emails an
+// hour to any one inbox.
+const forgotPasswordEmailLimiter = createLimiter({
+  keyBy: 'email',
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  message: 'Too many reset emails requested for this address. Please try again in an hour.'
 });
 
 // Reset tokens are 256-bit random (not brute-forceable in practice), but
@@ -171,12 +200,14 @@ module.exports = {
   globalLimiter,
   loginLimiter,
   signupLimiter,
+  signupDailyLimiter,
   forgotPasswordLimiter,
+  forgotPasswordEmailLimiter,
   resetPasswordLimiter,
   reportLimiter,
   followLimiter,
   accountActionLimiter,
   resendVerificationLimiter,
   createLimiter,
-  rateLimitKeys: { ipKey, userKey, userOrIpKey }
+  rateLimitKeys: { ipKey, userKey, userOrIpKey, emailKey }
 };

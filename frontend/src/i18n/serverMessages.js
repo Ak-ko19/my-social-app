@@ -43,6 +43,11 @@ const MY = {
   'Too many follow requests. Please try again later.': 'ဖော်လိုး တောင်းဆိုမှု များလွန်းပါသည်။ နောက်မှ ထပ်စမ်းကြည့်ပါ။',
   'Too many reports submitted. Please try again later.': 'တိုင်ကြားမှု များလွန်းပါသည်။ နောက်မှ ထပ်စမ်းကြည့်ပါ။',
   'Too many requests. Please try again later.': 'တောင်းဆိုမှု များလွန်းပါသည်။ နောက်မှ ထပ်စမ်းကြည့်ပါ။',
+  'Too many reset emails requested for this address. Please try again in an hour.': 'ဤလိပ်စာအတွက် စကားဝှက် ပြန်သတ်မှတ်ရန် အီးမေးလ် တောင်းဆိုမှု များလွန်းပါသည်။ တစ်နာရီ ကြာပြီးမှ ထပ်စမ်းကြည့်ပါ။',
+  'Too many login attempts for this account. Please wait a moment and try again.': 'ဤအကောင့်သို့ ဝင်ရောက်ရန် ကြိုးစားမှု များလွန်းပါသည်။ ခဏစောင့်ပြီး ထပ်စမ်းကြည့်ပါ။',
+  // bot protection (Day 11)
+  'Please reload the page and try again.': 'စာမျက်နှာကို ပြန်ဖွင့်ပြီး ထပ်စမ်းကြည့်ပါ။',
+  'Please wait a moment and try again.': 'ခဏစောင့်ပြီး ထပ်စမ်းကြည့်ပါ။',
   // posts, comments, social
   'Post content cannot be empty': 'ပို့စ်တွင် စာသား ထည့်ရန် လိုအပ်ပါသည်',
   'Comment cannot be empty': 'မှတ်ချက်တွင် စာသား ထည့်ရန် လိုအပ်ပါသည်',
@@ -132,6 +137,10 @@ const AR = {
   'Too many follow requests. Please try again later.': 'طلبات متابعة كثيرة جدًا. يرجى المحاولة لاحقًا.',
   'Too many reports submitted. Please try again later.': 'تم إرسال بلاغات كثيرة جدًا. يرجى المحاولة لاحقًا.',
   'Too many requests. Please try again later.': 'طلبات كثيرة جدًا. يرجى المحاولة لاحقًا.',
+  'Too many reset emails requested for this address. Please try again in an hour.': 'طلبات رسائل إعادة التعيين لهذا العنوان كثيرة جدًا. يرجى المحاولة بعد ساعة.',
+  'Too many login attempts for this account. Please wait a moment and try again.': 'محاولات تسجيل دخول كثيرة جدًا لهذا الحساب. يرجى الانتظار قليلًا ثم المحاولة مجددًا.',
+  'Please reload the page and try again.': 'يرجى إعادة تحميل الصفحة والمحاولة مجددًا.',
+  'Please wait a moment and try again.': 'يرجى الانتظار قليلًا ثم المحاولة مجددًا.',
   'Post content cannot be empty': 'لا يمكن أن يكون المنشور فارغًا',
   'Comment cannot be empty': 'لا يمكن أن يكون التعليق فارغًا',
   'Post not found': 'المنشور غير موجود',

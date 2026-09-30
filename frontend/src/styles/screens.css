@@ -112,6 +112,17 @@ textarea.form-input {
   color: var(--badge-green-fg);
 }
 
+/* Day 11 honeypot (hooks/useFormGuard.jsx): clipped to nothing rather
+   than moved off-screen (a far-left offset scrolls sideways in Arabic). */
+.hp-field {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   display: inline-flex;

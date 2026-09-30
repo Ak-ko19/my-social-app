@@ -116,7 +116,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] /health endpoint checks DB connectivity; structured logging; remove stray console.logs.
 
 ### Day 11 — Bot protection
-- [ ] Bot protection that needs no outside account: honeypot fields, minimum form-fill time, progressive delays after failed logins, stricter limits on signup/forgot password.
+- [x] Bot protection that needs no outside account: honeypot fields, minimum form-fill time, progressive delays after failed logins, stricter limits on signup/forgot password.
 - [ ] Add a Turnstile hook that turns on only if its env var exists.
 
 ### Day 12 — Moderation

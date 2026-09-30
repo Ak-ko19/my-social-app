@@ -8,12 +8,23 @@ const {
   forgotPasswordLimiter,
   resetPasswordLimiter,
   accountActionLimiter,
-  resendVerificationLimiter
+  resendVerificationLimiter,
+  signupDailyLimiter,
+  forgotPasswordEmailLimiter
 } = require('../middleware/rateLimiter');
+const { formGuard, sendFormToken, SIGNUP_MIN_MS, FORGOT_MIN_MS } = require('../services/botProtection');
 
-router.post('/signup', signupLimiter, authController.signup);
-router.post('/login', loginLimiter, authController.login);
-router.post('/forgot-password', forgotPasswordLimiter, authController.forgotPassword);
+// Day 11: the signup and forgot-password forms fetch this when they open.
+router.get('/form-token', sendFormToken);
+router.post('/signup', signupLimiter, signupDailyLimiter, formGuard(SIGNUP_MIN_MS), authController.signup);
+router.post('/login', loginLimiter, formGuard(null), authController.login);
+router.post(
+  '/forgot-password',
+  forgotPasswordLimiter,
+  formGuard(FORGOT_MIN_MS),
+  forgotPasswordEmailLimiter,
+  authController.forgotPassword
+);
 router.post('/reset-password/:token', resetPasswordLimiter, authController.resetPassword);
 router.put('/profile/password', authMiddleware, accountActionLimiter, authController.changePassword);
 router.post('/profile/deactivate', authMiddleware, accountActionLimiter, authController.deactivateAccount);

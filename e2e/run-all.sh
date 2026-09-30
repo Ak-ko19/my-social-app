@@ -14,11 +14,18 @@ SUITES="a2-walkthrough b1-reactions b2-media b3-stories b4-comments b5-audience 
 # Suites that test production-only behaviour (e.g. browser error reporting,
 # off in dev): always run on the production build with the real headers.
 DIST_SUITES="day10-errors"
+# Suites that need the backend's real bot checks (Day 11): on for them only,
+# since other suites sign users up straight through the API.
+BOT_SUITES="day11-bots"
 failed=0
 
-fresh_stack() { # [dist]
+fresh_stack() { # [dist|bots]
   bash e2e-down.sh >/dev/null 2>&1
-  if [ "$1" = dist ]; then E2E_FRONTEND=dist bash e2e-up.sh >/dev/null 2>&1; else bash e2e-up.sh >/dev/null 2>&1; fi
+  case "$1" in
+    dist) E2E_FRONTEND=dist bash e2e-up.sh >/dev/null 2>&1 ;;
+    bots) BOT_CHECKS_IN_TESTS=1 bash e2e-up.sh >/dev/null 2>&1 ;;
+    *) bash e2e-up.sh >/dev/null 2>&1 ;;
+  esac
 }
 
 report() { # name exit-code output-file
@@ -37,6 +44,12 @@ done
 
 for s in $DIST_SUITES; do
   fresh_stack dist
+  node "$s.cjs" > "out-$s.txt" 2>&1
+  report "$s" $? "out-$s.txt"
+done
+
+for s in $BOT_SUITES; do
+  fresh_stack bots
   node "$s.cjs" > "out-$s.txt" 2>&1
   report "$s" $? "out-$s.txt"
 done

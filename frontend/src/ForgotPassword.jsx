@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from './api';
+import { useFormGuard } from './hooks/useFormGuard';
 import Logo from './components/layout/Logo';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText, serverText } from './utils/serverError';
@@ -12,6 +12,8 @@ function ForgotPassword() {
   const [error, setError] = useState('');
   const { t } = useTranslation();
   const emailEnabled = useEmailEnabled();
+  const [busy, setBusy] = useState(false);
+  const { honeypot, guardedPost } = useFormGuard(2000);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -23,7 +25,9 @@ function ForgotPassword() {
       return;
     }
 
-    api.post('/forgot-password', { email: email.trim() })
+    setBusy(true);
+    guardedPost('/forgot-password', { email: email.trim() })
+    .finally(() => setBusy(false))
     .then((response) => {
       setMessage(serverText(response.data));
     })
@@ -50,9 +54,10 @@ function ForgotPassword() {
                 <span className="form-label">{t('auth.email')}</span>
                 <input className="form-input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </label>
+              {honeypot}
               {error && <p className="form-error" role="alert">{error}</p>}
               {message && <p className="form-success" role="status">{message}</p>}
-              <button type="submit" className="btn btn-primary btn-block">{t('auth.sendResetLink')}</button>
+              <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{t('auth.sendResetLink')}</button>
             </form>
           </>
         )}

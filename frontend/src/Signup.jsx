@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import api from './api';
 import { Link, useNavigate } from 'react-router-dom';
+import { useFormGuard } from './hooks/useFormGuard';
 import Logo from './components/layout/Logo';
 import { Trans, useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
@@ -11,8 +11,10 @@ function Signup() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { honeypot, guardedPost } = useFormGuard(3000);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -33,11 +35,13 @@ function Signup() {
       return;
     }
 
-    api.post('/signup', {
+    setBusy(true);
+    guardedPost('/signup', {
       username: username.trim(),
       email: email.trim(),
       password: password
     })
+    .finally(() => setBusy(false))
     .then(() => {
       setSuccess(true);
       setTimeout(() => {
@@ -69,13 +73,14 @@ function Signup() {
             <span className="form-label">{t('auth.password')}</span>
             <input className="form-input" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </label>
+          {honeypot}
           {error && <p className="form-error" role="alert">{error}</p>}
           {success && (
             <p className="form-success" role="status">
               {t('auth.signupSuccess')}
             </p>
           )}
-          <button type="submit" className="btn btn-primary btn-block">{t('auth.signUp')}</button>
+          <button type="submit" className="btn btn-primary btn-block" disabled={busy || success}>{t('auth.signUp')}</button>
         </form>
       </div>
       <p className="auth-legal">

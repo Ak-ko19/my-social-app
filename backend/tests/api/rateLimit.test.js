@@ -25,7 +25,7 @@ describe('rate limiting with real limiters', () => {
     }
   });
 
-  // Each user signs up from their own IP (signup is limited to 10/h per IP).
+  // Each user signs up from their own IP (signup is limited to 5/h per IP).
   let signupIp = 0;
   async function createUser() {
     const creds = uniqueUser();
@@ -133,6 +133,34 @@ describe('rate limiting with real limiters', () => {
     expect(blocked.status).toBe(429);
     expect(blocked.text).toBe('Too many follow requests. Please try again later.');
     expect((await follow('198.51.100.200', other)).status).toBe(201);
+  });
+
+  // Day 11
+  it('allows 5 signups an hour per network', async () => {
+    const ip = '198.51.100.40';
+    for (let i = 0; i < 5; i += 1) {
+      const res = await request(app).post('/signup').set('X-Forwarded-For', ip).send(uniqueUser());
+      expect(res.status).toBe(201);
+    }
+    const blocked = await request(app).post('/signup').set('X-Forwarded-For', ip).send(uniqueUser());
+    expect(blocked.status).toBe(429);
+    expect(blocked.text).toBe('Too many accounts created from this network. Please try again later.');
+    expect(blocked.headers['retry-after']).toBe('3600');
+  });
+
+  it('allows 3 reset emails an hour per address, whatever network asks', async () => {
+    const forgot = (ip, email) => request(app).post('/forgot-password').set('X-Forwarded-For', ip).send({ email });
+    for (let i = 0; i < 3; i += 1) {
+      // No email provider in production mode (RENDER=true above): 503,
+      // but the attempt still counts.
+      expect((await forgot(`198.51.100.${50 + i}`, 'Target@Example.com')).status).toBe(503);
+    }
+    // Case and spaces don't make a new address.
+    const blocked = await forgot('198.51.100.60', '  target@example.COM ');
+    expect(blocked.status).toBe(429);
+    expect(blocked.text).toBe('Too many reset emails requested for this address. Please try again in an hour.');
+    // Another address from the same networks is unaffected.
+    expect((await forgot('198.51.100.60', 'someone-else@example.com')).status).toBe(503);
   });
 });
 
