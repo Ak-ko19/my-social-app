@@ -12,6 +12,7 @@ router.get('/admin/reports', ...admin, adminController.listReports);
 router.post('/admin/reports/:id/dismiss', ...admin, adminController.dismissReport);
 router.post('/admin/reports/:id/remove-content', ...admin, adminController.removeReportedContent);
 router.post('/admin/users/:id/ban', ...admin, adminController.banUser);
+router.post('/admin/users/:id/suspend', ...admin, adminController.suspendUser);
 router.post('/admin/users/:id/unban', ...admin, adminController.unbanUser);
 // Day 10: built-in error log.
 router.get('/admin/errors', ...admin, errorLogController.listErrors);

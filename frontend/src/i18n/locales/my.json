@@ -127,7 +127,8 @@
     "newPasswordRequired": "စကားဝှက်အသစ် လိုအပ်ပါသည်",
     "resetFailed": "စကားဝှက် ပြန်သတ်မှတ်၍ မရပါ။ ထပ်စမ်းကြည့်ပါ။",
     "resetSuccess": "စကားဝှက် ပြန်သတ်မှတ်ပြီးပါပြီ! ဝင်ရောက်ရန် စာမျက်နှာသို့ ပို့ပေးနေပါသည်...",
-    "resetButton": "စကားဝှက် ပြန်သတ်မှတ်ရန်"
+    "resetButton": "စကားဝှက် ပြန်သတ်မှတ်ရန်",
+    "suspendedUntil": "သင့်အကောင့်ကို {{date}} အထိ ယာယီ ပိတ်ထားပါသည်။"
   },
   "verify": {
     "title": "အီးမေးလ် အတည်ပြုရန်",
@@ -628,7 +629,8 @@
       "dismissed": "ပယ်ချခဲ့သည်",
       "content_removed": "ပို့စ်ကို ဖယ်ရှားခဲ့သည်",
       "user_banned": "အသုံးပြုသူကို ပိတ်ပင်ခဲ့သည်",
-      "reviewed": "စစ်ဆေးပြီး"
+      "reviewed": "စစ်ဆေးပြီး",
+      "user_suspended": "အသုံးပြုသူကို ယာယီပိတ်ပြီး"
     },
     "resolvedBy": "{{name}} က {{label}}",
     "dismiss": "ပယ်ချရန်",
@@ -680,7 +682,19 @@
     "messageDeleted": "မက်ဆေ့ချ် (ပြန်ဖျက်ပြီး)",
     "asReported": "တိုင်ကြားစဉ်က -",
     "reportedPhoto": "တိုင်ကြားထားသော ဓာတ်ပုံ",
-    "deletedAccount": "ဖျက်ထားသော အကောင့်"
+    "deletedAccount": "ဖျက်ထားသော အကောင့်",
+    "removeComment": "မှတ်ချက်ကို ဖယ်ရှားရန်",
+    "removeMessage": "မက်ဆေ့ချ်ကို ဖယ်ရှားရန်",
+    "removedComment": "မှတ်ချက် ဖယ်ရှားပြီး",
+    "removedMessage": "မက်ဆေ့ချ် ဖယ်ရှားပြီး",
+    "suspend": "{{name}} ကို ယာယီပိတ်ရန်",
+    "suspendFor": "{{name}} ကို ယာယီပိတ်မည့် ကာလ",
+    "days_other": "{{count}} ရက်",
+    "suspendReason": "အကြောင်းပြချက် (မဖြစ်မနေ မဟုတ်ပါ)",
+    "confirmSuspend": "ယာယီပိတ်ရန် အတည်ပြုပါ",
+    "suspending": "ယာယီပိတ်နေသည်…",
+    "suspendedUntil": "{{date}} အထိ ယာယီပိတ်ထားသည်",
+    "liftSuspension": "{{name}} ၏ ယာယီပိတ်ခြင်းကို ရုပ်သိမ်းရန်"
   },
   "groups": {
     "title": "အဖွဲ့များ",

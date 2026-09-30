@@ -43,12 +43,40 @@
   consider one for `hooks/useFormGuard.jsx` (wait + stale-token retry).
 - Tip: `E2E_FRONTEND=dist bash run-all.sh` runs the browser suites on the
   production build with vercel.json's real headers.
+- GO_LIVE_CHECKLIST edits: use the Edit tool, never a node/heredoc
+  script — `\n` inside a quoted heredoc lands as a literal "\n" (bit
+  twice, Days 10 and 12; the rehearsal catches it).
 - Playwright gotcha seen 4× now: getByRole/getByLabel/getByText name
   matching is a SUBSTRING match — use `exact: true` when one label is
   contained in another.
 
 ## Plan
-(written at the start of each step)
+Step 2 — admin report review: remove comment/message, suspend user.
+(B12 already has: admin role, list pending/reviewed, dismiss, remove post,
+ban/unban.)
+- Migration 032_add_suspensions: users.banned_until (NULL = permanent
+  ban; a time = suspended until then); reports resolution += 
+  'user_suspended'. Down: suspensions become permanent bans (the old
+  code can't expire them; safer than silently unbanning), resolution
+  'user_suspended' → 'user_banned'.
+- services/moderationService.js: liftExpiredSuspension(userId) (clears
+  the ban + reactivates, like unban), liftExpiredSuspensions() for the
+  Day 9 cleanup job. authorize(): an expired suspension is lifted on the
+  spot → 'ok'; an active one → 'suspended' (401 "This account is
+  suspended"). Login: active → 403 {message:"This account is
+  suspended", until}; expired → lifted, logs in normally.
+- POST /admin/users/:id/suspend { days: 1|3|7|30, reason } — same effects
+  as ban (hide content, disconnect sockets, resolve reports) with
+  resolution 'user_suspended'. Unban also lifts a suspension.
+- POST /admin/reports/:id/remove-content: comment → deleted (replies +
+  likes cascade); message → soft-deleted like an unsend (media removed
+  from Cloudinary, 'message_deleted' emitted to the chat), resolution
+  content_removed for all pending reports on it.
+- Frontend admin card: "Remove comment" / "Remove message", "Suspend…"
+  with a 1/3/7/30-day choice + reason, "Suspended until …" tag, "Lift
+  suspension"; Login shows "suspended until <date>". EN/MY/AR.
+- Tests: jest (suspend/expiry/lift paths, remove comment/message, socket
+  emit), cleanup job lifts; browser: day12-review.
 
 ## Progress
 - Step 1 DONE (2026-09-30): built as planned. Extras/decisions:
@@ -62,5 +90,13 @@
     comment/message reports present + up twice OK; golive-rehearsal
     --old PASSED (015→031); day12-report 37/37 EN/MY/AR; b12/b4/b9/b10
     + a3 ar green.
-- Next: Step 2 — admin report-review page: remove comment/message,
-  suspend (temporary) user.
+- Step 2 DONE (2026-09-30): built as planned. Verified: backend 445/445;
+  10 mutation checks caught; golive-rehearsal --old PASSED (015→032);
+  032 down (suspension → permanent ban) / up twice OK; day12-review
+  15/15 (live message removal in bob's open chat, MY login "suspended
+  until", AR form), day12-report, b12-admin, day8-sessions, b9-dm, a3 en
+  green. Added formatDate(…, 'longTime') (no seconds). Checklist has a
+  Day 12 smoke item.
+  - Lesson: never run mutation checks while a browser stack is starting —
+    a backend booted mid-mutation crashed two suites (rerun clean: green).
+- Next: Day 12 close — full browser run, Progress Log, reset WIP.

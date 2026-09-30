@@ -121,7 +121,7 @@ Build every feature the way a senior engineer at a top social media company woul
 
 ### Day 12 — Moderation
 - [x] Report comments and messages.
-- [ ] Admin report-review page (admin role, list, resolve, remove content, suspend user).
+- [x] Admin report-review page (admin role, list, resolve, remove content, suspend user).
 
 ### Day 13 — Test coverage
 - [ ] Add browser suites to CI.

@@ -127,7 +127,8 @@
     "newPasswordRequired": "كلمة المرور الجديدة مطلوبة",
     "resetFailed": "فشلت إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى.",
     "resetSuccess": "تمت إعادة تعيين كلمة المرور! جارٍ التحويل إلى تسجيل الدخول...",
-    "resetButton": "إعادة تعيين كلمة المرور"
+    "resetButton": "إعادة تعيين كلمة المرور",
+    "suspendedUntil": "حسابك موقوف مؤقتًا حتى {{date}}."
   },
   "verify": {
     "title": "تأكيد البريد الإلكتروني",
@@ -652,7 +653,8 @@
       "dismissed": "تم التجاهل",
       "content_removed": "أزيل المنشور",
       "user_banned": "حُظر المستخدم",
-      "reviewed": "تمت المراجعة"
+      "reviewed": "تمت المراجعة",
+      "user_suspended": "تم إيقاف المستخدم مؤقتًا"
     },
     "resolvedBy": "{{label}} بواسطة {{name}}",
     "dismiss": "تجاهل",
@@ -704,7 +706,24 @@
     "messageDeleted": "رسالة (أُلغي إرسالها)",
     "asReported": "كما أُبلغ عنها:",
     "reportedPhoto": "الصورة المُبلَّغ عنها",
-    "deletedAccount": "حساب محذوف"
+    "deletedAccount": "حساب محذوف",
+    "removeComment": "إزالة التعليق",
+    "removeMessage": "إزالة الرسالة",
+    "removedComment": "أُزيل التعليق",
+    "removedMessage": "أُزيلت الرسالة",
+    "suspend": "إيقاف {{name}} مؤقتًا",
+    "suspendFor": "مدة إيقاف {{name}}",
+    "days_zero": "{{count}} يوم",
+    "days_one": "يوم واحد",
+    "days_two": "يومان",
+    "days_few": "{{count}} أيام",
+    "days_many": "{{count}} يومًا",
+    "days_other": "{{count}} يوم",
+    "suspendReason": "السبب (اختياري)",
+    "confirmSuspend": "تأكيد الإيقاف",
+    "suspending": "جارٍ الإيقاف…",
+    "suspendedUntil": "موقوف حتى {{date}}",
+    "liftSuspension": "رفع الإيقاف عن {{name}}"
   },
   "groups": {
     "title": "المجموعات",

@@ -127,7 +127,8 @@
     "newPasswordRequired": "New password is required",
     "resetFailed": "Failed to reset password. Please try again.",
     "resetSuccess": "Password reset successfully! Redirecting to login...",
-    "resetButton": "Reset password"
+    "resetButton": "Reset password",
+    "suspendedUntil": "Your account is suspended until {{date}}."
   },
   "verify": {
     "title": "Verify Email",
@@ -628,7 +629,8 @@
       "dismissed": "Dismissed",
       "content_removed": "Post removed",
       "user_banned": "User banned",
-      "reviewed": "Reviewed"
+      "reviewed": "Reviewed",
+      "user_suspended": "User suspended"
     },
     "resolvedBy": "{{label}} by {{name}}",
     "dismiss": "Dismiss",
@@ -680,7 +682,20 @@
     "messageDeleted": "Message (unsent)",
     "asReported": "As reported:",
     "reportedPhoto": "Reported photo",
-    "deletedAccount": "a deleted account"
+    "deletedAccount": "a deleted account",
+    "removeComment": "Remove comment",
+    "removeMessage": "Remove message",
+    "removedComment": "Comment removed",
+    "removedMessage": "Message removed",
+    "suspend": "Suspend {{name}}",
+    "suspendFor": "Suspend {{name}} for",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "suspendReason": "Reason (optional)",
+    "confirmSuspend": "Confirm suspension",
+    "suspending": "Suspending…",
+    "suspendedUntil": "Suspended until {{date}}",
+    "liftSuspension": "Lift suspension for {{name}}"
   },
   "groups": {
     "title": "Groups",

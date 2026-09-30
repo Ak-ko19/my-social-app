@@ -32,6 +32,7 @@ const MY = {
   'Your email is already verified': 'သင့်အီးမေးလ်ကို အတည်ပြုပြီးဖြစ်ပါသည်',
   'Email verified successfully': 'အီးမေးလ် အတည်ပြုပြီးပါပြီ',
   'This account has been banned': 'ဤအကောင့်ကို ပိတ်ပင်ထားပါသည်',
+  'This account is suspended': 'ဤအကောင့်ကို ယာယီ ပိတ်ထားပါသည်',
   'This account is private': 'ဤအကောင့်သည် သီးသန့်အကောင့် ဖြစ်ပါသည်',
   'User not found': 'အသုံးပြုသူ မတွေ့ပါ',
   // rate limits
@@ -128,6 +129,7 @@ const AR = {
   'Your email is already verified': 'بريدك الإلكتروني مؤكد بالفعل',
   'Email verified successfully': 'تم تأكيد البريد الإلكتروني بنجاح',
   'This account has been banned': 'تم حظر هذا الحساب',
+  'This account is suspended': 'هذا الحساب موقوف مؤقتًا',
   'This account is private': 'هذا الحساب خاص',
   'User not found': 'المستخدم غير موجود',
   'Too many login attempts. Please try again in 15 minutes.': 'محاولات تسجيل دخول كثيرة جدًا. يرجى المحاولة بعد 15 دقيقة.',

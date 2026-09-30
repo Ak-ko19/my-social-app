@@ -20,6 +20,11 @@ export function banUser(userId, reason, token) {
   return api.post(`/admin/users/${userId}/ban`, { reason }, withAuth(token));
 }
 
+// Day 12: days is 1, 3, 7 or 30.
+export function suspendUser(userId, days, reason, token) {
+  return api.post(`/admin/users/${userId}/suspend`, { days, reason }, withAuth(token));
+}
+
 export function unbanUser(userId, token) {
   return api.post(`/admin/users/${userId}/unban`, {}, withAuth(token));
 }

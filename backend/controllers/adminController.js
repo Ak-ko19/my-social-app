@@ -2,6 +2,8 @@ const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { mediaOfPost, deleteMedia } = require('../services/mediaCleanupService');
 const { getIO } = require('../sockets');
+const messageService = require('../services/messageService');
+const logger = require('../utils/logger');
 
 // B12 admin moderation. All routes sit behind authMiddleware + requireAdmin.
 //
@@ -42,9 +44,9 @@ async function listReports(req, res) {
          reporter.id AS reporter_id, reporter.username AS reporter_username,
          resolver.username AS resolved_by_username,
          p.content AS post_content, p.user_id AS post_author_id, pa.username AS post_author_username,
-         tu.username AS target_username, (tu.banned_at IS NOT NULL) AS target_banned,
+         tu.username AS target_username, (tu.banned_at IS NOT NULL) AS target_banned, tu.banned_until AS target_banned_until,
          r.target_snapshot, r.target_owner_id, owner.username AS target_owner_username,
-         (owner.banned_at IS NOT NULL) AS target_owner_banned,
+         (owner.banned_at IS NOT NULL) AS target_owner_banned, owner.banned_until AS target_owner_banned_until,
          c.content AS comment_content, c.post_id AS comment_post_id,
          m.content AS message_content, m.type AS message_type, m.media_url AS message_media_url,
          (SELECT COUNT(*)::int FROM reports r2
@@ -95,27 +97,64 @@ async function dismissReport(req, res) {
   }
 }
 
-// POST /admin/reports/:id/remove-content -- deletes the reported post.
+// POST /admin/reports/:id/remove-content -- deletes the reported post,
+// comment (its replies and likes go with it) or message (Day 12: removed
+// like an unsend -- the chat shows "message deleted" -- and its photo or
+// voice note is deleted from Cloudinary).
 async function removeReportedContent(req, res) {
   try {
     const report = await getReport(req.params.id);
     if (!report) return res.status(404).send('Report not found');
-    if (report.target_type !== 'post') return res.status(400).send('Only posts can be removed; ban the user instead');
-    const media = await mediaOfPost(report.target_id);
-    await db.query('DELETE FROM posts WHERE id = $1', [report.target_id]);
-    deleteMedia(media);
-    await resolvePending("target_type = 'post' AND target_id = $1", [report.target_id], req.userId, 'content_removed');
+    if (report.target_type === 'user') return res.status(400).send('Accounts cannot be removed here; ban or suspend the user instead');
+    if (report.target_type === 'post') {
+      const media = await mediaOfPost(report.target_id);
+      await db.query('DELETE FROM posts WHERE id = $1', [report.target_id]);
+      deleteMedia(media);
+    } else if (report.target_type === 'comment') {
+      await db.query('DELETE FROM comments WHERE id = $1', [report.target_id]);
+    } else {
+      const removed = await messageService.removeMessageAsModerator(report.target_id);
+      if (removed) {
+        try {
+          getIO().to(`conv_${removed.conversation_id}`).emit('message_deleted', {
+            conversationId: removed.conversation_id,
+            messageId: removed.id,
+            deletedAt: removed.deleted_at
+          });
+        } catch (err) {
+          logger.error('socket emit failed', { event: 'message_deleted', err });
+        }
+      }
+    }
+    await resolvePending('target_type = $1 AND target_id = $2', [report.target_type, report.target_id], req.userId, 'content_removed');
     res.json({ ok: true });
   } catch (err) {
-    sendServerError(res, err, 'Removing the post failed. Please try again later.');
+    sendServerError(res, err, 'Removing the content failed. Please try again later.');
   }
 }
+
+// Day 12 suspensions: how long an admin may choose.
+const SUSPEND_DAYS = [1, 3, 7, 30];
 
 // POST /admin/users/:id/ban { reason } -- also deactivates (hides their
 // content everywhere via the existing visibility rules), ends their live
 // socket sessions, and resolves pending reports about them or anything they
 // wrote (posts, comments, messages).
-async function banUser(req, res) {
+// POST /admin/users/:id/suspend { days, reason } -- the same for a limited
+// time: lifted by itself afterwards (services/moderationService.js).
+function banUser(req, res) {
+  return restrictUser(req, res, null);
+}
+
+function suspendUser(req, res) {
+  const days = Number(req.body?.days);
+  if (!SUSPEND_DAYS.includes(days)) {
+    return res.status(400).send(`days must be one of: ${SUSPEND_DAYS.join(', ')}`);
+  }
+  return restrictUser(req, res, days);
+}
+
+async function restrictUser(req, res, days) {
   try {
     const targetId = Number(req.params.id);
     if (!Number.isInteger(targetId)) return res.status(400).send('Invalid user ID');
@@ -128,18 +167,21 @@ async function banUser(req, res) {
     // when a request has no body at all, so never dereference it directly.
     const rawReason = req.body?.reason;
     const reason = typeof rawReason === 'string' ? rawReason.trim().slice(0, 500) : '';
+    // A ban replaces any suspension (banned_until NULL); a suspension
+    // replaces an earlier one or even a ban -- the admin's latest decision.
     await db.query(
       `UPDATE users SET banned_at = COALESCE(banned_at, now()), ban_reason = $2,
+         banned_until = CASE WHEN $3::int IS NULL THEN NULL ELSE now() + make_interval(days => $3::int) END,
          is_deactivated = true, deactivated_at = COALESCE(deactivated_at, now())
        WHERE id = $1`,
-      [targetId, reason || null]
+      [targetId, reason || null, days]
     );
     await resolvePending(
       `(target_type = 'user' AND target_id = $1) OR (target_type = 'post' AND target_id IN (SELECT id FROM posts WHERE user_id = $1))
        OR target_owner_id = $1`,
       [targetId],
       req.userId,
-      'user_banned'
+      days === null ? 'user_banned' : 'user_suspended'
     );
     try {
       getIO().in(`user_${targetId}`).disconnectSockets(true);
@@ -148,17 +190,17 @@ async function banUser(req, res) {
     }
     res.json({ ok: true });
   } catch (err) {
-    sendServerError(res, err, 'Banning the user failed. Please try again later.');
+    sendServerError(res, err, days === null ? 'Banning the user failed. Please try again later.' : 'Suspending the user failed. Please try again later.');
   }
 }
 
-// POST /admin/users/:id/unban
+// POST /admin/users/:id/unban -- also lifts a suspension early.
 async function unbanUser(req, res) {
   try {
     const targetId = Number(req.params.id);
     if (!Number.isInteger(targetId)) return res.status(400).send('Invalid user ID');
     const result = await db.query(
-      `UPDATE users SET banned_at = NULL, ban_reason = NULL, is_deactivated = false, deactivated_at = NULL
+      `UPDATE users SET banned_at = NULL, ban_reason = NULL, banned_until = NULL, is_deactivated = false, deactivated_at = NULL
        WHERE id = $1 AND banned_at IS NOT NULL RETURNING id`,
       [targetId]
     );
@@ -169,4 +211,4 @@ async function unbanUser(req, res) {
   }
 }
 
-module.exports = { listReports, dismissReport, removeReportedContent, banUser, unbanUser };
+module.exports = { listReports, dismissReport, removeReportedContent, banUser, suspendUser, unbanUser };

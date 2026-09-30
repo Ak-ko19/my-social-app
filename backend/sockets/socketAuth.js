@@ -36,6 +36,9 @@ async function socketAuthMiddleware(socket, next) {
     if (verdict === 'banned') {
       return next(authFailure('This account has been banned'));
     }
+    if (verdict === 'suspended') {
+      return next(authFailure('This account is suspended'));
+    }
     if (verdict !== 'ok') {
       return next(authFailure('Invalid or expired token'));
     }

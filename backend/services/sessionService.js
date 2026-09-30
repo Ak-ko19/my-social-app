@@ -9,6 +9,7 @@
 // password change or reset), so deploying this logs nobody out.
 const jwt = require('jsonwebtoken');
 const db = require('../db');
+const { banState, liftExpiredSuspension } = require('./moderationService');
 
 const TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60; // same 7 days as before
 
@@ -24,13 +25,13 @@ async function createSession(userId, req) {
   return { sid, token };
 }
 
-// 'ok' | 'banned' | 'invalid' for an already signature-checked token. One
-// query covers the ban check (which every auth path already paid for) and
-// the session check.
+// 'ok' | 'banned' | 'suspended' | 'invalid' for an already
+// signature-checked token. One query covers the ban check (which every auth
+// path already paid for) and the session check.
 async function authorize(decoded) {
   if (!decoded || !decoded.userId) return 'invalid';
   const result = await db.query(
-    `SELECT u.banned_at, u.tokens_valid_after,
+    `SELECT u.banned_at, u.banned_until, u.tokens_valid_after,
             s.id AS sid, s.revoked_at, s.expires_at < now() AS expired
      FROM users u
      LEFT JOIN sessions s ON s.id = $2 AND s.user_id = u.id
@@ -40,7 +41,10 @@ async function authorize(decoded) {
   );
   const row = result.rows[0];
   if (!row) return 'invalid';
-  if (row.banned_at) return 'banned';
+  const ban = banState(row);
+  if (ban !== 'none') return ban;
+  // Day 12: a suspension that has run out ends on this request.
+  if (row.banned_at) await liftExpiredSuspension(decoded.userId);
   if (decoded.sid !== undefined) {
     return row.sid && !row.revoked_at && !row.expired ? 'ok' : 'invalid';
   }

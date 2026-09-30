@@ -29,6 +29,10 @@ async function authMiddleware(req, res, next) {
   if (verdict === 'banned') {
     return res.status(401).send('This account has been banned');
   }
+  // Day 12: same while a suspension lasts.
+  if (verdict === 'suspended') {
+    return res.status(401).send('This account is suspended');
+  }
   if (verdict !== 'ok') {
     return res.status(401).send('Invalid or expired token');
   }

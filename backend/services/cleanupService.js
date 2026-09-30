@@ -7,6 +7,7 @@
 // huge backlog is simply finished over the next days.
 const db = require('../db');
 const { deleteMedia } = require('./mediaCleanupService');
+const { liftExpiredSuspensions } = require('./moderationService');
 
 const STORY_GRACE = '1 hour'; // past expires_at (stories already vanish from reads at expiry)
 const NOTIFICATION_RETENTION = '90 days';
@@ -39,6 +40,9 @@ const NOTIFICATIONS_OLD = `created_at < now() - interval '${NOTIFICATION_RETENTI
 const SESSIONS_DEAD = `expires_at < now() OR revoked_at < now() - interval '${REVOKED_SESSION_RETENTION}'`;
 // Day 10: error groups nobody has hit for 90 days.
 const ERRORS_STALE = `last_seen < now() - interval '${ERROR_RETENTION}'`;
+// Day 12: suspensions that have run out (most are lifted sooner, on the
+// user's next request; this catches people who haven't been back).
+const SUSPENSIONS_OVER = 'banned_until IS NOT NULL AND banned_until <= now()';
 
 // Expired stories: rows first (their views cascade), then the media of
 // exactly the rows that were deleted.
@@ -67,6 +71,7 @@ async function run({ dryRun = false } = {}) {
       notifications: await countWhere('notifications', NOTIFICATIONS_OLD),
       sessions: await countWhere('sessions', SESSIONS_DEAD),
       errorGroups: await countWhere('error_groups', ERRORS_STALE),
+      suspensionsLifted: await countWhere('users', SUSPENSIONS_OVER),
       durationMs: Date.now() - started
     };
   }
@@ -74,7 +79,8 @@ async function run({ dryRun = false } = {}) {
   const notifications = await deleteInBatches('notifications', NOTIFICATIONS_OLD, ROW_BATCH);
   const sessions = await deleteInBatches('sessions', SESSIONS_DEAD, ROW_BATCH);
   const errorGroups = await deleteInBatches('error_groups', ERRORS_STALE, ROW_BATCH);
-  return { dryRun: false, stories, storyMedia, notifications, sessions, errorGroups, durationMs: Date.now() - started };
+  const suspensionsLifted = await liftExpiredSuspensions();
+  return { dryRun: false, stories, storyMedia, notifications, sessions, errorGroups, suspensionsLifted, durationMs: Date.now() - started };
 }
 
 module.exports = { run, NOTIFICATION_RETENTION };

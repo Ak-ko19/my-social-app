@@ -6,15 +6,29 @@ import { IconButton } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import AdminErrorsPanel from '../components/admin/AdminErrorsPanel';
-import { fetchReports, dismissReport, removeReportedContent, banUser, unbanUser } from '../services/adminService';
+import { fetchReports, dismissReport, removeReportedContent, banUser, suspendUser, unbanUser } from '../services/adminService';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
 import { Trans, useTranslation } from 'react-i18next';
 import { serverErrorText } from '../utils/serverError';
+import { formatDate } from '../i18n';
 import '../components/feed/Feed.css';
 import './AdminScreen.css';
 
 // Labels: admin.resolution.<key>.
-const RESOLUTIONS = ['dismissed', 'content_removed', 'user_banned'];
+const RESOLUTIONS = ['dismissed', 'content_removed', 'user_banned', 'user_suspended'];
+// Day 12: suspension lengths an admin can pick (the API accepts these).
+const SUSPEND_DAYS = [1, 3, 7, 30];
+const REMOVE_LABEL = { post: 'admin.removePost', comment: 'admin.removeComment', message: 'admin.removeMessage' };
+
+// "Banned", or "Suspended until <date>" for a suspension.
+function RestrictionTag({ until }) {
+  const { t } = useTranslation();
+  return (
+    <span className="admin-banned-tag">
+      {until ? t('admin.suspendedUntil', { date: formatDate(until, 'longTime') }) : t('admin.banned')}
+    </span>
+  );
+}
 
 // Day 12: a reported comment or message -- only that one item, never the
 // rest of the conversation. If it has since been deleted/unsent, the text
@@ -67,14 +81,17 @@ function ReportedText({ report }) {
   );
 }
 
-// One report, with the actions an admin can take on it. Ban asks for an
-// optional reason inline before confirming.
+// One report, with the actions an admin can take on it. Ban and suspend
+// (Day 12) ask for an optional reason inline -- and suspend for how long --
+// before confirming.
 function ReportCard({ report, token, onDone }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [banOpen, setBanOpen] = useState(false);
+  const [restrict, setRestrict] = useState(null); // null | 'ban' | 'suspend'
   const [reason, setReason] = useState('');
+  const [days, setDays] = useState(7);
+  const banOpen = restrict !== null;
 
   const isPost = report.target_type === 'post';
   const isUser = report.target_type === 'user';
@@ -84,6 +101,7 @@ function ReportCard({ report, token, onDone }) {
   const targetUserId = isUser ? report.target_id : report.target_owner_id ?? report.post_author_id;
   const targetUsername = isUser ? report.target_username : report.target_owner_username ?? report.post_author_username;
   const targetBanned = isUser ? report.target_banned : report.target_owner_banned;
+  const targetBannedUntil = isUser ? report.target_banned_until : report.target_owner_banned_until;
   const pending = report.status === 'pending';
 
   const act = (fn) => {
@@ -124,7 +142,7 @@ function ReportCard({ report, token, onDone }) {
         ) : report.target_exists ? (
           <span className="admin-report-kind">
             <Trans i18nKey="admin.account" values={{ name: report.target_username }} components={{ link: <Link to={`/profile/${report.target_id}`} /> }} />
-            {report.target_banned && <span className="admin-banned-tag">{t('admin.banned')}</span>}
+            {report.target_banned && <RestrictionTag until={report.target_banned_until} />}
           </span>
         ) : (
           <span className="admin-report-kind">{t('admin.accountDeleted')}</span>
@@ -137,7 +155,9 @@ function ReportCard({ report, token, onDone }) {
       {!pending && (
         <p className="admin-report-resolution">
           {(() => {
-            const label = t(`admin.resolution.${RESOLUTIONS.includes(report.resolution) ? report.resolution : 'reviewed'}`);
+            let label = t(`admin.resolution.${RESOLUTIONS.includes(report.resolution) ? report.resolution : 'reviewed'}`);
+            if (report.resolution === 'content_removed' && report.target_type === 'comment') label = t('admin.removedComment');
+            if (report.resolution === 'content_removed' && report.target_type === 'message') label = t('admin.removedMessage');
             return report.resolved_by_username ? t('admin.resolvedBy', { label, name: report.resolved_by_username }) : label;
           })()}
           {report.resolved_at && ` · ${formatRelativeTime(report.resolved_at)}`}
@@ -151,13 +171,18 @@ function ReportCard({ report, token, onDone }) {
           <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => act(() => dismissReport(report.id, token))}>
             {t('admin.dismiss')}
           </button>
-          {isPost && report.target_exists && (
+          {!isUser && report.target_exists && (
             <button type="button" className="btn btn-secondary btn-sm admin-danger" disabled={busy} onClick={() => act(() => removeReportedContent(report.id, token))}>
-              {t('admin.removePost')}
+              {t(REMOVE_LABEL[report.target_type])}
             </button>
           )}
           {targetUserId && (
-            <button type="button" className="btn btn-sm admin-danger-solid" disabled={busy} onClick={() => setBanOpen(true)}>
+            <button type="button" className="btn btn-secondary btn-sm admin-danger" disabled={busy} onClick={() => setRestrict('suspend')}>
+              {t('admin.suspend', { name: targetUsername })}
+            </button>
+          )}
+          {targetUserId && (
+            <button type="button" className="btn btn-sm admin-danger-solid" disabled={busy} onClick={() => setRestrict('ban')}>
               {t('admin.ban', { name: targetUsername })}
             </button>
           )}
@@ -169,28 +194,44 @@ function ReportCard({ report, token, onDone }) {
           className="admin-ban-form"
           onSubmit={(e) => {
             e.preventDefault();
-            act(() => banUser(targetUserId, reason, token));
+            act(() => (restrict === 'ban' ? banUser(targetUserId, reason, token) : suspendUser(targetUserId, days, reason, token)));
           }}
         >
+          {restrict === 'suspend' && (
+            <fieldset className="admin-suspend-days">
+              <legend className="form-label">{t('admin.suspendFor', { name: targetUsername })}</legend>
+              {SUSPEND_DAYS.map((d) => (
+                <label key={d} className="admin-suspend-day">
+                  <input type="radio" name={`suspend-days-${report.id}`} value={d} checked={days === d} onChange={() => setDays(d)} />
+                  <span>{t('admin.days', { count: d })}</span>
+                </label>
+              ))}
+            </fieldset>
+          )}
           <label className="form-field">
-            <span className="form-label">{t('admin.banReason', { name: targetUsername })}</span>
+            <span className="form-label">
+              {restrict === 'ban' ? t('admin.banReason', { name: targetUsername }) : t('admin.suspendReason')}
+            </span>
             <input className="form-input" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} autoFocus />
           </label>
           <div className="admin-report-actions">
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setBanOpen(false)} disabled={busy}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setRestrict(null)} disabled={busy}>
               {t('common.cancel')}
             </button>
             <button type="submit" className="btn btn-sm admin-danger-solid" disabled={busy}>
-              {busy ? t('admin.banning') : t('admin.confirmBan')}
+              {restrict === 'ban'
+                ? busy ? t('admin.banning') : t('admin.confirmBan')
+                : busy ? t('admin.suspending') : t('admin.confirmSuspend')}
             </button>
           </div>
         </form>
       )}
 
-      {!pending && report.resolution === 'user_banned' && targetUserId && targetBanned !== false && (
+      {!pending && (report.resolution === 'user_banned' || report.resolution === 'user_suspended') && targetUserId && targetBanned !== false && (
         <div className="admin-report-actions">
+          {!isUser && targetBanned && <RestrictionTag until={targetBannedUntil} />}
           <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => act(() => unbanUser(targetUserId, token))}>
-            {t('admin.unban', { name: targetUsername })}
+            {targetBannedUntil ? t('admin.liftSuspension', { name: targetUsername }) : t('admin.unban', { name: targetUsername })}
           </button>
         </div>
       )}

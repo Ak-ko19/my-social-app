@@ -4,6 +4,7 @@ import { useFormGuard } from './hooks/useFormGuard';
 import Logo from './components/layout/Logo';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
+import { formatDate } from './i18n';
 import { notifyAuthChange } from './hooks/useAuth';
 
 function Login() {
@@ -54,7 +55,9 @@ function Login() {
     })
     .catch((err) => {
       console.error(err);
-      setError(serverErrorText(err, 'auth.loginFailed'));
+      // Day 12: a suspension says until when.
+      const until = err.response?.data?.until;
+      setError(until ? t('auth.suspendedUntil', { date: formatDate(until, 'longTime') }) : serverErrorText(err, 'auth.loginFailed'));
     });
   };
 

@@ -346,6 +346,20 @@ async function deleteMessage({ conversationId, messageId, userId }) {
   return result.rows[0];
 }
 
+// Day 12: a moderator removing a reported message -- the same soft delete
+// as an unsend (the chat shows "message deleted"), without the sender
+// check. Returns the updated row, or null if it's missing or already gone.
+async function removeMessageAsModerator(messageId) {
+  const result = await db.query(
+    'UPDATE messages SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL RETURNING *',
+    [messageId]
+  );
+  const message = result.rows[0];
+  if (!message) return null;
+  deleteMedia([message.media_url]);
+  return message;
+}
+
 // B9 reply-to: the target must be a message in the SAME conversation (so a
 // reply can never quote -- and so leak -- a message from a conversation the
 // sender isn't in). Returns the id to store, or null for a normal message.
@@ -485,6 +499,7 @@ module.exports = {
   markDelivered,
   markRead,
   deleteMessage,
+  removeMessageAsModerator,
   isParticipant,
   getConversationType,
   sanitizeContent,

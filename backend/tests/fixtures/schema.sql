@@ -41,8 +41,11 @@ CREATE TABLE users (
   verification_token text,
   verification_token_expiry timestamptz,
   -- Added by migration 028_add_sessions (Day 8).
-  tokens_valid_after timestamptz
+  tokens_valid_after timestamptz,
+  -- Added by migration 032_add_suspensions (Day 12): NULL = permanent ban.
+  banned_until timestamptz
 );
+CREATE INDEX idx_users_banned_until ON users (banned_until) WHERE banned_until IS NOT NULL;
 
 CREATE TABLE posts (
   id SERIAL PRIMARY KEY,
@@ -287,7 +290,7 @@ CREATE TABLE reports (
   -- Added by migration 025_add_admin_moderation (B12).
   resolved_by integer REFERENCES users(id) ON DELETE SET NULL,
   resolved_at timestamptz,
-  resolution varchar(20) CONSTRAINT chk_reports_resolution CHECK (resolution IN ('dismissed', 'content_removed', 'user_banned')),
+  resolution varchar(20) CONSTRAINT chk_reports_resolution CHECK (resolution IN ('dismissed', 'content_removed', 'user_banned', 'user_suspended')),
   -- Added by migration 031_report_comments_messages (Day 12).
   target_owner_id integer REFERENCES users(id) ON DELETE SET NULL,
   target_snapshot text

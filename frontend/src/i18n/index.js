@@ -104,6 +104,9 @@ const INTL_OPTIONS = {
 export function formatDate(value, style = 'datetime') {
   const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return '';
+  // Day 12: "October 3, 2026 06:53 PM" -- a date people act on (e.g. when a
+  // suspension ends), without the seconds of the default style.
+  if (style === 'longTime') return `${formatDate(d, 'long')} ${formatDate(d, 'time')}`;
   const my = i18n.language === 'my';
   if (!my || intlHasMyanmar) {
     const locale = my ? 'my' : i18n.language === 'ar' ? 'ar-u-nu-latn' : undefined;

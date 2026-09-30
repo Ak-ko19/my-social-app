@@ -6,6 +6,7 @@ const { mediaOfUser, deleteMedia } = require('../services/mediaCleanupService');
 const { sendEmail, emailEnabled } = require('../utils/email');
 const { createSession, revokeOtherSessions, disconnectOtherSockets } = require('../services/sessionService');
 const botProtection = require('../services/botProtection');
+const { banState, liftExpiredSuspension } = require('../services/moderationService');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Base URL of the frontend that verify-email/reset-password links point
@@ -163,8 +164,17 @@ async function login(req, res) {
 
     // B12: checked BEFORE the auto-reactivation below -- a ban also sets
     // is_deactivated, and logging in must not undo it.
-    if (user.banned_at) {
+    // Day 12: a suspension says until when; one that has run out is lifted
+    // here (which also reactivates the account).
+    const ban = banState(user);
+    if (ban === 'banned') {
       return res.status(403).send('This account has been banned');
+    }
+    if (ban === 'suspended') {
+      return res.status(403).json({ message: 'This account is suspended', until: user.banned_until });
+    }
+    if (user.banned_at && (await liftExpiredSuspension(user.id))) {
+      user.is_deactivated = false;
     }
 
     // A deactivated account reactivates the moment its owner successfully
