@@ -125,7 +125,7 @@ Build every feature the way a senior engineer at a top social media company woul
 
 ### Day 13 — Test coverage
 - [x] Add browser suites to CI.
-- [ ] Set up Vitest + React Testing Library with tests for the main components.
+- [x] Set up Vitest + React Testing Library with tests for the main components.
 
 ### Day 14 — GO LIVE #2 (only if you have the access) + buffer
 - [ ] Finish anything left from Week 2, deploy, smoke test, merge to main.

@@ -94,7 +94,8 @@ const call = async (method, url, token, body) => {
       (await dialog.getByText(fill(L.report.title, { label: L.report.thisMessage }), { exact: true }).count()) >= 1);
     if (lang === 'en') {
       await dialog.getByLabel(L.report.reasons.spam).check();
-      await page.locator('.report-dialog-details').fill('threatening me');
+      // Typed key by key (not fill): a focus bug once let only one letter through.
+      await page.locator('.report-dialog-details').pressSequentially('threatening me');
       await dialog.getByRole('button', { name: L.report.submit }).click();
       await dialog.getByText(L.report.submitted).first().waitFor({ timeout: 5000 }).catch(() => {});
       check(`${label}: message report submitted`, (await dialog.getByText(L.report.submitted).count()) >= 1);

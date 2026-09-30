@@ -14,18 +14,27 @@ import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
 // mobile-native pattern for a list of actions, as opposed to a form.
 function Modal({ open, onClose, title, children, className, variant = 'center' }) {
   const panelRef = useRef(null);
+  // Callers usually pass a new onClose function on every render. Depending
+  // on it below re-ran the effect -- and re-focused the panel -- on every
+  // keystroke in a field inside the dialog, so only one letter could be
+  // typed (Day 13, found by a component test). The latest onClose lives in
+  // a ref instead; the effect only runs when the dialog opens or closes.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', handleKeyDown);
     // Focus the panel so Escape/Tab work immediately without requiring a
     // click first, and so screen readers land inside the dialog.
     panelRef.current?.focus();
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open, onClose]);
+  }, [open]);
 
   return createPortal(
     <AnimatePresence>
