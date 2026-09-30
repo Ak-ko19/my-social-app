@@ -124,7 +124,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Admin report-review page (admin role, list, resolve, remove content, suspend user).
 
 ### Day 13 — Test coverage
-- [ ] Add browser suites to CI.
+- [x] Add browser suites to CI.
 - [ ] Set up Vitest + React Testing Library with tests for the main components.
 
 ### Day 14 — GO LIVE #2 (only if you have the access) + buffer

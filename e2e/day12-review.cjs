@@ -10,7 +10,7 @@ const { chromium } = require('./node_modules/playwright-core');
 const SP = __dirname;
 const WEB = 'http://localhost:5173';
 const API = 'http://localhost:3000';
-const PG = (process.env.PG_BIN || 'C:/Program Files/PostgreSQL/17/bin');
+const { PSQL } = require('./pg.cjs');
 const aliceToken = fs.readFileSync(path.join(SP, 'alice.token'), 'utf8').trim();
 const bobToken = fs.readFileSync(path.join(SP, 'bob.token'), 'utf8').trim();
 const locale = (lang) => JSON.parse(fs.readFileSync(path.join(SP, '..', 'frontend', 'src', 'i18n', 'locales', `${lang}.json`), 'utf8'));
@@ -18,7 +18,7 @@ const fill = (text, values) => text.replace(/\{\{(\w+)\}\}/g, (_, k) => values[k
 const results = [];
 const errors = [];
 const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  -- ' + extra : ''}`);
-const sql = (q) => execSync(`"${PG}/psql.exe" -h localhost -p 55433 -U testuser -d mysocialapp_e2e -At -c "${q}"`).toString().trim();
+const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysocialapp_e2e -At -c "${q}"`).toString().trim();
 const call = async (method, url, token, body) => {
   const res = await fetch(API + url, { method, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json' }, body: body && JSON.stringify(body) });
   const text = await res.text();

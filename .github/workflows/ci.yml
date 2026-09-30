@@ -13,6 +13,8 @@ on:
     branches: [master, main, dev]
   pull_request:
     branches: [master, main, dev]
+  # Day 13: lets the owner start a run by hand (runs the full browser suites).
+  workflow_dispatch:
 
 # A newer push to the same branch/PR cancels the older, now-stale run.
 concurrency:
@@ -77,3 +79,125 @@ jobs:
       # After the build: checks vercel.json's CSP against the built page's
       # inline script hash and the production API origin.
       - run: npm run check:headers
+
+  # Day 13: the browser suites (e2e/, headless Microsoft Edge -- GitHub's
+  # Ubuntu runners ship it) against a throwaway stack: Postgres below,
+  # backend on :3000, frontend on :5173, all started by e2e/e2e-up.sh.
+  # Minutes are limited on a private repo, so every push runs a smoke
+  # subset (one suite per risky area); the full run (~40 suites incl. the
+  # EN/MY/AR visual matrix) runs on pull requests to master and on demand
+  # (Actions -> CI -> Run workflow).
+  browser-smoke:
+    name: Browser tests (smoke)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: testuser
+          # Throwaway container, only reachable from this job.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 55433:5432
+        options: >-
+          --health-cmd "pg_isready -U testuser"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      E2E_EXTERNAL_DB: '1'
+      # walkthrough (feed, post, DM, live chat), reports + moderation,
+      # production build + CSP, bot checks.
+      E2E_ONLY: a2-walkthrough day12-report day10-errors day11-bots
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            e2e/package-lock.json
+      - name: Install dependencies
+        run: |
+          (cd backend && npm ci)
+          (cd frontend && npm ci)
+          (cd e2e && npm ci)
+      - name: Browser and tools
+        run: |
+          command -v psql >/dev/null || (sudo apt-get update && sudo apt-get install -y postgresql-client)
+          if [ "$E2E_FONTS" = 1 ]; then sudo apt-get update && sudo apt-get install -y fonts-noto-core; fi
+          command -v microsoft-edge >/dev/null || (cd e2e && sudo npx playwright-core install --with-deps msedge)
+          microsoft-edge --version
+      - name: Run browser suites
+        working-directory: e2e
+        run: bash run-all.sh
+      - name: Keep the suites' output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-output-${{ github.job }}
+          path: |
+            e2e/out-*.txt
+            e2e/*.log
+            e2e/*.png
+          retention-days: 7
+
+  browser-full:
+    name: Browser tests (full)
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (github.base_ref == 'master' || github.base_ref == 'main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 55433:5432
+        options: >-
+          --health-cmd "pg_isready -U testuser"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      E2E_EXTERNAL_DB: '1'
+      # Myanmar and Arabic fonts for the visual matrix.
+      E2E_FONTS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            e2e/package-lock.json
+      - name: Install dependencies
+        run: |
+          (cd backend && npm ci)
+          (cd frontend && npm ci)
+          (cd e2e && npm ci)
+      - name: Browser and tools
+        run: |
+          command -v psql >/dev/null || (sudo apt-get update && sudo apt-get install -y postgresql-client)
+          if [ "$E2E_FONTS" = 1 ]; then sudo apt-get update && sudo apt-get install -y fonts-noto-core; fi
+          command -v microsoft-edge >/dev/null || (cd e2e && sudo npx playwright-core install --with-deps msedge)
+          microsoft-edge --version
+      - name: Run browser suites
+        working-directory: e2e
+        run: bash run-all.sh
+      - name: Keep the suites' output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-output-${{ github.job }}
+          path: |
+            e2e/out-*.txt
+            e2e/*.log
+            e2e/*.png
+          retention-days: 7

@@ -30,7 +30,29 @@ npm run test:audit    # also the demo-seed check and the C4 audit checks
 ```
 
 To run a single suite: `npm run up`, then `node b16-rtl.cjs`, then
-`npm run down`.
+`npm run down`. To run a few, each on a fresh stack:
+`E2E_ONLY="b9-dm day12-report a3" bash run-all.sh` ("a3" = the visual
+matrix; an unknown name stops the run).
+
+## In CI (GitHub Actions, Linux)
+
+`.github/workflows/ci.yml` runs these suites on Ubuntu. The runner already
+has Microsoft Edge, and the scripts find the PostgreSQL tools on PATH
+(`pg.cjs` / `pg-tools.sh`).
+
+- **Database:** Postgres comes from a service container on :55433.
+  `E2E_EXTERNAL_DB=1` tells `e2e-up.sh` / `e2e-down.sh` not to start or
+  stop the local test cluster.
+- **Browser tests (smoke)**, on every push: `E2E_ONLY` = the walkthrough,
+  reports/moderation, the production build + CSP, and the bot checks.
+  About 10 minutes; the repo is private and its CI minutes are limited.
+- **Browser tests (full)**, on pull requests to `master` and by hand
+  (Actions → CI → Run workflow): everything, including the EN/MY/AR
+  visual matrix, with Noto fonts installed for Myanmar and Arabic.
+- **When a job fails:** it uploads `out-*.txt`, the logs and the
+  screenshots as an artifact named `e2e-output-…`.
+- `backend/tests/api/ciWorkflow.test.js` checks the workflow against
+  these scripts: suite names, ports, and that no suite is left out.
 
 **Production build + real headers:** prefix any of the above with
 `E2E_FRONTEND=dist` (e.g. `E2E_FRONTEND=dist bash run-all.sh`). The stack

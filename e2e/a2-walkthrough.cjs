@@ -9,7 +9,7 @@ const path = require('path');
 const { chromium } = require('./node_modules/playwright-core');
 const { execSync, spawn } = require('child_process');
 
-const PG = (process.env.PG_BIN || 'C:/Program Files/PostgreSQL/17/bin');
+const { PSQL } = require('./pg.cjs');
 const serverPid = () =>
   execSync('netstat -ano').toString().split('\n')
     .find((l) => /:3000\s.*LISTENING/.test(l)).trim().split(/\s+/).pop();
@@ -107,7 +107,7 @@ const check = (name, ok, extra = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} 
 
   // A message Alice's socket can never have received live: written straight
   // to the throwaway DB while the server is down.
-  execSync(`"${PG}/psql.exe" -h localhost -p 55433 -U testuser -d mysocialapp_e2e -c "INSERT INTO messages (conversation_id, sender_id, content) VALUES (1, 2, 'missed-during-outage')"`);
+  execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysocialapp_e2e -c "INSERT INTO messages (conversation_id, sender_id, content) VALUES (1, 2, 'missed-during-outage')"`);
   startBackend();
 
   let recovered = false;

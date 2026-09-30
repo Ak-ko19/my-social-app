@@ -1,16 +1,20 @@
 #!/bin/bash
 # Throwaway local stack for the browser suites. Never touches .env's database:
 # it uses the backend test cluster (port 55433) and a fresh mysocialapp_e2e DB.
-# PostgreSQL tools come from $PG_BIN (default: PostgreSQL 17 on Windows).
+# PostgreSQL tools: see pg-tools.sh. E2E_EXTERNAL_DB=1 (CI): a PostgreSQL
+# server is already listening on :55433 (a service container), so the local
+# test cluster isn't started.
 SP="$(cd "$(dirname "$0")" && pwd)"
-PG="${PG_BIN:-/c/Program Files/PostgreSQL/17/bin}"
+. "$SP/pg-tools.sh"
 B="$(cd "$SP/../backend" && pwd)"
 set -e
-"$PG/pg_ctl.exe" -D "$B/tests/.pgdata_test_cluster" status >/dev/null 2>&1 || \
-  "$PG/pg_ctl.exe" -D "$B/tests/.pgdata_test_cluster" -l "$B/tests/.pgdata_test_cluster.log" -o '-p 55433 -k ""' -w start >/dev/null 2>&1 </dev/null
-"$PG/dropdb.exe" -h localhost -p 55433 -U testuser --if-exists mysocialapp_e2e 2>/dev/null
-"$PG/createdb.exe" -h localhost -p 55433 -U testuser mysocialapp_e2e
-"$PG/psql.exe" -q -h localhost -p 55433 -U testuser -d mysocialapp_e2e -v ON_ERROR_STOP=1 -f "$B/tests/fixtures/schema.sql"
+if [ "$E2E_EXTERNAL_DB" != 1 ]; then
+  "$(pgtool pg_ctl)" -D "$B/tests/.pgdata_test_cluster" status >/dev/null 2>&1 || \
+    "$(pgtool pg_ctl)" -D "$B/tests/.pgdata_test_cluster" -l "$B/tests/.pgdata_test_cluster.log" -o '-p 55433 -k ""' -w start >/dev/null 2>&1 </dev/null
+fi
+"$(pgtool dropdb)" -h localhost -p 55433 -U testuser --if-exists mysocialapp_e2e 2>/dev/null
+"$(pgtool createdb)" -h localhost -p 55433 -U testuser mysocialapp_e2e
+"$(pgtool psql)" -q -h localhost -p 55433 -U testuser -d mysocialapp_e2e -v ON_ERROR_STOP=1 -f "$B/tests/fixtures/schema.sql"
 # E2E_TURNSTILE=1 (Day 11): Turnstile on, verified by a local stub, never Cloudflare.
 TS_SITE= TS_SECRET= TS_URL=
 if [ "$E2E_TURNSTILE" = 1 ]; then

@@ -12,7 +12,7 @@ const path = require('path');
 const { chromium } = require('./node_modules/playwright-core');
 // B12: make alice an admin in the throwaway DB so /admin renders the real
 // moderation screen (not the non-admin "Not found").
-require('child_process').execSync('"' + (process.env.PG_BIN || 'C:/Program Files/PostgreSQL/17/bin') + '/psql.exe" -h localhost -p 55433 -U testuser -d mysocialapp_e2e -c "UPDATE users SET is_admin = true WHERE id = 1"');
+require('child_process').execSync(require('./pg.cjs').PSQL + ' -h localhost -p 55433 -U testuser -d mysocialapp_e2e -c "UPDATE users SET is_admin = true WHERE id = 1"');
 
 const SP = __dirname;
 const APP = 'http://localhost:5173';

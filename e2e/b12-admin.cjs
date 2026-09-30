@@ -6,7 +6,7 @@ const { chromium } = require('./node_modules/playwright-core');
 
 const SP = __dirname;
 const API = 'http://localhost:3000';
-const PG = (process.env.PG_BIN || 'C:/Program Files/PostgreSQL/17/bin');
+const { PSQL } = require('./pg.cjs');
 const aliceToken = fs.readFileSync(path.join(SP, 'alice.token'), 'utf8').trim();
 const bobToken = fs.readFileSync(path.join(SP, 'bob.token'), 'utf8').trim();
 const results = [];
@@ -18,7 +18,7 @@ let expectedErrors = null; // regex allowed during a step that expects them
 // the ban click on, so it isn't a race with the admin's clicks.
 let daveBanStarted = false;
 const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  -- ' + extra : ''}`);
-const sql = (q) => execSync(`"${PG}/psql.exe" -h localhost -p 55433 -U testuser -d mysocialapp_e2e -At -c "${q}"`).toString().trim();
+const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysocialapp_e2e -At -c "${q}"`).toString().trim();
 const call = (method, url, token, body) => fetch(API + url, {
   method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: body && JSON.stringify(body)
 });

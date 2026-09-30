@@ -14,6 +14,19 @@ without them. Newest items at the bottom.
   into the next session.
 - Optional: install the GitHub CLI (`winget install GitHub.cli`, then
   `gh auth login`) so future sessions can read CI results themselves.
+- **Day 13 addition: browser tests in CI.** The "Browser tests (smoke)"
+  job is the first one that runs on Linux, and nothing here can run
+  Linux (no WSL or Docker). Its Windows equivalent passes with the same
+  settings.
+  - If it's red, download the `e2e-output-browser-smoke` artifact from
+    that run and paste the failing `out-*.txt` (or `stack.log`) into the
+    next session.
+  - The full browser run starts only by hand (Actions → CI → Run
+    workflow) or on a pull request to master.
+- **CI minutes:** a private repo gets 2000 free minutes a month. Each push
+  to `dev` now uses about 15 minutes (backend, frontend, browser smoke).
+  If Settings → Billing shows the limit getting close, tell the next
+  session and it can make the smoke job manual-only.
 
 ## 2. Merging to master and GO LIVE days (Days 7, 14, 21, 30, …)
 - CLAUDE.md's hard limits forbid Claude Code from pushing or merging to

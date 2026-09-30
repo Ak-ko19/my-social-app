@@ -7,6 +7,8 @@
 #   bash run-all.sh --audit    # also C1 (demo seed) and the C4 audit checks
 #                              # (npm audit and the deployed keep-alive ping
 #                              #  need an internet connection)
+#   E2E_ONLY="b9-dm a3" bash run-all.sh   # just these suites ("a3" = the
+#                              # visual matrix); CI's smoke job uses this
 SP="$(cd "$(dirname "$0")" && pwd)"
 cd "$SP" || exit 1
 
@@ -22,13 +24,24 @@ BOT_SUITES="day11-bots"
 TURNSTILE_SUITES="day11-turnstile"
 failed=0
 
+# E2E_ONLY: every name must be a real suite, so a typo can't make CI run
+# (and pass) nothing.
+wanted() { [ -z "$E2E_ONLY" ] || [[ " $E2E_ONLY " == *" $1 "* ]]; }
+for name in $E2E_ONLY; do
+  if [[ " $SUITES $DIST_SUITES $BOT_SUITES $TURNSTILE_SUITES a3 " != *" $name "* ]]; then
+    echo "E2E_ONLY: unknown suite \"$name\""
+    exit 2
+  fi
+done
+
+# The stack's own output goes to stack.log (kept by CI when a run fails).
 fresh_stack() { # [dist|bots|turnstile]
   bash e2e-down.sh >/dev/null 2>&1
   case "$1" in
-    dist) E2E_FRONTEND=dist bash e2e-up.sh >/dev/null 2>&1 ;;
-    bots) BOT_CHECKS_IN_TESTS=1 bash e2e-up.sh >/dev/null 2>&1 ;;
-    turnstile) E2E_TURNSTILE=1 E2E_FRONTEND=dist bash e2e-up.sh >/dev/null 2>&1 ;;
-    *) bash e2e-up.sh >/dev/null 2>&1 ;;
+    dist) E2E_FRONTEND=dist bash e2e-up.sh > stack.log 2>&1 ;;
+    bots) BOT_CHECKS_IN_TESTS=1 bash e2e-up.sh > stack.log 2>&1 ;;
+    turnstile) E2E_TURNSTILE=1 E2E_FRONTEND=dist bash e2e-up.sh > stack.log 2>&1 ;;
+    *) bash e2e-up.sh > stack.log 2>&1 ;;
   esac
 }
 
@@ -41,30 +54,35 @@ report() { # name exit-code output-file
 }
 
 for s in $SUITES; do
+  wanted "$s" || continue
   fresh_stack
   node "$s.cjs" > "out-$s.txt" 2>&1
   report "$s" $? "out-$s.txt"
 done
 
 for s in $DIST_SUITES; do
+  wanted "$s" || continue
   fresh_stack dist
   node "$s.cjs" > "out-$s.txt" 2>&1
   report "$s" $? "out-$s.txt"
 done
 
 for s in $BOT_SUITES; do
+  wanted "$s" || continue
   fresh_stack bots
   node "$s.cjs" > "out-$s.txt" 2>&1
   report "$s" $? "out-$s.txt"
 done
 
 for s in $TURNSTILE_SUITES; do
+  wanted "$s" || continue
   fresh_stack turnstile
   node "$s.cjs" > "out-$s.txt" 2>&1
   report "$s" $? "out-$s.txt"
 done
 
 for lang in en my ar; do
+  wanted a3 || continue
   fresh_stack
   A3_LANG=$lang node a3-visual.cjs > "out-a3-$lang.txt" 2>&1
   report "a3-visual ($lang)" $? "out-a3-$lang.txt"

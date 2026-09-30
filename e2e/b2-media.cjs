@@ -7,7 +7,7 @@ const { execSync } = require('child_process');
 const { chromium } = require('./node_modules/playwright-core');
 
 const SP = __dirname;
-const PG = (process.env.PG_BIN || 'C:/Program Files/PostgreSQL/17/bin');
+const { PSQL } = require('./pg.cjs');
 const token = fs.readFileSync(path.join(SP, 'alice.token'), 'utf8').trim();
 const IMG = ['icon-512.png', 'icon-192.png', 'apple-touch-icon.png'].map((f) => `http://localhost:5173/${f}`);
 const PUBLIC_DIR = require('path').resolve(__dirname, '../frontend/public');
@@ -16,7 +16,7 @@ const errors = [];
 const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  -- ' + extra : ''}`);
 
 function sql(q) {
-  return execSync(`"${PG}/psql.exe" -h localhost -p 55433 -U testuser -d mysocialapp_e2e -At -c "${q}"`).toString().trim();
+  return execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysocialapp_e2e -At -c "${q}"`).toString().trim();
 }
 
 (async () => {
