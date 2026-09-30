@@ -46,8 +46,12 @@ const RELOAD_T = { en: RELOAD, my: 'စာမျက်နှာကို ပြ�
     const t = locale(lang).auth;
     const name = `fast${lang}${Date.now() % 100000}`;
     const page = await newPage({ lang, theme, width });
+    const cloudflare = [];
+    page.on('request', (r) => { if (r.url().includes('challenges.cloudflare.com')) cloudflare.push(r.url()); });
     const started = Date.now();
     await page.goto(`${WEB}/signup`, { waitUntil: 'networkidle' });
+    check(`${label}: Turnstile off (no keys): no widget, Cloudflare never contacted`,
+      (await page.locator('.turnstile-box').count()) === 0 && cloudflare.length === 0, cloudflare.join(' '));
 
     const hp = page.locator('input[name=website]');
     const box = await page.locator('.hp-field').boundingBox();

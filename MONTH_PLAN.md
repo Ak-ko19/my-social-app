@@ -117,7 +117,7 @@ Build every feature the way a senior engineer at a top social media company woul
 
 ### Day 11 — Bot protection
 - [x] Bot protection that needs no outside account: honeypot fields, minimum form-fill time, progressive delays after failed logins, stricter limits on signup/forgot password.
-- [ ] Add a Turnstile hook that turns on only if its env var exists.
+- [x] Add a Turnstile hook that turns on only if its env var exists.
 
 ### Day 12 — Moderation
 - [ ] Report comments and messages.

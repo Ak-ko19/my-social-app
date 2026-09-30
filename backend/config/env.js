@@ -91,6 +91,13 @@ function checkEnv(env) {
     warnings.push('SENTRY_DSN does not look like a Sentry DSN (https://<key>@<host>/<project>), so Sentry may not receive errors.');
   }
 
+  // Day 11: optional Turnstile; it only turns on with both keys.
+  const turnstileSet = ['TURNSTILE_SITE_KEY', 'TURNSTILE_SECRET_KEY'].filter((name) => isSet(env[name]));
+  if (turnstileSet.length === 1) {
+    const missing = turnstileSet[0] === 'TURNSTILE_SITE_KEY' ? 'TURNSTILE_SECRET_KEY' : 'TURNSTILE_SITE_KEY';
+    warnings.push(`Turnstile is only partly configured (missing ${missing}), so the security check stays off.`);
+  }
+
   // Day 9: the daily cleanup job's shared secret (POST /internal/cleanup).
   if (isSet(env.CLEANUP_SECRET)) {
     if (env.CLEANUP_SECRET.length < 32) {

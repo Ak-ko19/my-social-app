@@ -11,7 +11,14 @@ set -e
 "$PG/dropdb.exe" -h localhost -p 55433 -U testuser --if-exists mysocialapp_e2e 2>/dev/null
 "$PG/createdb.exe" -h localhost -p 55433 -U testuser mysocialapp_e2e
 "$PG/psql.exe" -q -h localhost -p 55433 -U testuser -d mysocialapp_e2e -v ON_ERROR_STOP=1 -f "$B/tests/fixtures/schema.sql"
+# E2E_TURNSTILE=1 (Day 11): Turnstile on, verified by a local stub, never Cloudflare.
+TS_SITE= TS_SECRET= TS_URL=
+if [ "$E2E_TURNSTILE" = 1 ]; then
+  nohup node "$SP/turnstile-stub.cjs" 3901 > "$SP/turnstile-stub.log" 2>&1 &
+  TS_SITE=e2e-turnstile-site-key TS_SECRET=e2e-turnstile-secret TS_URL=http://localhost:3901/siteverify
+fi
 cd "$B"
+TURNSTILE_SITE_KEY="$TS_SITE" TURNSTILE_SECRET_KEY="$TS_SECRET" TURNSTILE_VERIFY_URL="$TS_URL" \
 NODE_ENV=test DATABASE_URL=postgresql://testuser@localhost:55433/mysocialapp_e2e JWT_SECRET=e2e-local-only-secret \
 ALLOWED_ORIGINS=http://localhost:5173 FRONTEND_URL=http://localhost:5173 BREVO_API_KEY= SENTRY_DSN= CLEANUP_SECRET= EMAIL_HOST= EMAIL_USER= EMAIL_PASS= \
 CLOUDINARY_CLOUD_NAME= CLOUDINARY_API_KEY= CLOUDINARY_API_SECRET= BOT_CHECKS_IN_TESTS="${BOT_CHECKS_IN_TESTS:-}" nohup node server.js > "$SP/backend.log" 2>&1 &
@@ -33,7 +40,7 @@ if [ "$BOT_CHECKS_IN_TESTS" = 1 ]; then
   FT=$(curl -s localhost:3000/form-token | node -pe "JSON.parse(require('fs').readFileSync(0)).token"); sleep 3.2
 fi
 for u in alice bob; do curl -s -X POST localhost:3000/signup -H 'Content-Type: application/json' \
-  -d "{\"username\":\"$u\",\"email\":\"$u@example.com\",\"password\":\"a-fine-password-123\",\"formToken\":\"$FT\"}" >/dev/null; done
+  -d "{\"username\":\"$u\",\"email\":\"$u@example.com\",\"password\":\"a-fine-password-123\",\"formToken\":\"$FT\",\"turnstileToken\":\"human-ok\"}" >/dev/null; done
 tok() { curl -s -X POST localhost:3000/login -H 'Content-Type: application/json' -d "{\"email\":\"$1@example.com\",\"password\":\"a-fine-password-123\"}" | node -pe "JSON.parse(require('fs').readFileSync(0)).token"; }
 tok alice > "$SP/alice.token"; tok bob > "$SP/bob.token"
 BT=$(cat "$SP/bob.token")

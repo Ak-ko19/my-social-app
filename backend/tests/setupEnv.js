@@ -22,6 +22,11 @@ process.env.EMAIL_FROM = '';
 process.env.CLEANUP_SECRET = '';
 // Day 10: a real Sentry DSN in .env must never receive test errors.
 process.env.SENTRY_DSN = '';
+// Day 11: real Turnstile keys in .env would make every signup test need a
+// Cloudflare token; turnstile.test.js sets its own.
+process.env.TURNSTILE_SITE_KEY = '';
+process.env.TURNSTILE_SECRET_KEY = '';
+process.env.TURNSTILE_VERIFY_URL = '';
 
 process.env.CLOUDINARY_CLOUD_NAME = '';
 process.env.CLOUDINARY_API_KEY = '';

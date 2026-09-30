@@ -4,7 +4,7 @@ import api from '../api';
 // GET /config is fetched once per page load and shared by every caller. A
 // failed request isn't cached, so the next screen that asks retries.
 let configPromise = null;
-function loadConfig() {
+export function loadConfig() {
   if (!configPromise) {
     configPromise = api
       .get('/config')

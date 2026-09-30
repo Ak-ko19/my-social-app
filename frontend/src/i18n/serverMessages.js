@@ -48,6 +48,7 @@ const MY = {
   // bot protection (Day 11)
   'Please reload the page and try again.': 'စာမျက်နှာကို ပြန်ဖွင့်ပြီး ထပ်စမ်းကြည့်ပါ။',
   'Please wait a moment and try again.': 'ခဏစောင့်ပြီး ထပ်စမ်းကြည့်ပါ။',
+  'Please complete the security check.': 'လုံခြုံရေး စစ်ဆေးမှုကို အရင် ပြီးအောင်လုပ်ပါ။',
   // posts, comments, social
   'Post content cannot be empty': 'ပို့စ်တွင် စာသား ထည့်ရန် လိုအပ်ပါသည်',
   'Comment cannot be empty': 'မှတ်ချက်တွင် စာသား ထည့်ရန် လိုအပ်ပါသည်',
@@ -141,6 +142,7 @@ const AR = {
   'Too many login attempts for this account. Please wait a moment and try again.': 'محاولات تسجيل دخول كثيرة جدًا لهذا الحساب. يرجى الانتظار قليلًا ثم المحاولة مجددًا.',
   'Please reload the page and try again.': 'يرجى إعادة تحميل الصفحة والمحاولة مجددًا.',
   'Please wait a moment and try again.': 'يرجى الانتظار قليلًا ثم المحاولة مجددًا.',
+  'Please complete the security check.': 'يرجى إكمال التحقق الأمني أولًا.',
   'Post content cannot be empty': 'لا يمكن أن يكون المنشور فارغًا',
   'Comment cannot be empty': 'لا يمكن أن يكون التعليق فارغًا',
   'Post not found': 'المنشور غير موجود',

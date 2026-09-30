@@ -187,13 +187,13 @@ describe('email delivery', () => {
     it('GET /config says whether email works', async () => {
       const off = await request(app).get('/config');
       expect(off.status).toBe(200);
-      expect(off.body).toEqual({ emailEnabled: false });
+      expect(off.body).toEqual({ emailEnabled: false, turnstileSiteKey: null });
       expect(off.headers['cache-control']).toBe('public, max-age=300');
       useBrevo();
-      expect((await request(app).get('/config')).body).toEqual({ emailEnabled: true });
+      expect((await request(app).get('/config')).body).toEqual({ emailEnabled: true, turnstileSiteKey: null });
       delete process.env.RENDER; // local dev prints emails, so they "work"
       process.env.BREVO_API_KEY = '';
-      expect((await request(app).get('/config')).body).toEqual({ emailEnabled: true });
+      expect((await request(app).get('/config')).body).toEqual({ emailEnabled: true, turnstileSiteKey: null });
     });
 
     it('forgot password answers every address the same 503, and writes no token', async () => {

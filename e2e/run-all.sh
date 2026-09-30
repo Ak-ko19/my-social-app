@@ -17,13 +17,17 @@ DIST_SUITES="day10-errors"
 # Suites that need the backend's real bot checks (Day 11): on for them only,
 # since other suites sign users up straight through the API.
 BOT_SUITES="day11-bots"
+# Turnstile on (local stub verifier), on the production build so the CSP
+# must allow Cloudflare's script and frame.
+TURNSTILE_SUITES="day11-turnstile"
 failed=0
 
-fresh_stack() { # [dist|bots]
+fresh_stack() { # [dist|bots|turnstile]
   bash e2e-down.sh >/dev/null 2>&1
   case "$1" in
     dist) E2E_FRONTEND=dist bash e2e-up.sh >/dev/null 2>&1 ;;
     bots) BOT_CHECKS_IN_TESTS=1 bash e2e-up.sh >/dev/null 2>&1 ;;
+    turnstile) E2E_TURNSTILE=1 E2E_FRONTEND=dist bash e2e-up.sh >/dev/null 2>&1 ;;
     *) bash e2e-up.sh >/dev/null 2>&1 ;;
   esac
 }
@@ -50,6 +54,12 @@ done
 
 for s in $BOT_SUITES; do
   fresh_stack bots
+  node "$s.cjs" > "out-$s.txt" 2>&1
+  report "$s" $? "out-$s.txt"
+done
+
+for s in $TURNSTILE_SUITES; do
+  fresh_stack turnstile
   node "$s.cjs" > "out-$s.txt" 2>&1
   report "$s" $? "out-$s.txt"
 done

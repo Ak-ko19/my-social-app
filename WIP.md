@@ -53,7 +53,27 @@
   contained in another.
 
 ## Plan
-(written at the start of each step)
+Step 2 — Turnstile, dormant until the owner adds keys (no account made here):
+- Backend services/turnstile.js: on only when BOTH TURNSTILE_SITE_KEY and
+  TURNSTILE_SECRET_KEY are set (env.js warns if only one is).
+  turnstileGuard on signup + forgot password (not login: password
+  managers / future mobile app). Missing or rejected token → 400
+  "Please complete the security check." Cloudflare unreachable (5 s
+  timeout) → let it through + logger.warn (fail open: honeypot, form
+  token and rate limits still apply; a Cloudflare outage must not stop
+  signups). TURNSTILE_VERIFY_URL override for the local test stub only.
+- GET /config adds turnstileSiteKey (public) or null.
+- Frontend: useFormGuard loads Cloudflare's script only when the site key
+  exists, renders the widget (theme follows the app), sends
+  turnstileToken, resets the widget after each attempt (tokens are
+  single-use); "complete the security check" message in EN/MY/AR.
+- CSP: script-src + frame-src https://challenges.cloudflare.com.
+- Pins: setupEnv / e2e-up / env.test CLEAN blank the two keys.
+- Tests: jest (fetch mocked: off / missing / pass / fail / unreachable,
+  env warnings, /config); browser suite day11-turnstile on a stack with
+  keys + a local stub verifier (e2e/turnstile-stub.cjs, port 3901) and a
+  fake widget script served by page.route; dist build to prove the CSP.
+- Docs: .env.example, LATER.md (optional owner item).
 
 ## Progress
 - Step 1 DONE (2026-09-30): built as planned. Deviations/decisions:
@@ -69,4 +89,9 @@
   - Verified: backend 412/412; mutation checks (9) all caught; day11-bots
     all green EN/MY/AR incl. stale-token retry and a frontend mutation;
     related suites day5/c2/c3/day8/b15/b16/a3 en+ar green.
-- Next: Step 2 — Turnstile hook, on only if its env var exists.
+- Step 2 DONE (2026-09-30): built as planned (see Plan above). Verified:
+  backend 421/421; 6 mutation checks caught; day11-turnstile 31/31 on
+  the dist build (fake widget from Cloudflare's URL + local stub
+  verifier), CSP mutations (frame-src, script-src) both caught;
+  day11-bots/day10-errors/day5/c2/c3 green. Owner item: LATER.md #6.
+- Next: Day 11 close — full browser run, Progress Log, reset WIP.

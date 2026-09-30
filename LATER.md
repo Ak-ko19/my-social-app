@@ -115,3 +115,27 @@ without them. Newest items at the bottom.
      that DSN. Save; Render redeploys.
 - **Check it worked:** the Render logs show
   `[errors] Sentry reporting is on.` at startup.
+
+## 6. (Optional) Turn on Cloudflare Turnstile (Day 11)
+- **Not needed:** signup and forgot password already have a hidden
+  honeypot field, a minimum fill time and tight rate limits. Login slows
+  down after repeated wrong passwords.
+- **What Turnstile adds:** a free "are you human?" check from Cloudflare
+  on signup and forgot password. It's for when bots get past the rest.
+  Login is never affected.
+- **Needs:** this version deployed first (a GO LIVE, item 2). The CSP in
+  `frontend/vercel.json` already allows Cloudflare's widget.
+- **Owner steps:**
+  1. Create a free Cloudflare account. Open **Turnstile → Add widget**,
+     add your frontend's domain (the Vercel URL) and choose
+     **Managed** mode.
+  2. Render → backend service → **Environment** → add
+     `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` from that page.
+     Save; Render redeploys. Both are needed: with only one set, the check
+     stays off and the Render logs show a warning.
+- Nothing needs setting on Vercel: the frontend gets the public site key
+  from the backend (`GET /config`).
+- **Check it worked:**
+  - `https://<backend>/config` shows your `turnstileSiteKey`.
+  - The signup page shows the Cloudflare box.
+- **To turn it off again:** delete either variable.

@@ -83,6 +83,13 @@ describe('checkEnv', () => {
     expect(warningsOf({ ...BASE, EMAIL_HOST: 'smtp.example.com' })).toMatch(/Email is only partly configured \(missing EMAIL_USER, EMAIL_PASS\)/);
     expect(checkEnv({ ...PROD, CLOUDINARY_API_KEY: '' }).errors).toEqual([]);
   });
+
+  it('warns when only one Turnstile key is set (the check stays off)', () => {
+    expect(warningsOf({ ...BASE, TURNSTILE_SITE_KEY: '0x4AAA' })).toMatch(/Turnstile is only partly configured \(missing TURNSTILE_SECRET_KEY\)/);
+    expect(warningsOf({ ...BASE, TURNSTILE_SECRET_KEY: '0x4AAA-secret' })).toMatch(/missing TURNSTILE_SITE_KEY/);
+    expect(warningsOf({ ...BASE, TURNSTILE_SECRET_KEY: '0x4AAA-secret' })).not.toContain('0x4AAA-secret');
+    expect(checkEnv({ ...PROD, TURNSTILE_SITE_KEY: 'a', TURNSTILE_SECRET_KEY: 'b' })).toEqual({ errors: [], warnings: [] });
+  });
 });
 
 describe('node server.js', () => {
@@ -94,7 +101,8 @@ describe('node server.js', () => {
     DATABASE_URL: 'postgresql://nobody@localhost:1/none', JWT_SECRET: 'x'.repeat(40),
     ALLOWED_ORIGINS: '', FRONTEND_URL: '',
     CLOUDINARY_CLOUD_NAME: '', CLOUDINARY_API_KEY: '', CLOUDINARY_API_SECRET: '',
-    BREVO_API_KEY: '', SENTRY_DSN: '', CLEANUP_SECRET: '', EMAIL_HOST: '', EMAIL_USER: '', EMAIL_PASS: '', EMAIL_FROM: '', EMAIL_PORT: ''
+    BREVO_API_KEY: '', SENTRY_DSN: '', CLEANUP_SECRET: '', EMAIL_HOST: '', EMAIL_USER: '', EMAIL_PASS: '', EMAIL_FROM: '', EMAIL_PORT: '',
+    TURNSTILE_SITE_KEY: '', TURNSTILE_SECRET_KEY: '', TURNSTILE_VERIFY_URL: ''
   };
 
   // Resolves once the process exits or prints its "running" line.

@@ -112,6 +112,14 @@ textarea.form-input {
   color: var(--badge-green-fg);
 }
 
+/* Day 11 optional Turnstile widget: 300px wide from Cloudflare; the box
+   keeps it from widening the card on a narrow phone. */
+.turnstile-box {
+  min-height: 65px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
 /* Day 11 honeypot (hooks/useFormGuard.jsx): clipped to nothing rather
    than moved off-screen (a far-left offset scrolls sideways in Arabic). */
 .hp-field {

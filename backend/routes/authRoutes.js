@@ -13,15 +13,18 @@ const {
   forgotPasswordEmailLimiter
 } = require('../middleware/rateLimiter');
 const { formGuard, sendFormToken, SIGNUP_MIN_MS, FORGOT_MIN_MS } = require('../services/botProtection');
+// Optional; a no-op until both Turnstile keys are set.
+const { turnstileGuard } = require('../services/turnstile');
 
 // Day 11: the signup and forgot-password forms fetch this when they open.
 router.get('/form-token', sendFormToken);
-router.post('/signup', signupLimiter, signupDailyLimiter, formGuard(SIGNUP_MIN_MS), authController.signup);
+router.post('/signup', signupLimiter, signupDailyLimiter, formGuard(SIGNUP_MIN_MS), turnstileGuard, authController.signup);
 router.post('/login', loginLimiter, formGuard(null), authController.login);
 router.post(
   '/forgot-password',
   forgotPasswordLimiter,
   formGuard(FORGOT_MIN_MS),
+  turnstileGuard,
   forgotPasswordEmailLimiter,
   authController.forgotPassword
 );
