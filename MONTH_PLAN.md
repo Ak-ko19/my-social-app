@@ -539,3 +539,40 @@ Build every feature the way a senior engineer at a top social media company woul
 - **LATER.md:** #4 added. The owner puts the same `CLEANUP_SECRET` on
   Render and in GitHub Actions secrets (after GO LIVE, since schedules
   run from `master`).
+
+### 2026-09-29/30 — Day 10: Monitoring
+- **Step 1 (`24deff3`):** built-in error log.
+  - Migration 030 `error_groups` stores one row per distinct error with a
+    count, so it can't grow unbounded.
+  - Fed by every server 500, the error handler, socket handlers, process
+    crashes and browser errors (`POST /client-errors`: capped,
+    rate-limited, path-only).
+  - A new top-level ErrorBoundary shows a translated "Something went
+    wrong" screen instead of a white page.
+  - Admin → Errors can list, show details, resolve and load more. An
+    error re-opens if it happens again.
+  - Optional Sentry via `SENTRY_DSN` (lazy).
+  - **Found + fixed:**
+    - a burst of repeats that then stopped was under-counted;
+    - an error mentioning a just-deleted user was lost (FK);
+    - "×2" showed as "2×" in Arabic;
+    - my checklist edit broke the migration loop, and the rehearsal now
+      checks the checklist's list against the files.
+- **Step 2 (`3917f39`):** `GET /health` (DB check, 3 s timeout, reasons
+  only logged), replacing `/test-db`.
+  - JSON structured logs in production (pg `detail` never logged).
+  - Per-request log line with the route pattern and `X-Request-Id`.
+  - All 35 backend `console.*` calls now go through the logger, with a
+    guard test.
+  - **Found + fixed:**
+    - **a crash when the DB drops an idle connection.** It predates
+      today, and production very likely cold-restarted whenever Neon
+      idled; `db.js` now handles pool errors, proven on a real server;
+    - feed and three middleware 500s bypassed the error log.
+- **Tests at close:**
+  - backend 396/396 (38 suites);
+  - full browser run ALL PASSED: 24 suites (day10-errors on the
+    production build), 392 checks, plus A3 228/228 × EN/MY/AR;
+  - golive-rehearsal --old PASSED (015→030).
+- **LATER.md:** #5 added (optional Sentry). GO_LIVE_CHECKLIST lists
+  migration 030 and checks `/health` and Admin → Errors.
