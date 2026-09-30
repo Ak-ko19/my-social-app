@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
 const { authorize, touchSession } = require('../services/sessionService');
+const { sendServerError } = require('../utils/sendError');
+const logger = require('../utils/logger');
 
 async function authMiddleware(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -20,8 +22,7 @@ async function authMiddleware(req, res, next) {
     // another device, password changed, session expired).
     verdict = await authorize(decoded);
   } catch (err) {
-    console.error('Auth check failed:', err.message);
-    return res.status(500).send('Something went wrong. Please try again later.');
+    return sendServerError(res, err, 'Something went wrong. Please try again later.');
   }
   // B12: a ban ends existing sessions immediately. 401 (not 403) so the
   // frontend's 401 handler logs the banned user out.
@@ -36,7 +37,7 @@ async function authMiddleware(req, res, next) {
   // "Last active" in the sessions list; at most one write per 5 minutes,
   // and the request never waits for it.
   if (req.sessionId) {
-    touchSession(req.sessionId).catch((err) => console.error('Session touch failed:', err.message));
+    touchSession(req.sessionId).catch((err) => logger.error('session touch failed', { err }));
   }
   next();
 }

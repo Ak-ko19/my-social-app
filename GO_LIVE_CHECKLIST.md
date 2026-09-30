@@ -151,7 +151,11 @@ keeps working against the new backend.
     `[config] The server can't start` message lists exactly which
     variable to fix (step 2). The old version stays live meanwhile.
 - [ ] **Backend is up:**
-  - `https://my-social-app-ecjg.onrender.com/` answers "Hello! …".
+  - `https://my-social-app-ecjg.onrender.com/health` answers
+    `{"status":"ok","db":"ok",…}`. `"db":"down"` means the backend can't
+    reach Neon: check `DATABASE_URL`.
+  - Optional, free: add that `/health` URL to an uptime monitor (e.g.
+    UptimeRobot) to get an email if the site goes down.
   - `https://my-social-app-ecjg.onrender.com/config` answers
     `{"emailEnabled":false}`, or `true` once Brevo is set up.
 - [ ] **Frontend (Vercel):** it deploys from `master` by itself. Wait for

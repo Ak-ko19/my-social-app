@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const express = require('express');
 const cleanupService = require('../services/cleanupService');
+const logger = require('../utils/logger');
+const { report } = require('../services/errorLogService');
 
 const router = express.Router();
 
@@ -27,10 +29,11 @@ function requireSecret(envName) {
 router.post('/internal/cleanup', requireSecret('CLEANUP_SECRET'), async (req, res) => {
   try {
     const result = await cleanupService.run({ dryRun: req.query.dryRun === '1' });
-    console.log('[cleanup]', JSON.stringify(result));
+    logger.info('cleanup finished', result);
     res.json(result);
   } catch (err) {
-    console.error('[cleanup] failed:', err);
+    logger.error('cleanup failed', { err });
+    report(err, { source: 'api', route: 'POST /internal/cleanup', status: 500 });
     res.status(500).json({ error: 'Cleanup failed' });
   }
 });

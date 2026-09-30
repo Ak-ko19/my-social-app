@@ -188,8 +188,7 @@ async function getFeed(req, res) {
       hasMore
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    sendServerError(res, error, 'Loading the feed failed. Please try again later.');
   }
 }
 

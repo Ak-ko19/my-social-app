@@ -101,7 +101,7 @@ describe('error log', () => {
     jest.spyOn(db, 'query').mockRejectedValueOnce(new Error('connection refused'));
     errorLog.report(new Error('while the db is down'), { route: 'GET /y' });
     await settle();
-    expect(logged.mock.calls.flat().join(' ')).toMatch(/could not save an error to the log: connection refused/);
+    expect(logged.mock.calls.flat().join(' ')).toMatch(/could not save an error to the log[\s\S]*connection refused/);
   });
 
   it('still saves the error when the user it mentions was deleted meanwhile', async () => {

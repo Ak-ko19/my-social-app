@@ -7,12 +7,14 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const helmet = require('helmet');
-const db = require('./db');
 const allowedOrigins = require('./config/allowedOrigins');
 const { resolveTrustProxy } = require('./config/trustProxy');
 const { globalLimiter } = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
 const { report, startMonitoring, whenIdle } = require('./services/errorLogService');
+const requestLogger = require('./middleware/requestLogger');
+const healthRoutes = require('./routes/healthRoutes');
+const logger = require('./utils/logger');
 const { initSocket } = require('./sockets');
 
 const authRoutes = require('./routes/authRoutes');
@@ -48,6 +50,10 @@ const PORT = process.env.PORT?.trim() ? Number(process.env.PORT) : 3000;
 // Before any middleware reads req.ip (the rate limiters): behind Render's
 // proxy it must resolve to the real client, not the proxy.
 app.set('trust proxy', resolveTrustProxy(process.env));
+
+// Day 10: one structured log line per request (not under the test suite,
+// where hundreds of requests would bury the output).
+if (process.env.NODE_ENV !== 'test') app.use(requestLogger);
 
 app.use(helmet({
   // Post/avatar images used to be served locally under /uploads and needed
@@ -91,18 +97,8 @@ app.use(globalLimiter);
 app.get('/', (req, res) => {
   res.send('Hello! My social media app backend is running!');
 });
-app.get('/test-db', async (req, res) => {
-  try {
-    const result = await db.query('SELECT NOW()');
-    res.send('Database connected! Server time: ' + result.rows[0].now);
-  } catch (err) {
-    // Public endpoint: log the real error server-side, never echo DB
-    // error text (hostnames, auth failures, ...) back to the caller.
-    console.error('GET /test-db failed:', err.message);
-    res.status(500).send('Database connection failed');
-  }
-});
-
+// Day 10: GET /health (app + database) replaces the old GET /test-db.
+app.use(healthRoutes);
 app.use(configRoutes);
 app.use(internalRoutes);
 app.use(clientErrorRoutes);
@@ -144,11 +140,11 @@ if (require.main === module) {
   // Day 10: errors outside any request end up in the error log too.
   startMonitoring();
   process.on('unhandledRejection', (reason) => {
-    console.error('Unhandled promise rejection:', reason);
+    logger.error('unhandled promise rejection', { err: reason });
     report(reason, { source: 'process', route: 'unhandledRejection' });
   });
   process.on('uncaughtException', (err) => {
-    console.error('Uncaught exception:', err);
+    logger.error('uncaught exception', { err });
     report(err, { source: 'process', route: 'uncaughtException' });
     // The process is in an unknown state: exit (Render restarts a clean
     // one) as soon as the report is saved -- at most 2 s later.
@@ -159,6 +155,6 @@ if (require.main === module) {
   initSocket(httpServer);
 
   httpServer.listen(PORT, () => {
-    console.log(`Server is running on port ${httpServer.address().port}`);
+    logger.info('server started', { port: httpServer.address().port });
   });
 }

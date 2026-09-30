@@ -1,5 +1,6 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const logger = require('../utils/logger');
 const { encodeCursor, decodeCursor, getLimit } = require('../utils/cursorPagination');
 const messageService = require('../services/messageService');
 const blockService = require('../services/blockService');
@@ -263,7 +264,7 @@ async function sendMessage(req, res) {
     try {
       getIO().to(`conv_${message.conversation_id}`).emit('new_message', message);
     } catch (err) {
-      console.error('Failed to emit new_message over socket:', err.message);
+      logger.error('socket emit failed', { event: 'new_message', err });
     }
 
     res.status(201).json(message);
@@ -319,7 +320,7 @@ async function sendVoiceMessage(req, res) {
     try {
       getIO().to(`conv_${message.conversation_id}`).emit('new_message', message);
     } catch (err) {
-      console.error('Failed to emit new_message over socket:', err.message);
+      logger.error('socket emit failed', { event: 'new_message', err });
     }
 
     res.status(201).json(message);
@@ -358,7 +359,7 @@ async function deleteMessage(req, res) {
         deletedAt: message.deleted_at
       });
     } catch (err) {
-      console.error('Failed to emit message_deleted over socket:', err.message);
+      logger.error('socket emit failed', { event: 'message_deleted', err });
     }
 
     res.status(200).json(messageService.scrubDeletedContent(message));
@@ -414,7 +415,7 @@ async function sendImageMessage(req, res) {
     try {
       getIO().to(`conv_${message.conversation_id}`).emit('new_message', message);
     } catch (err) {
-      console.error('Failed to emit new_message over socket:', err.message);
+      logger.error('socket emit failed', { event: 'new_message', err });
     }
     res.status(201).json(message);
   } catch (err) {
@@ -439,7 +440,7 @@ async function editMessage(req, res) {
     try {
       getIO().to(`conv_${message.conversation_id}`).emit('message_edited', { conversationId: message.conversation_id, message });
     } catch (err) {
-      console.error('Failed to emit message_edited over socket:', err.message);
+      logger.error('socket emit failed', { event: 'message_edited', err });
     }
     res.json(message);
   } catch (err) {

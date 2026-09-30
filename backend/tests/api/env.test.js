@@ -107,7 +107,7 @@ describe('node server.js', () => {
       let out = '';
       const collect = (chunk) => {
         out += chunk;
-        const running = out.match(/Server is running on port (\d+)/);
+        const running = out.match(/server started \{"port":(\d+)\}/); // logger's dev format
         if (running) {
           child.kill();
           resolve({ running: true, port: Number(running[1]), out });

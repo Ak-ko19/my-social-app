@@ -1,7 +1,52 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 10 — Monitoring (not started)
-**Step:** —
+**Day:** 10 — Monitoring
+**Step:** 2 — /health checks DB connectivity; structured logging; remove stray console.logs. (Step 1 DONE: `24deff3`.)
+
+## Step 2 plan
+- `GET /health` (public, no DB details ever): `SELECT 1` with a 3 s
+  timeout → 200 `{status:'ok', db:'ok', uptimeSeconds}` or 503
+  `{status:'error', db:'down'}`; `Cache-Control: no-store`. Replaces the
+  old debug `GET /test-db` (only referenced by itself). `GET /` stays the
+  cheap keep-alive target (no DB).
+- `utils/logger.js`: info/warn/error(msg, fields). Production → one JSON
+  line per event {level, time, msg, ...fields, err:{name, message,
+  code, stack}}; dev → readable text. pg `detail` never logged.
+- Request log middleware: {method, route pattern, status, ms, userId,
+  requestId}; `X-Request-Id` header (a given safe one is reused);
+  GET / and /health skipped; 5xx error, 4xx warn, else info.
+- Every backend console.* (35) goes through the logger; the noisy
+  per-disconnect socket log is removed. Frontend has no console.log
+  (its console.error calls are real error paths — kept).
+- Tests: /health ok / down / hanging DB (503 within the timeout, no error
+  text); logger JSON + dev text + error serialisation; request log +
+  X-Request-Id + skips; guard: no console.* in backend sources outside
+  utils/logger.js (scripts/tests excluded).
+
+## Step 2 progress
+- [x] utils/logger.js, middleware/requestLogger.js, routes/healthRoutes.js
+  (/test-db removed), wired in server.js
+- [x] all 35 backend console.* calls → logger (15 files; none left);
+  per-disconnect socket log removed
+- [x] Found while converting: getFeed and 3 middlewares (auth check,
+  requireAdmin, requireConversationParticipant) answered 500 by hand, so
+  those failures never reached the Day 10 error log → sendServerError;
+  the cleanup route reports its failure too
+- [x] env.test: server start line is now `server started {"port":N}`
+- [x] logger writes through console.* in every mode (one path; tests'
+  spies see production JSON too); 2 test expectations adapted
+- [x] monitoring.test.js 12 (health ok/down/hang, logger JSON/dev/pg
+  detail, request log, X-Request-Id, skips, console guard, db pool
+  error); mutation-checked (pg detail, concrete URL, stray console.log,
+  missing pool error listener)
+- [x] FOUND on a real production-mode server: stopping the database
+  CRASHED the server (pg pool 'error' on an idle client, no listener →
+  uncaught). Pre-existing: production likely crashed/cold-restarted
+  whenever Neon dropped idle connections. Fixed in db.js; re-verified:
+  /health 503 in 5 ms while down, server alive, 200 when the DB is back.
+- [x] Backend 396/396; rehearsal PASSED; a2 b9 b12 + day10-errors (dist)
+  green; GO_LIVE_CHECKLIST now checks /health (+ uptime-monitor tip)
+- STEP 2 DONE
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

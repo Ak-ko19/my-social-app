@@ -1,4 +1,5 @@
 const messageService = require('../services/messageService');
+const { sendServerError } = require('../utils/sendError');
 
 // Gates conversation-scoped upload routes (currently just the voice-message
 // endpoint) on participation BEFORE any multer parsing or Cloudinary upload
@@ -20,8 +21,7 @@ async function requireConversationParticipant(req, res, next) {
     }
     next();
   } catch (err) {
-    console.error('requireConversationParticipant failed:', err.message);
-    res.status(500).send('Failed to verify conversation membership. Please try again later.');
+    sendServerError(res, err, 'Failed to verify conversation membership. Please try again later.');
   }
 }
 

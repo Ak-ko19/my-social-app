@@ -152,7 +152,8 @@ describe('email delivery', () => {
     it('production logs only that it was not sent, without the text or the address', async () => {
       process.env.RENDER = 'true';
       await expect(sendEmail({ to: 'ana@example.com', subject: 'Reset your password', text: 'Reset link: https://app/reset-password/abc' })).resolves.toBe(false);
-      expect(logged()).toMatch(/Not sent, no email provider configured .*"Reset your password" to a\*\*\*@example.com/);
+      // Production logs are JSON lines, so the quotes arrive escaped.
+      expect(logged()).toMatch(/Not sent, no email provider configured .*\\?"Reset your password\\?" to a\*\*\*@example.com/);
       expect(logged()).not.toMatch(/reset-password|abc|ana@example\.com/);
     });
 

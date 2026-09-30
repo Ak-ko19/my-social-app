@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
 const { authorize } = require('../services/sessionService');
+const logger = require('../utils/logger');
 
 // Same token check as authMiddleware, but never rejects the request --
 // public endpoints (GET /posts, GET /posts/:id, GET /profile/:id, search)
@@ -28,7 +29,7 @@ async function optionalAuth(req, res, next) {
     try {
       if ((await authorize(decoded)) === 'ok') req.userId = decoded.userId;
     } catch (err) {
-      console.error('Auth check failed:', err.message);
+      logger.error('auth check failed (optional auth)', { err });
     }
   }
   next();

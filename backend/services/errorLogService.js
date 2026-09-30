@@ -8,6 +8,7 @@
 // fails too; that's only printed to the console.
 const crypto = require('crypto');
 const db = require('../db');
+const logger = require('../utils/logger');
 
 const MAX_MESSAGE = 500;
 const MAX_STACK = 4000;
@@ -45,7 +46,7 @@ function getSentry() {
         sentry = require('@sentry/node');
         sentry.init({ dsn: process.env.SENTRY_DSN, environment: process.env.NODE_ENV || 'production' });
       } catch (err) {
-        console.error('[errors] Sentry could not start:', err.message);
+        logger.error('Sentry could not start', { err });
         sentry = null;
       }
     }
@@ -76,7 +77,7 @@ const inFlight = new Set(); // writes still running (see whenIdle)
 function save(entry, times) {
   const promise = write(entry, times)
     .catch((writeErr) => {
-      console.error('[errors] could not save an error to the log:', writeErr.message);
+      logger.error('could not save an error to the log', { err: writeErr });
     })
     .finally(() => inFlight.delete(promise));
   inFlight.add(promise);
@@ -141,14 +142,14 @@ function report(err, { source = 'api', route = null, status = null, userId = nul
     pending.set(entry.fingerprint, { lastWrite: now, extra: 0, timer: null, entry });
     save(entry, times);
   } catch (reportErr) {
-    console.error('[errors] report() failed:', reportErr.message);
+    logger.error('error log report() failed', { err: reportErr });
   }
 }
 
 // At server start: bring Sentry up early (when configured), so it also
 // sees errors from the first requests.
 function startMonitoring() {
-  if (getSentry()) console.log('[errors] Sentry reporting is on.');
+  if (getSentry()) logger.info('Sentry reporting is on');
 }
 
 // Tests only: forget throttling state between cases.

@@ -5,11 +5,12 @@ const socketAuthMiddleware = require('./socketAuth');
 const messageService = require('../services/messageService');
 const presence = require('./presence');
 const { report } = require('../services/errorLogService');
+const logger = require('../utils/logger');
 
 // A socket handler hit a real server error (not a validation error): log
 // it and record it in the error log (Day 10), grouped by event name.
 function socketFailure(event, socket, err) {
-  console.error(`${event} failed for user ${socket.userId}:`, err.message);
+  logger.error('socket handler failed', { event, userId: socket.userId, err });
   report(err, { source: 'socket', route: event, userId: socket.userId });
 }
 
@@ -227,7 +228,6 @@ function initSocket(httpServer) {
     let conversationRoomIds = [];
 
     socket.on('disconnect', async (reason) => {
-      console.log(`Socket disconnected: userId=${socket.userId} reason=${reason}`);
       try {
         await db.query('UPDATE users SET last_seen = NOW() WHERE id = $1', [socket.userId]);
       } catch (err) {

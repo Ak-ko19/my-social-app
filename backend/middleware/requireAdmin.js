@@ -1,4 +1,5 @@
 const db = require('../db');
+const { sendServerError } = require('../utils/sendError');
 
 // B12: use after authMiddleware. Re-reads users.is_admin on every request
 // (never trusts a token claim), so revoking admin takes effect immediately.
@@ -11,8 +12,7 @@ async function requireAdmin(req, res, next) {
     }
     next();
   } catch (err) {
-    console.error('requireAdmin failed:', err.message);
-    res.status(500).send('Something went wrong. Please try again later.');
+    sendServerError(res, err, 'Something went wrong. Please try again later.');
   }
 }
 

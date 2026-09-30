@@ -15,6 +15,7 @@
 // scan script.
 const db = require('../db');
 const cloudinary = require('../config/cloudinary');
+const logger = require('../utils/logger');
 
 const BATCH_SIZE = 100; // Cloudinary's limit per delete_resources call
 
@@ -55,7 +56,7 @@ async function deleteAssets(assets, api = cloudinary.api) {
         deleted += batch.length;
       } catch (err) {
         failed += batch.length;
-        console.error(`Cloudinary cleanup failed for ${batch.length} ${resourceType} file(s):`, err.message || err);
+        logger.error('Cloudinary cleanup failed', { files: batch.length, resourceType, err });
       }
     }
   }

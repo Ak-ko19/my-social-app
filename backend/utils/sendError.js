@@ -1,4 +1,5 @@
 const { report } = require('../services/errorLogService');
+const logger = require('./logger');
 
 // "METHOD /route/:pattern" -- the route PATTERN, not the concrete URL, so
 // the same bug on every post id is one group in the error log.
@@ -14,8 +15,8 @@ function routeOf(req) {
 // column names, driver errors) that are useful to an attacker and
 // meaningless to a legitimate user.
 function sendServerError(res, err, publicMessage) {
-  console.error(err);
   const req = res.req;
+  logger.error('request failed', { route: routeOf(req), status: 500, err });
   report(err, { source: 'api', route: routeOf(req), status: 500, userId: req && req.userId });
   res.status(500).send(publicMessage);
 }

@@ -10,6 +10,7 @@
 const { resolveTrustProxy } = require('./trustProxy');
 const { isProduction } = require('./runtime');
 const { parseSender } = require('../utils/email');
+const logger = require('../utils/logger');
 
 const isSet = (value) => typeof value === 'string' && value.trim() !== '';
 
@@ -116,9 +117,9 @@ function checkEnv(env) {
 // Called by server.js before anything else when it's run directly.
 function assertEnv(env = process.env) {
   const { errors, warnings } = checkEnv(env);
-  for (const warning of warnings) console.warn(`[config] Warning: ${warning}`);
+  for (const warning of warnings) logger.warn(`[config] Warning: ${warning}`);
   if (errors.length > 0) {
-    console.error(
+    logger.error(
       `[config] The server can't start. Fix these environment variables (see backend/.env.example):\n${
         errors.map((e) => `  - ${e}`).join('\n')}`
     );
