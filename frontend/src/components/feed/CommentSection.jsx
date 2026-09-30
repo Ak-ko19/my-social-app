@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Heart, X } from 'lucide-react';
 import clsx from 'clsx';
@@ -8,6 +8,7 @@ import Username from './Username';
 import { renderTextWithLinks } from '../../utils/renderTextWithLinks';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import MentionAutocomplete from './MentionAutocomplete';
+import ReportDialog from './ReportDialog';
 import { useMentionAutocomplete, applyMentionSelection } from '../../hooks/useMentionAutocomplete';
 import { DURATION_NORMAL, EASE_STANDARD } from '../../utils/motionTokens';
 
@@ -27,7 +28,7 @@ function buildThreads(list) {
   return topLevel.map((c) => ({ comment: c, replies: replies.get(c.id) || [] }));
 }
 
-function CommentItem({ c, comments, currentUserId, onReply }) {
+function CommentItem({ c, comments, currentUserId, onReply, onReport }) {
   const { t } = useTranslation();
   const { editingCommentId, editText, setEditText, startEdit, cancelEdit, saveEdit, toggleCommentLike } = comments;
 
@@ -84,6 +85,12 @@ function CommentItem({ c, comments, currentUserId, onReply }) {
               {t('common.edit')}
             </button>
           )}
+          {/* Day 12: someone else's comment can be reported. */}
+          {currentUserId && c.user_id !== currentUserId && (
+            <button type="button" className="comment-action" onClick={() => onReport(c)} aria-label={t('comments.reportAria', { name: c.username })}>
+              {t('comments.report')}
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -119,6 +126,7 @@ function CommentSection({ postId, comments }) {
   } = comments;
 
   const threads = buildThreads(list);
+  const [reporting, setReporting] = useState(null); // the comment being reported
 
   const handleReply = (c) => {
     startReply(c);
@@ -143,12 +151,12 @@ function CommentSection({ postId, comments }) {
         <ul className="feed-comment-list">
           {threads.map(({ comment: c, replies }) => (
             <li key={c.id} className={c.pending ? 'feed-comment-pending' : undefined}>
-              <CommentItem c={c} comments={comments} currentUserId={currentUserId} onReply={handleReply} />
+              <CommentItem c={c} comments={comments} currentUserId={currentUserId} onReply={handleReply} onReport={setReporting} />
               {replies.length > 0 && (
                 <ul className="comment-replies" aria-label={t('comments.repliesTo', { name: c.username })}>
                   {replies.map((r) => (
                     <li key={r.id} className={r.pending ? 'feed-comment-pending' : undefined}>
-                      <CommentItem c={r} comments={comments} currentUserId={currentUserId} onReply={handleReply} />
+                      <CommentItem c={r} comments={comments} currentUserId={currentUserId} onReply={handleReply} onReport={setReporting} />
                     </li>
                   ))}
                 </ul>
@@ -223,6 +231,15 @@ function CommentSection({ postId, comments }) {
         <p className="feed-error-text" role="alert">
           {submitError}
         </p>
+      )}
+      {reporting && (
+        <ReportDialog
+          open
+          onClose={() => setReporting(null)}
+          targetType="comment"
+          targetId={reporting.id}
+          label={t('report.thisComment')}
+        />
       )}
     </motion.section>
   );

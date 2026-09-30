@@ -102,6 +102,32 @@
   font-size: 13px;
 }
 
+/* Day 12: reported messages / deleted comments */
+.admin-report-quote {
+  overflow-wrap: anywhere;
+}
+
+.admin-report-asreported {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.admin-report-audio {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin: var(--space-1) 0;
+}
+
+.admin-report-image {
+  display: block;
+  max-width: 100%;
+  max-height: 200px;
+  margin: var(--space-1) 0;
+  border-radius: var(--radius-sm);
+}
+
 .admin-report-details {
   margin: var(--space-2) 0 0;
   color: var(--color-text-muted);

@@ -1,5 +1,5 @@
 import { memo, useEffect, useState } from 'react';
-import { CornerUpLeft, Pencil } from 'lucide-react';
+import { CornerUpLeft, Flag, Pencil } from 'lucide-react';
 import MessageStatusIcon from './MessageStatusIcon';
 import VoiceMessagePlayer from './VoiceMessagePlayer';
 import { useTranslation } from 'react-i18next';
@@ -75,7 +75,8 @@ function MessageBubble({
   onReply,
   onStartEdit,
   onSaveEdit,
-  onCancelEdit
+  onCancelEdit,
+  onReport
 }) {
   const { t } = useTranslation();
   const isFailed = message.status === 'failed';
@@ -98,6 +99,8 @@ function MessageBubble({
   // can be deleted.
   const canDelete = isOwn && !isDeleted && isPersisted;
   const canReply = !isDeleted && isPersisted;
+  // Day 12: someone else's message can be reported to the moderators.
+  const canReport = !isOwn && !isDeleted && isPersisted && Boolean(onReport);
   // Whether the 15-minute edit window is still open -- state + a timer (not
   // Date.now() during render) so "Edit" disappears exactly when it closes.
   const isEditableType = isOwn && message.type !== 'voice' && message.type !== 'image';
@@ -234,7 +237,7 @@ function MessageBubble({
           </button>
         )}
       </div>
-      {(canReply || canEdit) && !isEditing && (
+      {(canReply || canEdit || canReport) && !isEditing && (
         <div className="messages-bubble-actions">
           {canReply && (
             <button type="button" className="messages-action-btn" onClick={() => onReply(message)} aria-label={t('messages.replyToMessage')}>
@@ -244,6 +247,11 @@ function MessageBubble({
           {canEdit && (
             <button type="button" className="messages-action-btn" onClick={() => onStartEdit(message.id)} aria-label={t('messages.editMessage')}>
               <Pencil size={13} aria-hidden="true" />
+            </button>
+          )}
+          {canReport && (
+            <button type="button" className="messages-action-btn" onClick={() => onReport(message)} aria-label={t('messages.reportMessage')} title={t('messages.reportMessage')}>
+              <Flag size={13} aria-hidden="true" />
             </button>
           )}
         </div>

@@ -22,6 +22,16 @@ async function resolvePending(where, params, adminId, resolution) {
 // GET /admin/reports?status=pending|reviewed&page=N
 // Each report comes with a summary of its target (post text + author, or
 // the reported account) and how many pending reports share that target.
+// Day 12: a comment or message report shows that one comment/message (and
+// who wrote it) -- never the rest of the conversation. If it has since
+// been deleted, target_snapshot still has the text as reported.
+function targetExists(r) {
+  if (r.target_type === 'post') return r.post_author_id !== null;
+  if (r.target_type === 'comment') return r.comment_content !== null;
+  if (r.target_type === 'message') return r.message_type !== null;
+  return r.target_username !== null;
+}
+
 async function listReports(req, res) {
   try {
     const status = req.query.status === 'reviewed' ? 'reviewed' : 'pending';
@@ -33,6 +43,10 @@ async function listReports(req, res) {
          resolver.username AS resolved_by_username,
          p.content AS post_content, p.user_id AS post_author_id, pa.username AS post_author_username,
          tu.username AS target_username, (tu.banned_at IS NOT NULL) AS target_banned,
+         r.target_snapshot, r.target_owner_id, owner.username AS target_owner_username,
+         (owner.banned_at IS NOT NULL) AS target_owner_banned,
+         c.content AS comment_content, c.post_id AS comment_post_id,
+         m.content AS message_content, m.type AS message_type, m.media_url AS message_media_url,
          (SELECT COUNT(*)::int FROM reports r2
             WHERE r2.target_type = r.target_type AND r2.target_id = r.target_id AND r2.status = 'pending') AS pending_for_target
        FROM reports r
@@ -41,6 +55,9 @@ async function listReports(req, res) {
        LEFT JOIN posts p ON r.target_type = 'post' AND p.id = r.target_id
        LEFT JOIN users pa ON pa.id = p.user_id
        LEFT JOIN users tu ON r.target_type = 'user' AND tu.id = r.target_id
+       LEFT JOIN comments c ON r.target_type = 'comment' AND c.id = r.target_id
+       LEFT JOIN messages m ON r.target_type = 'message' AND m.id = r.target_id AND m.deleted_at IS NULL
+       LEFT JOIN users owner ON owner.id = r.target_owner_id
        WHERE r.status = $1
        ORDER BY r.created_at ${status === 'pending' ? 'ASC' : 'DESC'}, r.id
        LIMIT $2 OFFSET $3`,
@@ -50,7 +67,9 @@ async function listReports(req, res) {
     const reports = (hasMore ? result.rows.slice(0, REPORTS_PAGE_SIZE) : result.rows).map((r) => ({
       ...r,
       post_content: r.post_content ? r.post_content.slice(0, 300) : r.post_content,
-      target_exists: r.target_type === 'post' ? r.post_author_id !== null : r.target_username !== null
+      comment_content: r.comment_content ? r.comment_content.slice(0, 300) : r.comment_content,
+      message_content: r.message_content ? r.message_content.slice(0, 300) : r.message_content,
+      target_exists: targetExists(r)
     }));
     res.json({ reports, hasMore, page });
   } catch (err) {
@@ -94,7 +113,8 @@ async function removeReportedContent(req, res) {
 
 // POST /admin/users/:id/ban { reason } -- also deactivates (hides their
 // content everywhere via the existing visibility rules), ends their live
-// socket sessions, and resolves pending reports about them or their posts.
+// socket sessions, and resolves pending reports about them or anything they
+// wrote (posts, comments, messages).
 async function banUser(req, res) {
   try {
     const targetId = Number(req.params.id);
@@ -115,7 +135,8 @@ async function banUser(req, res) {
       [targetId, reason || null]
     );
     await resolvePending(
-      "(target_type = 'user' AND target_id = $1) OR (target_type = 'post' AND target_id IN (SELECT id FROM posts WHERE user_id = $1))",
+      `(target_type = 'user' AND target_id = $1) OR (target_type = 'post' AND target_id IN (SELECT id FROM posts WHERE user_id = $1))
+       OR target_owner_id = $1`,
       [targetId],
       req.userId,
       'user_banned'

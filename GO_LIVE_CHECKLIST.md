@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 030, check the environment variables,
+database, run migrations 015 → 031, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -97,7 +97,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 030 on production
+## 3. Run migrations 015 → 031 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -128,14 +128,16 @@ they run.
            019_add_comment_replies_likes 020_add_post_visibility 021_add_message_image_type \
            022_add_message_replies_images 023_add_group_chats 024_add_notification_preferences \
            025_add_admin_moderation 026_add_communities 027_add_pages 028_add_sessions \
-           029_add_cleanup_indexes 030_add_error_log; do
+           029_add_cleanup_indexes 030_add_error_log 031_report_comments_messages; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
-- [ ] Check the result (this should print `6`):
+- [ ] Check the result (this should print `6`, then `2`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
     "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups')"
+  "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
+    "SELECT count(*) FROM information_schema.columns WHERE table_name = 'reports' AND column_name IN ('target_owner_id','target_snapshot')"
   ```
 
 ## 4. Deploy the backend, then the frontend

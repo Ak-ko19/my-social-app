@@ -39,4 +39,10 @@ const cleanupInterval = setInterval(() => {
 }, CLEANUP_INTERVAL_MS);
 cleanupInterval.unref();
 
-module.exports = { isRateLimited };
+// Tests only: the counters outlive a DB reset, and user/conversation ids
+// restart with it, so a file sending many messages starts each test clean.
+function resetMessageRateLimits() {
+  sendTimestamps.clear();
+}
+
+module.exports = { isRateLimited, resetMessageRateLimits };

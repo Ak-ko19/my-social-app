@@ -17,7 +17,7 @@ CREATE TYPE message_status AS ENUM ('sent', 'delivered', 'read');
 -- 'image' added by migration 021_add_message_image_type (B9).
 CREATE TYPE message_type AS ENUM ('text', 'voice', 'image');
 CREATE TYPE report_status AS ENUM ('pending', 'reviewed');
-CREATE TYPE report_target_type AS ENUM ('post', 'user');
+CREATE TYPE report_target_type AS ENUM ('post', 'user', 'comment', 'message');
 
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
@@ -287,8 +287,12 @@ CREATE TABLE reports (
   -- Added by migration 025_add_admin_moderation (B12).
   resolved_by integer REFERENCES users(id) ON DELETE SET NULL,
   resolved_at timestamptz,
-  resolution varchar(20) CONSTRAINT chk_reports_resolution CHECK (resolution IN ('dismissed', 'content_removed', 'user_banned'))
+  resolution varchar(20) CONSTRAINT chk_reports_resolution CHECK (resolution IN ('dismissed', 'content_removed', 'user_banned')),
+  -- Added by migration 031_report_comments_messages (Day 12).
+  target_owner_id integer REFERENCES users(id) ON DELETE SET NULL,
+  target_snapshot text
 );
+CREATE INDEX idx_reports_target_owner ON reports (target_owner_id) WHERE target_owner_id IS NOT NULL;
 
 CREATE TABLE messages_dm_legacy (
   id SERIAL PRIMARY KEY,

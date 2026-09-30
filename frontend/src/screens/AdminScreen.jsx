@@ -16,6 +16,57 @@ import './AdminScreen.css';
 // Labels: admin.resolution.<key>.
 const RESOLUTIONS = ['dismissed', 'content_removed', 'user_banned'];
 
+// Day 12: a reported comment or message -- only that one item, never the
+// rest of the conversation. If it has since been deleted/unsent, the text
+// as it was when reported (target_snapshot) is shown instead.
+function ReportedText({ report }) {
+  const { t } = useTranslation();
+  const isComment = report.target_type === 'comment';
+  const name = report.target_owner_username;
+  const owner = name
+    ? { values: { name }, components: { link: <Link to={`/profile/${report.target_owner_id}`} /> } }
+    : { values: { name: t('admin.deletedAccount') }, components: { link: <span /> } };
+  const text = isComment ? report.comment_content : report.message_content;
+  let kind = isComment ? 'admin.commentBy' : 'admin.messageBy';
+  if (!isComment && report.message_type === 'voice') kind = 'admin.voiceBy';
+  if (!isComment && report.message_type === 'image') kind = 'admin.photoBy';
+
+  if (!report.target_exists) {
+    return (
+      <>
+        <span className="admin-report-kind">
+          {t(isComment ? 'admin.commentDeleted' : 'admin.messageDeleted')}
+          {name && <> · <Trans i18nKey={isComment ? 'admin.commentBy' : 'admin.messageBy'} {...owner} /></>}
+        </span>
+        {report.target_snapshot && (
+          <p className="admin-report-quote" dir="auto">
+            {/* bdi: the reported text keeps its own direction (and its
+                quote marks) next to a label in the other script. */}
+            <span className="admin-report-asreported">{t('admin.asReported')}</span> <bdi>“{report.target_snapshot}”</bdi>
+          </p>
+        )}
+      </>
+    );
+  }
+  return (
+    <>
+      <span className="admin-report-kind"><Trans i18nKey={kind} {...owner} /></span>
+      {report.message_type === 'voice' && report.message_media_url && (
+        <audio className="admin-report-audio" controls preload="none" src={report.message_media_url} />
+      )}
+      {report.message_type === 'image' && report.message_media_url && (
+        <a href={report.message_media_url} target="_blank" rel="noreferrer">
+          <img className="admin-report-image" src={report.message_media_url} alt={t('admin.reportedPhoto')} loading="lazy" />
+        </a>
+      )}
+      {text && <p className="admin-report-quote" dir="auto">“{text}”</p>}
+      {isComment && report.comment_post_id && (
+        <Link to={`/posts/${report.comment_post_id}`} className="admin-report-link">{t('admin.openPost')}</Link>
+      )}
+    </>
+  );
+}
+
 // One report, with the actions an admin can take on it. Ban asks for an
 // optional reason inline before confirming.
 function ReportCard({ report, token, onDone }) {
@@ -26,8 +77,13 @@ function ReportCard({ report, token, onDone }) {
   const [reason, setReason] = useState('');
 
   const isPost = report.target_type === 'post';
-  const targetUserId = isPost ? report.post_author_id : report.target_id;
-  const targetUsername = isPost ? report.post_author_username : report.target_username;
+  const isUser = report.target_type === 'user';
+  // Whose content it is (the account a ban would hit). Day 12 reports
+  // carry target_owner_*; a post reported before that falls back to the
+  // post's live author.
+  const targetUserId = isUser ? report.target_id : report.target_owner_id ?? report.post_author_id;
+  const targetUsername = isUser ? report.target_username : report.target_owner_username ?? report.post_author_username;
+  const targetBanned = isUser ? report.target_banned : report.target_owner_banned;
   const pending = report.status === 'pending';
 
   const act = (fn) => {
@@ -53,7 +109,9 @@ function ReportCard({ report, token, onDone }) {
       </div>
 
       <div className="admin-report-target">
-        {isPost ? (
+        {report.target_type === 'comment' || report.target_type === 'message' ? (
+          <ReportedText report={report} />
+        ) : isPost ? (
           report.target_exists ? (
             <>
               <span className="admin-report-kind"><Trans i18nKey="admin.postBy" values={{ name: report.post_author_username }} components={{ link: <Link to={`/profile/${report.post_author_id}`} /> }} /></span>
@@ -129,7 +187,7 @@ function ReportCard({ report, token, onDone }) {
         </form>
       )}
 
-      {!pending && report.resolution === 'user_banned' && targetUserId && report.target_banned !== false && (
+      {!pending && report.resolution === 'user_banned' && targetUserId && targetBanned !== false && (
         <div className="admin-report-actions">
           <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => act(() => unbanUser(targetUserId, token))}>
             {t('admin.unban', { name: targetUsername })}

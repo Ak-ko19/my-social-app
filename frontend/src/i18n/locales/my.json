@@ -212,7 +212,9 @@
       "hate_speech": "အမုန်းစကား",
       "misinformation": "သတင်းအမှား",
       "other": "အခြား"
-    }
+    },
+    "thisComment": "ဤမှတ်ချက်",
+    "thisMessage": "ဤမက်ဆေ့ချ်"
   },
   "comments": {
     "editLabel": "မှတ်ချက် ပြင်ရန်",
@@ -228,7 +230,9 @@
     "cancelReply": "ပြန်ဖြေခြင်း ရပ်ရန်",
     "writeComment": "မှတ်ချက် ရေးရန်",
     "replyPlaceholder": "ပြန်ဖြေချက် ရေးပါ...",
-    "commentPlaceholder": "မှတ်ချက် ရေးပါ... (တစ်စုံတစ်ယောက်ကို ဖော်ပြရန် @ ကို သုံးပါ)"
+    "commentPlaceholder": "မှတ်ချက် ရေးပါ... (တစ်စုံတစ်ယောက်ကို ဖော်ပြရန် @ ကို သုံးပါ)",
+    "report": "တိုင်ကြားရန်",
+    "reportAria": "{{name}} ၏ မှတ်ချက်ကို တိုင်ကြားရန်"
   },
   "reactions": {
     "like": "လိုက်ခ်",
@@ -502,7 +506,8 @@
     "playVoice": "အသံမက်ဆေ့ချ် ဖွင့်ရန်",
     "seekVoice": "အသံမက်ဆေ့ချ် ရှေ့နောက်ရွှေ့ရန်",
     "audioFailed": "အသံ ဖွင့်၍ မရပါ",
-    "holdToRecord": "အသံမက်ဆေ့ချ် သွင်းရန် ဖိထားပါ"
+    "holdToRecord": "အသံမက်ဆေ့ချ် သွင်းရန် ဖိထားပါ",
+    "reportMessage": "မက်ဆေ့ချ်ကို တိုင်ကြားရန်"
   },
   "members": {
     "loadFailed": "သင် ဖော်လိုးထားသူများကို ဖွင့်၍ မရပါ",
@@ -666,7 +671,16 @@
       "resolve": "ဖြေရှင်းပြီးအဖြစ် မှတ်ရန်",
       "resolving": "မှတ်နေသည်…",
       "loadMore": "ထပ်ဖွင့်ရန်"
-    }
+    },
+    "commentBy": "<link>{{name}}</link> ၏ မှတ်ချက်",
+    "commentDeleted": "မှတ်ချက် (ဖျက်ပြီး)",
+    "messageBy": "<link>{{name}}</link> ထံမှ မက်ဆေ့ချ်",
+    "voiceBy": "<link>{{name}}</link> ထံမှ အသံမက်ဆေ့ချ်",
+    "photoBy": "<link>{{name}}</link> ထံမှ ဓာတ်ပုံ",
+    "messageDeleted": "မက်ဆေ့ချ် (ပြန်ဖျက်ပြီး)",
+    "asReported": "တိုင်ကြားစဉ်က -",
+    "reportedPhoto": "တိုင်ကြားထားသော ဓာတ်ပုံ",
+    "deletedAccount": "ဖျက်ထားသော အကောင့်"
   },
   "groups": {
     "title": "အဖွဲ့များ",

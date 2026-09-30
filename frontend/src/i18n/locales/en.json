@@ -212,7 +212,9 @@
       "hate_speech": "Hate speech",
       "misinformation": "Misinformation",
       "other": "Other"
-    }
+    },
+    "thisComment": "this comment",
+    "thisMessage": "this message"
   },
   "comments": {
     "editLabel": "Edit comment",
@@ -228,7 +230,9 @@
     "cancelReply": "Cancel reply",
     "writeComment": "Write a comment",
     "replyPlaceholder": "Write a reply...",
-    "commentPlaceholder": "Write a comment... (@ to mention someone)"
+    "commentPlaceholder": "Write a comment... (@ to mention someone)",
+    "report": "Report",
+    "reportAria": "Report {{name}}'s comment"
   },
   "reactions": {
     "like": "Like",
@@ -502,7 +506,8 @@
     "playVoice": "Play voice message",
     "seekVoice": "Seek voice message",
     "audioFailed": "Couldn't load audio",
-    "holdToRecord": "Hold to record a voice message"
+    "holdToRecord": "Hold to record a voice message",
+    "reportMessage": "Report message"
   },
   "members": {
     "loadFailed": "Could not load the people you follow",
@@ -666,7 +671,16 @@
       "resolve": "Mark resolved",
       "resolving": "Resolving…",
       "loadMore": "Load more"
-    }
+    },
+    "commentBy": "Comment by <link>{{name}}</link>",
+    "commentDeleted": "Comment (deleted)",
+    "messageBy": "Message from <link>{{name}}</link>",
+    "voiceBy": "Voice message from <link>{{name}}</link>",
+    "photoBy": "Photo from <link>{{name}}</link>",
+    "messageDeleted": "Message (unsent)",
+    "asReported": "As reported:",
+    "reportedPhoto": "Reported photo",
+    "deletedAccount": "a deleted account"
   },
   "groups": {
     "title": "Groups",

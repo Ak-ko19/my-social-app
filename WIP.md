@@ -1,7 +1,28 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 12 — Moderation (not started)
-**Step:** —
+**Day:** 12 — Moderation
+**Step:** 1 — Report comments and messages.
+
+## Step 1 plan
+- Migration 031_report_comments_messages: report_target_type += 'comment',
+  'message'; reports.target_owner_id (author of the reported thing, ON
+  DELETE SET NULL) + reports.target_snapshot (the reported text at report
+  time, max 1000 chars, so the evidence survives an edit/unsend). Down:
+  deletes comment/message reports, drops the columns, rebuilds the enum.
+  Fixture + GO_LIVE loop + rehearsal.
+- POST /reports: targetType comment → comment must exist, not your own.
+  message → must exist, not deleted, reporter must be a participant of
+  its conversation (else 404 — never reveal other chats), not your own.
+  Voice/photo messages: snapshot = caption or null (type shown instead).
+- Admin list: comment → live text/author/post id; message → live
+  text/type/sender (only the reported message, never the rest of the
+  chat); target_exists; falls back to the snapshot when gone.
+  Ban resolves pending comment/message reports on that user too.
+- Frontend: "Report" on others' comments (comment actions) and a flag
+  button on others' messages (bubble actions) → the existing
+  ReportDialog; admin panel renders the new target kinds. EN/MY/AR.
+- Tests: jest (rules, privacy 404, snapshot, admin list, ban resolves,
+  enum/columns); browser suite day12-report (comment + DM + group, RTL).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -30,4 +51,16 @@
 (written at the start of each step)
 
 ## Progress
-(nothing in progress — Day 11 closed 2026-09-30)
+- Step 1 DONE (2026-09-30): built as planned. Extras/decisions:
+  - Post reports also store owner + snapshot now (evidence survives an
+    edit; ban resolves via target_owner_id).
+  - services/rateLimiter.js got resetMessageRateLimits() for tests (its
+    in-memory counters outlive a DB reset and ids restart).
+  - Admin: voice → inline player, photo → thumbnail, only the reported
+    message; "As reported:" text in <bdi> (bidi with Arabic labels).
+  - Verified: backend 434/434; 6 mutation checks caught; 031 down with
+    comment/message reports present + up twice OK; golive-rehearsal
+    --old PASSED (015→031); day12-report 37/37 EN/MY/AR; b12/b4/b9/b10
+    + a3 ar green.
+- Next: Step 2 — admin report-review page: remove comment/message,
+  suspend (temporary) user.

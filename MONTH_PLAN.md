@@ -120,7 +120,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Add a Turnstile hook that turns on only if its env var exists.
 
 ### Day 12 — Moderation
-- [ ] Report comments and messages.
+- [x] Report comments and messages.
 - [ ] Admin report-review page (admin role, list, resolve, remove content, suspend user).
 
 ### Day 13 — Test coverage

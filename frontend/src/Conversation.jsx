@@ -16,6 +16,7 @@ import MessageComposer from './components/messages/MessageComposer';
 import MessageThreadSkeleton from './components/messages/MessageThreadSkeleton';
 import ConversationListErrorState from './components/messages/ConversationListErrorState';
 import ConnectionBanner from './components/messages/ConnectionBanner';
+import ReportDialog from './components/feed/ReportDialog';
 import './components/messages/Messages.css';
 import './components/feed/Feed.css';
 import { useTranslation } from 'react-i18next';
@@ -70,6 +71,9 @@ function Conversation() {
     setEditingId(messageId);
   }, []);
   const handleCancelEdit = useCallback(() => setEditingId(null), []);
+  // Day 12: the message being reported (someone else's), or null.
+  const [reporting, setReporting] = useState(null);
+  const handleReport = useCallback((message) => setReporting(message), []);
   // B10: conversation details (type, group name, members + roles). Fetched
   // for every conversation (cheap); groups use it for the header, sender
   // names and typing names. Refetched when the group changes (group_updated).
@@ -349,6 +353,7 @@ function Conversation() {
                 onStartEdit={handleStartEdit}
                 onSaveEdit={handleSaveEdit}
                 onCancelEdit={handleCancelEdit}
+                onReport={handleReport}
               />
             ))}
           </VoicePlaybackProvider>
@@ -375,6 +380,15 @@ function Conversation() {
         replyToLabel={replyTo ? replyAuthorLabel(replyTo.sender_id) : ''}
         onCancelReply={() => setReplyTo(null)}
       />
+      {reporting && (
+        <ReportDialog
+          open
+          onClose={() => setReporting(null)}
+          targetType="message"
+          targetId={reporting.id}
+          label={t('report.thisMessage')}
+        />
+      )}
     </div>
   );
 }
