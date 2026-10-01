@@ -43,16 +43,22 @@ export function replaceToken(token) {
   notifyAuthChange();
 }
 
-// Single place that clears a dead session and sends the user back to
-// login -- used by both api.js's 401 interceptor and SocketProvider's
-// AUTH_FAILED handling, so the two can't drift into slightly different
-// "what does logging someone out actually do" behavior.
-export function forceLogout() {
+// Forgets the session in this browser and tells every useAuth() consumer,
+// so nothing sends the token again (no navigation; see forceLogout).
+export function clearLocalSession() {
   localStorage.removeItem('token');
   localStorage.removeItem('userId');
   localStorage.removeItem('username');
   localStorage.removeItem('emailVerified');
   notifyAuthChange();
+}
+
+// Single place that clears a dead session and sends the user back to
+// login -- used by both api.js's 401 interceptor and SocketProvider's
+// AUTH_FAILED handling, so the two can't drift into slightly different
+// "what does logging someone out actually do" behavior.
+export function forceLogout() {
+  clearLocalSession();
   if (window.location.pathname !== '/login') {
     window.location.assign('/login');
   }

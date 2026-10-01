@@ -36,7 +36,7 @@ import AppFooter from '../components/layout/AppFooter';
 import ThemeToggle from '../components/common/ThemeToggle';
 import PrivacyToggle from '../components/common/PrivacyToggle';
 import { useCurrentUserSummary } from '../hooks/useCurrentUserSummary';
-import { forceLogout, useAuth } from '../hooks/useAuth';
+import { clearLocalSession, forceLogout, useAuth } from '../hooks/useAuth';
 import { useUnreadCount } from '../hooks/useUnreadCount';
 import { logoutOnServer } from '../services/sessionService';
 import './SettingsScreen.css';
@@ -117,10 +117,15 @@ function SettingsScreen() {
   const currentUser = useCurrentUserSummary();
 
   // Day 8: end this device's session on the server too (so it disappears
-  // from "Where you're logged in"), then sign out here whatever the network
+  // from "Where you're logged in"), and sign out here whatever the network
   // says -- logging out must always work.
+  // Day 15: the browser forgets the token FIRST. Waiting for the server
+  // before that let polls (unread counts, ...) go out with a token the
+  // server had just revoked, and come back 401.
   const handleLogout = () => {
-    logoutOnServer(token)
+    const sessionToken = token;
+    clearLocalSession();
+    logoutOnServer(sessionToken)
       .catch((err) => console.warn('Server logout failed; signing out locally.', err.message))
       .finally(forceLogout);
   };

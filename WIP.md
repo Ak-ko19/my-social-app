@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 15 — i18n framework
-**Step:** 1 — verify (already built in B15) and close gaps.
+**Day:** 16 — Myanmar (not started)
+**Step:** —
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -37,11 +37,4 @@
 (written at the start of each step)
 
 ## Progress
-- Day 14 closed (GO LIVE skipped, rehearsal green).
-- Step 1 DONE: react-i18next since B15; check:i18n green (838 keys × 3).
-  Audit for hard-coded UI text: the only English left was in 9 dead
-  files (PostActions/PostHeader/PostMedia/LikeButton/MoreButton/
-  CommentButton + an unused FeedActions context) -> removed, with their
-  CSS. Verified: lint/build/vitest 30, backend 454, a2/b1/b4/day2/b15/
-  b16 + A3 EN/MY/AR green.
-- Next: Day 15 close (full browser run), then Day 16.
+(nothing in progress — Day 15 closed 2026-10-01)

@@ -718,3 +718,25 @@ Build every feature the way a senior engineer at a top social media company woul
   - REHEARSAL PASSED. GO_LIVE_CHECKLIST's "last run" was updated.
 - No code changed, so no new test run was needed beyond the rehearsal.
   Day 13's full browser run (the same code) is green.
+
+### 2026-10-01 — Day 15: i18n framework (verified)
+- **Step (`82716f5`):** react-i18next has been in place since B15, with
+  lazy MY/AR bundles and `check:i18n` (838 keys in each language, plural
+  forms, no unknown references).
+  - An audit for UI text outside the translation files found English
+    only in nine dead files: PostActions/PostHeader/PostMedia/LikeButton/
+    MoreButton/CommentButton (replaced by PostCard) and a never-mounted
+    FeedActions context/provider/hook.
+  - Removed, with the CSS only they used.
+- **Found at close:** day8-sessions-list once logged two 401s, all checks
+  passing. Settings → Log Out waited for the server to revoke the
+  session before clearing the token here, so a poll fired during that
+  round trip went out with a revoked token.
+  - **Fix:** `clearLocalSession()` runs first, then the server logout
+    with the captured token, then the redirect.
+  - Unit test added. The suite passed 3/3 afterwards.
+- **Tests at close:**
+  - backend 454/454; Vitest 31/31.
+  - Full browser run (Day 15 code): all 28 suites and A3 EN/MY/AR green,
+    run in foreground batches. day8-sessions-list, b11-settings and
+    day8-sessions were re-run after the logout fix.
