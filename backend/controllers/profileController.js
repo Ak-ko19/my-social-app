@@ -1,4 +1,5 @@
 const db = require('../db');
+const { APP_LANGUAGES, isAppLanguage } = require('../config/languages');
 const { sendServerError } = require('../utils/sendError');
 const { deleteMedia } = require('../services/mediaCleanupService');
 const blockService = require('../services/blockService');
@@ -8,7 +9,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function getMyProfile(req, res) {
   try {
-    const result = await db.query('SELECT id, username, email, bio, avatar_url, is_private, email_verified, is_admin, created_at FROM users WHERE id = $1', [req.userId]);
+    const result = await db.query('SELECT id, username, email, bio, avatar_url, is_private, email_verified, is_admin, language, created_at FROM users WHERE id = $1', [req.userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).send('User not found');
@@ -128,4 +129,20 @@ async function updatePrivacy(req, res) {
   }
 }
 
-module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy };
+// Day 16: PUT /profile/language { language } -- the app language for this
+// account, applied on every device it logs in on.
+async function updateLanguage(req, res) {
+  try {
+    const language = req.body?.language;
+    if (!isAppLanguage(language)) {
+      return res.status(400).send(`language must be one of: ${APP_LANGUAGES.join(', ')}`);
+    }
+    const result = await db.query('UPDATE users SET language = $1 WHERE id = $2 RETURNING language', [language, req.userId]);
+    if (result.rows.length === 0) return res.status(404).send('User not found');
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    sendServerError(res, err, 'Saving the language failed. Please try again later.');
+  }
+}
+
+module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage };

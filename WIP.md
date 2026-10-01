@@ -1,7 +1,29 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 16 — Myanmar (not started)
-**Step:** —
+**Day:** 16 — Myanmar
+**Step:** 1 — MY translations + font + switcher (exist since B15: verify)
+and the missing part: save the language choice PER USER.
+
+## Step 1 plan
+- Exists: my.json (838 keys, check:i18n), Noto Sans Myanmar (unicode-range,
+  only loads for Burmese text), Settings → Language + landing select.
+- Missing: the choice lives only in this browser (localStorage).
+- Migration 033_add_user_language: users.language varchar(5) NULL,
+  CHECK in ('en','my','ar'). NULL = never chosen.
+- API: PUT /profile/language {language} (auth, validated); GET
+  /profile/me and POST /login return `language`; POST /signup takes an
+  optional language (invalid/missing → NULL, never fails a signup).
+- Frontend: Language screen saves to the account when logged in
+  (best effort; on failure a quiet note, still applied here). Login: the
+  account's language wins on a new device; if the account has none, the
+  device's current language is saved to it. Signup sends the current
+  language.
+- Copy: language hint ("on all your devices"), privacy text (language is
+  also saved to the account) in EN/MY/AR.
+- Tests: backend (validation, me/login/signup), vitest (Language screen
+  save + failure note, Login applies account language), browser suite
+  day16-language (choose MY on one device → new device logs in in MY;
+  RTL for AR).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -37,4 +59,9 @@
 (written at the start of each step)
 
 ## Progress
-(nothing in progress — Day 15 closed 2026-10-01)
+- Step 1 DONE (2026-10-01). Verified: backend 459/459 (language.test 5;
+  5 mutations caught after making the isolation test start at user 2);
+  vitest 37/37; rehearsal 015→033 PASSED; day16-language 15/15;
+  a2/b11/b15/b16/c2/day11-bots green; c3-landing + day16-language
+  stalled once (dev server, ~1.6 GB free RAM) and passed on rerun.
+- Next: Day 16 close (full browser run in batches).

@@ -10,5 +10,6 @@ router.get('/profile/me', authMiddleware, profileController.getMyProfile);
 router.get('/profile/:id', optionalAuth, profileController.getProfile);
 router.put('/profile', authMiddleware, upload.single('avatar'), uploadToCloudinary('avatars'), profileController.updateProfile);
 router.put('/profile/privacy', authMiddleware, profileController.updatePrivacy);
+router.put('/profile/language', authMiddleware, profileController.updateLanguage);
 
 module.exports = router;

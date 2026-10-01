@@ -13,7 +13,7 @@ function Signup() {
   const [success, setSuccess] = useState(false);
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { honeypot, guardedPost } = useFormGuard(3000);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -39,7 +39,9 @@ function Signup() {
     guardedPost('/signup', {
       username: username.trim(),
       email: email.trim(),
-      password: password
+      password: password,
+      // Day 16: kept on the account, so it follows them to other devices.
+      language: i18n.language
     })
     .finally(() => setBusy(false))
     .then(() => {

@@ -93,7 +93,8 @@
   "language": {
     "title": "Language",
     "choose": "App language",
-    "hint": "Changes the app's buttons, menus and messages on this device. Posts and comments stay in the language they were written in."
+    "hint": "Changes the app's buttons, menus and messages. When you're logged in it's saved to your account, so it follows you to every device. Posts and comments stay in the language they were written in.",
+    "saveFailed": "Couldn't save this to your account right now. It's still used on this device."
   },
   "auth": {
     "email": "Email",
@@ -970,7 +971,7 @@
         },
         {
           "heading": "5. Data on your device",
-          "body": "The app keeps your login session, theme (light/dark) and language choice in your browser's local storage. We don't use advertising or tracking cookies."
+          "body": "The app keeps your login session, theme (light/dark) and language choice in your browser's local storage. Your language choice is also saved to your account, so it follows you to other devices. We don't use advertising or tracking cookies."
         },
         {
           "heading": "6. Security",

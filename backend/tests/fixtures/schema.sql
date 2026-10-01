@@ -43,7 +43,9 @@ CREATE TABLE users (
   -- Added by migration 028_add_sessions (Day 8).
   tokens_valid_after timestamptz,
   -- Added by migration 032_add_suspensions (Day 12): NULL = permanent ban.
-  banned_until timestamptz
+  banned_until timestamptz,
+  -- Added by migration 033_add_user_language (Day 16): NULL = never chosen.
+  language varchar(5) CONSTRAINT chk_users_language CHECK (language IN ('en', 'my', 'ar'))
 );
 CREATE INDEX idx_users_banned_until ON users (banned_until) WHERE banned_until IS NOT NULL;
 

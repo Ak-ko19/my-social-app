@@ -17,3 +17,9 @@ export function fetchUserPosts(userId, tab, token, { page = 1, limit = 12 } = {}
     .get(`/users/${userId}/posts`, { ...(token ? authHeaders(token) : {}), params: { tab, page, limit } })
     .then((res) => res.data);
 }
+
+// Day 16: the app language saved on the account (follows you to every
+// device). language = 'en' | 'my' | 'ar'.
+export function saveLanguage(language, token) {
+  return api.put('/profile/language', { language }, authHeaders(token)).then((res) => res.data);
+}

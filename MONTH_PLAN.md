@@ -139,7 +139,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Add react-i18next; move all UI text into English translation files. *(Already built in B15; verified 2026-10-01 — see Progress Log.)*
 
 ### Day 16 — Myanmar
-- [ ] Myanmar translations (Unicode) + a proper Myanmar web font; language switcher in Settings; save choice per user.
+- [x] Myanmar translations (Unicode) + a proper Myanmar web font; language switcher in Settings; save choice per user. *(Translations, Noto Sans Myanmar and the switcher since B15; per-user saving added Day 16.)*
 
 ### Day 17 — Arabic + RTL
 - [ ] Arabic translations; full right-to-left layout (dir="rtl", logical CSS properties); check every screen.

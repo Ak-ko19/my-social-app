@@ -7,6 +7,7 @@ const { sendEmail, emailEnabled } = require('../utils/email');
 const { createSession, revokeOtherSessions, disconnectOtherSockets } = require('../services/sessionService');
 const botProtection = require('../services/botProtection');
 const { banState, liftExpiredSuspension } = require('../services/moderationService');
+const { isAppLanguage } = require('../config/languages');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Base URL of the frontend that verify-email/reset-password links point
@@ -76,10 +77,13 @@ async function signup(req, res) {
     if (!isPasswordValid(password)) {
       return res.status(400).send(`Password must be between ${MIN_PASSWORD_LENGTH} and ${MAX_PASSWORD_LENGTH} characters long`);
     }
+    // Day 16: the language the app was in when they signed up, so it
+    // follows them to other devices. Optional; anything unknown is ignored.
+    const language = isAppLanguage(req.body.language) ? req.body.language : null;
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await db.query(
-      'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email',
-      [username, email, hashedPassword]
+      'INSERT INTO users (username, email, password, language) VALUES ($1, $2, $3, $4) RETURNING id, username, email',
+      [username, email, hashedPassword, language]
     );
     await issueVerificationEmail(result.rows[0].id, result.rows[0].email);
     res.status(201).json(result.rows[0]);
@@ -195,7 +199,9 @@ async function login(req, res) {
       username: user.username,
       email: user.email,
       reactivated,
-      emailVerified: user.email_verified
+      emailVerified: user.email_verified,
+      // Day 16: the account's app language (null = never chosen).
+      language: user.language
     });
   } catch (err) {
     sendServerError(res, err, 'Login failed. Please try again later.');
