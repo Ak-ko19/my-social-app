@@ -1,5 +1,5 @@
 // Centralizes Cloudinary delivery-URL transformations so every image
-// consumer (PostMedia, Avatar, ...) asks for optimized images the same way,
+// consumer (PostCard's media, Avatar, ...) asks for optimized images the same way,
 // in one place, instead of hand-building transform strings per component.
 //
 // This only rewrites the delivery URL Cloudinary already returned at upload

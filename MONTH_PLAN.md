@@ -136,7 +136,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ## WEEK 3 — Languages and core social features
 
 ### Day 15 — i18n framework
-- [ ] Add react-i18next; move all UI text into English translation files.
+- [x] Add react-i18next; move all UI text into English translation files. *(Already built in B15; verified 2026-10-01 — see Progress Log.)*
 
 ### Day 16 — Myanmar
 - [ ] Myanmar translations (Unicode) + a proper Myanmar web font; language switcher in Settings; save choice per user.

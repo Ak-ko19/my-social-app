@@ -3,9 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
 
 // Purely presentational: all state and mutation logic lives in
-// useFollowToggle (owned by PostCard), passed in as `follow`. Same subtle
-// tap feedback as LikeButton/CommentButton for consistency, without the
-// extra label-swap animation (only Like's state transition was asked for).
+// useFollowToggle (owned by PostCard), passed in as `follow`. A subtle
+// tap feedback, without a label-swap animation.
 function FollowButton({ follow }) {
   const { t } = useTranslation();
   const { isFollowing, requested, pending, error, toggle } = follow;

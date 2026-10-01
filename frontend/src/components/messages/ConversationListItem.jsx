@@ -16,7 +16,7 @@ function localizePreview(text, t) {
 }
 
 // Deliberately a single component rather than split into sub-parts like
-// PostCard/PostHeader/PostContent -- a conversation row has none of
+// PostCard/PostContent -- a conversation row has none of
 // PostCard's per-part reuse/complexity (no comments, no media, no separate
 // like/follow mutations), so that split would be premature here.
 //

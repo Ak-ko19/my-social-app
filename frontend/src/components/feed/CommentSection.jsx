@@ -98,7 +98,7 @@ function CommentItem({ c, comments, currentUserId, onReply, onReport }) {
 }
 
 // Receives the `comments` bag from useComments (owned by PostCard, shared
-// with the CommentButton toggle) rather than fetching its own data.
+// with its Comment toggle) rather than fetching its own data.
 //
 // The open/close transition (PostCard mounts/unmounts this inside an
 // AnimatePresence) only animates opacity + a small y offset, never height.
