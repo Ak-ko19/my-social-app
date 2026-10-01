@@ -128,6 +128,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Set up Vitest + React Testing Library with tests for the main components.
 
 ### Day 14 — GO LIVE #2 (only if you have the access) + buffer
+*GO LIVE skipped 2026-10-01: no production access (CLAUDE.md hard limits) — owner action, LATER.md #2. Buffer done: nothing left from Week 2 except the owner's GO LIVE steps; rehearsal re-run on current dev (015 → 032) PASSED.*
 - [ ] Finish anything left from Week 2, deploy, smoke test, merge to main.
 
 ---
@@ -702,3 +703,18 @@ Build every feature the way a senior engineer at a top social media company woul
   - In batch 1, b1-reactions and b2-media failed because their stack
     could not reach the database (machine low on memory, ~2 GB free of
     8). Both passed on an immediate rerun.
+
+### 2026-10-01 — Day 14: GO LIVE #2 (skipped) + buffer
+- **GO LIVE skipped:** there is no production access (CLAUDE.md hard
+  limits). It stays an owner action (LATER.md #2, updated).
+- **Buffer:** nothing is left from Week 2 apart from the owner-only GO
+  LIVE boxes (Day 1's remote-CI check, Day 7). The GO LIVE rehearsal was
+  re-run on the current `dev` (Days 1–13):
+  - migrations 015 → 032 up, down and up;
+  - the schema matches the app's (171 columns, 97 constraints);
+  - data is kept;
+  - the old and new code both pass the API smoke test;
+  - the checklist's migration list is exact.
+  - REHEARSAL PASSED. GO_LIVE_CHECKLIST's "last run" was updated.
+- No code changed, so no new test run was needed beyond the rehearsal.
+  Day 13's full browser run (the same code) is green.

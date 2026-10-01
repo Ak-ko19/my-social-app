@@ -55,6 +55,9 @@ without them. Newest items at the bottom.
   - **So Day 7 (GO LIVE #1) was skipped** and the work continued with
     Day 8, as MONTH_PLAN says. The same applies to every later GO LIVE
     day until you run the checklist.
+  - **Day 14 (GO LIVE #2) was skipped too (2026-10-01).** `dev` is now
+    Days 1–13. The checklist covers migrations 015 → 032 and its smoke
+    tests up to Day 12. The rehearsal passed on that `dev` the same day.
 
 ## 3. Add a Brevo API key to turn on real emails (Day 5)
 - **Why:** password reset and email verification need to send emails.
