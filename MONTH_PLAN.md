@@ -664,3 +664,41 @@ Build every feature the way a senior engineer at a top social media company woul
   practice is now avoided.
 - **GO_LIVE_CHECKLIST:** migrations 015 → 032, a post-check for the new
   columns, and a Day 12 smoke item.
+
+### 2026-09-30/10-01 — Day 13: Test coverage
+- **Step 1 (`89ff4b6`):** the browser suites run in CI.
+  - The e2e scripts work on Windows and Linux. `pg.cjs` / `pg-tools.sh`
+    find the PostgreSQL tools; ports are freed with taskkill or fuser;
+    `E2E_EXTERNAL_DB=1` uses CI's Postgres service container.
+  - `run-all.sh` takes `E2E_ONLY` (an unknown name stops the run).
+  - **Better than running everything on every push:** the repo is
+    private, with 2000 CI minutes a month. So "Browser tests (smoke)"
+    runs 4 key suites on every push, and "Browser tests (full)" runs on
+    PRs to master and by hand, with Noto fonts for MY/AR.
+  - `ciWorkflow.test.js` guards the workflow against the scripts.
+  - **Not verifiable here:** the first real Linux run (no WSL or
+    Docker), which is an owner check (LATER #1). The same command passed
+    locally in external-DB mode.
+- **Step 2 (`5d2caa9`):** Vitest + React Testing Library.
+  - 30 component and unit tests: utils (incl. safeUrl), useFormGuard,
+    ReportDialog, MessageBubble, CommentSection, Modal, ErrorBoundary
+    and Login. CI's frontend job runs them.
+  - **Real bug found and fixed:** Modal re-focused its panel on every
+    parent render, so text fields inside dialogs (report details,
+    account-deletion confirm) only took one letter. The browser suites
+    missed it because Playwright's `fill()` sets the whole value at once.
+    - Guarded by Modal tests that fail on the old code.
+    - day12-report now types key by key.
+  - `npm audit fix` cleared one advisory (brace-expansion, via eslint).
+- **Flaky test fixed at close:** day11-bots once read the login form
+  before it had rendered after signup (MY). It now waits for the login
+  heading and logs the error text if it fails.
+- **Tests at close:**
+  - backend 454/454; Vitest 30/30.
+  - Full browser run ALL PASSED: 28 suites and 499 checks, plus A3
+    228/228 × EN/MY/AR.
+  - The run was done in 5 foreground batches: the background run was
+    killed by Claude Code for low memory.
+  - In batch 1, b1-reactions and b2-media failed because their stack
+    could not reach the database (machine low on memory, ~2 GB free of
+    8). Both passed on an immediate rerun.

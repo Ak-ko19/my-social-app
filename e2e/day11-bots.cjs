@@ -71,11 +71,15 @@ const RELOAD_T = { en: RELOAD, my: 'စာမျက်နှာကို ပြ�
     await page.screenshot({ path: path.join(SP, `day11-signup-${lang}-${theme}-${width}.png`) });
 
     await page.waitForURL(`${WEB}/login`, { timeout: 5000 }).catch(() => {});
+    // The login screen itself, not just its URL (a fill racing the switch
+    // from the signup form made this flaky once).
+    await page.getByRole('heading', { name: t.welcomeBack }).waitFor({ timeout: 5000 }).catch(() => {});
     await page.locator('input[type=email]').fill(`${name}@example.com`);
     await page.locator('input[type=password]').fill('a-fine-password-123');
     await page.locator('form button[type=submit]').click();
     await page.waitForURL(`${WEB}/`, { timeout: 8000 }).catch(() => {});
-    check(`${label}: and then logs in`, page.url() === `${WEB}/`, page.url());
+    check(`${label}: and then logs in`, page.url() === `${WEB}/`,
+      `${page.url()} ${await page.locator('.form-error').innerText().catch(() => '')}`);
     await page.context().close();
   }
 
