@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Check } from 'lucide-react';
 import { IconButton } from '../components/ui';
-import { LANGUAGES, setLanguage } from '../i18n';
+import { LANGUAGES } from '../i18n';
 import { useAuth } from '../hooks/useAuth';
-import { saveLanguage } from '../services/profileService';
+import { chooseLanguage } from '../utils/languageChoice';
 
 // B15: /settings/language -- English / Myanmar / Arabic. Day 16: saved on
 // this device AND on the account, so it follows you to every device.
@@ -19,8 +19,7 @@ function LanguageScreen() {
   // be saved, the app still switches and says so quietly.
   const choose = (code) => {
     setSaveFailed(false);
-    setLanguage(code).catch(() => {});
-    if (token) saveLanguage(code, token).catch(() => setSaveFailed(true));
+    chooseLanguage(code, token).catch(() => setSaveFailed(true));
   };
 
   return (

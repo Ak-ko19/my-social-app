@@ -64,4 +64,10 @@ and the missing part: save the language choice PER USER.
   vitest 37/37; rehearsal 015→033 PASSED; day16-language 15/15;
   a2/b11/b15/b16/c2/day11-bots green; c3-landing + day16-language
   stalled once (dev server, ~1.6 GB free RAM) and passed on rerun.
-- Next: Day 16 close (full browser run in batches).
+- Day 16 close run #1: day8-sessions-list showed a REAL design flaw —
+  the first login auto-saved the device default (en) to the account,
+  which then overrode an Arabic device. Fixed (utils/languageChoice.js):
+  only picked languages reach the account; a logged-out pick is pending
+  and wins at the next login there; signup sends only a picked one.
+  day16-language 17/17, day8-sessions-list green, vitest 38/38.
+- Next: Day 16 close run #2 (all batches again).

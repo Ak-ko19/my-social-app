@@ -39,11 +39,12 @@ const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysoci
   const EN = locale('en');
   const MY = locale('my');
 
-  // 1. Alice has never chosen: her first login saves this device's (English).
+  // 1. Alice has never chosen. Logging in must not write this device's
+  // default to her account (that would later override a real choice).
   check('setup: alice has no saved language', sql('SELECT language IS NULL FROM users WHERE id = 1') === 't');
   const laptop = await device();
   await logIn(laptop, 'alice@example.com');
-  check('first login saves the device language to the account', sql('SELECT language FROM users WHERE id = 1') === 'en');
+  check('a device default is never saved to the account', sql('SELECT language IS NULL FROM users WHERE id = 1') === 't');
 
   // 2. She switches to Myanmar in Settings -> saved on the account.
   await laptop.goto(`${WEB}/settings/language`, { waitUntil: 'networkidle' });
@@ -74,11 +75,21 @@ const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysoci
   await logIn(tablet, 'alice@example.com');
   check('a third device logs straight into Arabic, RTL', JSON.stringify(await htmlLang(tablet)) === '["ar","rtl"]');
 
-  // 5. Signing up in Myanmar keeps Myanmar on the new account.
+  // 5. Picked on the landing page while logged out: that fresh choice wins
+  // at the next login on that device, and becomes the account's.
+  const kiosk = await device();
+  await kiosk.goto(`${WEB}/welcome`, { waitUntil: 'networkidle' });
+  await kiosk.locator('.landing-lang-select').selectOption('en');
+  await logIn(kiosk, 'alice@example.com');
+  check('a logged-out pick wins at login (English, not the account\'s Arabic)', (await htmlLang(kiosk))[0] === 'en');
+  await kiosk.waitForTimeout(500);
+  check('...and is saved to the account', sql('SELECT language FROM users WHERE id = 1') === 'en');
+
+  // 6. Signing up after picking Myanmar keeps Myanmar on the new account.
   const fresh = await device();
+  await fresh.goto(`${WEB}/welcome`, { waitUntil: 'networkidle' });
+  await fresh.locator('.landing-lang-select').selectOption('my');
   await fresh.goto(`${WEB}/signup`, { waitUntil: 'networkidle' });
-  await fresh.evaluate(() => localStorage.setItem('lang', 'my'));
-  await fresh.reload({ waitUntil: 'networkidle' });
   const inputs = fresh.locator('form input:not([name=website])');
   await inputs.nth(0).fill('mya');
   await inputs.nth(1).fill('mya@example.com');

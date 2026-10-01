@@ -6,6 +6,7 @@ import i18n from '../i18n';
 import api from '../api';
 import LanguageScreen from './LanguageScreen';
 import Login from '../Login';
+import { chooseLanguage, pickedLanguage } from '../utils/languageChoice';
 
 vi.mock('../api', () => ({ default: { get: vi.fn(), post: vi.fn(), put: vi.fn() } }));
 vi.mock('../hooks/useTheme', () => ({ useTheme: () => ({ theme: 'light' }) }));
@@ -40,11 +41,12 @@ describe('Language screen', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('تعذّر حفظ هذا في حسابك الآن');
   });
 
-  it('logged out: only this device', async () => {
+  it('logged out: this device now, and remembered for the next login here', async () => {
     screenEl();
     await userEvent.click(screen.getByRole('radio', { name: /မြန်မာ/ }));
     await waitFor(() => expect(i18n.language).toBe('my'));
     expect(api.put).not.toHaveBeenCalled();
+    expect(pickedLanguage()).toBe('my');
   });
 });
 
@@ -65,11 +67,21 @@ describe('Login and the account language', () => {
     expect(api.put).not.toHaveBeenCalled();
   });
 
-  it('an account that never chose one gets this device\'s language', async () => {
+  it('a device default is never written to the account', async () => {
     api.post.mockResolvedValue(loginReply(null));
     await submit();
-    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/profile/language', { language: 'en' }, { headers: { Authorization: 'Bearer new-token' } }));
+    await waitFor(() => expect(localStorage.getItem('token')).toBe('new-token'));
+    expect(api.put).not.toHaveBeenCalled();
     expect(i18n.language).toBe('en');
+  });
+
+  it('a language picked here while logged out wins at login and is saved to the account', async () => {
+    await chooseLanguage('my', null);
+    api.post.mockResolvedValue(loginReply('en'));
+    await submit();
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/profile/language', { language: 'my' }, { headers: { Authorization: 'Bearer new-token' } }));
+    expect(i18n.language).toBe('my');
+    expect(pickedLanguage()).toBeUndefined(); // used up
   });
 
   it('nothing to do when they already match', async () => {

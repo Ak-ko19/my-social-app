@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useFormGuard } from './hooks/useFormGuard';
+import { pickedLanguage } from './utils/languageChoice';
 import Logo from './components/layout/Logo';
 import { Trans, useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
@@ -13,7 +14,7 @@ function Signup() {
   const [success, setSuccess] = useState(false);
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { honeypot, guardedPost } = useFormGuard(3000);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -40,8 +41,8 @@ function Signup() {
       username: username.trim(),
       email: email.trim(),
       password: password,
-      // Day 16: kept on the account, so it follows them to other devices.
-      language: i18n.language
+      // Day 16: a language picked on this device is kept on the account.
+      language: pickedLanguage()
     })
     .finally(() => setBusy(false))
     .then(() => {
