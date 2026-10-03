@@ -145,8 +145,8 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Arabic translations; full right-to-left layout (dir="rtl", logical CSS properties); check every screen. *(Built in B16; verified Day 17 — see Progress Log.)*
 
 ### Day 18 — Comment replies + reactions
-- [ ] Threaded replies to comments (if AUDIT_REPORT.md marks missing).
-- [ ] Reactions beyond like (if missing).
+- [x] Threaded replies to comments (if AUDIT_REPORT.md marks missing). *(Exists — B4/B1; verified Day 18.)*
+- [x] Reactions beyond like (if missing). *(Exists — B4/B1; verified Day 18.)*
 
 ### Day 19 — Link previews + share cards
 - [ ] Link previews in posts and messages (server-side fetch with timeout and size limit).
@@ -799,3 +799,14 @@ Build every feature the way a senior engineer at a top social media company woul
   - **Day-end full run:** not repeated. The built app is byte-for-byte
     the one that passed Day 16's full run the same day (`App.css` was
     never imported), and the RTL suites above were re-run.
+
+### 2026-10-03 — Day 18: Comment replies + reactions (already built)
+- Both tasks say "if missing", and both exist.
+  - **Threaded replies and comment likes (B4):** one reply level, with
+    reply-to-reply landing in the same thread, and notifications.
+  - **Reactions beyond like (B1):** six reactions, old likes count as
+    reactions (migration 016).
+- **Verified on today's code:** commentThreads + reaction API tests
+  20/20; browser suites b1-reactions 14/14 and b4-comments 15/15.
+- No code changed, so no new full run: the same code passed Day 16's
+  full run.
