@@ -852,3 +852,34 @@ Build every feature the way a senior engineer at a top social media company woul
     EN/MY/AR, all green on the first pass.
 - **Owner:** GO_LIVE_CHECKLIST has a Day 19 smoke item (Facebook Sharing
   Debugger / Telegram paste).
+
+### 2026-10-03 — Day 20: Posts upgrade
+- **Multiple images per post:** exists since B2; verified (media +
+  postVisibility tests, b2-media).
+- **"Only me" audience (`ae101e6`):** migration 035 adds `only_me`.
+  - **Hidden from everyone but the author on every read path:**
+    - getVisiblePost (post page, likes, comments, bookmarks, share
+      cards);
+    - the follower clause of /posts, /feed, profile tabs, explore,
+      hashtags, search and bookmarks;
+    - notification snippets.
+  - UI: composer option, a lock on the card, and the post menu offers
+    the other two audiences.
+  - **Rollback safety (better than a plain down):** the older code
+    treats any audience but 'followers' as public. So 035's down
+    refuses while "only me" posts exist, and explains the options.
+    GO_LIVE rollback notes were updated.
+  - **Also fixed:** mentions now notify only people who can see the
+    post. Before, a followers-only post's @mention notified
+    non-followers too.
+- **Self-caught:**
+  - The first draft of onlyMe.test.js hit two non-existent routes
+    (/search, /explore) and passed vacuously. Positive controls exposed
+    it, and all 10 filter mutations are caught now.
+  - At the Day close, b14-pages caught a regression: renaming the
+    menu's audience keys let audience items appear on page and group
+    posts. Fixed in `bb95ee3`, with PostMenu.test.jsx.
+- **Tests at close:**
+  - backend 537/537; Vitest 54/54.
+  - Rehearsal 015 → 035 PASSED.
+  - Full browser run: 33 suites + A3 EN/MY/AR green.
