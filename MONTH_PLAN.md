@@ -142,7 +142,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Myanmar translations (Unicode) + a proper Myanmar web font; language switcher in Settings; save choice per user. *(Translations, Noto Sans Myanmar and the switcher since B15; per-user saving added Day 16.)*
 
 ### Day 17 — Arabic + RTL
-- [ ] Arabic translations; full right-to-left layout (dir="rtl", logical CSS properties); check every screen.
+- [x] Arabic translations; full right-to-left layout (dir="rtl", logical CSS properties); check every screen. *(Built in B16; verified Day 17 — see Progress Log.)*
 
 ### Day 18 — Comment replies + reactions
 - [ ] Threaded replies to comments (if AUDIT_REPORT.md marks missing).
@@ -774,3 +774,28 @@ Build every feature the way a senior engineer at a top social media company woul
 - **Follow-up noted:** routes have no auth guard, so auth-only screens
   re-render briefly with no token on a forced logout. Low impact (that
   path reloads to /login).
+
+### 2026-10-03 — Day 17: Arabic + RTL (verified)
+- **Already built in B16, now verified:**
+  - Arabic translations: 839 keys, all plural forms (zero/one/two/few/
+    many/other).
+  - `dir="rtl"` follows the language.
+  - Audit for physical CSS (`left`/`right`, `margin-left`,
+    `text-align: left`, …): none left in live styles. The only hits were
+    the unused Vite template `App.css` (never imported; removed) and
+    `text-align: left` on admin stack traces, which carry `dir="ltr"` on
+    purpose.
+  - Direction-aware logic is in place:
+    - the media carousel scrolls toward negative scrollLeft;
+    - voice seek and slide-to-cancel measure from the start edge;
+    - arrow keys follow what the user sees (utils/direction.js);
+    - icons that point (back, reply, send, log out) are mirrored;
+    - switches and story progress run from the start edge.
+  - Arabic is re-checked on every screen by the A3 matrix (228 page
+    checks) and in each new suite since (Days 10–16 all test AR at
+    375–430px).
+- **Tests:** lint, build, Vitest 40/40, b16-rtl, b15-lang and A3
+  EN/MY/AR green.
+  - **Day-end full run:** not repeated. The built app is byte-for-byte
+    the one that passed Day 16's full run the same day (`App.css` was
+    never imported), and the RTL suites above were re-run.

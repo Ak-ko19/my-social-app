@@ -1,6 +1,6 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 17 — Arabic + RTL (not started)
+**Day:** 18 — Comment replies + reactions (not started)
 **Step:** —
 
 ## Carry-over notes
@@ -43,4 +43,4 @@
 (written at the start of each step)
 
 ## Progress
-(nothing in progress — Day 16 closed 2026-10-03)
+(nothing in progress — Day 17 closed 2026-10-03)
