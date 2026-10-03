@@ -740,3 +740,37 @@ Build every feature the way a senior engineer at a top social media company woul
   - Full browser run (Day 15 code): all 28 suites and A3 EN/MY/AR green,
     run in foreground batches. day8-sessions-list, b11-settings and
     day8-sessions were re-run after the logout fix.
+
+### 2026-10-01/03 — Day 16: Myanmar (+ language per account)
+- **Already there since B15:** Myanmar translations (`check:i18n`: 839
+  keys × EN/MY/AR), the Noto Sans Myanmar font (unicode-range: it loads
+  only for Burmese text), and the Language switcher in Settings plus the
+  landing page.
+- **Built (`3e94305`, `695e37e`):** the "save choice per user" part.
+  - Migration 033 adds `users.language`. `PUT /profile/language`;
+    `/profile/me` and `/login` return it; signup keeps a language that
+    was picked.
+  - **Better than the first version:** the first cut saved the device's
+    language at the first login. Most devices are just on their default
+    (English), so a later login on an Arabic device switched it to
+    English (caught by day8-sessions-list at the Day close).
+  - **Now only languages the person actually picks reach the account:**
+    - picked while logged in → saved at once;
+    - picked while logged out → pending on that device, wins at the next
+      login there and is saved;
+    - otherwise the account's language is applied.
+  - Copy (hint, privacy policy) updated in EN/MY/AR.
+- **Also fixed (`444ac47`):** logging out from Settings sent one
+  token-less `/profile/me` (PrivacyToggle re-fetched when the token was
+  cleared) → a 401. This was the real cause of day8-sessions-list's
+  occasional 401, which Day 15's fix only partly addressed. The suite
+  now records which URL got a 401.
+- **Tests at close:**
+  - backend 459/459 (5 mutations caught); Vitest 40/40.
+  - Rehearsal 015 → 033 PASSED.
+  - Full browser run: 29 suites + A3 EN/MY/AR green, in batches.
+  - Batch 2 was re-run after the internet dropped mid-run (Google Fonts
+    errors).
+- **Follow-up noted:** routes have no auth guard, so auth-only screens
+  re-render briefly with no token on a forced logout. Low impact (that
+  path reloads to /login).

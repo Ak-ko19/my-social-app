@@ -1,29 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 16 — Myanmar
-**Step:** 1 — MY translations + font + switcher (exist since B15: verify)
-and the missing part: save the language choice PER USER.
-
-## Step 1 plan
-- Exists: my.json (838 keys, check:i18n), Noto Sans Myanmar (unicode-range,
-  only loads for Burmese text), Settings → Language + landing select.
-- Missing: the choice lives only in this browser (localStorage).
-- Migration 033_add_user_language: users.language varchar(5) NULL,
-  CHECK in ('en','my','ar'). NULL = never chosen.
-- API: PUT /profile/language {language} (auth, validated); GET
-  /profile/me and POST /login return `language`; POST /signup takes an
-  optional language (invalid/missing → NULL, never fails a signup).
-- Frontend: Language screen saves to the account when logged in
-  (best effort; on failure a quiet note, still applied here). Login: the
-  account's language wins on a new device; if the account has none, the
-  device's current language is saved to it. Signup sends the current
-  language.
-- Copy: language hint ("on all your devices"), privacy text (language is
-  also saved to the account) in EN/MY/AR.
-- Tests: backend (validation, me/login/signup), vitest (Language screen
-  save + failure note, Login applies account language), browser suite
-  day16-language (choose MY on one device → new device logs in in MY;
-  RTL for AR).
+**Day:** 17 — Arabic + RTL (not started)
+**Step:** —
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -55,27 +33,14 @@ and the missing part: save the language choice PER USER.
 - This machine has 8 GB RAM (~2 GB free): run long browser runs in
   the foreground in E2E_ONLY batches; a background run got killed.
 
+- Follow-up from Day 16: routes have no auth guard; auth-only screens
+  (Admin, EditPage, ManageCommunity, …) re-render briefly with no token
+  on a forced logout. Consider a route-level guard (Day 20 a11y/quality
+  or Day 25 security round).
+- Internet drops break suites via Google Fonts errors: re-run the batch.
+
 ## Plan
 (written at the start of each step)
 
 ## Progress
-- Step 1 DONE (2026-10-01). Verified: backend 459/459 (language.test 5;
-  5 mutations caught after making the isolation test start at user 2);
-  vitest 37/37; rehearsal 015→033 PASSED; day16-language 15/15;
-  a2/b11/b15/b16/c2/day11-bots green; c3-landing + day16-language
-  stalled once (dev server, ~1.6 GB free RAM) and passed on rerun.
-- Day 16 close run #1: day8-sessions-list showed a REAL design flaw —
-  the first login auto-saved the device default (en) to the account,
-  which then overrode an Arabic device. Fixed (utils/languageChoice.js):
-  only picked languages reach the account; a logged-out pick is pending
-  and wins at the next login there; signup sends only a picked one.
-  day16-language 17/17, day8-sessions-list green, vitest 38/38.
-- Close run #2: batch 2 failed when the internet dropped (fonts); rerun
-  green. day8-sessions-list 401 again -> the suite now logs which URL got
-  a 401: PrivacyToggle re-fetched /profile/me when the token was cleared
-  on logout. Fixed (token guard + stale-response guard), vitest test fails
-  on the old code; 5/5 suite runs clean.
-- FOLLOW-UP (not urgent): routes are not auth-guarded, so auth-only
-  screens (Admin, EditPage, ManageCommunity, ...) re-render briefly with
-  no token on a forced logout; consider a token guard / route guard.
-- Next: close batches 4 + A3, then Progress Log.
+(nothing in progress — Day 16 closed 2026-10-03)
