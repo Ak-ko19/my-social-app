@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 22 (Week 4) — see MONTH_PLAN (not started)
-**Step:** —
+**Day:** 22 — Push notifications
+**Step:** 1 — Web push (VAPID)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -44,7 +44,41 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-(written at the start of each step)
+Day 22 — web push (VAPID, existing PWA service worker /sw.js).
+- Off until the owner sets VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY (+
+  VAPID_SUBJECT mailto:) on Render; keys are generated locally with
+  `npx web-push generate-vapid-keys` — no account (LATER item). env.js
+  warns on a partial setup. Like Turnstile.
+- Migration 036 push_subscriptions (user_id FK cascade, endpoint UNIQUE,
+  p256dh, auth, user_agent, created_at, last_success_at).
+- API (auth): GET /push/config {publicKey|null}; POST /push/subscribe
+  {endpoint, keys}; DELETE /push/subscribe {endpoint}. Logout and
+  account deletion drop the device's subscription.
+- SSRF: the endpoint is user-supplied and the server POSTs to it ->
+  https only, host must be a known browser push service (FCM, Mozilla,
+  Apple, Microsoft WNS); key formats checked; max 10 per user.
+- Sending (services/pushService.js, web-push lib, fire-and-forget):
+  - after notificationService.notify / mention inserts (so B11
+    settings apply);
+  - new DMs from messageService.createMessage, only to participants who
+    are offline (no live socket) — no buzzing someone in the app;
+  - text in the recipient's users.language (EN/MY/AR), never message
+    content (lock screen privacy): "alice sent you a message";
+  - 404/410 from the push service -> subscription deleted.
+- SW: push -> showNotification (icon, tag per conversation/post, data
+  url); notificationclick -> focus an open tab or open the url.
+- Settings → Notifications: "Push notifications on this device" switch
+  (asks permission; hidden when unsupported or the server has no keys).
+- Tests: jest with web-push mocked (validation/SSRF allow-list, sends
+  after notify, prefs respected, offline-only for DMs, language, 410
+  cleanup); vitest switch; browser: dist stack with test VAPID keys, a
+  fake PushManager + a local stub push endpoint (test-only origin).
 
 ## Progress
-(nothing in progress — Day 21 closed 2026-10-03: GO LIVE skipped)
+- Step 1 DONE: web push. Verified: backend 552/552 (push 14 tests, 8
+  mutations caught after adding look-alike hosts); vitest 60/60;
+  rehearsal 015→036; day22-push 11/11 end to end (real encryption to a
+  stub push service, SW shows it) + a2/b4/b9/b10/b11/day8 green.
+  Found while building: the web-push lib only speaks https -> we build
+  the request with it and send it ourselves (https only in production).
+- Next: Day 22 close (full browser run in batches).

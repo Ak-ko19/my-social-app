@@ -43,6 +43,7 @@ const internalRoutes = require('./routes/internalRoutes');
 const clientErrorRoutes = require('./routes/clientErrorRoutes');
 const linkPreviewRoutes = require('./routes/linkPreviewRoutes');
 const shareRoutes = require('./routes/shareRoutes');
+const pushRoutes = require('./routes/pushRoutes');
 
 const app = express();
 // Hosts like Render tell the app which port to listen on (validated by
@@ -106,6 +107,7 @@ app.use(internalRoutes);
 app.use(clientErrorRoutes);
 app.use(linkPreviewRoutes);
 app.use(shareRoutes);
+app.use(pushRoutes);
 // Before followRoutes/userPostsRoutes: literal /users/suggestions must win over /users/:id/... patterns.
 app.use(suggestionRoutes);
 app.use(authRoutes);

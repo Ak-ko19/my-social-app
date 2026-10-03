@@ -6,6 +6,7 @@
 // for both at once.
 const sanitizeHtml = require('sanitize-html');
 const db = require('../db');
+const { pushNewMessage } = require('./pushService');
 const { isRateLimited } = require('./rateLimiter');
 const blockService = require('./blockService');
 const { deleteMedia } = require('./mediaCleanupService');
@@ -154,6 +155,8 @@ async function createMessage({ conversationId, senderId, type, content, mediaUrl
      RETURNING *`,
     [conversationId, senderId, content ?? null, clientTempId || null, type, mediaUrl || null, durationSeconds ?? null, replyToMessageId]
   );
+  // Day 22: a push to participants who aren't in the app right now.
+  pushNewMessage({ conversationId, senderId });
   // Every new message goes out with its reply preview already attached, so
   // a new_message broadcast renders the quote without another fetch.
   const [withPreview] = await attachReplyPreviews(conversationId, result.rows);

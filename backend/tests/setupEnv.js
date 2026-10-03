@@ -29,6 +29,11 @@ process.env.TURNSTILE_SECRET_KEY = '';
 process.env.TURNSTILE_VERIFY_URL = '';
 // Day 19: the browser suites' stub site only (see linkPreviewService).
 process.env.LINK_PREVIEW_TEST_ORIGIN = '';
+// Day 22: push stays off unless a test sets keys (pushService.test.js).
+process.env.VAPID_PUBLIC_KEY = '';
+process.env.VAPID_PRIVATE_KEY = '';
+process.env.VAPID_SUBJECT = '';
+process.env.PUSH_TEST_ENDPOINT_ORIGIN = '';
 
 process.env.CLOUDINARY_CLOUD_NAME = '';
 process.env.CLOUDINARY_API_KEY = '';

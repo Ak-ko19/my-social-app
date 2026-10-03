@@ -4,6 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 import { IconButton } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import FeedErrorState from '../components/feed/FeedErrorState';
+import PushSwitch from '../components/common/PushSwitch';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
 import '../components/feed/Feed.css';
@@ -78,6 +79,8 @@ function NotificationSettingsScreen() {
       </header>
       <div className="screen-body">
         <p className="notif-settings-intro">{t('notifSettings.intro')}</p>
+        {/* Day 22: this device's push switch (hidden where push can't work). */}
+        <PushSwitch />
         {loadError && <FeedErrorState message={loadError} onRetry={load} />}
         {!prefs && !loadError && <p className="screen-status" role="status">{t('common.loading')}</p>}
         {saveError && <p className="form-error" role="alert">{saveError}</p>}

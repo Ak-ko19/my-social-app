@@ -84,6 +84,14 @@ describe('checkEnv', () => {
     expect(checkEnv({ ...PROD, CLOUDINARY_API_KEY: '' }).errors).toEqual([]);
   });
 
+  it('warns when push is only partly configured, or the VAPID subject looks wrong', () => {
+    expect(warningsOf({ ...BASE, VAPID_PUBLIC_KEY: 'pub' })).toMatch(/Push notifications are only partly configured \(missing VAPID_PRIVATE_KEY\)/);
+    expect(warningsOf({ ...BASE, VAPID_PRIVATE_KEY: 'secret-private' })).toMatch(/missing VAPID_PUBLIC_KEY/);
+    expect(warningsOf({ ...BASE, VAPID_PRIVATE_KEY: 'secret-private' })).not.toContain('secret-private');
+    expect(warningsOf({ ...BASE, VAPID_PUBLIC_KEY: 'p', VAPID_PRIVATE_KEY: 'q', VAPID_SUBJECT: 'me@example.com' })).toMatch(/VAPID_SUBJECT should be a mailto:/);
+    expect(checkEnv({ ...PROD, VAPID_PUBLIC_KEY: 'p', VAPID_PRIVATE_KEY: 'q', VAPID_SUBJECT: 'mailto:me@example.com' })).toEqual({ errors: [], warnings: [] });
+  });
+
   it('warns when only one Turnstile key is set (the check stays off)', () => {
     expect(warningsOf({ ...BASE, TURNSTILE_SITE_KEY: '0x4AAA' })).toMatch(/Turnstile is only partly configured \(missing TURNSTILE_SECRET_KEY\)/);
     expect(warningsOf({ ...BASE, TURNSTILE_SECRET_KEY: '0x4AAA-secret' })).toMatch(/missing TURNSTILE_SITE_KEY/);
@@ -102,7 +110,8 @@ describe('node server.js', () => {
     ALLOWED_ORIGINS: '', FRONTEND_URL: '',
     CLOUDINARY_CLOUD_NAME: '', CLOUDINARY_API_KEY: '', CLOUDINARY_API_SECRET: '',
     BREVO_API_KEY: '', SENTRY_DSN: '', CLEANUP_SECRET: '', EMAIL_HOST: '', EMAIL_USER: '', EMAIL_PASS: '', EMAIL_FROM: '', EMAIL_PORT: '',
-    TURNSTILE_SITE_KEY: '', TURNSTILE_SECRET_KEY: '', TURNSTILE_VERIFY_URL: '', LINK_PREVIEW_TEST_ORIGIN: ''
+    TURNSTILE_SITE_KEY: '', TURNSTILE_SECRET_KEY: '', TURNSTILE_VERIFY_URL: '', LINK_PREVIEW_TEST_ORIGIN: '',
+    VAPID_PUBLIC_KEY: '', VAPID_PRIVATE_KEY: '', VAPID_SUBJECT: '', PUSH_TEST_ENDPOINT_ORIGIN: ''
   };
 
   // Resolves once the process exits or prints its "running" line.

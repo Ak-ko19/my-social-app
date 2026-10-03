@@ -98,6 +98,16 @@ function checkEnv(env) {
     warnings.push(`Turnstile is only partly configured (missing ${missing}), so the security check stays off.`);
   }
 
+  // Day 22: optional web push; on only with both VAPID keys.
+  const vapidSet = ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY'].filter((name) => isSet(env[name]));
+  if (vapidSet.length === 1) {
+    const missing = vapidSet[0] === 'VAPID_PUBLIC_KEY' ? 'VAPID_PRIVATE_KEY' : 'VAPID_PUBLIC_KEY';
+    warnings.push(`Push notifications are only partly configured (missing ${missing}), so they stay off.`);
+  }
+  if (vapidSet.length === 2 && isSet(env.VAPID_SUBJECT) && !/^(mailto:|https:\/\/)/.test(env.VAPID_SUBJECT.trim())) {
+    warnings.push('VAPID_SUBJECT should be a mailto: address or an https:// URL (push services may refuse others).');
+  }
+
   // Day 9: the daily cleanup job's shared secret (POST /internal/cleanup).
   if (isSet(env.CLEANUP_SECRET)) {
     if (env.CLEANUP_SECRET.length < 32) {

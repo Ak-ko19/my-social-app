@@ -39,6 +39,7 @@ import { useCurrentUserSummary } from '../hooks/useCurrentUserSummary';
 import { clearLocalSession, forceLogout, useAuth } from '../hooks/useAuth';
 import { useUnreadCount } from '../hooks/useUnreadCount';
 import { logoutOnServer } from '../services/sessionService';
+import { disablePush } from '../utils/push';
 import './SettingsScreen.css';
 
 // Explicit icon imports + inline component refs, not a string name +
@@ -122,12 +123,14 @@ function SettingsScreen() {
   // Day 15: the browser forgets the token FIRST. Waiting for the server
   // before that let polls (unread counts, ...) go out with a token the
   // server had just revoked, and come back 401.
+  // Day 22: this device stops receiving the account's push notifications.
   const handleLogout = () => {
     const sessionToken = token;
     clearLocalSession();
-    logoutOnServer(sessionToken)
-      .catch((err) => console.warn('Server logout failed; signing out locally.', err.message))
-      .finally(forceLogout);
+    Promise.allSettled([
+      disablePush(sessionToken),
+      logoutOnServer(sessionToken).catch((err) => console.warn('Server logout failed; signing out locally.', err.message))
+    ]).finally(forceLogout);
   };
 
   return (

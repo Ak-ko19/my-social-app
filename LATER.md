@@ -159,3 +159,26 @@ without them. Newest items at the bottom.
   - `https://<backend>/config` shows your `turnstileSiteKey`.
   - The signup page shows the Cloudflare box.
 - **To turn it off again:** delete either variable.
+
+## 7. (Optional) Turn on push notifications (Day 22)
+- **What it does:** people who switch it on (Settings → Notifications →
+  "Push notifications on this device") get likes, comments, follows,
+  mentions and messages on their phone or computer even when the app is
+  closed. It uses the browsers' own free push services.
+- **Not needed:** without it, everything works as now, and the switch
+  simply isn't shown.
+- **Needs:** this version deployed first (GO LIVE, item 2).
+- **Owner steps (2 minutes, no account needed):**
+  1. In `backend/` on your computer, run
+     `npx web-push generate-vapid-keys`. It prints a Public Key and a
+     Private Key.
+  2. Render → backend service → **Environment** → add
+     `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` from step 1, and
+     `VAPID_SUBJECT` = `mailto:` followed by your email address. Save;
+     Render redeploys.
+  3. Keep the private key secret. If you ever change the keys, everyone
+     has to switch push on again.
+- **Check it worked:**
+  - `https://<backend>/push/config` shows your public key.
+  - In the app, switch push on and ask a friend to like your post: a
+    notification appears.

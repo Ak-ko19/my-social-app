@@ -2,6 +2,7 @@
 // recipient's notification settings (migration 024) and a new type can't
 // forget to. Missing preferences row = everything on.
 const db = require('../db');
+const { pushNotification } = require('./pushService');
 
 // Notification type -> the setting (column) that controls it. Column names
 // come only from this map, never from input, so interpolating them into
@@ -39,12 +40,16 @@ function allowedSql(category, recipientSql) {
 async function notify({ userId, actorId, type, postId = null, commentId = null }) {
   if (userId === actorId) return;
   const category = categoryFor(type);
-  await db.query(
+  const result = await db.query(
     `INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id)
      SELECT $1, $2, $3, $4, $5
-     WHERE ${allowedSql(category, '$1::int')}`,
+     WHERE ${allowedSql(category, '$1::int')}
+     RETURNING id`,
     [userId, actorId, type, postId, commentId]
   );
+  // Day 22: a push to their devices too -- only when the notification was
+  // actually created (so the same settings apply).
+  if (result.rowCount > 0) pushNotification({ userId, actorId, type, postId, commentId });
 }
 
 // { likes, comments, mentions, follows, follow_accepted } -- all true when

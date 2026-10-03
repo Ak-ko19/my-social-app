@@ -164,7 +164,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ## WEEK 4 — Engagement and polish
 
 ### Day 22 — Push notifications
-- [ ] Web push (VAPID, via the existing PWA service worker).
+- [x] Web push (VAPID, via the existing PWA service worker).
 
 ### Day 23 — Notification settings
 - [ ] Per-type on/off (likes, comments, follows, messages), mute a conversation.

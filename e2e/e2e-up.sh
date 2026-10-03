@@ -24,7 +24,16 @@ fi
 # Day 19: a stub website for link previews (the backend may fetch it only
 # via LINK_PREVIEW_TEST_ORIGIN, which production ignores).
 nohup node "$SP/link-stub.cjs" 3902 > "$SP/link-stub.log" 2>&1 &
+# E2E_PUSH=1 (Day 22): push on, with throwaway VAPID keys made here and a
+# stub push service the backend may send to (test-only origin).
+VAPID_PUB= VAPID_PRIV= PUSH_ORIGIN=
+if [ "$E2E_PUSH" = 1 ]; then
+  nohup node "$SP/push-stub.cjs" 3903 > "$SP/push-stub.log" 2>&1 &
+  KEYS=$(cd "$B" && node -e "const k=require('web-push').generateVAPIDKeys();console.log(k.publicKey+' '+k.privateKey)")
+  VAPID_PUB=${KEYS% *} VAPID_PRIV=${KEYS#* } PUSH_ORIGIN=http://127.0.0.1:3903
+fi
 cd "$B"
+VAPID_PUBLIC_KEY="$VAPID_PUB" VAPID_PRIVATE_KEY="$VAPID_PRIV" VAPID_SUBJECT=mailto:e2e@example.com PUSH_TEST_ENDPOINT_ORIGIN="$PUSH_ORIGIN" \
 LINK_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3902 \
 TURNSTILE_SITE_KEY="$TS_SITE" TURNSTILE_SECRET_KEY="$TS_SECRET" TURNSTILE_VERIFY_URL="$TS_URL" \
 NODE_ENV=test DATABASE_URL=postgresql://testuser@localhost:55433/mysocialapp_e2e JWT_SECRET=e2e-local-only-secret \

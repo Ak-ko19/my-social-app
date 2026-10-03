@@ -613,6 +613,12 @@
         "title": "Accepted requests",
         "description": "When someone accepts your follow request"
       }
+    },
+    "push": {
+      "title": "Push notifications on this device",
+      "description": "Get notified about likes, comments, follows and messages even when the app is closed.",
+      "blocked": "Notifications are blocked for this site. Allow them in your browser settings to turn this on.",
+      "failed": "Couldn't turn on push notifications. Please try again."
     }
   },
   "admin": {

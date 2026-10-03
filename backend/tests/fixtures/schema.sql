@@ -353,3 +353,16 @@ CREATE TABLE link_previews (
   fetched_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_link_previews_fetched_at ON link_previews (fetched_at);
+
+-- Day 22 (migration 036): web push subscriptions, one per browser.
+CREATE TABLE push_subscriptions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL UNIQUE,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_success_at TIMESTAMPTZ
+);
+CREATE INDEX idx_push_subscriptions_user ON push_subscriptions (user_id);

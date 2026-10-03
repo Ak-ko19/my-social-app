@@ -56,3 +56,46 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
+// Day 22: web push (backend services/pushService.js). The payload is
+// { title, body, url, tag }; a tag replaces the earlier notification about
+// the same conversation/post instead of stacking them.
+self.addEventListener('push', (event) => {
+  let data;
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : '' };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'MySocialApp', {
+      body: data.body || '',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: data.tag,
+      renotify: Boolean(data.tag),
+      data: { url: typeof data.url === 'string' ? data.url : '/' }
+    })
+  );
+});
+
+// Tapping it opens the right page -- in an open tab of the app if there is
+// one. Only ever a page of this site (never a URL from the payload's
+// origin, whatever it says).
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || '/', self.location.origin);
+  if (target.origin !== self.location.origin) return;
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const open = windows.find((w) => new URL(w.url).origin === self.location.origin);
+      if (open) {
+        await open.focus();
+        if ('navigate' in open) await open.navigate(target.href);
+        return;
+      }
+      await self.clients.openWindow(target.href);
+    })()
+  );
+});

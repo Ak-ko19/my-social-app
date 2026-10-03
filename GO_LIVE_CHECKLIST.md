@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 035, check the environment variables,
+database, run migrations 015 → 036, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -85,6 +85,7 @@ failed and keeps the old version running. It's still better to check now.
 | `BREVO_API_KEY`, `EMAIL_FROM` | optional | turns on real emails; see LATER.md #3. Without them the app says "reset by email isn't available" |
 | `CLEANUP_SECRET` | optional | turns on the daily cleanup job (32+ random characters); the same value goes into a GitHub Actions secret, see LATER.md #4 |
 | `SENTRY_DSN` | optional | also sends server errors to Sentry (see LATER.md #5). Errors are always kept in Admin → Errors anyway |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | optional | push notifications (see LATER.md #7). Push is on only with both keys |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | optional | Cloudflare "are you human?" check on signup and forgot password. It's on only with both keys (see LATER.md #6) |
 | `TRUST_PROXY` | leave unset | defaults to 1 on Render |
 | `PORT`, `RENDER` | don't touch | Render sets these itself |
@@ -97,7 +98,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 035 on production
+## 3. Run migrations 015 → 036 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -114,7 +115,7 @@ they run.
 - [ ] Confirm none of the new tables exist yet (this should print `0`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews')"
+    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews','push_subscriptions')"
   ```
 - [ ] Run them **one at a time, in this order**, from `backend/`. Each
   prints `Migration applied successfully`.
@@ -130,14 +131,14 @@ they run.
            025_add_admin_moderation 026_add_communities 027_add_pages 028_add_sessions \
            029_add_cleanup_indexes 030_add_error_log 031_report_comments_messages \
            032_add_suspensions 033_add_user_language 034_add_link_previews \
-           035_add_only_me_visibility; do
+           035_add_only_me_visibility 036_add_push_subscriptions; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
-- [ ] Check the result (this should print `7`, then `4`):
+- [ ] Check the result (this should print `8`, then `4`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews')"
+    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews','push_subscriptions')"
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
     "SELECT count(*) FROM information_schema.columns WHERE (table_name = 'reports' AND column_name IN ('target_owner_id','target_snapshot')) OR (table_name = 'users' AND column_name IN ('banned_until','language'))"
   ```
@@ -208,6 +209,14 @@ Do this in a normal browser window, then again on a phone.
   - Remove the message: it shows as deleted in the chat.
   - Suspend the test account for 1 day. Logging in says "suspended
     until …". Then "Lift suspension", and it can log in again.
+- [ ] **Push notifications (Day 22), only if the VAPID keys are set:**
+  - On a phone, use Chrome (Android) or the installed app (iPhone:
+    Share → Add to Home Screen first).
+  - Settings → Notifications → turn on "Push notifications on this
+    device".
+  - Close the app. From another account, like your post and send you a
+    message: two notifications arrive. Tapping one opens that post or
+    chat.
 - [ ] **"Only me" posts (Day 20):**
   - Write a post with the audience "Only me". It shows a lock.
   - A second test account that follows you doesn't see it on Home, on

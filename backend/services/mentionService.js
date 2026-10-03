@@ -4,6 +4,7 @@
 // comment_id) rather than a new table, same as 'like'/'comment'/'follow'.
 const db = require('../db');
 const { getVisiblePost } = require('./postVisibilityService');
+const { pushNotification } = require('./pushService');
 const { allowedSql } = require('./notificationService');
 
 const MENTION_REGEX = /@(\w+)/g;
@@ -62,6 +63,8 @@ async function notifyMentions({ content, authorId, postId, commentId = null, exc
     `INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id) VALUES ${placeholders}`,
     params
   );
+  // Day 22: and a push to each of them.
+  for (const row of recipients) pushNotification({ userId: row.id, actorId: authorId, type: 'mention', postId, commentId });
 }
 
 module.exports = { parseMentionUsernames, notifyMentions };

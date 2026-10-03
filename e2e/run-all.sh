@@ -22,25 +22,29 @@ BOT_SUITES="day11-bots"
 # Turnstile on (local stub verifier), on the production build so the CSP
 # must allow Cloudflare's script and frame.
 TURNSTILE_SUITES="day11-turnstile"
+# Push on (throwaway VAPID keys + a stub push service), production build so
+# the real service worker runs (Day 22).
+PUSH_SUITES="day22-push"
 failed=0
 
 # E2E_ONLY: every name must be a real suite, so a typo can't make CI run
 # (and pass) nothing.
 wanted() { [ -z "$E2E_ONLY" ] || [[ " $E2E_ONLY " == *" $1 "* ]]; }
 for name in $E2E_ONLY; do
-  if [[ " $SUITES $DIST_SUITES $BOT_SUITES $TURNSTILE_SUITES a3 " != *" $name "* ]]; then
+  if [[ " $SUITES $DIST_SUITES $BOT_SUITES $TURNSTILE_SUITES $PUSH_SUITES a3 " != *" $name "* ]]; then
     echo "E2E_ONLY: unknown suite \"$name\""
     exit 2
   fi
 done
 
 # The stack's own output goes to stack.log (kept by CI when a run fails).
-fresh_stack() { # [dist|bots|turnstile]
+fresh_stack() { # [dist|bots|turnstile|push]
   bash e2e-down.sh >/dev/null 2>&1
   case "$1" in
     dist) E2E_FRONTEND=dist bash e2e-up.sh > stack.log 2>&1 ;;
     bots) BOT_CHECKS_IN_TESTS=1 bash e2e-up.sh > stack.log 2>&1 ;;
     turnstile) E2E_TURNSTILE=1 E2E_FRONTEND=dist bash e2e-up.sh > stack.log 2>&1 ;;
+    push) E2E_PUSH=1 E2E_FRONTEND=dist bash e2e-up.sh > stack.log 2>&1 ;;
     *) bash e2e-up.sh > stack.log 2>&1 ;;
   esac
 }
@@ -77,6 +81,13 @@ done
 for s in $TURNSTILE_SUITES; do
   wanted "$s" || continue
   fresh_stack turnstile
+  node "$s.cjs" > "out-$s.txt" 2>&1
+  report "$s" $? "out-$s.txt"
+done
+
+for s in $PUSH_SUITES; do
+  wanted "$s" || continue
+  fresh_stack push
   node "$s.cjs" > "out-$s.txt" 2>&1
   report "$s" $? "out-$s.txt"
 done
