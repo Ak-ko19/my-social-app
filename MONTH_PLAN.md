@@ -922,3 +922,25 @@ Build every feature the way a senior engineer at a top social media company woul
   - Rehearsal 015 → 036 PASSED.
   - Full browser run: 35 suites (new: day22-push, end to end with real
     encryption) + A3 EN/MY/AR green.
+
+### 2026-10-03 — Day 23: Notification settings
+- **Already there (B11):** per-type switches for likes, comments,
+  mentions, follows and accepted requests.
+- **Added (`3fad351`):**
+  - **A "Messages" switch:** `notification_preferences.messages`,
+    migration 037.
+  - **Muting a chat:** `conversation_participants.muted_until` for
+    8 hours, 1 week, or until turned back on (`'infinity'`).
+    `PUT /conversations/:id/mute` is for participants only (others get
+    the same 404 as a missing chat). The SQL interval comes from a fixed
+    map, never from input.
+  - Message pushes skip people who turned messages off or muted the
+    chat. Unread badges stay, as in other apps.
+  - **UI:** a bell in the chat header (mute sheet / unmute), a bell-off
+    icon on muted chats in the inbox, and the new row in Notification
+    settings. EN/MY/AR.
+- **Tests at close:**
+  - backend 559/559 (3 filter mutations caught); Vitest 60/60.
+  - Rehearsal 015 → 037 PASSED.
+  - Full browser run: 36 suites (new: day23-mute) + A3 EN/MY/AR green.
+    b11-settings now expects 6 switches.

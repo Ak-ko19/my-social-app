@@ -1,6 +1,6 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 23 — Notification settings
+**Day:** 24–25 — Next P1 features from the gap list (not started)
 **Step:** —
 
 ## Carry-over notes
@@ -44,27 +44,7 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-Day 23 — notification settings: likes/comments/mentions/follows/
-follow_accepted switches exist (B11). Missing: "messages" and muting a
-conversation.
-- Migration 037: notification_preferences.messages (default true);
-  conversation_participants.muted_until timestamptz (NULL = not muted,
-  'infinity' = until unmuted).
-- notificationService CATEGORIES += 'messages' (no notification type maps
-  to it: message notifications are pushes, Day 22).
-- PUT /conversations/:id/mute { duration: '8h' | '1w' | 'always' | null }
-  (participants only; null = unmute). /conversations (direct + group) and
-  /conversations/:id return muted + muted_until for the viewer.
-- pushNewMessage skips recipients with messages off or the conversation
-  muted. Unread badges unchanged (like other apps).
-- UI: "Messages" row in Notification settings; in a chat a bell button
-  in the header opens Mute (8 hours / 1 week / until I turn it back on)
-  or Unmute; a muted chat shows a bell-off icon in the inbox. EN/MY/AR.
-- Tests: jest (validation, participants only, expiry, push skipped for
-  muted/messages-off, list flags), vitest (mute sheet), browser suite.
+(written at the start of each step)
 
 ## Progress
-- Step DONE: messages setting + mute a chat. Verified: backend 559/559
-  (mute 7 tests, 3 mutations caught); vitest 60; rehearsal 015→037;
-  day23-mute 16/16; b9/b10/b11 (count updated 5->6)/b13/a2/day12/day22.
-- Next: Day 23 close (full browser run).
+(nothing in progress — Day 23 closed 2026-10-03)
