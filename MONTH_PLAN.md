@@ -894,3 +894,31 @@ Build every feature the way a senior engineer at a top social media company woul
   new API smoke) passed today on the same backend.
 - GO_LIVE_CHECKLIST's "last run" was updated. It already has smoke items
   for Days 19–20 and the "only me" rollback warning.
+
+### 2026-10-03 — Day 22: Push notifications
+- **Web push (`25ee487`):** VAPID, through the existing service worker.
+  It's off until the owner generates keys locally and sets them; no
+  account needed (LATER #7).
+  - **Subscriptions:** migration 036. Only https endpoints at the
+    browsers' push services are accepted, as exact hosts or real
+    subdomains (SSRF: the server POSTs to them). The newest 10 devices
+    per person are kept, and 404/410 from a push service removes one.
+  - **What is pushed:** every notification that is actually created
+    (so the per-type settings apply), mentions, and new messages.
+    Messages go only to people not in the app right now (no live
+    socket), and never include the message text (lock screens). Text is
+    in the recipient's language (Day 16).
+  - **Better than calling the library's send directly:** `web-push`
+    only speaks https, so it builds the encrypted, signed request and a
+    tiny sender delivers it. That made a real end-to-end test against a
+    local stub push service possible.
+  - **UI:** the "Push notifications on this device" switch in Settings →
+    Notifications. It's hidden when the browser or server can't do push,
+    and explains blocked permission. Logging out unsubscribes the device.
+    Service worker: tag per post/conversation; a tap opens that page of
+    this site.
+- **Tests at close:**
+  - backend 552/552; Vitest 60/60.
+  - Rehearsal 015 → 036 PASSED.
+  - Full browser run: 35 suites (new: day22-push, end to end with real
+    encryption) + A3 EN/MY/AR green.
