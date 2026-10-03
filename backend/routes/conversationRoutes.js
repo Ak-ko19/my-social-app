@@ -40,5 +40,6 @@ router.post(
 router.put('/conversations/:id/messages/:messageId', authMiddleware, conversationController.editMessage);
 router.delete('/conversations/:id/messages/:messageId', authMiddleware, conversationController.deleteMessage);
 router.put('/conversations/:id/read', authMiddleware, conversationController.markConversationRead);
+router.put('/conversations/:id/mute', authMiddleware, conversationController.muteConversation);
 
 module.exports = router;

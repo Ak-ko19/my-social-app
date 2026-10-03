@@ -167,7 +167,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Web push (VAPID, via the existing PWA service worker).
 
 ### Day 23 — Notification settings
-- [ ] Per-type on/off (likes, comments, follows, messages), mute a conversation.
+- [x] Per-type on/off (likes, comments, follows, messages), mute a conversation.
 
 ### Day 24–25 — Next P1 features from the gap list
 - [ ] Take the highest-priority free-tier-compatible P1 items from AUDIT_REPORT.md (e.g. friend requests or basic groups) and build them.

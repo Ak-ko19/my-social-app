@@ -114,6 +114,11 @@ export function fetchConversationDetails(conversationId, token) {
   return api.get(`/conversations/${conversationId}`, authHeaders(token)).then((res) => res.data);
 }
 
+// Day 23: duration '8h' | '1w' | 'always', or null to unmute.
+export function muteConversation(conversationId, duration, token) {
+  return api.put(`/conversations/${conversationId}/mute`, { duration }, authHeaders(token)).then((res) => res.data);
+}
+
 export function addGroupMembers(conversationId, userIds, token) {
   return api.post(`/conversations/${conversationId}/members`, { userIds }, authHeaders(token)).then((res) => res.data);
 }

@@ -30,7 +30,9 @@ async function getConversations(req, res) {
         END AS last_message,
         lm.created_at AS last_message_at,
         COALESCE(lm.created_at, c.created_at) AS activity_at,
-        COALESCE(unread.count, 0)::int AS unread_count
+        COALESCE(unread.count, 0)::int AS unread_count,
+        -- Day 23: muted for you (no message notifications)
+        COALESCE(cp.muted_until > now(), false) AS muted
       FROM conversation_participants cp
       JOIN conversations c ON c.id = cp.conversation_id AND c.type = 'direct'
       JOIN conversation_participants other_cp
@@ -94,7 +96,8 @@ async function getConversations(req, res) {
         END AS last_message,
         lm.created_at AS last_message_at,
         COALESCE(lm.created_at, c.created_at) AS activity_at,
-        COALESCE(unread.count, 0)::int AS unread_count
+        COALESCE(unread.count, 0)::int AS unread_count,
+        COALESCE(cp.muted_until > now(), false) AS muted
       FROM conversation_participants cp
       JOIN conversations c ON c.id = cp.conversation_id AND c.type = 'group'
       LEFT JOIN LATERAL (
@@ -452,7 +455,37 @@ async function editMessage(req, res) {
   }
 }
 
+// Day 23: PUT /conversations/:id/mute { duration: '8h' | '1w' | 'always' | null }
+// -- no message notifications from this chat for that long (null = unmute).
+// Only for people in the conversation; anyone else gets the same 404 as a
+// conversation that doesn't exist.
+const MUTE_DURATIONS = { '8h': "now() + interval '8 hours'", '1w': "now() + interval '7 days'", always: "'infinity'::timestamptz" };
+
+async function muteConversation(req, res) {
+  try {
+    const conversationId = Number(req.params.id);
+    if (!Number.isInteger(conversationId)) return res.status(400).send('Invalid conversation ID');
+    const duration = req.body?.duration ?? null;
+    if (duration !== null && !Object.hasOwn(MUTE_DURATIONS, duration)) {
+      return res.status(400).send(`duration must be one of: ${Object.keys(MUTE_DURATIONS).join(', ')}, or null`);
+    }
+    // The interval comes only from the fixed map above, never from input.
+    const result = await db.query(
+      `UPDATE conversation_participants SET muted_until = ${duration === null ? 'NULL' : MUTE_DURATIONS[duration]}
+       WHERE conversation_id = $1 AND user_id = $2
+       RETURNING COALESCE(muted_until > now(), false) AS muted,
+         CASE WHEN muted_until > now() AND muted_until <> 'infinity' THEN muted_until END AS muted_until`,
+      [conversationId, req.userId]
+    );
+    if (result.rows.length === 0) return res.status(404).send('Conversation not found');
+    res.json(result.rows[0]);
+  } catch (err) {
+    sendServerError(res, err, 'Muting the conversation failed. Please try again later.');
+  }
+}
+
 module.exports = {
+  muteConversation,
   getConversations,
   sendImageMessage,
   editMessage,

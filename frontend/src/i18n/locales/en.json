@@ -512,7 +512,18 @@
     "seekVoice": "Seek voice message",
     "audioFailed": "Couldn't load audio",
     "holdToRecord": "Hold to record a voice message",
-    "reportMessage": "Report message"
+    "reportMessage": "Report message",
+    "mute": {
+      "open": "Mute notifications",
+      "title": "Mute notifications from this chat",
+      "mutedTitle": "Notifications from this chat are muted",
+      "mutedLabel": "Muted",
+      "for8h": "For 8 hours",
+      "for1w": "For 1 week",
+      "always": "Until I turn them back on",
+      "unmute": "Unmute",
+      "failed": "Couldn't change notifications for this chat. Please try again."
+    }
   },
   "members": {
     "loadFailed": "Could not load the people you follow",
@@ -612,6 +623,10 @@
       "follow_accepted": {
         "title": "Accepted requests",
         "description": "When someone accepts your follow request"
+      },
+      "messages": {
+        "title": "Messages",
+        "description": "When someone sends you a message (each chat can also be muted on its own)"
       }
     },
     "push": {

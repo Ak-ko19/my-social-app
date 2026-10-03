@@ -141,7 +141,10 @@ async function getConversationDetails(req, res) {
     const conversationId = Number(req.params.id);
     if (!Number.isInteger(conversationId)) throw new GroupError(400, 'Invalid conversation ID');
     const result = await db.query(
-      `SELECT c.id, c.type, c.name, c.created_by, cp.role AS my_role
+      `SELECT c.id, c.type, c.name, c.created_by, cp.role AS my_role,
+         -- Day 23: muted for you; muted_until 'infinity' = until unmuted
+         COALESCE(cp.muted_until > now(), false) AS muted,
+         CASE WHEN cp.muted_until > now() AND cp.muted_until <> 'infinity' THEN cp.muted_until END AS muted_until
        FROM conversations c
        JOIN conversation_participants cp ON cp.conversation_id = c.id AND cp.user_id = $2
        WHERE c.id = $1`,

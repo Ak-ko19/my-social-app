@@ -16,6 +16,11 @@ const { isProduction } = require('../config/runtime');
 const { isOnline } = require('../sockets/presence');
 const { pushText } = require('../config/pushText');
 
+// SQL "recipient <col> hasn't turned message notifications off" (Day 23).
+// Inlined rather than imported from notificationService, which requires
+// this file.
+const MESSAGES_ALLOWED = (col) => `NOT EXISTS (SELECT 1 FROM notification_preferences np WHERE np.user_id = ${col} AND np.messages = false)`;
+
 const MAX_PER_USER = 10;
 const TTL_SECONDS = 24 * 60 * 60;
 // Chrome/Edge/Opera/Samsung (FCM), Firefox, Safari, legacy Edge (WNS).
@@ -190,6 +195,9 @@ function pushNewMessage({ conversationId, senderId }) {
     const recipients = (await db.query(
       `SELECT cp.user_id FROM conversation_participants cp
        WHERE cp.conversation_id = $1 AND cp.user_id <> $2
+         -- Day 23: chat muted, or message notifications off
+         AND (cp.muted_until IS NULL OR cp.muted_until <= now())
+         AND ${MESSAGES_ALLOWED('cp.user_id')}
          AND NOT EXISTS (SELECT 1 FROM blocks b
            WHERE (b.blocker_id = cp.user_id AND b.blocked_id = $2) OR (b.blocker_id = $2 AND b.blocked_id = cp.user_id))`,
       [conversationId, senderId]

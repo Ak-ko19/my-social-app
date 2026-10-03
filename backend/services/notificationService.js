@@ -18,7 +18,9 @@ const CATEGORY_BY_TYPE = {
   follow_accepted: 'follow_accepted'
 };
 
-const CATEGORIES = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted'];
+// 'messages' (Day 23) has no notification type: it controls message pushes
+// (pushService.pushNewMessage).
+const CATEGORIES = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages'];
 
 function categoryFor(type) {
   const category = CATEGORY_BY_TYPE[type];
@@ -52,7 +54,7 @@ async function notify({ userId, actorId, type, postId = null, commentId = null }
   if (result.rowCount > 0) pushNotification({ userId, actorId, type, postId, commentId });
 }
 
-// { likes, comments, mentions, follows, follow_accepted } -- all true when
+// { likes, comments, mentions, follows, follow_accepted, messages } -- all true when
 // the user never saved settings.
 async function getPreferences(userId) {
   const result = await db.query(`SELECT ${CATEGORIES.join(', ')} FROM notification_preferences WHERE user_id = $1`, [userId]);

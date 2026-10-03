@@ -6,11 +6,11 @@ import { useConversationMessages } from './hooks/useConversationMessages';
 import { usePresenceEvents } from './hooks/usePresenceEvents';
 import { useTypingIndicator } from './hooks/useTypingIndicator';
 import { VoicePlaybackProvider } from './context/VoicePlaybackProvider';
-import { fetchConversations, fetchConversationDetails } from './services/messageService';
+import { fetchConversations, fetchConversationDetails, muteConversation } from './services/messageService';
 import { formatRelativeTime } from './utils/formatRelativeTime';
 import Avatar from './components/common/Avatar';
-import { ChevronLeft, Users } from 'lucide-react';
-import { IconButton } from './components/ui';
+import { Bell, BellOff, ChevronLeft, Users } from 'lucide-react';
+import { ActionSheet, IconButton } from './components/ui';
 import MessageBubble from './components/messages/MessageBubble';
 import MessageComposer from './components/messages/MessageComposer';
 import MessageThreadSkeleton from './components/messages/MessageThreadSkeleton';
@@ -78,6 +78,19 @@ function Conversation() {
   // for every conversation (cheap); groups use it for the header, sender
   // names and typing names. Refetched when the group changes (group_updated).
   const [details, setDetails] = useState(null);
+  // Day 23: mute this chat's notifications (for me).
+  const [muteOpen, setMuteOpen] = useState(false);
+  const [muteError, setMuteError] = useState('');
+  const changeMute = (duration) => {
+    setMuteError('');
+    muteConversation(conversationId, duration, token)
+      .then((state) => setDetails((d) => (d ? { ...d, ...state } : d)))
+      .catch((err) => {
+        console.error(err);
+        setMuteError(t('messages.mute.failed'));
+      });
+  };
+  const muted = Boolean(details?.muted);
   const [detailsError, setDetailsError] = useState('');
   const isGroup = details?.type === 'group';
   const membersById = useMemo(() => new Map((details?.members || []).map((m) => [m.id, m])), [details]);
@@ -308,7 +321,28 @@ function Conversation() {
         </div>
           </>
         )}
+        {details && (
+          <IconButton
+            icon={muted ? BellOff : Bell}
+            aria-label={muted ? t('messages.mute.mutedLabel') : t('messages.mute.open')}
+            className="conversation-mute-btn"
+            onClick={() => setMuteOpen(true)}
+          />
+        )}
       </header>
+      {muteError && <p className="form-error conversation-mute-error" role="alert">{muteError}</p>}
+      <ActionSheet
+        open={muteOpen}
+        onClose={() => setMuteOpen(false)}
+        title={muted ? t('messages.mute.mutedTitle') : t('messages.mute.title')}
+        items={muted
+          ? [{ key: 'unmute', label: t('messages.mute.unmute'), icon: Bell, onSelect: () => changeMute(null) }]
+          : [
+              { key: '8h', label: t('messages.mute.for8h'), icon: BellOff, onSelect: () => changeMute('8h') },
+              { key: '1w', label: t('messages.mute.for1w'), icon: BellOff, onSelect: () => changeMute('1w') },
+              { key: 'always', label: t('messages.mute.always'), icon: BellOff, onSelect: () => changeMute('always') }
+            ]}
+      />
 
       {detailsError && (
         <p className="form-error conversation-notice" role="alert">

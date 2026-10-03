@@ -983,3 +983,19 @@
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
+
+/* Day 23: mute a chat -- bell at the end of the header; muted icon in the inbox. */
+.conversation-mute-btn {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}
+
+.conversation-mute-error {
+  padding: 0 var(--space-md);
+}
+
+.messages-muted-icon {
+  margin-inline-start: 4px;
+  vertical-align: -1px;
+  color: var(--color-text-muted);
+}

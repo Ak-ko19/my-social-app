@@ -175,6 +175,8 @@ CREATE TABLE conversation_participants (
   last_read_message_id integer REFERENCES messages(id) ON DELETE SET NULL,
   -- Added by migration 023_add_group_chats (B10).
   role varchar(10) DEFAULT 'member' NOT NULL CONSTRAINT chk_participants_role CHECK (role IN ('admin', 'member')),
+  -- Added by migration 037 (Day 23): NULL = not muted, 'infinity' = until unmuted.
+  muted_until timestamptz,
   PRIMARY KEY (conversation_id, user_id)
 );
 
@@ -278,7 +280,9 @@ CREATE TABLE notification_preferences (
   mentions boolean NOT NULL DEFAULT true,
   follows boolean NOT NULL DEFAULT true,
   follow_accepted boolean NOT NULL DEFAULT true,
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  -- Added by migration 037_add_message_notification_settings (Day 23).
+  messages boolean NOT NULL DEFAULT true
 );
 
 CREATE TABLE reports (
