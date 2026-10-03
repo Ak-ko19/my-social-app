@@ -157,6 +157,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Per-post privacy: public / followers / only me (if missing). *(public/followers since B5; "only me" added Day 20.)*
 
 ### Day 21 — GO LIVE #3 (only if you have the access) + buffer
+*GO LIVE skipped 2026-10-03: no production access (CLAUDE.md hard limits) — owner action, LATER.md #2. Buffer: nothing left from Week 3; rehearsal 015 → 035 PASSED on current dev.*
 
 ---
 
@@ -883,3 +884,13 @@ Build every feature the way a senior engineer at a top social media company woul
   - backend 537/537; Vitest 54/54.
   - Rehearsal 015 → 035 PASSED.
   - Full browser run: 33 suites + A3 EN/MY/AR green.
+
+### 2026-10-03 — Day 21: GO LIVE #3 (skipped) + buffer
+- **GO LIVE:** skipped again, since there is no production access. It
+  stays an owner action (LATER.md #2, updated for Days 1–20 and
+  migrations 015 → 035).
+- **Buffer:** nothing is left from Week 3 apart from the owner's GO LIVE.
+  The rehearsal (015 → 035, schema match, data kept, downs/ups, old and
+  new API smoke) passed today on the same backend.
+- GO_LIVE_CHECKLIST's "last run" was updated. It already has smoke items
+  for Days 19–20 and the "only me" rollback warning.

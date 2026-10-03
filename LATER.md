@@ -55,6 +55,10 @@ without them. Newest items at the bottom.
   - **So Day 7 (GO LIVE #1) was skipped** and the work continued with
     Day 8, as MONTH_PLAN says. The same applies to every later GO LIVE
     day until you run the checklist.
+  - **Day 21 (GO LIVE #3) was skipped (2026-10-03).** `dev` is now
+    Days 1–20. The checklist covers migrations 015 → 035, smoke tests up
+    to Day 20, and rollback notes for "only me" posts. The rehearsal
+    passed on that `dev`.
   - **Day 14 (GO LIVE #2) was skipped too (2026-10-01).** `dev` is now
     Days 1–13. The checklist covers migrations 015 → 032 and its smoke
     tests up to Day 12. The rehearsal passed on that `dev` the same day.

@@ -1,6 +1,6 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 21 — GO LIVE #3 + buffer (not started)
+**Day:** 22 (Week 4) — see MONTH_PLAN (not started)
 **Step:** —
 
 ## Carry-over notes
@@ -47,4 +47,4 @@
 (written at the start of each step)
 
 ## Progress
-(nothing in progress — Day 20 closed 2026-10-03)
+(nothing in progress — Day 21 closed 2026-10-03: GO LIVE skipped)

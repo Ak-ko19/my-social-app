@@ -26,8 +26,8 @@ the production database or merging to `master`.
   migration on a local copy of the live schema (never production):
   `cd e2e && bash golive-rehearsal.sh --old` must end with
   `REHEARSAL PASSED`.
-  - Last run 2026-10-01, 015 → 032, all passed:
-    - the result matches the app's schema exactly (171 columns, 97
+  - Last run 2026-10-03, 015 → 035, all passed:
+    - the result matches the app's schema exactly (179 columns, 99
       constraints);
     - all old rows are kept, and old images and likes carry over;
     - the new code and the old live code both work on the migrated
