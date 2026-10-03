@@ -102,7 +102,7 @@ describe('node server.js', () => {
     ALLOWED_ORIGINS: '', FRONTEND_URL: '',
     CLOUDINARY_CLOUD_NAME: '', CLOUDINARY_API_KEY: '', CLOUDINARY_API_SECRET: '',
     BREVO_API_KEY: '', SENTRY_DSN: '', CLEANUP_SECRET: '', EMAIL_HOST: '', EMAIL_USER: '', EMAIL_PASS: '', EMAIL_FROM: '', EMAIL_PORT: '',
-    TURNSTILE_SITE_KEY: '', TURNSTILE_SECRET_KEY: '', TURNSTILE_VERIFY_URL: ''
+    TURNSTILE_SITE_KEY: '', TURNSTILE_SECRET_KEY: '', TURNSTILE_VERIFY_URL: '', LINK_PREVIEW_TEST_ORIGIN: ''
   };
 
   // Resolves once the process exits or prints its "running" line.

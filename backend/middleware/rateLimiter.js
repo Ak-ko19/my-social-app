@@ -196,8 +196,18 @@ const resendVerificationLimiter = createLimiter({
   message: 'Too many verification emails requested. Please try again in 15 minutes.'
 });
 
+// Day 19: each uncached preview makes the server fetch a web page. A feed
+// full of links is a few dozen; this bounds a script using us as a fetcher.
+const linkPreviewLimiter = createLimiter({
+  keyBy: 'user',
+  windowMs: 15 * 60 * 1000,
+  max: 120,
+  message: 'Too many requests. Please try again later.'
+});
+
 module.exports = {
   globalLimiter,
+  linkPreviewLimiter,
   loginLimiter,
   signupLimiter,
   signupDailyLimiter,

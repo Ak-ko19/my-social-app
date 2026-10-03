@@ -27,6 +27,8 @@ process.env.SENTRY_DSN = '';
 process.env.TURNSTILE_SITE_KEY = '';
 process.env.TURNSTILE_SECRET_KEY = '';
 process.env.TURNSTILE_VERIFY_URL = '';
+// Day 19: the browser suites' stub site only (see linkPreviewService).
+process.env.LINK_PREVIEW_TEST_ORIGIN = '';
 
 process.env.CLOUDINARY_CLOUD_NAME = '';
 process.env.CLOUDINARY_API_KEY = '';

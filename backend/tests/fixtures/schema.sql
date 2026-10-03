@@ -340,3 +340,15 @@ CREATE TABLE error_groups (
   resolved_at timestamptz
 );
 CREATE INDEX idx_error_groups_last_seen ON error_groups (last_seen DESC);
+
+-- Day 19 (migration 034): link preview cache.
+CREATE TABLE link_previews (
+  url_hash CHAR(64) PRIMARY KEY,
+  url TEXT NOT NULL,
+  ok BOOLEAN NOT NULL,
+  title TEXT,
+  description TEXT,
+  site_name TEXT,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_link_previews_fetched_at ON link_previews (fetched_at);

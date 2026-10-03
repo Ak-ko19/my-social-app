@@ -149,7 +149,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Reactions beyond like (if missing). *(Exists — B4/B1; verified Day 18.)*
 
 ### Day 19 — Link previews + share cards
-- [ ] Link previews in posts and messages (server-side fetch with timeout and size limit).
+- [x] Link previews in posts and messages (server-side fetch with timeout and size limit).
 - [ ] Open Graph share cards for public post URLs.
 
 ### Day 20 — Posts upgrade

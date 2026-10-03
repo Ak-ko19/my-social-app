@@ -14,13 +14,14 @@ import { useComments } from '../../hooks/useComments';
 import { resolveImageUrl } from '../../api';
 import { getOptimizedImageUrl } from '../../utils/cloudinaryImage';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
-import { safeHttpUrl } from '../../utils/safeUrl';
+import { firstLink } from '../../utils/links';
 import { updatePost, updatePostVisibility } from '../../services/postService';
 import { Avatar, VerifiedTick } from '../ui';
 import MediaCarousel from './MediaCarousel';
 import CommentSection from './CommentSection';
 import PostMenu from './PostMenu';
 import PostText from './PostText';
+import LinkPreviewCard from '../common/LinkPreviewCard';
 import './PostCard.css';
 
 // Replaces the old Feed.css-based PostCard IN PLACE -- same external
@@ -161,9 +162,10 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
   // for things like Report/Block, which act on the real person).
   const page = post.page || null;
   const initials = ((page ? page.name : post.username) || '?').slice(0, 2).toUpperCase();
-  // Link previews render only for http(s) URLs (never javascript:/data:).
-  const linkUrl = safeHttpUrl(post.linkPreview?.url);
-  const linkImage = safeHttpUrl(post.linkPreview?.image);
+  // B2: media[] is the full ordered list; image_url is the fallback for
+  // payloads that predate post_media (e.g. a cached older response).
+  const media = post.media?.length ? post.media : post.image_url ? [{ url: post.image_url }] : [];
+  const hasMedia = media.length > 0;
 
   return (
     <article className="post-card">
@@ -236,33 +238,15 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
         <PostText content={post.content} className="post-card-body" />
       )}
 
-      {/* B2: media[] is the full ordered list; image_url is the fallback for
-          payloads that predate post_media (e.g. a cached older response). */}
       <MediaCarousel
-        media={post.media?.length ? post.media : post.image_url ? [{ url: post.image_url }] : []}
+        media={media}
         altPrefix={t('feed.imageAlt', { name: page ? page.name : post.username })}
         className="post-card-media"
       />
 
-      {linkUrl && (
-        <a className="post-card-link-preview" href={linkUrl} target="_blank" rel="noreferrer">
-          {linkImage && (
-            <div className="post-card-link-preview-media">
-              <img src={linkImage} alt="" />
-              {post.linkPreview.cta && <span className="post-card-link-preview-cta">{post.linkPreview.cta}</span>}
-            </div>
-          )}
-          <div className="post-card-link-preview-text">
-            {post.linkPreview.domain && (
-              <span className="post-card-link-preview-domain">{post.linkPreview.domain}</span>
-            )}
-            <span className="post-card-link-preview-title">{post.linkPreview.title}</span>
-            {post.linkPreview.subtitle && (
-              <span className="post-card-link-preview-subtitle">{post.linkPreview.subtitle}</span>
-            )}
-          </div>
-        </a>
-      )}
+      {/* Day 19: a card for the first link -- only when the post has no
+          photos of its own (they'd compete for the same space). */}
+      {!hasMedia && <LinkPreviewCard url={firstLink(post.content)} />}
 
       <div className="post-card-stats">
         <span className="post-card-reaction-summary">

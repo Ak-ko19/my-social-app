@@ -21,7 +21,11 @@ if [ "$E2E_TURNSTILE" = 1 ]; then
   nohup node "$SP/turnstile-stub.cjs" 3901 > "$SP/turnstile-stub.log" 2>&1 &
   TS_SITE=e2e-turnstile-site-key TS_SECRET=e2e-turnstile-secret TS_URL=http://localhost:3901/siteverify
 fi
+# Day 19: a stub website for link previews (the backend may fetch it only
+# via LINK_PREVIEW_TEST_ORIGIN, which production ignores).
+nohup node "$SP/link-stub.cjs" 3902 > "$SP/link-stub.log" 2>&1 &
 cd "$B"
+LINK_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3902 \
 TURNSTILE_SITE_KEY="$TS_SITE" TURNSTILE_SECRET_KEY="$TS_SECRET" TURNSTILE_VERIFY_URL="$TS_URL" \
 NODE_ENV=test DATABASE_URL=postgresql://testuser@localhost:55433/mysocialapp_e2e JWT_SECRET=e2e-local-only-secret \
 ALLOWED_ORIGINS=http://localhost:5173 FRONTEND_URL=http://localhost:5173 BREVO_API_KEY= SENTRY_DSN= CLEANUP_SECRET= EMAIL_HOST= EMAIL_USER= EMAIL_PASS= \

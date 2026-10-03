@@ -41,6 +41,7 @@ const configRoutes = require('./routes/configRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
 const internalRoutes = require('./routes/internalRoutes');
 const clientErrorRoutes = require('./routes/clientErrorRoutes');
+const linkPreviewRoutes = require('./routes/linkPreviewRoutes');
 
 const app = express();
 // Hosts like Render tell the app which port to listen on (validated by
@@ -102,6 +103,7 @@ app.use(healthRoutes);
 app.use(configRoutes);
 app.use(internalRoutes);
 app.use(clientErrorRoutes);
+app.use(linkPreviewRoutes);
 // Before followRoutes/userPostsRoutes: literal /users/suggestions must win over /users/:id/... patterns.
 app.use(suggestionRoutes);
 app.use(authRoutes);

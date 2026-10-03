@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 033, check the environment variables,
+database, run migrations 015 → 034, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -97,7 +97,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 033 on production
+## 3. Run migrations 015 → 034 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -114,7 +114,7 @@ they run.
 - [ ] Confirm none of the new tables exist yet (this should print `0`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups')"
+    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews')"
   ```
 - [ ] Run them **one at a time, in this order**, from `backend/`. Each
   prints `Migration applied successfully`.
@@ -129,14 +129,14 @@ they run.
            022_add_message_replies_images 023_add_group_chats 024_add_notification_preferences \
            025_add_admin_moderation 026_add_communities 027_add_pages 028_add_sessions \
            029_add_cleanup_indexes 030_add_error_log 031_report_comments_messages \
-           032_add_suspensions 033_add_user_language; do
+           032_add_suspensions 033_add_user_language 034_add_link_previews; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
-- [ ] Check the result (this should print `6`, then `4`):
+- [ ] Check the result (this should print `7`, then `4`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups')"
+    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews')"
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
     "SELECT count(*) FROM information_schema.columns WHERE (table_name = 'reports' AND column_name IN ('target_owner_id','target_snapshot')) OR (table_name = 'users' AND column_name IN ('banned_until','language'))"
   ```

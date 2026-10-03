@@ -43,6 +43,8 @@ const ERRORS_STALE = `last_seen < now() - interval '${ERROR_RETENTION}'`;
 // Day 12: suspensions that have run out (most are lifted sooner, on the
 // user's next request; this catches people who haven't been back).
 const SUSPENSIONS_OVER = 'banned_until IS NOT NULL AND banned_until <= now()';
+// Day 19: link previews are only a cache.
+const PREVIEWS_OLD = "fetched_at < now() - interval '30 days'";
 
 // Expired stories: rows first (their views cascade), then the media of
 // exactly the rows that were deleted.
@@ -72,6 +74,7 @@ async function run({ dryRun = false } = {}) {
       sessions: await countWhere('sessions', SESSIONS_DEAD),
       errorGroups: await countWhere('error_groups', ERRORS_STALE),
       suspensionsLifted: await countWhere('users', SUSPENSIONS_OVER),
+      linkPreviews: await countWhere('link_previews', PREVIEWS_OLD),
       durationMs: Date.now() - started
     };
   }
@@ -80,7 +83,8 @@ async function run({ dryRun = false } = {}) {
   const sessions = await deleteInBatches('sessions', SESSIONS_DEAD, ROW_BATCH);
   const errorGroups = await deleteInBatches('error_groups', ERRORS_STALE, ROW_BATCH);
   const suspensionsLifted = await liftExpiredSuspensions();
-  return { dryRun: false, stories, storyMedia, notifications, sessions, errorGroups, suspensionsLifted, durationMs: Date.now() - started };
+  const linkPreviews = await deleteInBatches('link_previews', PREVIEWS_OLD, ROW_BATCH);
+  return { dryRun: false, stories, storyMedia, notifications, sessions, errorGroups, suspensionsLifted, linkPreviews, durationMs: Date.now() - started };
 }
 
 module.exports = { run, NOTIFICATION_RETENTION };

@@ -4,6 +4,9 @@ import MessageStatusIcon from './MessageStatusIcon';
 import VoiceMessagePlayer from './VoiceMessagePlayer';
 import { useTranslation } from 'react-i18next';
 import i18n, { formatDate } from '../../i18n';
+import LinkPreviewCard from '../common/LinkPreviewCard';
+import { renderTextWithLinks } from '../../utils/renderTextWithLinks';
+import { firstLink } from '../../utils/links';
 
 const PROGRESS_BAR_DELAY_MS = 1000;
 // Mirrors the backend's MESSAGE_EDIT_WINDOW_MS (messageService) -- the
@@ -150,11 +153,18 @@ function MessageBubble({
         <a href={message.media_url} target="_blank" rel="noreferrer" className="messages-image-link" aria-label={t('messages.openPhoto')}>
           <img src={message.media_url} alt={message.content ? t('messages.preview.photoCaption', { caption: message.content }) : t('messages.preview.photo')} className="messages-image" loading="lazy" />
         </a>
-        {message.content && <p className="messages-bubble-text" dir="auto">{message.content}</p>}
+        {message.content && <p className="messages-bubble-text" dir="auto">{renderTextWithLinks(message.content, { tags: false })}</p>}
       </>
     );
   } else {
-    body = <p className="messages-bubble-text" dir="auto">{message.content}</p>;
+    // Day 19: links are clickable, and the first one gets a preview card
+    // (once the message is really sent).
+    body = (
+      <>
+        <p className="messages-bubble-text" dir="auto">{renderTextWithLinks(message.content || '', { tags: false })}</p>
+        {isPersisted && <LinkPreviewCard url={firstLink(message.content)} className="link-preview-in-message" />}
+      </>
+    );
   }
 
   return (
