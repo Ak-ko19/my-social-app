@@ -38,6 +38,8 @@ const sidOf = (token) => JSON.parse(Buffer.from(token.split('.')[1], 'base64url'
     }, [lang, theme]);
     const page = await ctx.newPage();
     page.on('console', (m) => { if (m.type() === 'error') errors.push(`${lang}: ${m.text()}`); });
+    // Which request got a 401 (the console line doesn't say).
+    page.on('response', (r) => { if (r.status() === 401) errors.push(`${lang}: 401 from ${r.request().method()} ${r.url()} (${page.url()})`); });
     page.on('pageerror', (e) => errors.push(`${lang}: ${e.message}`));
     return page;
   }

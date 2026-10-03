@@ -21,10 +21,21 @@ function PrivacyToggle() {
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    // No token = logging out right now (Settings stays on screen for a
+    // moment): asking would only earn a 401 (Day 16).
+    if (!token) return undefined;
+    let active = true;
     api
       .get('/profile/me', authHeaders(token))
-      .then((res) => setIsPrivate(Boolean(res.data.is_private)))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        if (active) setIsPrivate(Boolean(res.data.is_private));
+      })
+      .catch((err) => {
+        if (active) console.error(err);
+      });
+    return () => {
+      active = false;
+    };
   }, [token]);
 
   const toggle = () => {

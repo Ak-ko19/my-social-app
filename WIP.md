@@ -70,4 +70,12 @@ and the missing part: save the language choice PER USER.
   only picked languages reach the account; a logged-out pick is pending
   and wins at the next login there; signup sends only a picked one.
   day16-language 17/17, day8-sessions-list green, vitest 38/38.
-- Next: Day 16 close run #2 (all batches again).
+- Close run #2: batch 2 failed when the internet dropped (fonts); rerun
+  green. day8-sessions-list 401 again -> the suite now logs which URL got
+  a 401: PrivacyToggle re-fetched /profile/me when the token was cleared
+  on logout. Fixed (token guard + stale-response guard), vitest test fails
+  on the old code; 5/5 suite runs clean.
+- FOLLOW-UP (not urgent): routes are not auth-guarded, so auth-only
+  screens (Admin, EditPage, ManageCommunity, ...) re-render briefly with
+  no token on a forced logout; consider a token guard / route guard.
+- Next: close batches 4 + A3, then Progress Log.
