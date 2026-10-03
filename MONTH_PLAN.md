@@ -810,3 +810,45 @@ Build every feature the way a senior engineer at a top social media company woul
   20/20; browser suites b1-reactions 14/14 and b4-comments 15/15.
 - No code changed, so no new full run: the same code passed Day 16's
   full run.
+
+### 2026-10-03 — Day 19: Link previews + share cards
+- **Step 1 (`4866742`):** link previews.
+  - **Found first:** URLs in posts, comments and messages weren't even
+    clickable. Now they are links: http(s) only, a new tab,
+    `rel="noopener noreferrer nofollow ugc"`, trailing punctuation left
+    out, LTR inside Arabic text.
+  - **The server fetches the linked page** (`GET /link-preview`), so the
+    reader's browser never contacts the site. SSRF protection:
+    - http(s) on ports 80/443 only, no credentials in the URL;
+    - every resolved address must be public (all v4/v6 special ranges,
+      including IPv4-mapped/NAT64/6to4 forms);
+    - the connection is pinned to the checked address (no DNS
+      rebinding);
+    - redirects are followed by hand, max 3, each re-checked;
+    - 5 s, 512 KB, HTML only.
+  - **Cache:** `link_previews` (migration 034); good results for 7 days,
+    failures for 1 h; the cleanup job drops rows older than 30 days.
+  - **Card:** site, title, description, under posts without photos and
+    in text messages.
+    - **Better than a site-image card:** no og:image. Loading the
+      site's image would tell it who is reading, and would need a wider
+      CSP.
+    - Replaces a dead `post.linkPreview` placeholder in PostCard.
+- **Step 2 (`b69562d`):** Open Graph share cards.
+  - `GET /share/posts/:id` serves the post's og:/twitter: tags (author
+    or page, text excerpt, first photo) and a redirect for people.
+  - vercel.json rewrites crawler user-agents on `/posts/:id` to it, so
+    shared links keep the app's domain. check-headers verifies the
+    rewrite target.
+  - Only publicly visible posts get a real card; everything else gets
+    the same generic card, which reveals nothing.
+  - serve-dist emulates the rewrite, so the dist suite tests the real
+    vercel.json.
+- **Tests at close:**
+  - backend 526/526: linkPreview 59 tests, 10 safeguard mutations
+    caught; share 10 tests.
+  - Vitest 50/50; rehearsal 015 → 034 PASSED.
+  - Full browser run: 32 suites (new: day19-links, day19-share) + A3
+    EN/MY/AR, all green on the first pass.
+- **Owner:** GO_LIVE_CHECKLIST has a Day 19 smoke item (Facebook Sharing
+  Debugger / Telegram paste).
