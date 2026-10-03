@@ -1,0 +1,40 @@
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import PostMenu from './PostMenu';
+
+vi.mock('../../hooks/useAuth', () => ({ useAuth: () => ({ token: 'tok', userId: 2 }) }));
+
+// B5 / Day 20: the owner's menu offers the audiences the post isn't using --
+// and none at all for group or page posts (regression: the Day 20 rename of
+// the menu keys briefly let them through).
+const open = async (post, visibility) => {
+  const onChangeVisibility = vi.fn();
+  render(<PostMenu post={{ id: 1, user_id: 2, username: 'bob', ...post }} visibility={visibility} onChangeVisibility={onChangeVisibility} />);
+  await userEvent.click(screen.getByRole('button', { name: 'More options' }));
+  return onChangeVisibility;
+};
+
+describe('PostMenu audience items', () => {
+  it('an "only me" post offers public and followers-only', async () => {
+    const onChange = await open({}, 'only_me');
+    expect(screen.queryByText('Make visible to only me')).toBeNull();
+    await userEvent.click(screen.getByText('Make public'));
+    expect(onChange).toHaveBeenCalledWith('public');
+  });
+
+  it('a public post offers followers-only and only me', async () => {
+    await open({}, 'public');
+    expect(screen.getByText('Make visible to followers only')).toBeInTheDocument();
+    expect(screen.getByText('Make visible to only me')).toBeInTheDocument();
+    expect(screen.queryByText('Make public')).toBeNull();
+  });
+
+  it.each([['page', { page: { id: 5, name: 'Cafe' } }], ['group', { community_id: 9 }]])('a %s post has none', async (kind, extra) => {
+    await open(extra, 'public');
+    for (const label of ['Make public', 'Make visible to followers only', 'Make visible to only me']) {
+      expect(screen.queryByText(label)).toBeNull();
+    }
+    expect(screen.getByText('Edit post')).toBeInTheDocument();
+  });
+});
