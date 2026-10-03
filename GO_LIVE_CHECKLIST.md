@@ -207,6 +207,15 @@ Do this in a normal browser window, then again on a phone.
   - Remove the message: it shows as deleted in the chat.
   - Suspend the test account for 1 day. Logging in says "suspended
     until …". Then "Lift suspension", and it can log in again.
+- [ ] **Links (Day 19):**
+  - Post a link to a news article. It's clickable, and a card with the
+    site, title and description appears under the post.
+  - Paste a public post's link (Share → copy) into Telegram or a Facebook
+    post. It shows the author and text, not just "MySocialApp".
+  - If it doesn't, check the link with Facebook's Sharing Debugger
+    (developers.facebook.com/tools/debug, no login needed for a basic
+    check).
+  - A followers-only post's link shows only the generic card.
 - [ ] **Bot protection (Day 11):**
   - Signing up at normal speed shows no extra step and no error.
   - Signup and Forgot password take up to 3 seconds if you submit very

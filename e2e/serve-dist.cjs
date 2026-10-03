@@ -51,8 +51,40 @@ const TYPES = {
   '.webmanifest': 'application/manifest+json', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8'
 };
 
+// Day 19: rewrites to an external URL with "has" header conditions (share
+// cards: crawlers on /posts/:id go to the API). The production API origin
+// becomes the local one, like the CSP above. ":name" sources only.
+const externalRewrites = (vercel.rewrites || [])
+  .filter((r) => /^https?:\/\//.test(r.destination))
+  .map((r) => ({
+    test: new RegExp(`^${r.source.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/:(\w+)/g, '(?<$1>[^/]+)')}$`),
+    has: (r.has || []).filter((h) => h.type === 'header').map((h) => ({ key: h.key.toLowerCase(), value: new RegExp(h.value) })),
+    destination: r.destination.replace(PROD_API.origin, LOCAL_API.origin)
+  }));
+
+function externalRewrite(req, urlPath) {
+  for (const rule of externalRewrites) {
+    const match = rule.test.exec(urlPath);
+    if (!match) continue;
+    if (!rule.has.every((h) => h.value.test(req.headers[h.key] || ''))) continue;
+    return rule.destination.replace(/:(\w+)/g, (whole, name) => (match.groups && name in match.groups ? encodeURIComponent(match.groups[name]) : whole));
+  }
+  return null;
+}
+
 http.createServer((req, res) => {
   const urlPath = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  const proxyTo = externalRewrite(req, urlPath);
+  if (proxyTo) {
+    http.get(proxyTo, { headers: { 'user-agent': req.headers['user-agent'] || '' } }, (upstream) => {
+      res.writeHead(upstream.statusCode, upstream.headers);
+      upstream.pipe(res);
+    }).on('error', () => {
+      res.writeHead(502);
+      res.end();
+    });
+    return;
+  }
   let file = path.join(DIST, urlPath);
   if (!file.startsWith(DIST) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
     file = path.join(DIST, 'index.html');

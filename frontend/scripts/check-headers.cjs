@@ -62,6 +62,16 @@ for (const origin of [api.origin, `${api.protocol === 'https:' ? 'wss' : 'ws'}:/
   if (!connect.includes(origin)) problems.push(`connect-src is missing ${origin} (from .env.production).`);
 }
 
+// 2b. Day 19: rewrites to an external URL (share cards for crawlers) must go
+// to that same API, and come before the SPA catch-all or they never match.
+const rewrites = vercel.rewrites || [];
+const catchAll = rewrites.findIndex((r) => r.source === '/(.*)');
+rewrites.forEach((r, i) => {
+  if (!/^https?:\/\//.test(r.destination)) return;
+  if (new URL(r.destination).origin !== api.origin) problems.push(`rewrite ${r.source} goes to ${new URL(r.destination).origin}, not the API (${api.origin}).`);
+  if (catchAll !== -1 && i > catchAll) problems.push(`rewrite ${r.source} comes after the "/(.*)" catch-all, so it never applies.`);
+});
+
 // 3. The rest of the policy and the other headers.
 const must = {
   "default-src 'self'": (directives['default-src'] || []).join(' ') === "'self'",

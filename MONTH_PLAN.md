@@ -150,7 +150,7 @@ Build every feature the way a senior engineer at a top social media company woul
 
 ### Day 19 — Link previews + share cards
 - [x] Link previews in posts and messages (server-side fetch with timeout and size limit).
-- [ ] Open Graph share cards for public post URLs.
+- [x] Open Graph share cards for public post URLs.
 
 ### Day 20 — Posts upgrade
 - [ ] Multiple images per post (if missing).

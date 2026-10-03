@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 19 — Link previews + share cards
-**Step:** 2 — Open Graph share cards (step 1 done)
+**Step:** — (both steps done; Day close pending)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -78,4 +78,27 @@ Day 19 Step 1 — link previews in posts and messages.
   post.linkPreview placeholder was replaced.
 - For the Privacy Policy task (Day 30): mention that the server fetches
   linked pages for previews (sites see our server, not the reader).
-- Next: Step 2 — Open Graph share cards for public post URLs.
+- Step 2 PLAN (OG share cards): crawlers (FB/Telegram/Viber/WhatsApp/X…)
+  run no JS, so /posts/:id shows the generic SPA card.
+  - Backend GET /share/posts/:id: small HTML page with og:/twitter: tags
+    ("<name> on MySocialApp", text excerpt, first PHOTO, og:url = the
+    frontend URL) + meta refresh/link to the app. Only for posts visible
+    to the public (getVisiblePost(id, null)); hidden/missing -> generic
+    card (never reveals the post exists). Everything HTML-escaped.
+  - vercel.json: rewrite /posts/:id with a user-agent "has" condition
+    (crawler list) to that backend URL, BEFORE the SPA catch-all; shared
+    links stay on the frontend domain, people still get the app.
+  - serve-dist.cjs: emulate "has" + external rewrites (proxy to the
+    local API) so the dist suites test the real vercel.json; check-
+    headers.cjs: the rewrite must point at the .env.production API.
+  - Tests: jest (public / followers-only / private account / community /
+    deleted author / page post / escaping / image), browser (dist: a
+    crawler UA gets the tags, a browser UA gets the app).
+- Step 2 DONE: share cards. Verified: backend 526/526 (share 10 tests;
+  mutations caught except an equivalent one: post_media rows already come
+  in position order via the unique index); check-headers guards the
+  rewrite; day19-share 14/14 on the dist stack; day10-errors +
+  day11-turnstile green with the new serve-dist.
+- Day 20 note: "only me" visibility does not exist yet; when added,
+  getVisiblePost (used by share cards) must hide it.
+- Next: Day 19 close (full browser run in batches).
