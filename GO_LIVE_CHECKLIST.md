@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 034, check the environment variables,
+database, run migrations 015 → 035, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -97,7 +97,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 034 on production
+## 3. Run migrations 015 → 035 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -129,7 +129,8 @@ they run.
            022_add_message_replies_images 023_add_group_chats 024_add_notification_preferences \
            025_add_admin_moderation 026_add_communities 027_add_pages 028_add_sessions \
            029_add_cleanup_indexes 030_add_error_log 031_report_comments_messages \
-           032_add_suspensions 033_add_user_language 034_add_link_previews; do
+           032_add_suspensions 033_add_user_language 034_add_link_previews \
+           035_add_only_me_visibility; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
@@ -207,6 +208,11 @@ Do this in a normal browser window, then again on a phone.
   - Remove the message: it shows as deleted in the chat.
   - Suspend the test account for 1 day. Logging in says "suspended
     until …". Then "Lift suspension", and it can log in again.
+- [ ] **"Only me" posts (Day 20):**
+  - Write a post with the audience "Only me". It shows a lock.
+  - A second test account that follows you doesn't see it on Home, on
+    your profile, or by opening its link.
+  - Change it to Public from the ⋯ menu; now they can.
 - [ ] **Links (Day 19):**
   - Post a link to a news article. It's clickable, and a card with the
     site, title and description appears under the post.
@@ -283,7 +289,9 @@ because every migration only adds things. Two options:
 
 ⚠️ This is only safe while users haven't used the new privacy features.
 The old code **does not know** about:
-- followers-only posts (it would show them to everyone);
+- followers-only and "only me" posts (it would show them to everyone).
+  This is also why `035_add_only_me_visibility.down.sql` refuses to run
+  while "only me" posts exist; its first lines explain the options;
 - private groups (it would show their posts in feeds);
 - bans (banned people could log in again).
 

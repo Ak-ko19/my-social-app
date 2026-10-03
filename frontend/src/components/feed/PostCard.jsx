@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from '../../utils/serverError';
 import { AnimatePresence } from 'motion/react';
-import { Bookmark, Globe, MessageCircle, Share2, Users } from 'lucide-react';
+import { Bookmark, Globe, Lock, MessageCircle, Share2, Users } from 'lucide-react';
 import ReactionButton from './ReactionButton';
 import { topReactions } from '../../utils/reactions';
 import clsx from 'clsx';
@@ -68,9 +68,10 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
   const [visibility, setVisibility] = useState(post.visibility || 'public');
   const [visibilityError, setVisibilityError] = useState('');
 
-  const toggleVisibility = () => {
+  // B5 / Day 20: 'public' | 'followers' | 'only_me', picked in PostMenu.
+  const changeVisibility = (next) => {
     const previous = visibility;
-    const next = previous === 'followers' ? 'public' : 'followers';
+    if (next === previous) return;
     setVisibility(next);
     setVisibilityError('');
     updatePostVisibility(post.id, next, token).catch((err) => {
@@ -166,6 +167,8 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
   // payloads that predate post_media (e.g. a cached older response).
   const media = post.media?.length ? post.media : post.image_url ? [{ url: post.image_url }] : [];
   const hasMedia = media.length > 0;
+  const AudienceIcon = visibility === 'only_me' ? Lock : visibility === 'followers' ? Users : Globe;
+  const audienceLabel = t(visibility === 'only_me' ? 'feed.audienceOnlyMe' : visibility === 'followers' ? 'feed.audienceFollowers' : 'feed.audiencePublic');
 
   return (
     <article className="post-card">
@@ -187,10 +190,10 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
             {/* B13/B14: group posts follow the group's privacy and page posts
                 are always public -- neither has its own audience. */}
             {!post.community_id && !page && (
-              <span className="post-card-audience" title={visibility === 'followers' ? t('feed.audienceFollowers') : t('feed.audiencePublic')}>
+              <span className="post-card-audience" title={audienceLabel}>
                 {' · '}
-                {visibility === 'followers' ? <Users size={12} aria-hidden="true" /> : <Globe size={12} aria-hidden="true" />}
-                <span className="feed-visually-hidden">{visibility === 'followers' ? t('feed.audienceFollowers') : t('feed.audiencePublic')}</span>
+                <AudienceIcon size={12} aria-hidden="true" />
+                <span className="feed-visually-hidden">{audienceLabel}</span>
               </span>
             )}
           </div>
@@ -198,7 +201,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
         <PostMenu
           post={post}
           visibility={visibility}
-          onToggleVisibility={toggleVisibility}
+          onChangeVisibility={changeVisibility}
           onBlocked={onRemovePostsByUser}
           onDeleted={onRemovePost}
           onEdit={startEditing}

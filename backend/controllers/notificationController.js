@@ -12,7 +12,9 @@ async function getNotifications(req, res) {
         notifications.id, notifications.type, notifications.post_id, notifications.comment_id,
         notifications.is_read, notifications.created_at,
         actor.id AS actor_id, actor.username AS actor_username, actor.avatar_url AS actor_avatar_url,
-        posts.content AS post_content
+        -- Day 20: no snippet of a post that has since become "only me"
+        -- (unless it's your own).
+        CASE WHEN posts.visibility <> 'only_me' OR posts.user_id = $1 THEN posts.content END AS post_content
       FROM notifications
       JOIN users actor ON notifications.actor_id = actor.id
       LEFT JOIN posts ON notifications.post_id = posts.id

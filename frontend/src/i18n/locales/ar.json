@@ -182,7 +182,8 @@
     "composerPrompt": "بمَ تفكر؟",
     "photo": "صورة",
     "video": "فيديو",
-    "live": "مباشر"
+    "live": "مباشر",
+    "audienceOnlyMe": "أنا فقط"
   },
   "postMenu": {
     "blockFailed": "تعذّر حظر المستخدم",
@@ -201,7 +202,8 @@
     "blockDescription": "لن ترى منشورات {{name}} أو متابعاته أو رسائله بعد الآن، ولن يرى ما يخصك.",
     "blockConfirm": "حظر",
     "deleteTitle": "حذف هذا المنشور؟",
-    "deleteDescription": "لا يمكن التراجع عن هذا الإجراء."
+    "deleteDescription": "لا يمكن التراجع عن هذا الإجراء.",
+    "makeOnlyMe": "جعله مرئيًا لي فقط"
   },
   "report": {
     "thisPost": "هذا المنشور",
@@ -311,7 +313,8 @@
     "selectedImage": "الصورة المختارة {{n}}",
     "removeImage": "إزالة الصورة {{n}}",
     "posting": "جارٍ النشر…",
-    "post": "نشر"
+    "post": "نشر",
+    "onlyMe": "أنا فقط"
   },
   "ui": {
     "verified": "موثّق",

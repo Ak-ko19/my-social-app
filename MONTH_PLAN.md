@@ -153,8 +153,8 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Open Graph share cards for public post URLs.
 
 ### Day 20 — Posts upgrade
-- [ ] Multiple images per post (if missing).
-- [ ] Per-post privacy: public / followers / only me (if missing).
+- [x] Multiple images per post (if missing). *(Exists since B2; verified Day 20.)*
+- [x] Per-post privacy: public / followers / only me (if missing). *(public/followers since B5; "only me" added Day 20.)*
 
 ### Day 21 — GO LIVE #3 (only if you have the access) + buffer
 

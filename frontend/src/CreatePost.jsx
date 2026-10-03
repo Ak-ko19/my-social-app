@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import api from './api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Globe, Users, X } from 'lucide-react';
+import { ChevronLeft, Globe, Lock, Users, X } from 'lucide-react';
 import { IconButton } from './components/ui';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
@@ -154,6 +154,11 @@ function CreatePost() {
           <label className={visibility === 'followers' ? 'audience-option is-selected' : 'audience-option'}>
             <input type="radio" name="visibility" value="followers" checked={visibility === 'followers'} onChange={() => setVisibility('followers')} />
             <Users size={15} aria-hidden="true" /> {t('compose.followers')}
+          </label>
+          {/* Day 20: a private note on your own profile. */}
+          <label className={visibility === 'only_me' ? 'audience-option is-selected' : 'audience-option'}>
+            <input type="radio" name="visibility" value="only_me" checked={visibility === 'only_me'} onChange={() => setVisibility('only_me')} />
+            <Lock size={15} aria-hidden="true" /> {t('compose.onlyMe')}
           </label>
         </fieldset>
         )}

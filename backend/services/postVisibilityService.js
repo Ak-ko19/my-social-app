@@ -47,6 +47,8 @@ async function getVisiblePost(postId, viewerId) {
   if (isAuthor) return summary;
 
   if (post.is_deactivated) return null;
+  // Day 20: an "only me" post is for its author alone.
+  if (post.visibility === 'only_me') return null;
   if (viewerId != null && (await blockService.isBlocked(viewerId, post.user_id))) return null;
 
   if (post.community_id) {

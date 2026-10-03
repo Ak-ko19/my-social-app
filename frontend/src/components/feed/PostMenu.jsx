@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flag, Globe, MoreHorizontal, Pencil, Trash2, UserX, Users } from 'lucide-react';
+import { Flag, Globe, Lock, MoreHorizontal, Pencil, Trash2, UserX, Users } from 'lucide-react';
 import { IconButton, ActionSheet, ConfirmDialog } from '../ui';
 import ReportDialog from './ReportDialog';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,14 @@ import { deletePost } from '../../services/postService';
 // itself lives there, not here, since it needs to replace the post body.
 // canModerate (B13): the viewer is an admin of the post's group, so they
 // may delete someone else's post there.
-function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, onDeleted, onEdit, canModerate = false }) {
+// B5 / Day 20: the audiences a post can be switched to (all but its own).
+const AUDIENCE_ITEMS = [
+  { value: 'public', label: 'postMenu.makePublic', icon: Globe },
+  { value: 'followers', label: 'postMenu.makeFollowersOnly', icon: Users },
+  { value: 'only_me', label: 'postMenu.makeOnlyMe', icon: Lock }
+];
+
+function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, onDeleted, onEdit, canModerate = false }) {
   const { t } = useTranslation();
   const { token, userId } = useAuth();
   const isOwner = post.user_id === userId;
@@ -50,13 +57,13 @@ function PostMenu({ post, visibility = 'public', onToggleVisibility, onBlocked, 
   };
 
   const ownerItems = [
-        {
-          key: 'visibility',
-          label: visibility === 'followers' ? t('postMenu.makePublic') : t('postMenu.makeFollowersOnly'),
-          icon: visibility === 'followers' ? Globe : Users,
-          // B5: PostCard owns the change (optimistic + error display).
-          onSelect: () => onToggleVisibility?.()
-        },
+        // PostCard owns the change (optimistic + error display).
+        ...AUDIENCE_ITEMS.filter((a) => a.value !== visibility).map((a) => ({
+          key: `visibility-${a.value}`,
+          label: t(a.label),
+          icon: a.icon,
+          onSelect: () => onChangeVisibility?.(a.value)
+        })),
         {
           key: 'edit',
           label: t('postMenu.edit'),

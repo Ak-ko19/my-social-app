@@ -71,7 +71,7 @@ async function getPopularPosts(req, res) {
            AND (
              ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
              OR users.id = $1
-             OR EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted')
+             OR (posts.visibility <> 'only_me' AND EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted'))
            )
        )
        SELECT posts.id, posts.content, posts.visibility, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url,

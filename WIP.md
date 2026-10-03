@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 20 — Posts upgrade (not started)
-**Step:** —
+**Day:** 20 — Posts upgrade
+**Step:** — (both done; Day close pending)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -47,7 +47,33 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-(written at the start of each step)
+Day 20 Step 1 (multiple images): exists since B2 — verified (media +
+postVisibility tests 18/18; b2-media green in Day 19's full run). Ticked.
+
+Day 20 Step 2 — per-post audience "only me" (public/followers exist):
+- Migration 035_add_only_me_visibility: chk_posts_visibility +
+  'only_me'. DOWN REFUSES while only_me posts exist (the old code treats
+  any non-'followers' value as public, so a plain rollback would publish
+  them); its error says how to proceed (restore backup, or explicitly
+  convert to followers-only first).
+- API: POST /posts and PUT /posts/:id accept 'only_me' (not for page or
+  community posts).
+- Every read path hides it from everyone but the author:
+  getVisiblePost (post page, likes, comments, bookmarks, share cards) +
+  the follower clause of every listing (getPosts, /feed, profile tabs,
+  explore, hashtag, search, bookmarks list).
+- Mentions: notify only people who can see the post (also fixes
+  followers-only posts notifying non-followers).
+- Frontend: "Only me" in the audience picker (composer + edit), lock
+  icon on the card, EN/MY/AR.
+- Tests: a visibility matrix over every endpoint, mentions, migration
+  down guard; browser suite day20-only-me.
 
 ## Progress
-(nothing in progress — Day 19 closed 2026-10-03)
+- Step 2 DONE: only-me. Verified: backend 537/537 (onlyMe 11 tests with
+  positive controls — the first draft used two wrong routes and passed
+  vacuously; 10/10 filter mutations caught after fixes); 035 down refuses
+  with only_me rows, works after conversion, up idempotent; rehearsal
+  015→035; day20-only-me 13/13 + b5/a2/b4/b6/b7/b15/b16/day2/day19-share.
+  Also fixed: mentions in followers-only posts notified non-followers.
+- Next: Day 20 close (full browser run in batches).

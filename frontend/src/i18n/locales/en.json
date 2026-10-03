@@ -174,7 +174,8 @@
     "composerPrompt": "What's on your mind?",
     "photo": "Photo",
     "video": "Video",
-    "live": "Live"
+    "live": "Live",
+    "audienceOnlyMe": "Only me"
   },
   "postMenu": {
     "blockFailed": "Failed to block user",
@@ -193,7 +194,8 @@
     "blockDescription": "You won't see posts, follows, or messages from {{name}} anymore, and they won't see yours.",
     "blockConfirm": "Block",
     "deleteTitle": "Delete this post?",
-    "deleteDescription": "This cannot be undone."
+    "deleteDescription": "This cannot be undone.",
+    "makeOnlyMe": "Make visible to only me"
   },
   "report": {
     "thisPost": "this post",
@@ -299,7 +301,8 @@
     "selectedImage": "Selected image {{n}}",
     "removeImage": "Remove image {{n}}",
     "posting": "Posting…",
-    "post": "Post"
+    "post": "Post",
+    "onlyMe": "Only me"
   },
   "ui": {
     "verified": "Verified",

@@ -52,7 +52,7 @@ async function searchPosts(req, res) {
         AND (
           ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
           OR users.id = $4
-          OR EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $4 AND follows.following_id = users.id AND follows.status = 'accepted')
+          OR (posts.visibility <> 'only_me' AND EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $4 AND follows.following_id = users.id AND follows.status = 'accepted'))
         )
         AND NOT users.is_deactivated
       ORDER BY posts.created_at DESC

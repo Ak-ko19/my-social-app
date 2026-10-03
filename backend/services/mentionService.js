@@ -3,6 +3,7 @@
 // existing notifications table/shape (user_id, actor_id, type, post_id,
 // comment_id) rather than a new table, same as 'like'/'comment'/'follow'.
 const db = require('../db');
+const { getVisiblePost } = require('./postVisibilityService');
 const { allowedSql } = require('./notificationService');
 
 const MENTION_REGEX = /@(\w+)/g;
@@ -46,10 +47,17 @@ async function notifyMentions({ content, authorId, postId, commentId = null, exc
        )`,
     [usernames, authorId, excludeUserIds]
   );
-  if (usersResult.rows.length === 0) return;
+  // Day 20: only people who can see the post (a followers-only post's
+  // non-followers, or anyone at all for an "only me" post, would get a
+  // notification for something they can't open).
+  const recipients = [];
+  for (const row of usersResult.rows) {
+    if (await getVisiblePost(postId, row.id)) recipients.push(row);
+  }
+  if (recipients.length === 0) return;
 
-  const placeholders = usersResult.rows.map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, 'mention', $${i * 4 + 3}, $${i * 4 + 4})`).join(', ');
-  const params = usersResult.rows.flatMap((row) => [row.id, authorId, postId, commentId]);
+  const placeholders = recipients.map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, 'mention', $${i * 4 + 3}, $${i * 4 + 4})`).join(', ');
+  const params = recipients.flatMap((row) => [row.id, authorId, postId, commentId]);
   await db.query(
     `INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id) VALUES ${placeholders}`,
     params

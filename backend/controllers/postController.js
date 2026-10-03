@@ -2,7 +2,8 @@ const db = require('../db');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 
 // B5: keep in sync with migration 020's CHECK constraint.
-const POST_VISIBILITIES = ['public', 'followers'];
+// Day 20: 'only_me' -- seen by its author only.
+const POST_VISIBILITIES = ['public', 'followers', 'only_me'];
 const { sendServerError } = require('../utils/sendError');
 const { mediaOfPost, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
@@ -20,6 +21,11 @@ async function createPost(req, res) {
     const visibility = req.body.visibility || 'public';
     if (!POST_VISIBILITIES.includes(visibility)) {
       return res.status(400).send(`visibility must be one of: ${POST_VISIBILITIES.join(', ')}`);
+    }
+    // Day 20: "only me" is for your own profile; a group post is for the
+    // group.
+    if (visibility === 'only_me' && req.body.communityId !== undefined && req.body.communityId !== '') {
+      return res.status(400).send("Group and page posts don't have their own audience");
     }
     // B13: posting inside a community requires being a (non-pending)
     // member. (Images were already uploaded by the middleware at this point;
@@ -111,7 +117,7 @@ async function getPosts(req, res) {
       AND (
         ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
         OR users.id = $1
-        OR EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted')
+        OR (posts.visibility <> 'only_me' AND EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted'))
       )
       AND NOT users.is_deactivated
       ORDER BY posts.created_at DESC
@@ -156,7 +162,7 @@ async function getFeed(req, res) {
         -- Your own posts, so a new post is at the top of Home right away
         -- (every audience: you can always see your own).
         (posts.page_id IS NULL AND posts.user_id = $1)
-        OR (posts.page_id IS NULL AND posts.user_id IN (
+        OR (posts.page_id IS NULL AND posts.visibility <> 'only_me' AND posts.user_id IN (
           SELECT following_id FROM follows WHERE follower_id = $1 AND status = 'accepted'
         ))
         -- B14: posts from pages you follow.

@@ -57,7 +57,8 @@ CREATE TABLE posts (
   image_url text,
   -- Added by migration 020_add_post_visibility (B5).
   visibility varchar(10) DEFAULT 'public' NOT NULL
-    CONSTRAINT chk_posts_visibility CHECK (visibility IN ('public', 'followers'))
+    -- 'only_me' added by migration 035_add_only_me_visibility (Day 20).
+    CONSTRAINT chk_posts_visibility CHECK (visibility IN ('public', 'followers', 'only_me'))
 );
 
 -- Added by migration 026_add_communities (B13).
