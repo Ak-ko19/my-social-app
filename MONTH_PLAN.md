@@ -173,7 +173,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Take the highest-priority free-tier-compatible P1 items from AUDIT_REPORT.md (e.g. friend requests or basic groups) and build them. *(Report groups/pages, share cards for profiles/pages, self-hosted fonts — see Progress Log.)*
 
 ### Day 26 — Accessibility
-- [ ] Keyboard navigation, focus states, alt text on images, labels, colour contrast in both themes.
+- [x] Keyboard navigation, focus states, alt text on images, labels, colour contrast in both themes. *(axe-core suite day26-a11y + contrast token fixes — see Progress Log.)*
 
 ### Day 27 — Performance
 - [ ] DB indexes for slow queries, responsive Cloudinary image sizes, lazy loading, bundle check.
@@ -973,3 +973,28 @@ Build every feature the way a senior engineer at a top social media company woul
   - backend 567/567; Vitest 60/60.
   - Rehearsal 015 → 038; 038 down tested with data.
   - Full browser run: all 38 suites + A3 EN/MY/AR green.
+
+### 2026-10-05 — Day 26: Accessibility
+- **Audit (`9cf9e5d`):** new suite `e2e/day26-a11y.cjs` runs axe-core
+  (WCAG 2.1 A + AA) on every route, light and dark, in EN, and on the
+  main screens in MY and AR (RTL), at 390px — 88 page checks. It fails
+  on any serious or critical violation; `AXE_DETAIL=1` lists each
+  failing contrast pair.
+- **Found:** only colour contrast (66 page checks). Labels, alt text,
+  button/link names and ARIA already passed.
+- **Fixed at the tokens, not per element:**
+  - Muted text #646b77 in light mode (was #8a8f98, 2.9:1) and #9aa1b0
+    in dark mode (was #80899a).
+  - New `--color-accent-text` / `--color-accent-2-text`: the same as the
+    fills in light mode, lighter in dark mode (#a5b4fc / #22d3ee), used
+    by every `color: var(--color-accent)` rule. Buttons with white text
+    keep `--color-accent`.
+  - Log-out button text #b91c1c.
+- **Keyboard:** the suite also Tabs through /welcome, /login, /,
+  /settings and /messages/1, and needs a visible focus ring at every
+  stop and focus never lost to the page. A mutation that hides every
+  focus ring makes it fail.
+- **Tests at close:**
+  - backend 567/567; Vitest 60/60; eslint clean.
+  - Full browser run: all 36 suites (new: day26-a11y) + A3 EN/MY/AR
+    green.

@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 26 — Accessibility
-**Step:** 1 — axe-core audit + contrast fixes + keyboard focus check
+**Day:** 27 — Performance (not started)
+**Step:** —
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -37,27 +37,16 @@
   (Admin, EditPage, ManageCommunity, …) re-render briefly with no token
   on a forced logout. Consider a route-level guard (Day 20 a11y/quality
   or Day 25 security round).
-- Internet drops break suites via Google Fonts errors: re-run the batch.
+- Accessibility: e2e/day26-a11y.cjs must stay at 0 serious/critical.
+  Accent colour as TEXT uses --color-accent-text (lighter in dark mode),
+  never --color-accent.
 
 - Day 30 Privacy Policy: mention that the server fetches linked pages
   for previews (sites see our server, not the reader) and that share
   cards show public posts to link-preview crawlers.
 
 ## Plan
-Step 1: e2e/day26-a11y.cjs runs axe-core (WCAG 2.1 A/AA) on every route,
-light + dark, EN + MY/AR, 390px; FAIL on serious/critical. Fix the root
-causes in the tokens, not per element. Add a keyboard Tab walk that
-requires a visible focus ring. Register the suite in run-all.sh.
+(written at the start of each step)
 
 ## Progress
-- First audit: only color-contrast failed (66 page checks): light muted
-  #8a8f98, dark #4f46e5 used as text, dark muted #80899a on subtle-bg,
-  log-out red #dc2626 on #fef2f2, cyan admin badge.
-- Fixed via tokens: muted #646b77 / dark #9aa1b0; new
-  --color-accent-text (#4f46e5 / dark #a5b4fc) and --color-accent-2-text
-  (#0e7490 / #22d3ee) for every color: var(--color-accent) use; log-out
-  #b91c1c. Audit now 0 serious/critical on 88 page checks.
-- Keyboard walk passes on 5 screens; mutation (all focus rings off)
-  makes it FAIL. Vitest 60/60, eslint clean, a3 (en) 228/0.
-- VERIFY green: day26-a11y, b6, b11, b13, b14, c3, day24, a3 en/my/ar;
-  backend 567/567. Committed.
+(nothing in progress — Day 26 closed 2026-10-05)
