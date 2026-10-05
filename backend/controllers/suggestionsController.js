@@ -34,8 +34,17 @@ async function getSuggestions(req, res) {
        ),
        friends_of_friends AS (
          SELECT f.following_id AS user_id, COUNT(*)::int AS mutual_count
-         FROM follows f
-         WHERE f.status = 'accepted' AND f.follower_id IN (SELECT user_id FROM my_follows)
+         -- Day 27: walk the follows index once per person I follow, never
+         -- the whole table. A plain join left that to the planner, which at
+         -- some table sizes picked a full scan (e2e/day27-perf.cjs, flaky);
+         -- a LATERAL subquery with OFFSET 0 can't be flattened into a join,
+         -- so it is always this per-person lookup.
+         FROM my_follows m
+         CROSS JOIN LATERAL (
+           SELECT f.following_id FROM follows f
+           WHERE f.follower_id = m.user_id AND f.status = 'accepted'
+           OFFSET 0
+         ) f
          GROUP BY f.following_id
        ),
        my_followers AS (

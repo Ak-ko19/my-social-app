@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 038, check the environment variables,
+database, run migrations 015 → 039, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -26,9 +26,9 @@ the production database or merging to `master`.
   migration on a local copy of the live schema (never production):
   `cd e2e && bash golive-rehearsal.sh --old` must end with
   `REHEARSAL PASSED`.
-  - Last run 2026-10-03, 015 → 035, all passed:
-    - the result matches the app's schema exactly (179 columns, 99
-      constraints);
+  - Last run 2026-10-05, 015 → 039, all passed:
+    - the result matches the app's schema exactly (189 columns, 102
+      constraints, 84 indexes);
     - all old rows are kept, and old images and likes carry over;
     - the new code and the old live code both work on the migrated
       database;
@@ -98,7 +98,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 038 on production
+## 3. Run migrations 015 → 039 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -132,17 +132,23 @@ they run.
            029_add_cleanup_indexes 030_add_error_log 031_report_comments_messages \
            032_add_suspensions 033_add_user_language 034_add_link_previews \
            035_add_only_me_visibility 036_add_push_subscriptions \
-           037_add_message_notification_settings 038_report_groups_pages; do
+           037_add_message_notification_settings 038_report_groups_pages \
+           039_add_performance_indexes; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
-- [ ] Check the result (this should print `8`, then `6`):
+- [ ] Check the result (this should print `8`, then `6`, then `4`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
     "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews','push_subscriptions')"
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
     "SELECT count(*) FROM information_schema.columns WHERE (table_name = 'reports' AND column_name IN ('target_owner_id','target_snapshot')) OR (table_name = 'users' AND column_name IN ('banned_until','language')) OR (table_name = 'notification_preferences' AND column_name = 'messages') OR (table_name = 'conversation_participants' AND column_name = 'muted_until')"
+  "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
+    "SELECT count(*) FROM pg_indexes WHERE indexname IN ('idx_messages_conversation_id','idx_post_hashtags_hashtag','idx_participants_last_read','idx_story_views_viewer')"
   ```
+  - 039 builds indexes, which briefly holds back writes to each table
+    while it runs: seconds at today's size, another reason for a quiet
+    hour.
 
 ## 4. Deploy the backend, then the frontend
 

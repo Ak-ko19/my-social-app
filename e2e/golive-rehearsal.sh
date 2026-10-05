@@ -38,6 +38,9 @@ psql_() { "$PG/psql.exe" "$@"; }
 MIGRATIONS=$(cd "$B/migrations" && ls [0-9][0-9][0-9]_*.up.sql | awk -F_ '$1 >= 15' | sed 's/\.up\.sql$//' | sort)
 COLS="SELECT table_name||'.'||column_name||' '||data_type||' null='||is_nullable FROM information_schema.columns WHERE table_schema='public' ORDER BY 1"
 CONS="SELECT table_name||' '||constraint_type||' '||constraint_name FROM information_schema.table_constraints WHERE table_schema='public' AND constraint_type IN ('PRIMARY KEY','UNIQUE','FOREIGN KEY','CHECK') AND constraint_name NOT LIKE '%_not_null' ORDER BY 1"
+# Day 27: indexes too (name, table, definition). The dev fixture had gone
+# without 001/002/015's indexes for weeks; this keeps the two in step.
+IDX="SELECT tablename||' '||indexname||' '||regexp_replace(indexdef, '^.* USING ', '') FROM pg_indexes WHERE schemaname='public' ORDER BY 1"
 
 "$PG/pg_ctl.exe" -D "$B/tests/.pgdata_test_cluster" status >/dev/null 2>&1 || \
   "$PG/pg_ctl.exe" -D "$B/tests/.pgdata_test_cluster" -l "$B/tests/.pgdata_test_cluster.log" -o '-p 55433 -k ""' -w start >/dev/null 2>&1 </dev/null
@@ -54,6 +57,19 @@ fresh_db() { # $1 = database name, $2 = schema source ("live" or "dev")
   for f in 001_add_performance_indexes.sql 002_add_trigram_search_indexes.sql; do
     git -C "$REPO" show "master:backend/migrations/$f" | psql_ -q "$url" >/dev/null 2>&1
   done
+  # Day 27: the indexes migrations 003-014 created in production. The base
+  # snapshot above was read from information_schema (columns and
+  # constraints only), so it has none of them.
+  psql_ -q -v ON_ERROR_STOP=1 "$url" >/dev/null <<'SQL'
+CREATE INDEX idx_messages_conversation_created_at ON messages (conversation_id, created_at DESC);
+CREATE INDEX idx_blocks_blocked_id ON blocks (blocked_id);
+CREATE INDEX idx_reports_target_pending ON reports (target_type, target_id) WHERE status = 'pending';
+CREATE INDEX idx_reports_reporter_id ON reports (reporter_id, created_at DESC);
+CREATE INDEX idx_bookmarks_user_created_at ON bookmarks (user_id, created_at DESC);
+CREATE INDEX idx_post_hashtags_hashtag_id ON post_hashtags (hashtag_id);
+CREATE INDEX idx_follows_following_status ON follows (following_id, status);
+CREATE INDEX idx_users_verification_token ON users (verification_token) WHERE verification_token IS NOT NULL;
+SQL
   psql_ -q -v ON_ERROR_STOP=1 "$url" <<'SQL'
 INSERT INTO users (username, email, password, bio, avatar_url, email_verified) VALUES
   ('thiri', 'thiri@example.com', 'x', 'ရန်ကုန်', 'https://res.cloudinary.com/prod/image/upload/v1/avatars/a1.jpg', true),
@@ -113,24 +129,27 @@ CHECKLIST_LIST=$(awk '/^  for m in 015/,/; do$/' "$REPO/GO_LIVE_CHECKLIST.md" | 
   || { bad "GO_LIVE_CHECKLIST's migration list differs:"; echo "  checklist: $CHECKLIST_LIST"; }
 # 1-3. Migrate a live-shaped copy and compare with the dev schema.
 fresh_db $DB live
-psql_ "$URL" -At -c "$COLS" > "$WORK/cols-live.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-live.txt"
+psql_ "$URL" -At -c "$COLS" > "$WORK/cols-live.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-live.txt"; psql_ "$URL" -At -c "$IDX" > "$WORK/idx-live.txt"
 [ "$(psql_ "$URL" -At -c "SELECT count(*) FROM information_schema.columns WHERE table_name='users' AND column_name='verification_token'")" = 1 ] \
   && ok "base is the live schema (migration 014)" || bad "base schema"
 run_migrations up
 fresh_db schema_dev dev
 psql_ postgresql://testuser@localhost:55433/schema_dev -At -c "$COLS" > "$WORK/cols-dev.txt"
 psql_ postgresql://testuser@localhost:55433/schema_dev -At -c "$CONS" > "$WORK/cons-dev.txt"
-psql_ "$URL" -At -c "$COLS" > "$WORK/cols-migrated.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-migrated.txt"
+psql_ postgresql://testuser@localhost:55433/schema_dev -At -c "$IDX" > "$WORK/idx-dev.txt"
+psql_ "$URL" -At -c "$COLS" > "$WORK/cols-migrated.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-migrated.txt"; psql_ "$URL" -At -c "$IDX" > "$WORK/idx-migrated.txt"
 diff -q "$WORK/cols-migrated.txt" "$WORK/cols-dev.txt" >/dev/null && ok "columns match the dev schema ($(wc -l < "$WORK/cols-dev.txt"))" || { bad "columns differ from dev schema:"; diff "$WORK/cols-migrated.txt" "$WORK/cols-dev.txt" | head -20; }
 diff -q "$WORK/cons-migrated.txt" "$WORK/cons-dev.txt" >/dev/null && ok "constraints match the dev schema ($(wc -l < "$WORK/cons-dev.txt"))" || { bad "constraints differ from dev schema:"; diff "$WORK/cons-migrated.txt" "$WORK/cons-dev.txt" | head -20; }
+diff -q "$WORK/idx-migrated.txt" "$WORK/idx-dev.txt" >/dev/null && ok "indexes match the dev schema ($(wc -l < "$WORK/idx-dev.txt"))" || { bad "indexes differ from dev schema (< migrated, > dev):"; diff "$WORK/idx-migrated.txt" "$WORK/idx-dev.txt" | head -30; }
 [ "$(psql_ "$URL" -At -c "SELECT (SELECT count(*) FROM users)||'/'||(SELECT count(*) FROM posts)||'/'||(SELECT count(*) FROM likes)||'/'||(SELECT count(*) FROM comments)||'/'||(SELECT count(*) FROM messages)")" = "3/3/3/2/2" ] \
   && ok "all 014-era rows kept" || bad "rows lost"
 "$PG/dropdb.exe" -h localhost -p 55433 -U testuser --if-exists schema_dev
 
 # 5. Rollback A: down to exactly the live schema, data kept, then up again.
 run_migrations down
-psql_ "$URL" -At -c "$COLS" > "$WORK/cols-down.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-down.txt"
+psql_ "$URL" -At -c "$COLS" > "$WORK/cols-down.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-down.txt"; psql_ "$URL" -At -c "$IDX" > "$WORK/idx-down.txt"
 diff -q "$WORK/cols-down.txt" "$WORK/cols-live.txt" >/dev/null && diff -q "$WORK/cons-down.txt" "$WORK/cons-live.txt" >/dev/null \
+  && diff -q "$WORK/idx-down.txt" "$WORK/idx-live.txt" >/dev/null \
   && ok "rollback A: downs restore the live schema exactly" || bad "rollback A: schema after downs differs from live"
 [ "$(psql_ "$URL" -At -c "SELECT (SELECT count(*) FROM users)||'/'||(SELECT count(*) FROM posts)||'/'||(SELECT count(*) FROM messages)")" = "3/3/2" ] \
   && ok "rollback A: data kept" || bad "rollback A: rows lost"

@@ -370,3 +370,49 @@ CREATE TABLE push_subscriptions (
   last_success_at TIMESTAMPTZ
 );
 CREATE INDEX idx_push_subscriptions_user ON push_subscriptions (user_id);
+
+
+-- Indexes production already has from migrations 001-014, 015, 018, 019
+-- and 022. This fixture lacked them until Day 27; the rehearsal now
+-- compares indexes too, so the two can't drift apart again.
+-- 003-014 (before migration tracking; the snapshot above has no indexes):
+CREATE INDEX idx_messages_conversation_created_at ON messages (conversation_id, created_at DESC);
+CREATE INDEX idx_blocks_blocked_id ON blocks (blocked_id);
+CREATE INDEX idx_reports_target_pending ON reports (target_type, target_id) WHERE status = 'pending';
+CREATE INDEX idx_reports_reporter_id ON reports (reporter_id, created_at DESC);
+CREATE INDEX idx_bookmarks_user_created_at ON bookmarks (user_id, created_at DESC);
+CREATE INDEX idx_follows_following_status ON follows (following_id, status);
+CREATE INDEX idx_users_verification_token ON users (verification_token) WHERE verification_token IS NOT NULL;
+-- (010's idx_post_hashtags_hashtag_id was replaced by 039's idx_post_hashtags_hashtag.)
+-- 001_add_performance_indexes.sql:
+CREATE INDEX idx_posts_user_id ON posts (user_id);
+CREATE INDEX idx_posts_created_at ON posts (created_at DESC);
+CREATE INDEX idx_comments_post_id_created_at ON comments (post_id, created_at);
+CREATE INDEX idx_notifications_user_id_created_at ON notifications (user_id, created_at DESC);
+CREATE INDEX idx_notifications_unread ON notifications (user_id) WHERE is_read = false;
+CREATE INDEX idx_notifications_post_id ON notifications (post_id);
+CREATE INDEX idx_notifications_comment_id ON notifications (comment_id);
+CREATE INDEX idx_follows_following_id ON follows (following_id);
+CREATE INDEX idx_users_reset_token ON users (reset_token) WHERE reset_token IS NOT NULL;
+-- 002_add_trigram_search_indexes.sql (search: ILIKE '%text%'):
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX idx_users_username_trgm ON users USING GIN (username gin_trgm_ops);
+CREATE INDEX idx_posts_content_trgm ON posts USING GIN (content gin_trgm_ops);
+-- 015_add_fk_lookup_indexes:
+CREATE INDEX idx_conversation_participants_user_id ON conversation_participants (user_id);
+CREATE INDEX idx_comments_user_id ON comments (user_id);
+CREATE INDEX idx_likes_user_id ON likes (user_id);
+CREATE INDEX idx_notifications_actor_id ON notifications (actor_id);
+CREATE INDEX idx_messages_sender_id ON messages (sender_id);
+CREATE INDEX idx_bookmarks_post_id ON bookmarks (post_id);
+-- 018 / 019 / 022 (also missing here until Day 27):
+CREATE INDEX idx_stories_user_expires ON stories (user_id, expires_at);
+CREATE INDEX idx_comments_parent_comment_id ON comments (parent_comment_id);
+CREATE INDEX idx_comment_likes_user_id ON comment_likes (user_id);
+CREATE INDEX idx_messages_reply_to ON messages (reply_to_message_id);
+
+-- Day 27 (migration 039): the indexes still missing after those.
+CREATE INDEX idx_messages_conversation_id ON messages (conversation_id, id);
+CREATE INDEX idx_post_hashtags_hashtag ON post_hashtags (hashtag_id, post_id);
+CREATE INDEX idx_participants_last_read ON conversation_participants (last_read_message_id) WHERE last_read_message_id IS NOT NULL;
+CREATE INDEX idx_story_views_viewer ON story_views (viewer_id);

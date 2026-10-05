@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 27 — Performance (not started)
-**Step:** —
+**Day:** 27 — Performance
+**Step:** 1 — DB indexes and query shapes (day27-perf suite, migration 039)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -37,6 +37,9 @@
   (Admin, EditPage, ManageCommunity, …) re-render briefly with no token
   on a forced logout. Consider a route-level guard (Day 20 a11y/quality
   or Day 25 security round).
+- Explore (posts and hashtags) aggregates the last 7 days on every
+  request (~5.7k rows read at the perf seed). Fine now; at real scale
+  precompute it (a table refreshed by the cleanup job) -- Phase 2.
 - Accessibility: e2e/day26-a11y.cjs must stay at 0 serious/critical.
   Accent colour as TEXT uses --color-accent-text (lighter in dark mode),
   never --color-accent.
@@ -46,7 +49,24 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-(written at the start of each step)
+Step 1: seed ~1M realistic rows (e2e/day27-perf.sql), call 30 read
+endpoints, FAIL on a full scan of a table over 4 MB or over 20k rows read
+per request (Postgres' own counters, not timings). Fix with indexes and
+query shapes. Then step 2: responsive Cloudinary sizes + lazy loading;
+step 3: bundle check.
 
 ## Progress
-(nothing in progress — Day 26 closed 2026-10-05)
+- Step 1 found the dev fixture had NO pre-015 indexes and none from
+  015/018/019/022 (snapshot was columns/constraints only). Fixture now has
+  them all; the rehearsal compares indexes too (84 match) and its live
+  model includes 003-014's indexes.
+- Migration 039 (only what prod lacks): messages(conversation_id, id),
+  post_hashtags(hashtag_id, post_id) replacing 010's, participants
+  (last_read_message_id), story_views(viewer_id).
+- Query shapes: inbox unread uses id > COALESCE(last_read, 0); hashtag
+  page looks the tag up first and orders by post id; suggestions
+  friends-of-friends is a LATERAL per-person lookup.
+- Mutations: without 039 the hashtag page and inbox exceed 20k rows; the
+  ASC order mutation fails hashtagPage.test.js.
+- VERIFY green: day27-perf 30/30, b7, b8, b9, b10, day23, a2; backend
+  570/570; rehearsal 015->039 passed.

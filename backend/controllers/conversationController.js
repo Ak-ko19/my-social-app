@@ -55,7 +55,10 @@ async function getConversations(req, res) {
         WHERE m.conversation_id = c.id
           AND m.sender_id != $1
           AND m.deleted_at IS NULL
-          AND (cp.last_read_message_id IS NULL OR m.id > cp.last_read_message_id)
+          -- Day 27: COALESCE, not "IS NULL OR": the same rows (ids start at
+          -- 1), but Postgres can then read just this id range from
+          -- idx_messages_conversation_id instead of the whole conversation.
+          AND m.id > COALESCE(cp.last_read_message_id, 0)
       ) unread ON true
       WHERE cp.user_id = $1
       ORDER BY COALESCE(lm.created_at, c.created_at) DESC
@@ -109,7 +112,10 @@ async function getConversations(req, res) {
       LEFT JOIN LATERAL (
         SELECT COUNT(*) AS count FROM messages m
         WHERE m.conversation_id = c.id AND m.sender_id != $1 AND m.deleted_at IS NULL
-          AND (cp.last_read_message_id IS NULL OR m.id > cp.last_read_message_id)
+          -- Day 27: COALESCE, not "IS NULL OR": the same rows (ids start at
+          -- 1), but Postgres can then read just this id range from
+          -- idx_messages_conversation_id instead of the whole conversation.
+          AND m.id > COALESCE(cp.last_read_message_id, 0)
       ) unread ON true
       WHERE cp.user_id = $1
     `, [req.userId]);
