@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 30 — GO LIVE #4 (owner, skipped) + fix top AUDIT_REPORT_2 items
-**Step:** 2 — N4 dead code (step 1 committed 6f8a373)
+**Step:** 3 — N2 flaky backend test (steps 1-2 committed 6f8a373, 202c830)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -44,8 +44,6 @@
   an index (check with the suite). Any new index goes in the migration,
   the fixture AND the rehearsal compares them. npm run check:bundle
   keeps the first download under 225 kB gz.
-- Watch: on Day 28 one full backend run had 1 failing test that did not
-  repeat in 3 reruns (name not captured). If it shows again, capture it.
 - Privacy Policy (legal.privacy in the locales) is written from the
   code: when a feature changes what is collected, shared or kept,
   update it (EN/MY/AR) and its date in LegalScreen.jsx.
@@ -85,3 +83,8 @@ Tests: Vitest (guard, safe return path), browser suite day30-guard.
   react.svg,vite.svg} (nothing imported them); stale comment fixed.
   lint, build, bundle 213.9 kB, Vitest 70/70, backend 578/578, a2, b9,
   a3 EN green.
+- Step 3 done: caught it in run 3 of 4: botProtection.test.js forged a
+  token by replacing the signature's last char with A -- the real one
+  1 time in 16 (base64 last char = 4 bits). Measured 244/4000 old vs
+  0/4000 new (first char swapped). 30/30 runs of the file, 2 full runs
+  578/578.

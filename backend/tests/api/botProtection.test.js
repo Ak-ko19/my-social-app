@@ -29,7 +29,12 @@ describe('form tokens', () => {
     const now = Date.now();
     const good = bot.issueFormToken(now - 5000);
     const [issued, mac] = good.split('.');
-    for (const token of [undefined, 42, '', 'abc', `${issued}.`, `.${mac}`, `${Number(issued) - 1}.${mac}`, `${issued}.${mac}x`, `${issued}.${mac.slice(0, -1)}A`]) {
+    // A forged signature: its FIRST character swapped for a different one.
+    // (Day 30: replacing the last one with 'A' was the real signature
+    // whenever it already ended in 'A' -- 1 run in 16 -- because base64's
+    // last character only carries 4 bits. The first carries a full 6.)
+    const forged = `${mac[0] === 'A' ? 'B' : 'A'}${mac.slice(1)}`;
+    for (const token of [undefined, 42, '', 'abc', `${issued}.`, `.${mac}`, `${Number(issued) - 1}.${mac}`, `${issued}.${mac}x`, `${issued}.${forged}`]) {
       expect(bot.checkFormToken(token, 3000, now)).toBe(bot.RELOAD);
     }
     expect(bot.checkFormToken(bot.issueFormToken(now + 60000), 0, now)).toBe(bot.RELOAD);
