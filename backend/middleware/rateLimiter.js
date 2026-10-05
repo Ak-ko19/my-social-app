@@ -187,6 +187,15 @@ const accountActionLimiter = createLimiter({
   message: 'Too many attempts. Please try again in 15 minutes.'
 });
 
+// Day 28: "Download your information" reads everything an account has --
+// heavy, and rarely needed more than once.
+const dataExportLimiter = createLimiter({
+  keyBy: 'user',
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'Too many downloads. Please try again in an hour.'
+});
+
 // Same shape as forgotPasswordLimiter -- prevents email-bombing a victim's
 // inbox via repeated resend requests.
 const resendVerificationLimiter = createLimiter({
@@ -217,6 +226,7 @@ module.exports = {
   reportLimiter,
   followLimiter,
   accountActionLimiter,
+  dataExportLimiter,
   resendVerificationLimiter,
   createLimiter,
   rateLimitKeys: { ipKey, userKey, userOrIpKey, emailKey }

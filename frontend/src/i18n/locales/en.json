@@ -579,7 +579,13 @@
     "deactivate": "Deactivate",
     "confirmDeleteTitle": "Delete your account?",
     "confirmDeleteText": "This permanently deletes your account and everything you've posted. This cannot be undone.",
-    "deleteForever": "Delete Forever"
+    "deleteForever": "Delete Forever",
+    "downloadTitle": "Download your information",
+    "downloadText": "Get a copy of everything in your account — your profile, posts, comments, reactions, messages, followers and settings — as one file (JSON). Your password is not included.",
+    "downloadButton": "Download my data",
+    "downloadPending": "Preparing your file…",
+    "downloadDone": "Your file has been downloaded.",
+    "downloadFailed": "Preparing your data failed. Please try again."
   },
   "blocked": {
     "title": "Blocked Users",

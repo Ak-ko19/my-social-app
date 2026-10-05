@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 28 — Privacy (not started)
-**Step:** —
+**Day:** 28 — Privacy
+**Step:** 1 — "Download my data" export
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -53,7 +53,31 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-(written at the start of each step)
+Step 1 (like Facebook/Instagram "Download your information"):
+- API: GET /profile/export (auth; own limiter, 5 per hour per user) ->
+  JSON attachment mysocialapp-<username>-<date>.json. services/
+  dataExportService.js builds it with one query per section (no N+1).
+- Contents: profile (no password hash, reset/verification tokens),
+  settings (privacy, language, notification prefs), posts (+ media,
+  visibility, group/page), comments, reactions, comment likes,
+  bookmarks, stories (+ view count, never viewer names), following/followers/requests,
+  blocked users, groups joined/created, pages owned/followed,
+  conversations I am in with their messages (deleted ones as
+  "deleted", no content), legacy DMs, notifications, reports I made
+  (never reports against me), sessions (device, dates; no ids/tokens),
+  push devices (browser + date; no endpoint/keys).
+- Never: other people's emails/private fields, who blocked me, who
+  reported me, conversations I'm not in.
+- UI: Settings -> Account -> "Download your information" button,
+  loading/error states, EN/MY/AR.
+- Tests: jest (401, contents, exclusions, header, limit); browser suite
+  day28-export (click, download, parse, light/dark/AR).
+Step 2: Privacy Policy matches what the app really does.
 
 ## Progress
-(nothing in progress — Day 27 closed 2026-10-05)
+- Step 1 done: GET /profile/export (services/dataExportService.js, 5/h
+  limiter), Settings -> Security & Privacy -> Download my data. Story
+  viewers exported as a count only (the app never names them).
+  dataExport.test.js (7) + rate limit case; mutations (leak other chats,
+  whole user row) caught. day28-export 12/12 (file, contents, error,
+  dark, AR RTL). backend 578/578, Vitest 65/65, check:i18n, bundle OK.

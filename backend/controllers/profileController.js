@@ -3,6 +3,7 @@ const { APP_LANGUAGES, isAppLanguage } = require('../config/languages');
 const { sendServerError } = require('../utils/sendError');
 const { deleteMedia } = require('../services/mediaCleanupService');
 const blockService = require('../services/blockService');
+const { buildExport } = require('../services/dataExportService');
 
 // Same check signup uses (authController.EMAIL_REGEX).
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -18,6 +19,23 @@ async function getMyProfile(req, res) {
     res.status(200).json(result.rows[0]);
   } catch (err) {
     sendServerError(res, err, 'Error fetching profile. Please try again later.');
+  }
+}
+
+// Day 28: GET /profile/export -- "Download your information": the
+// account's own data as a JSON file (see services/dataExportService.js for
+// what is and isn't in it).
+async function exportMyData(req, res) {
+  try {
+    const data = await buildExport(req.userId);
+    if (!data) return res.status(404).send('User not found');
+    const name = data.profile.username.replace(/[^A-Za-z0-9_.-]/g, '_');
+    const date = data.exported_at.slice(0, 10);
+    res.set('Content-Disposition', `attachment; filename="mysocialapp-${name}-${date}.json"`);
+    res.set('Cache-Control', 'no-store');
+    res.type('application/json').send(JSON.stringify(data, null, 2));
+  } catch (err) {
+    sendServerError(res, err, 'Preparing your data failed. Please try again later.');
   }
 }
 
@@ -145,4 +163,4 @@ async function updateLanguage(req, res) {
   }
 }
 
-module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage };
+module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, exportMyData };

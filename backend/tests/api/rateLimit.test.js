@@ -136,6 +136,18 @@ describe('rate limiting with real limiters', () => {
   });
 
   // Day 11
+  // Day 28: "Download your information" is heavy; 5 an hour per account.
+  it('allows 5 data downloads an hour per user', async () => {
+    const user = await createUser();
+    const other = await createUser();
+    const download = (ip, u) => request(app).get('/profile/export').set('X-Forwarded-For', ip).set('Authorization', `Bearer ${u.token}`);
+    for (let i = 0; i < 5; i += 1) expect((await download(`203.0.113.${10 + i}`, user)).status).toBe(200);
+    const blocked = await download('203.0.113.20', user);
+    expect(blocked.status).toBe(429);
+    expect(blocked.text).toBe('Too many downloads. Please try again in an hour.');
+    expect((await download('203.0.113.20', other)).status).toBe(200);
+  });
+
   it('allows 5 signups an hour per network', async () => {
     const ip = '198.51.100.40';
     for (let i = 0; i < 5; i += 1) {

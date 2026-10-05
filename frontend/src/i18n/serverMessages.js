@@ -38,6 +38,8 @@ const MY = {
   // rate limits
   'Too many login attempts. Please try again in 15 minutes.': 'ဝင်ရောက်ရန် ကြိုးစားမှု များလွန်းပါသည်။ မိနစ် ၁၅ ကြာပြီးမှ ထပ်စမ်းကြည့်ပါ။',
   'Too many attempts. Please try again in 15 minutes.': 'ကြိုးစားမှု များလွန်းပါသည်။ မိနစ် ၁၅ ကြာပြီးမှ ထပ်စမ်းကြည့်ပါ။',
+  'Too many downloads. Please try again in an hour.': 'ဒေါင်းလုဒ် အကြိမ်များလွန်းပါသည်။ တစ်နာရီကြာပြီးမှ ထပ်စမ်းကြည့်ပါ။',
+  'Preparing your data failed. Please try again later.': 'အချက်အလက်များ ပြင်ဆင်ခြင်း မအောင်မြင်ပါ။ နောက်မှ ထပ်စမ်းကြည့်ပါ။',
   'Too many password reset requests. Please try again in 15 minutes.': 'စကားဝှက် ပြန်သတ်မှတ်ရန် တောင်းဆိုမှု များလွန်းပါသည်။ မိနစ် ၁၅ ကြာပြီးမှ ထပ်စမ်းကြည့်ပါ။',
   'Too many verification emails requested. Please try again in 15 minutes.': 'အတည်ပြု အီးမေးလ် တောင်းဆိုမှု များလွန်းပါသည်။ မိနစ် ၁၅ ကြာပြီးမှ ထပ်စမ်းကြည့်ပါ။',
   'Too many accounts created from this network. Please try again later.': 'ဤကွန်ရက်မှ အကောင့် အများအပြား ဖွင့်ထားပြီးပါပြီ။ နောက်မှ ထပ်စမ်းကြည့်ပါ။',
@@ -134,6 +136,8 @@ const AR = {
   'User not found': 'المستخدم غير موجود',
   'Too many login attempts. Please try again in 15 minutes.': 'محاولات تسجيل دخول كثيرة جدًا. يرجى المحاولة بعد 15 دقيقة.',
   'Too many attempts. Please try again in 15 minutes.': 'محاولات كثيرة جدًا. يرجى المحاولة بعد 15 دقيقة.',
+  'Too many downloads. Please try again in an hour.': 'عمليات تنزيل كثيرة جدًا. يرجى المحاولة بعد ساعة.',
+  'Preparing your data failed. Please try again later.': 'تعذّر تجهيز بياناتك. يرجى المحاولة لاحقًا.',
   'Too many password reset requests. Please try again in 15 minutes.': 'طلبات إعادة تعيين كلمة المرور كثيرة جدًا. يرجى المحاولة بعد 15 دقيقة.',
   'Too many verification emails requested. Please try again in 15 minutes.': 'طلبات رسائل التأكيد كثيرة جدًا. يرجى المحاولة بعد 15 دقيقة.',
   'Too many accounts created from this network. Please try again later.': 'تم إنشاء حسابات كثيرة جدًا من هذه الشبكة. يرجى المحاولة لاحقًا.',

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { IconButton, ConfirmDialog } from '../components/ui';
 import { useAuth, forceLogout, replaceToken } from '../hooks/useAuth';
-import { changePassword, deactivateAccount, deleteAccount } from '../services/accountService';
+import { changePassword, deactivateAccount, deleteAccount, downloadMyData } from '../services/accountService';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from '../utils/serverError';
 import './AccountManagementScreen.css';
@@ -23,6 +23,10 @@ function AccountManagementScreen() {
   const [deactivatePasswordInput, setDeactivatePasswordInput] = useState('');
   const [confirmDeactivateOpen, setConfirmDeactivateOpen] = useState(false);
   const [deactivateError, setDeactivateError] = useState('');
+
+  const [downloadPending, setDownloadPending] = useState(false);
+  const [downloadDone, setDownloadDone] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
 
   const [deletePasswordInput, setDeletePasswordInput] = useState('');
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -63,6 +67,33 @@ function AccountManagementScreen() {
     } catch (err) {
       console.error(err);
       setDeactivateError(serverErrorText(err, 'account.deactivateFailed'));
+    }
+  };
+
+  // Day 28: "Download your information" -- saved as a .json file named
+  // like the server's own Content-Disposition (which a cross-origin page
+  // can't read without extra CORS headers).
+  const handleDownload = async () => {
+    setDownloadError('');
+    setDownloadDone(false);
+    setDownloadPending(true);
+    try {
+      const json = await downloadMyData(token);
+      const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `mysocialapp-${(username || 'account').replace(/[^A-Za-z0-9_.-]/g, '_')}-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      // Revoked a moment later: revoking right away can cancel the download.
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      setDownloadDone(true);
+    } catch (err) {
+      console.error(err);
+      setDownloadError(serverErrorText(err, 'account.downloadFailed'));
+    } finally {
+      setDownloadPending(false);
     }
   };
 
@@ -124,6 +155,26 @@ function AccountManagementScreen() {
             {passwordPending ? t('common.saving') : t('account.changePassword')}
           </button>
         </form>
+      </section>
+
+      <section className="account-mgmt-section">
+        <h2 className="account-mgmt-section-title">{t('account.downloadTitle')}</h2>
+        <p className="account-mgmt-description">{t('account.downloadText')}</p>
+        {downloadError && (
+          <p className="account-mgmt-error" role="alert">
+            {downloadError}
+          </p>
+        )}
+        {downloadDone && <p className="account-mgmt-success" role="status">{t('account.downloadDone')}</p>}
+        <button
+          type="button"
+          className="account-mgmt-btn account-mgmt-btn-secondary"
+          onClick={handleDownload}
+          disabled={downloadPending}
+          aria-busy={downloadPending}
+        >
+          {downloadPending ? t('account.downloadPending') : t('account.downloadButton')}
+        </button>
       </section>
 
       <section className="account-mgmt-section">

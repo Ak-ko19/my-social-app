@@ -23,3 +23,11 @@ export function verifyEmail(token) {
 export function resendVerification(token) {
   return api.post('/resend-verification', {}, authHeaders(token));
 }
+
+// Day 28: "Download your information" -- the account's data as JSON text
+// (kept as text, not parsed: it is saved as a file as-is, and an error's
+// plain-text message still reaches serverErrorText).
+export async function downloadMyData(token) {
+  const res = await api.get('/profile/export', { ...authHeaders(token), responseType: 'text', transformResponse: [(data) => data] });
+  return res.data;
+}
