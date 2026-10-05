@@ -176,7 +176,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Keyboard navigation, focus states, alt text on images, labels, colour contrast in both themes. *(axe-core suite day26-a11y + contrast token fixes — see Progress Log.)*
 
 ### Day 27 — Performance
-- [ ] DB indexes for slow queries, responsive Cloudinary image sizes, lazy loading, bundle check.
+- [x] DB indexes for slow queries, responsive Cloudinary image sizes, lazy loading, bundle check. *(day27-perf suite, migration 039, query shapes, image srcsets, bundle budget — see Progress Log.)*
 
 ### Day 28 — Privacy
 - [ ] "Download my data" export; make the Privacy Policy match what the app really does.
@@ -997,4 +997,49 @@ Build every feature the way a senior engineer at a top social media company woul
 - **Tests at close:**
   - backend 567/567; Vitest 60/60; eslint clean.
   - Full browser run: all 36 suites (new: day26-a11y) + A3 EN/MY/AR
+    green.
+
+### 2026-10-05 — Day 27: Performance
+- **Measured, not guessed (`c9eb578`):** new suite `e2e/day27-perf.cjs`
+  seeds about a million realistic rows (30k users, a year of posts,
+  3,000 hashtags of skewed size, read marks, long chat histories) and
+  calls 30 read endpoints. It fails if a request makes Postgres scan a
+  table over 4 MB end to end, or read over 20k rows, using Postgres' own
+  counters (deterministic); timings are only printed.
+- **Found a hidden drift:** the dev/test fixture had none of the indexes
+  production got from 001–014, 015, 018, 019 and 022 (it was built from
+  columns and constraints only). My first draft of 039 would have
+  duplicated a dozen live indexes, and its down would have dropped
+  022's. The fixture now has them all, and the rehearsal compares
+  indexes too (84 match), with 003–014's in its model of the live
+  database.
+- **Migration 039 (only what production lacks):**
+  `messages(conversation_id, id)`, `post_hashtags(hashtag_id, post_id)`
+  (replaces 010's), `conversation_participants(last_read_message_id)`,
+  `story_views(viewer_id)`.
+- **Query shapes:**
+  - Inbox unread counts: `id > COALESCE(last_read, 0)`, a range scan (it
+    read every message of every conversation).
+  - Hashtag page: the tag id is looked up first, and posts are ordered by
+    post id, so a popular tag reads ~30 rows instead of 15k.
+  - Suggestions: friends-of-friends as a LATERAL per-person lookup (the
+    planner sometimes scanned all 300k follows).
+  - Mutations: without 039 the hashtag page and inbox exceed 20k rows;
+    hashtagPage.test.js catches a wrong order.
+- **Images (`51d084e`):** ui/Avatar (most avatars) downloaded the
+  original upload; it now gets a square crop at 1x/2x/3x, lazily. Feed
+  images have a 320–1440px srcset sized for the 480px column; story, DM,
+  search and admin images are sized too.
+- **Bundle (`07cebb1`):** screens were already code-split. The first
+  download was 225 kB gzipped. socket.io-client now loads only after
+  login, which brings it to 212.6 kB. `npm run check:bundle` (in CI)
+  enforces a 225 kB budget and keeps translations and the chat client
+  out of the first download.
+- **Not done:** explore still aggregates the last 7 days per request
+  (~5.7k rows at the perf seed). That's fine at this size; precompute it
+  in Phase 2 when traffic justifies it (WIP carry-over note).
+- **Tests at close:**
+  - backend 570/570; Vitest 65/65; eslint clean.
+  - Rehearsal 015 → 039 passed.
+  - Full browser run: all 37 suites (new: day27-perf) + A3 EN/MY/AR
     green.
