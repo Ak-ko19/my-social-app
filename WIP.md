@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 30 — GO LIVE #4 (owner, skipped) + fix top AUDIT_REPORT_2 items
-**Step:** 1 — N1 route guard
+**Step:** 2 — N4 dead code (step 1 committed 6f8a373)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -81,3 +81,7 @@ Tests: Vitest (guard, safe return path), browser suite day30-guard.
   14 public stay open, return after login, revoked session -> Login).
   backend 578/578; a2, b9, b11, b12, b13, b14, c2, c3, day5, day8 x2,
   day12-review, day16 green.
+- Step 2 done: removed PostContent.jsx and src/assets/{hero.png,
+  react.svg,vite.svg} (nothing imported them); stale comment fixed.
+  lint, build, bundle 213.9 kB, Vitest 70/70, backend 578/578, a2, b9,
+  a3 EN green.
