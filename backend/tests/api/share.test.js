@@ -75,6 +75,46 @@ describe('share cards (Day 19)', () => {
     expect(tag((await card(post.id)).text, 'og:title')).toBe('Corner Cafe on MySocialApp');
   });
 
+  describe('profiles and pages (Day 24)', () => {
+    const profileCard = (id) => request(app).get(`/share/profiles/${encodeURIComponent(id)}`);
+
+    it('a public profile: name, bio, photo -- by id or by username', async () => {
+      await pool.query("UPDATE users SET bio = 'Tea lover in Yangon', avatar_url = 'https://res.cloudinary.com/demo/image/upload/me.jpg' WHERE id = $1", [bob.id]);
+      for (const id of [String(bob.id), bob.username, bob.username.toUpperCase()]) {
+        const res = await profileCard(id);
+        expect(tag(res.text, 'og:title')).toBe(`${bob.username} on MySocialApp`);
+        expect(tag(res.text, 'og:description')).toBe('Tea lover in Yangon');
+        expect(tag(res.text, 'og:image')).toBe('https://res.cloudinary.com/demo/image/upload/me.jpg');
+      }
+      expect(tag((await profileCard(bob.username)).text, 'og:url')).toBe(`http://localhost:5173/profile/${bob.username}`);
+    });
+
+    it('private, deactivated or missing accounts: the generic card, nothing about them', async () => {
+      await pool.query("UPDATE users SET bio = 'secret bio', is_private = true WHERE id = $1", [bob.id]);
+      let res = await profileCard(bob.id);
+      expect(GENERIC(res)).toBe(true);
+      expect(res.text).not.toContain('secret bio');
+      await pool.query('UPDATE users SET is_private = false, is_deactivated = true WHERE id = $1', [bob.id]);
+      expect(GENERIC(await profileCard(bob.id))).toBe(true);
+      res = await profileCard('nobody-like-this');
+      expect(GENERIC(res)).toBe(true);
+      expect(GENERIC(await profileCard("x' OR '1'='1"))).toBe(true);
+    });
+
+    it('a page: its name and description; hidden when its owner is deactivated', async () => {
+      const pageRow = (await pool.query("INSERT INTO pages (name, description, owner_id) VALUES ('Corner <Cafe>', 'Best mohinga', $1) RETURNING id", [bob.id])).rows[0];
+      let res = await request(app).get(`/share/pages/${pageRow.id}`);
+      expect(tag(res.text, 'og:title')).toBe('Corner &lt;Cafe&gt; on MySocialApp');
+      expect(tag(res.text, 'og:description')).toBe('Best mohinga');
+      expect(tag(res.text, 'og:url')).toBe(`http://localhost:5173/pages/${pageRow.id}`);
+      await pool.query('UPDATE users SET is_deactivated = true WHERE id = $1', [bob.id]);
+      res = await request(app).get(`/share/pages/${pageRow.id}`);
+      expect(GENERIC(res)).toBe(true);
+      expect(res.text).not.toContain('mohinga');
+      expect(GENERIC(await request(app).get('/share/pages/999999'))).toBe(true);
+    });
+  });
+
   describe('never reveals posts that are not public (same generic card as a missing one)', () => {
     it('followers-only post', async () => {
       const post = await newPost(bob, 'friends only', { visibility: 'followers' });

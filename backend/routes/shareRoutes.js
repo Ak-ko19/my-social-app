@@ -12,6 +12,9 @@ const router = express.Router();
 // this page instead: plain HTML with the post's card tags, and a redirect
 // to the app for anyone else who lands here.
 //
+// Day 24: the same for profiles (/profile/:id) and pages (/pages/:id),
+// further down.
+//
 // Only a post anyone may see (public, author not private, not in a private
 // community, not deactivated/banned) gets a real card. Everything else gets
 // the same generic card as a post that doesn't exist, so a shared link never
@@ -99,6 +102,59 @@ router.get('/share/posts/:id', async (req, res) => {
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=300');
     res.send(page({ appUrl, ...(card || { title: SITE, description: null, image: null }) }));
+  } catch (err) {
+    sendServerError(res, err, 'Loading the share card failed.');
+  }
+});
+
+const frontendUrl = () => (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '');
+const GENERIC = { title: SITE, description: null, image: null };
+
+function sendCard(res, appUrl, card) {
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.set('Cache-Control', 'public, max-age=300');
+  res.send(page({ appUrl, ...(card || GENERIC) }));
+}
+
+// Day 24: a profile. Only a public account anyone can see gets a real card
+// (name, bio, photo); a private, deactivated or banned one gets the same
+// generic card as an account that doesn't exist. :id may be a username,
+// like the app's own /profile/:id.
+router.get('/share/profiles/:id', async (req, res) => {
+  const raw = req.params.id;
+  try {
+    const isId = /^\d+$/.test(raw);
+    const result = await db.query(
+      `SELECT id, username, bio, avatar_url, is_private, is_deactivated, banned_at
+       FROM users WHERE ${isId ? 'id = $1::int' : 'LOWER(username) = LOWER($1)'}`,
+      [isId ? Number(raw) : String(raw).slice(0, 100)]
+    );
+    const user = result.rows[0];
+    const visible = user && !user.is_private && !user.is_deactivated && !user.banned_at;
+    const card = visible
+      ? { title: `${user.username} on ${SITE}`, description: excerpt(user.bio) || null, image: isHttpUrl(user.avatar_url) ? user.avatar_url : null }
+      : null;
+    sendCard(res, `${frontendUrl()}/profile/${encodeURIComponent(raw)}`, card);
+  } catch (err) {
+    sendServerError(res, err, 'Loading the share card failed.');
+  }
+});
+
+// Day 24: a page (pages are always public; a deactivated owner hides it).
+router.get('/share/pages/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    let card = null;
+    if (Number.isInteger(id) && id > 0) {
+      const result = await db.query(
+        `SELECT pg.name, pg.description FROM pages pg JOIN users u ON u.id = pg.owner_id
+         WHERE pg.id = $1 AND NOT u.is_deactivated AND u.banned_at IS NULL`,
+        [id]
+      );
+      const pg = result.rows[0];
+      if (pg) card = { title: `${pg.name} on ${SITE}`, description: excerpt(pg.description) || null, image: null };
+    }
+    sendCard(res, Number.isInteger(id) && id > 0 ? `${frontendUrl()}/pages/${id}` : `${frontendUrl()}/`, card);
   } catch (err) {
     sendServerError(res, err, 'Loading the share card failed.');
   }

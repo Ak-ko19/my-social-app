@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 24–25 — Next P1 features from the gap list
-**Step:** 2 — Share cards for pages and profiles (step 1 done)
+**Step:** 3 — Self-host the fonts (steps 1–2 done)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -72,4 +72,8 @@ Step 1 plan — report groups and pages:
   reportTargets 13, 2 mutations caught, day24-report-places 16/16,
   b12/b13/b14/day12 green; backend 564/564; rehearsal 015→038; 038 down
   with data OK, up idempotent. Step 1 DONE.
-- Next: Step 2 — share cards for pages and profiles.
+- Step 2 DONE: share cards for profiles (public, active only; by id or
+  username) and pages (hidden with a deactivated owner); vercel.json
+  rewrites; backend 567/567 (share 13, 2 mutations caught); day19-share
+  18/18 on the dist build.
+- Next: Step 3 — self-host the fonts.

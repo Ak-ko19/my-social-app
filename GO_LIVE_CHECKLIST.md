@@ -236,6 +236,9 @@ Do this in a normal browser window, then again on a phone.
     (developers.facebook.com/tools/debug, no login needed for a basic
     check).
   - A followers-only post's link shows only the generic card.
+  - Day 24: a public profile's link shows the name, bio and photo; a
+    page's link shows its name and description. A private profile shows
+    only the generic card.
 - [ ] **Bot protection (Day 11):**
   - Signing up at normal speed shows no extra step and no error.
   - Signup and Forgot password take up to 3 seconds if you submit very

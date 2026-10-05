@@ -4,7 +4,9 @@
 // app as usual. Runs in DIST_SUITES. Throwaway stack: alice(1), bob(2).
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 const { chromium } = require('./node_modules/playwright-core');
+const { PSQL } = require('./pg.cjs');
 
 const SP = __dirname;
 const WEB = 'http://localhost:5173';
@@ -24,7 +26,8 @@ const tag = (html, key) => {
   const m = new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)">`).exec(html);
   return m ? m[1] : null;
 };
-const asCrawler = (id, ua) => fetch(`${WEB}/posts/${id}`, { headers: { 'User-Agent': ua } }).then((r) => r.text());
+const crawl = (urlPath, ua) => fetch(WEB + urlPath, { headers: { 'User-Agent': ua } }).then((r) => r.text());
+const asCrawler = (id, ua) => crawl(`/posts/${id}`, ua);
 
 (async () => {
   const pub = await newPost('Morning market in Yangon — fresh mangoes everywhere');
@@ -50,6 +53,21 @@ const asCrawler = (id, ua) => fetch(`${WEB}/posts/${id}`, { headers: { 'User-Age
   check('followers-only post: generic card, text not included', tag(hidden, 'og:title') === 'MySocialApp' && !hidden.includes('Only my followers'));
   const missing = await asCrawler(999999, 'facebookexternalhit/1.1');
   check('missing post: the same generic card', tag(missing, 'og:title') === 'MySocialApp');
+
+  // 2b. Day 24: profiles (by id or username) and pages get cards too; a
+  // private account doesn't.
+  execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysocialapp_e2e -c "UPDATE users SET bio = 'Tea lover in Yangon' WHERE id = 2"`);
+  for (const id of ['2', 'bob']) {
+    const html = await crawl(`/profile/${id}`, 'facebookexternalhit/1.1');
+    check(`profile /profile/${id}: card with name and bio`, tag(html, 'og:title') === 'bob on MySocialApp' && tag(html, 'og:description') === 'Tea lover in Yangon', tag(html, 'og:title'));
+  }
+  const cafe = await fetch(`${API}/pages`, { method: 'POST', headers: { Authorization: `Bearer ${bobToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Mohinga Corner', description: 'Breakfast since 1998' }) }).then((r) => r.json());
+  const pageHtml = await crawl(`/pages/${cafe.id}`, 'TelegramBot (like TwitterBot)');
+  check('page: card with its name and description', tag(pageHtml, 'og:title') === 'Mohinga Corner on MySocialApp' && tag(pageHtml, 'og:description') === 'Breakfast since 1998');
+  execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysocialapp_e2e -c "UPDATE users SET is_private = true WHERE id = 2"`);
+  const privateHtml = await crawl('/profile/bob', 'facebookexternalhit/1.1');
+  check('a private account: generic card, bio not included', tag(privateHtml, 'og:title') === 'MySocialApp' && !privateHtml.includes('Tea lover'));
+  execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysocialapp_e2e -c "UPDATE users SET is_private = false WHERE id = 2"`);
 
   // 3. A person (a normal browser) gets the app, not the card page.
   const plain = await fetch(`${WEB}/posts/${pub.id}`, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130 Safari/537.36' } }).then((r) => r.text());

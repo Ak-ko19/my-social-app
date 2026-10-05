@@ -11,6 +11,28 @@
       ],
       "destination": "https://my-social-app-ecjg.onrender.com/share/posts/:id"
     },
+    {
+      "source": "/profile/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|TelegramBot|WhatsApp|Discordbot|Pinterestbot|redditbot|Viber|SkypeUriPreview|vkShare|Embedly).*"
+        }
+      ],
+      "destination": "https://my-social-app-ecjg.onrender.com/share/profiles/:id"
+    },
+    {
+      "source": "/pages/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|TelegramBot|WhatsApp|Discordbot|Pinterestbot|redditbot|Viber|SkypeUriPreview|vkShare|Embedly).*"
+        }
+      ],
+      "destination": "https://my-social-app-ecjg.onrender.com/share/pages/:id"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
