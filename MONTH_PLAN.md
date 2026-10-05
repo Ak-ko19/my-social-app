@@ -179,7 +179,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] DB indexes for slow queries, responsive Cloudinary image sizes, lazy loading, bundle check. *(day27-perf suite, migration 039, query shapes, image srcsets, bundle budget — see Progress Log.)*
 
 ### Day 28 — Privacy
-- [ ] "Download my data" export; make the Privacy Policy match what the app really does.
+- [x] "Download my data" export; make the Privacy Policy match what the app really does. *(GET /profile/export + Settings section; policy rewritten from the code — see Progress Log.)*
 
 ### Day 29 — Re-audit
 - [ ] Repeat the full read-only audit; write AUDIT_REPORT_2.md comparing with the first audit.
@@ -1042,4 +1042,42 @@ Build every feature the way a senior engineer at a top social media company woul
   - backend 570/570; Vitest 65/65; eslint clean.
   - Rehearsal 015 → 039 passed.
   - Full browser run: all 37 suites (new: day27-perf) + A3 EN/MY/AR
+    green.
+
+### 2026-10-05 — Day 28: Privacy
+- **Download your information (`280818c`):**
+  - `GET /profile/export` returns a JSON file of everything the account
+    made or owns (services/dataExportService.js, one query per section,
+    5 downloads an hour). It's under Settings → Security & Privacy, with
+    pending, done and error states in EN/MY/AR.
+  - Never in it: password hash or tokens, session ids, push endpoints
+    and keys, other people's private fields, who blocked or reported the
+    account, chats it isn't in.
+  - Deleted messages appear only as markers, without their text.
+  - Better approach than a plain dump: story viewers are exported as a
+    count only, because the app never names them to the owner, so the
+    export mustn't either.
+  - Tests: dataExport.test.js (7) plus a rate-limit case; mutations
+    (leaking other chats, dumping the whole user row) are caught.
+    Browser suite day28-export (12): the real file download, its
+    contents, a refused download, dark mode, Arabic RTL.
+- **Privacy Policy (`e613c47`):** rewritten from the code, 11 sections in
+  EN/MY/AR. Every statement was checked against its implementation:
+  - stories, "Only me", devices signed in, last active;
+  - link previews (our server fetches the page) and share cards (public
+    content only);
+  - all providers, including browser push services (pushes never carry
+    message text), Turnstile and Sentry; fonts are self-hosted;
+  - the device cache holds app files only;
+  - retention periods, the data download, and the under-13 rule;
+  - the privacy policy has its own "last updated" date; the Terms keep
+    theirs.
+- **Owner note:** the retention promises need the cleanup job switched
+  on before launch; this was added to LATER.md #4. The policy is still
+  marked as a draft for the owner's review.
+- **Tests at close:**
+  - backend 578/578 (one failure in one run didn't repeat in 3 reruns;
+    noted in WIP to watch); Vitest 65/65; eslint and check:i18n clean;
+    bundle 213.8 kB.
+  - Full browser run: all 38 suites (new: day28-export) + A3 EN/MY/AR
     green.
