@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 28 — Privacy
-**Step:** 1 — "Download my data" export
+**Step:** 2 — Privacy Policy matches the app (step 1 committed 280818c)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -81,3 +81,12 @@ Step 2: Privacy Policy matches what the app really does.
   dataExport.test.js (7) + rate limit case; mutations (leak other chats,
   whole user row) caught. day28-export 12/12 (file, contents, error,
   dark, AR RTL). backend 578/578, Vitest 65/65, check:i18n, bundle OK.
+- Step 2: policy rewritten from the code (11 sections, EN/MY/AR):
+  stories, Only me, sessions/devices, last active, link previews and
+  share cards, providers (Render/Neon/Vercel, Cloudinary, Brevo, push
+  services, Turnstile, Sentry), self-hosted fonts, SW cache = app files
+  only, retention (needs LATER #4 cleanup job -- noted there), data
+  download, under-13. Privacy has its own date (5 Oct); terms keep
+  27 Sep. c2-legal (+3 checks) and b16-rtl date updated; both green.
+- Watch: one full backend run had 1 failure that did not repeat in 3
+  reruns (not captured) -- if it shows again, capture the test name.

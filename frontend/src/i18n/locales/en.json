@@ -1000,34 +1000,46 @@
       "sections": [
         {
           "heading": "1. What we collect",
-          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, private-account setting); and what you create: posts, photos, comments, reactions, messages, voice messages, groups, pages, follows, bookmarks, blocks and reports."
+          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, private-account setting, language); and what you create or do: posts and who can see them, photos, stories, comments and replies, reactions, messages and voice messages, groups, pages, follows, saved posts, blocks, muted conversations and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
         },
         {
           "heading": "2. How we use it",
-          "body": "Only to run the app: showing your posts to the audience you chose, delivering messages and notifications, suggesting people you may know, keeping accounts secure, and handling reports. We do not sell your data and we do not show ads."
+          "body": "Only to run the app: showing your posts to the audience you chose, delivering messages and notifications (including push notifications if you turn them on), suggesting people you may know based on who you and the people you follow follow, keeping accounts secure, and handling reports. We do not sell your data and we do not show ads."
         },
         {
           "heading": "3. Who can see what",
-          "body": "Public posts can be seen by anyone. Followers-only posts, private accounts and private groups are limited to the people allowed in. Direct and group messages are visible only to the people in that conversation. Blocking someone hides you from each other."
+          "body": "Public posts, public profiles and pages can be seen by anyone. Followers-only posts, private accounts and private groups are limited to the people allowed in, and \"Only me\" posts are visible only to you. Stories disappear after 24 hours. Direct and group messages are visible only to the people in that conversation, who can also see when you are online or were last active. Blocking someone hides you from each other. Our moderators can see content that has been reported, so they can review it."
         },
         {
-          "heading": "4. Services we use",
-          "body": "Photos, voice messages and profile pictures are stored with our media hosting provider (Cloudinary). Verification and password-reset emails are sent by an email provider. These providers only process the data needed for that job."
+          "heading": "4. Links and sharing",
+          "body": "When someone shares a link to a public post, a public profile or a page in another app (for example a chat app), that app may show a preview card with its text and name. Private accounts, followers-only posts and \"Only me\" posts never get a preview card. When a post or message contains a link, our server fetches that web page to show a preview, so the website sees our server, not you."
         },
         {
-          "heading": "5. Data on your device",
-          "body": "The app keeps your login session, theme (light/dark) and language choice in your browser's local storage. Your language choice is also saved to your account, so it follows you to other devices. We don't use advertising or tracking cookies."
+          "heading": "5. Services we use",
+          "body": "Our servers and database run with hosting providers (Render, Neon and Vercel). Photos, voice messages and profile pictures are stored with our media provider (Cloudinary). Verification and password-reset emails are sent by an email provider (Brevo). If you turn on push notifications, your browser's push service (for example Google, Mozilla, Apple or Microsoft) delivers them; they say who did what, never the text of your messages. Sign-up and password reset may use Cloudflare's \"are you human?\" check, and server errors may be reported to an error-tracking service (Sentry). These providers only process the data needed for that job. Our fonts are served by us, not by Google."
         },
         {
-          "heading": "6. Security",
-          "body": "Passwords are stored hashed, connections are encrypted, and repeated login attempts are rate-limited. Your IP address is used briefly for this rate limiting and is not stored in our database."
+          "heading": "6. Data on your device",
+          "body": "The app keeps your login session, theme (light/dark) and language choice in your browser's local storage, and keeps a copy of the app's own files so it can open when you are offline — never your posts or messages. Your language choice is also saved to your account, so it follows you to other devices. Logging out removes your login session from the device. We don't use advertising or tracking cookies."
         },
         {
-          "heading": "7. Your choices",
-          "body": "You can edit your profile, make your account private, control notifications, and delete your account at any time in Settings. Deleting your account permanently removes your data from our database."
+          "heading": "7. How long we keep it",
+          "body": "What you post stays until you delete it or delete your account. Stories are removed with their photos after 24 hours, notifications after 90 days, and signed-out sessions within a day. Records of server errors, which may note which account ran into the error, are deleted after 90 days without a new occurrence. Deleting a post, story or message, or changing your profile picture, also deletes the old file from our media provider."
         },
         {
-          "heading": "8. Changes",
+          "heading": "8. Security",
+          "body": "Passwords are stored hashed, connections are encrypted, and repeated login attempts are rate-limited. Your IP address is used briefly for this rate limiting and is not stored in our database. In Settings you can see the devices signed in to your account and sign them out."
+        },
+        {
+          "heading": "9. Your choices",
+          "body": "In Settings you can edit your profile, make your account private, choose who sees each post, choose which notifications you get, mute conversations, turn push notifications on or off, and sign out other devices. You can download a copy of your information at any time (Settings → Security & Privacy). You can deactivate your account (it stays hidden until you log in again) or delete it: deleting permanently removes your data from our database and your photos and voice messages from our media provider."
+        },
+        {
+          "heading": "10. Children",
+          "body": "MySocialApp is not for children under 13, and we do not knowingly keep accounts of people under 13."
+        },
+        {
+          "heading": "11. Changes",
           "body": "If we change this policy in an important way, we will tell you in the app before the change takes effect."
         }
       ]

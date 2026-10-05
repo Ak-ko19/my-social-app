@@ -21,9 +21,15 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await anon.getByRole('heading', { name: 'Terms & Conditions' }).waitFor();
   const n = await anon.locator('.legal-section').count();
   check('Terms page opens logged out from Signup, with 8 sections + draft note', n === 8 && (await anon.getByRole('note').count()) === 1, `${n}`);
+  check('Terms keep their own date (27 September 2026)', (await anon.locator('.legal-updated').innerText()).includes('September 27, 2026'));
   await anon.getByRole('link', { name: 'Read the Privacy Policy' }).click();
   await anon.getByRole('heading', { name: 'Privacy Policy' }).waitFor();
   check('cross-link to Privacy Policy', (await anon.getByText(/Cloudinary/).count()) === 1);
+  // Day 28: the policy now matches the app -- 11 sections, its own date,
+  // and it covers the new things (data download, retention, link previews).
+  const privacyText = await anon.locator('.legal-body').innerText();
+  check('Privacy Policy (Day 28): 11 sections dated 5 October 2026', (await anon.locator('.legal-section').count()) === 11 && privacyText.includes('October 5, 2026'), privacyText.slice(0, 120));
+  check('it covers data download, retention, link previews and push', ['download a copy of your information', 'How long we keep it', 'preview card', 'push service'].every((p) => privacyText.includes(p)));
   await anon.getByRole('button', { name: 'Back' }).click();
   await anon.waitForURL(`${WEB}/terms`);
   check('back returns to the previous page', true);
@@ -49,9 +55,9 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   const mp = watch(await myCtx.newPage());
   await mp.goto(`${WEB}/privacy`, { waitUntil: 'networkidle' });
   await mp.getByRole('heading', { name: 'ကိုယ်ရေးလုံခြုံမှု မူဝါဒ' }).waitFor();
-  check('Myanmar Privacy Policy renders', (await mp.locator('.legal-section').count()) === 8);
+  check('Myanmar Privacy Policy renders', (await mp.locator('.legal-section').count()) === 11);
   const updated = await mp.locator('.legal-updated').innerText();
-  check('date is in Burmese even though Chromium has no Burmese ICU data', updated.includes('၂၀၂၆ စက်တင်ဘာ ၂၇'), updated);
+  check('date is in Burmese even though Chromium has no Burmese ICU data', updated.includes('၂၀၂၆ အောက်တိုဘာ ၅'), updated);
   check('375px dark Myanmar: no horizontal scroll', !(await mp.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)));
   await mp.screenshot({ path: path.join(SP, 'c2-privacy-my-dark-375.png') });
 

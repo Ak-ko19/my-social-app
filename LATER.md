@@ -105,6 +105,10 @@ without them. Newest items at the bottom.
   - dead login sessions.
 - **Until then:** nothing breaks. The data just isn't pruned. The GitHub
   job skips itself with a notice.
+- **Before the public launch:** the Privacy Policy (Day 28, section 7)
+  promises these periods: stories gone after 24 hours with their photos,
+  notifications after 90 days, signed-out sessions within a day, error
+  records after 90 quiet days. They only hold once this job runs.
 - **Needs:** this version deployed and merged to `master` (GitHub only
   runs schedules from the default branch).
 - **Owner steps (about 5 minutes, free):**

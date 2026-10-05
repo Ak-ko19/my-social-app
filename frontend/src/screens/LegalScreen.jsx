@@ -8,7 +8,8 @@ import './LegalScreen.css';
 // C2: /terms and /privacy -- public (no login needed), text from the
 // locale files (legal.<doc>.sections) so both exist in English and Myanmar.
 // Marked as a draft until the owner has it reviewed (see ROADMAP NEEDS OWNER).
-const LAST_UPDATED = '2026-09-27';
+// Each document has its own date (Day 28 rewrote the privacy policy only).
+const LAST_UPDATED = { terms: '2026-09-27', privacy: '2026-10-05' };
 
 function LegalScreen({ doc }) {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ function LegalScreen({ doc }) {
       </header>
       <article className="screen-body legal-body">
         <p className="legal-draft" role="note">{t('legal.draftNote')}</p>
-        <p className="legal-updated">{t('legal.updated', { date: formatDate(`${LAST_UPDATED}T12:00:00`, 'long') })}</p>
+        <p className="legal-updated">{t('legal.updated', { date: formatDate(`${LAST_UPDATED[doc]}T12:00:00`, 'long') })}</p>
         {Array.isArray(sections) &&
           sections.map((s) => (
             <section key={s.heading} className="legal-section">
