@@ -81,6 +81,9 @@ jobs:
       # After the build: checks vercel.json's CSP against the built page's
       # inline script hash and the production API origin.
       - run: npm run check:headers
+      # Day 27: the first download stays within its size budget, and the
+      # code that should load on demand stays out of it.
+      - run: npm run check:bundle
 
   # Day 13: the browser suites (e2e/, headless Microsoft Edge -- GitHub's
   # Ubuntu runners ship it) against a throwaway stack: Postgres below,

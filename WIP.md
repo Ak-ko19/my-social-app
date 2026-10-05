@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 27 — Performance
-**Step:** 2 — responsive images + lazy loading (step 1 committed c9eb578)
+**Step:** 3 — bundle check (steps 1-2 committed c9eb578, 51d084e)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -77,3 +77,10 @@ step 3: bundle check.
   cloudinaryImage.test.jsx (5; lazy-removal mutation caught). Vitest
   65/65, eslint clean, build OK; b2, b3, b6, b9, b12, a2, day26, a3
   EN/MY/AR green; backend 570/570.
+- Step 3: screens were already lazy (37), MY/AR translations separate.
+  First download (entry + preloads + CSS) was 225 kB gz; socket.io-client
+  now loads after login (SocketProvider dynamic import): 212.6 kB.
+  scripts/check-bundle.cjs (npm run check:bundle, in CI): budget 225 kB,
+  no translation or socket.io in the first download; a static-import
+  mutation fails it. b9, b10, day8, day10, day22, day23, b11, c3, a2
+  green; backend 570/570.
