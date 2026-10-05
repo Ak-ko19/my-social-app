@@ -38,7 +38,7 @@
   align-items: center;
   justify-content: center;
   background: var(--color-subtle-bg);
-  color: var(--color-accent-2);
+  color: var(--color-accent-2-text);
 }
 
 .group-row-text {
@@ -137,7 +137,7 @@
   font-size: 0.6875rem;
   font-weight: 600;
   background: var(--color-subtle-bg);
-  color: var(--color-accent-2);
+  color: var(--color-accent-2-text);
 }
 
 /* B14 Pages reuse the group list/hero styles; the icon gets its own hue. */

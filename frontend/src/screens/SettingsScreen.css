@@ -136,7 +136,7 @@
      specific button. Not worth a near-duplicate new token for one
      deliberately-distinct destructive action. */
   background: #fef2f2;
-  color: #dc2626;
+  color: #b91c1c; /* Day 26: #dc2626 was 4.4:1 on #fef2f2 */
   font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 700;

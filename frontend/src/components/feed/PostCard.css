@@ -58,7 +58,7 @@
 
 .post-text-hashtag,
 .post-text-mention {
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   font-weight: 700;
   text-decoration: none;
 }
@@ -181,7 +181,7 @@
 }
 
 .post-card-action-active {
-  color: var(--color-accent);
+  color: var(--color-accent-text);
 }
 
 .post-card-skeleton-header {

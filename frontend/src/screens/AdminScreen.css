@@ -86,7 +86,7 @@
 
 .admin-report-kind a,
 .admin-report-link {
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   font-weight: 700;
 }
 
@@ -129,7 +129,7 @@
 
 .admin-suspend-day:has(input:checked) {
   border-color: var(--color-accent);
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   font-weight: 700;
 }
 

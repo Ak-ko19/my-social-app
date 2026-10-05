@@ -47,7 +47,7 @@
      --color-surface (measured), below even the relaxed 3:1 large-text/UI
      minimum, let alone the 4.5:1 normal-text one that applies to something
      like a post timestamp. This keeps the same hue, just darkened. */
-  --color-text-muted: #746f7a;
+  --color-text-muted: #646b77;
   --color-border: var(--border);
   --color-error: #dc2626;
   /* Darker than a "brighter" green/amber would be, specifically so these
@@ -175,7 +175,7 @@
   /* Lightened from the original #6b7280 -- that only hit 3.47:1 against
      --color-surface (measured), below the 4.5:1 normal-text minimum
      (same issue as light theme's original --color-text-muted). */
-  --color-text-muted: #80899a;
+  --color-text-muted: #9aa1b0;
   --color-border: var(--border);
   --color-error: #f87171;
   --color-success: #4ade80;

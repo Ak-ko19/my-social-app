@@ -62,7 +62,7 @@
 
 /* Web links in user text (renderTextWithLinks). */
 .post-text-link {
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   text-decoration: underline;
   text-underline-offset: 2px;
   overflow-wrap: anywhere;

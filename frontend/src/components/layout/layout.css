@@ -186,7 +186,7 @@
 }
 
 .bottom-tab-active {
-  color: var(--color-accent);
+  color: var(--color-accent-text);
 }
 
 .bottom-tab-icon-wrap {

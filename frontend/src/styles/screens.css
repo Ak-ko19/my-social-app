@@ -38,7 +38,7 @@
 }
 
 .screen-link {
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   font-weight: 700;
   text-decoration: none;
 }
@@ -658,7 +658,7 @@ textarea.form-input {
 
 .language-option.is-selected {
   border-color: var(--color-accent);
-  color: var(--color-accent);
+  color: var(--color-accent-text);
 }
 
 .language-option:focus-within {
