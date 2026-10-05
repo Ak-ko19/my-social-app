@@ -170,7 +170,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Per-type on/off (likes, comments, follows, messages), mute a conversation.
 
 ### Day 24–25 — Next P1 features from the gap list
-- [ ] Take the highest-priority free-tier-compatible P1 items from AUDIT_REPORT.md (e.g. friend requests or basic groups) and build them.
+- [x] Take the highest-priority free-tier-compatible P1 items from AUDIT_REPORT.md (e.g. friend requests or basic groups) and build them. *(Report groups/pages, share cards for profiles/pages, self-hosted fonts — see Progress Log.)*
 
 ### Day 26 — Accessibility
 - [ ] Keyboard navigation, focus states, alt text on images, labels, colour contrast in both themes.
@@ -944,3 +944,32 @@ Build every feature the way a senior engineer at a top social media company woul
   - Rehearsal 015 → 037 PASSED.
   - Full browser run: 36 suites (new: day23-mute) + A3 EN/MY/AR green.
     b11-settings now expects 6 switches.
+
+### 2026-10-03/05 — Days 24–25: Next P1 items from the audit
+- **What was picked:** the P1 list was mostly done already (sessions,
+  push, error log, Turnstile, comment/message reports, cleanup, link
+  previews, post share cards, headers, CI). Others are on later Days
+  (accessibility 26, data export 28, content filter ~47, 2FA 77). That
+  left three items:
+  1. **Report groups and pages (`3254d7c`):** migration 038.
+     - A private group can be reported only by its members (others get
+       the same 404 as a missing group), and not your own.
+     - The name and description are kept as reported, and the owner is
+       recorded, so banning them resolves these reports too.
+     - Admin cards show the group or page, and Remove deletes it with
+       its posts and photos, after a confirm.
+     - A Report button is on the group and page screens.
+  2. **Share cards for profiles and pages (`5823472`):** profiles, by id
+     or username, only when public and active; pages are hidden when
+     their owner is deactivated. vercel.json crawler rewrites were added.
+  3. **Self-hosted fonts (`a1e8530`):**
+     - @fontsource with unicode-range subsets, so there's no request to
+       Google per visitor.
+     - The CSP is now `style-src 'self'; font-src 'self'`, and fonts are
+       never inlined.
+     - check-headers guards both, and the dist suite proves the fonts
+       load from this site.
+- **Tests at close:**
+  - backend 567/567; Vitest 60/60.
+  - Rehearsal 015 → 038; 038 down tested with data.
+  - Full browser run: all 38 suites + A3 EN/MY/AR green.
