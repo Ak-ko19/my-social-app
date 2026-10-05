@@ -182,7 +182,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] "Download my data" export; make the Privacy Policy match what the app really does. *(GET /profile/export + Settings section; policy rewritten from the code — see Progress Log.)*
 
 ### Day 29 — Re-audit
-- [ ] Repeat the full read-only audit; write AUDIT_REPORT_2.md comparing with the first audit.
+- [x] Repeat the full read-only audit; write AUDIT_REPORT_2.md comparing with the first audit. *(AUDIT_REPORT_2.md — see Progress Log.)*
 
 ### Day 30 — GO LIVE #4 (only if you have the access)
 - [ ] Deploy and smoke test. Fix any top items from AUDIT_REPORT_2.md first.
@@ -1081,3 +1081,35 @@ Build every feature the way a senior engineer at a top social media company woul
     bundle 213.8 kB.
   - Full browser run: all 38 suites (new: day28-export) + A3 EN/MY/AR
     green.
+
+### 2026-10-05 — Day 29: Re-audit
+- **AUDIT_REPORT_2.md**, read-only (no app code changed), compared with
+  the first audit:
+  - All 12 first-audit bugs are fixed on `dev`, with the commits and
+    tests as evidence.
+  - Two still need the owner: email needs a Brevo key, and cleanup needs
+    its secret.
+  - #1 (the proxy rate limit) is still live until GO LIVE.
+- **Method:**
+  - A script classified all 121 routes: 80 login, 8 admin, 19 optional,
+    1 secret, 13 intentionally public.
+  - 32/32 fresh probes passed on the endpoints added since the first
+    audit (export, only-me, share-card escaping, SSRF, push, sessions,
+    mute, sockets, admin/internal, banned users, private accounts,
+    headers).
+  - 6 obfuscated loopback URLs never reached a local listener.
+  - `npm audit` (production dependencies): 0 vulnerabilities.
+  - Test numbers come from the full verification of the audited commit
+    `61969ae` (the Day 28 close the same day).
+- **New findings:**
+  - N1 Medium: protected screens render for logged-out visitors (no
+    route guard; the API refuses, so nothing leaks).
+  - N2 Low: one unrepeated backend test failure.
+  - N3 Low: explore aggregates 7 days per request.
+  - N4 Low: dead code (PostContent.jsx, 3 template assets).
+  - N5/N6 Info: frontend console calls; the token in localStorage,
+    mitigated by the CSP.
+- **Top risk:** production still runs the Sep 22 code, 144 commits
+  behind (owner GO LIVE, fully rehearsed).
+- **Next (Day 30):** GO LIVE is an owner action; the owner-free part is
+  fixing N1, N2 and N4.
