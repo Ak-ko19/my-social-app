@@ -748,7 +748,20 @@
     "confirmSuspend": "تأكيد الإيقاف",
     "suspending": "جارٍ الإيقاف…",
     "suspendedUntil": "موقوف حتى {{date}}",
-    "liftSuspension": "رفع الإيقاف عن {{name}}"
+    "liftSuspension": "رفع الإيقاف عن {{name}}",
+    "groupNamed": "مجموعة <link>{{name}}</link>",
+    "pageNamed": "صفحة <link>{{name}}</link>",
+    "privateGroup": "خاصة",
+    "madeBy": "أنشأها {{name}}",
+    "groupRemoved": "مجموعة (أُزيلت)",
+    "pageRemoved": "صفحة (أُزيلت)",
+    "removeGroup": "إزالة المجموعة",
+    "removePage": "إزالة الصفحة",
+    "removedGroup": "أُزيلت المجموعة",
+    "removedPage": "أُزيلت الصفحة",
+    "confirmRemoveGroup": "إزالة المجموعة \"{{name}}\"؟",
+    "confirmRemovePage": "إزالة الصفحة \"{{name}}\"؟",
+    "confirmRemoveBody": "ستُحذف جميع منشوراتها أيضًا. لا يمكن التراجع عن هذا."
   },
   "groups": {
     "title": "المجموعات",
@@ -824,7 +837,8 @@
     "remove": "إزالة",
     "removeName": "إزالة {{name}}",
     "actionFailed": "فشل هذا الإجراء. يرجى المحاولة مرة أخرى.",
-    "manageLoadFailed": "تعذّر تحميل المجموعة"
+    "manageLoadFailed": "تعذّر تحميل المجموعة",
+    "report": "الإبلاغ عن المجموعة"
   },
   "pages": {
     "title": "الصفحات",
@@ -879,7 +893,8 @@
       "organization": "منظمة",
       "community": "مجتمع",
       "other": "أخرى"
-    }
+    },
+    "report": "الإبلاغ عن الصفحة"
   },
   "menu": {
     "eyebrow": "استكشف MySocialApp",

@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 037, check the environment variables,
+database, run migrations 015 → 038, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -98,7 +98,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 037 on production
+## 3. Run migrations 015 → 038 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -132,7 +132,7 @@ they run.
            029_add_cleanup_indexes 030_add_error_log 031_report_comments_messages \
            032_add_suspensions 033_add_user_language 034_add_link_previews \
            035_add_only_me_visibility 036_add_push_subscriptions \
-           037_add_message_notification_settings; do
+           037_add_message_notification_settings 038_report_groups_pages; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
@@ -210,6 +210,8 @@ Do this in a normal browser window, then again on a phone.
   - Remove the message: it shows as deleted in the chat.
   - Suspend the test account for 1 day. Logging in says "suspended
     until …". Then "Lift suspension", and it can log in again.
+  - Day 24: the flag on a group's or page's screen reports it. It
+    appears in Reports, and "Remove group/page" asks before deleting.
 - [ ] **Push notifications (Day 22), only if the VAPID keys are set:**
   - On a phone, use Chrome (Android) or the installed app (iPhone:
     Share → Add to Home Screen first).

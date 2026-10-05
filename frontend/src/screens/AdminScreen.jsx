@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ShieldAlert } from 'lucide-react';
 import clsx from 'clsx';
-import { IconButton } from '../components/ui';
+import { ConfirmDialog, IconButton } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import AdminErrorsPanel from '../components/admin/AdminErrorsPanel';
@@ -18,7 +18,9 @@ import './AdminScreen.css';
 const RESOLUTIONS = ['dismissed', 'content_removed', 'user_banned', 'user_suspended'];
 // Day 12: suspension lengths an admin can pick (the API accepts these).
 const SUSPEND_DAYS = [1, 3, 7, 30];
-const REMOVE_LABEL = { post: 'admin.removePost', comment: 'admin.removeComment', message: 'admin.removeMessage' };
+const REMOVE_LABEL = { post: 'admin.removePost', comment: 'admin.removeComment', message: 'admin.removeMessage', community: 'admin.removeGroup', page: 'admin.removePage' };
+// Day 24: removing a whole group or page (with all its posts) asks first.
+const CONFIRM_REMOVE = { community: 'admin.confirmRemoveGroup', page: 'admin.confirmRemovePage' };
 
 // "Banned", or "Suspended until <date>" for a suspension.
 function RestrictionTag({ until }) {
@@ -81,6 +83,39 @@ function ReportedText({ report }) {
   );
 }
 
+// Day 24: a reported group or page -- name, link and who made it; once
+// removed, its name and description as reported.
+function ReportedPlace({ report }) {
+  const { t } = useTranslation();
+  const isGroup = report.target_type === 'community';
+  const name = isGroup ? report.community_name : report.page_name;
+  const to = isGroup ? `/groups/${report.target_id}` : `/pages/${report.target_id}`;
+  if (!report.target_exists) {
+    return (
+      <>
+        <span className="admin-report-kind">{t(isGroup ? 'admin.groupRemoved' : 'admin.pageRemoved')}</span>
+        {report.target_snapshot && (
+          <p className="admin-report-quote" dir="auto">
+            <span className="admin-report-asreported">{t('admin.asReported')}</span> <bdi>“{report.target_snapshot}”</bdi>
+          </p>
+        )}
+      </>
+    );
+  }
+  return (
+    <>
+      <span className="admin-report-kind">
+        <Trans i18nKey={isGroup ? 'admin.groupNamed' : 'admin.pageNamed'} values={{ name }} components={{ link: <Link to={to} /> }} />
+        {isGroup && report.community_privacy === 'private' && <span className="admin-banned-tag">{t('admin.privateGroup')}</span>}
+      </span>
+      {report.target_owner_username && (
+        <span className="admin-report-meta">{t('admin.madeBy', { name: report.target_owner_username })}</span>
+      )}
+      {report.target_snapshot && <p className="admin-report-quote" dir="auto">“{report.target_snapshot}”</p>}
+    </>
+  );
+}
+
 // One report, with the actions an admin can take on it. Ban and suspend
 // (Day 12) ask for an optional reason inline -- and suspend for how long --
 // before confirming.
@@ -91,6 +126,7 @@ function ReportCard({ report, token, onDone }) {
   const [restrict, setRestrict] = useState(null); // null | 'ban' | 'suspend'
   const [reason, setReason] = useState('');
   const [days, setDays] = useState(7);
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const banOpen = restrict !== null;
 
   const isPost = report.target_type === 'post';
@@ -129,6 +165,8 @@ function ReportCard({ report, token, onDone }) {
       <div className="admin-report-target">
         {report.target_type === 'comment' || report.target_type === 'message' ? (
           <ReportedText report={report} />
+        ) : report.target_type === 'community' || report.target_type === 'page' ? (
+          <ReportedPlace report={report} />
         ) : isPost ? (
           report.target_exists ? (
             <>
@@ -158,6 +196,8 @@ function ReportCard({ report, token, onDone }) {
             let label = t(`admin.resolution.${RESOLUTIONS.includes(report.resolution) ? report.resolution : 'reviewed'}`);
             if (report.resolution === 'content_removed' && report.target_type === 'comment') label = t('admin.removedComment');
             if (report.resolution === 'content_removed' && report.target_type === 'message') label = t('admin.removedMessage');
+            if (report.resolution === 'content_removed' && report.target_type === 'community') label = t('admin.removedGroup');
+            if (report.resolution === 'content_removed' && report.target_type === 'page') label = t('admin.removedPage');
             return report.resolved_by_username ? t('admin.resolvedBy', { label, name: report.resolved_by_username }) : label;
           })()}
           {report.resolved_at && ` · ${formatRelativeTime(report.resolved_at)}`}
@@ -172,7 +212,7 @@ function ReportCard({ report, token, onDone }) {
             {t('admin.dismiss')}
           </button>
           {!isUser && report.target_exists && (
-            <button type="button" className="btn btn-secondary btn-sm admin-danger" disabled={busy} onClick={() => act(() => removeReportedContent(report.id, token))}>
+            <button type="button" className="btn btn-secondary btn-sm admin-danger" disabled={busy} onClick={() => (CONFIRM_REMOVE[report.target_type] ? setConfirmRemove(true) : act(() => removeReportedContent(report.id, token)))}>
               {t(REMOVE_LABEL[report.target_type])}
             </button>
           )}
@@ -234,6 +274,20 @@ function ReportCard({ report, token, onDone }) {
             {targetBannedUntil ? t('admin.liftSuspension', { name: targetUsername }) : t('admin.unban', { name: targetUsername })}
           </button>
         </div>
+      )}
+      {CONFIRM_REMOVE[report.target_type] && (
+        <ConfirmDialog
+          open={confirmRemove}
+          title={t(CONFIRM_REMOVE[report.target_type], { name: report.community_name || report.page_name || '' })}
+          description={t('admin.confirmRemoveBody')}
+          confirmLabel={t(REMOVE_LABEL[report.target_type])}
+          danger
+          onConfirm={() => {
+            setConfirmRemove(false);
+            act(() => removeReportedContent(report.id, token));
+          }}
+          onClose={() => setConfirmRemove(false)}
+        />
       )}
     </li>
   );

@@ -95,7 +95,7 @@ describe('reporting comments and messages (Day 12)', () => {
   it('still validates target types', async () => {
     const res = await report(alice, 'story', 1);
     expect(res.status).toBe(400);
-    expect(res.text).toBe('targetType must be "post", "user", "comment" or "message"');
+    expect(res.text).toBe('targetType must be "post", "user", "comment", "message", "community" or "page"');
   });
 
   it('post reports now keep the author and the text as reported too', async () => {

@@ -1,6 +1,6 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
-const { mediaOfPost, deleteMedia } = require('../services/mediaCleanupService');
+const { mediaOfPost, mediaOfCommunity, mediaOfPage, deleteMedia } = require('../services/mediaCleanupService');
 const { getIO } = require('../sockets');
 const messageService = require('../services/messageService');
 const logger = require('../utils/logger');
@@ -31,6 +31,8 @@ function targetExists(r) {
   if (r.target_type === 'post') return r.post_author_id !== null;
   if (r.target_type === 'comment') return r.comment_content !== null;
   if (r.target_type === 'message') return r.message_type !== null;
+  if (r.target_type === 'community') return r.community_name !== null;
+  if (r.target_type === 'page') return r.page_name !== null;
   return r.target_username !== null;
 }
 
@@ -49,6 +51,7 @@ async function listReports(req, res) {
          (owner.banned_at IS NOT NULL) AS target_owner_banned, owner.banned_until AS target_owner_banned_until,
          c.content AS comment_content, c.post_id AS comment_post_id,
          m.content AS message_content, m.type AS message_type, m.media_url AS message_media_url,
+         co.name AS community_name, co.privacy AS community_privacy, pg.name AS page_name,
          (SELECT COUNT(*)::int FROM reports r2
             WHERE r2.target_type = r.target_type AND r2.target_id = r.target_id AND r2.status = 'pending') AS pending_for_target
        FROM reports r
@@ -59,6 +62,8 @@ async function listReports(req, res) {
        LEFT JOIN users tu ON r.target_type = 'user' AND tu.id = r.target_id
        LEFT JOIN comments c ON r.target_type = 'comment' AND c.id = r.target_id
        LEFT JOIN messages m ON r.target_type = 'message' AND m.id = r.target_id AND m.deleted_at IS NULL
+       LEFT JOIN communities co ON r.target_type = 'community' AND co.id = r.target_id
+       LEFT JOIN pages pg ON r.target_type = 'page' AND pg.id = r.target_id
        LEFT JOIN users owner ON owner.id = r.target_owner_id
        WHERE r.status = $1
        ORDER BY r.created_at ${status === 'pending' ? 'ASC' : 'DESC'}, r.id
@@ -112,6 +117,15 @@ async function removeReportedContent(req, res) {
       deleteMedia(media);
     } else if (report.target_type === 'comment') {
       await db.query('DELETE FROM comments WHERE id = $1', [report.target_id]);
+    } else if (report.target_type === 'community') {
+      // Day 24: the whole group -- its posts (and their photos) go with it.
+      const media = await mediaOfCommunity(report.target_id);
+      await db.query('DELETE FROM communities WHERE id = $1', [report.target_id]);
+      deleteMedia(media);
+    } else if (report.target_type === 'page') {
+      const media = await mediaOfPage(report.target_id);
+      await db.query('DELETE FROM pages WHERE id = $1', [report.target_id]);
+      deleteMedia(media);
     } else {
       const removed = await messageService.removeMessageAsModerator(report.target_id);
       if (removed) {

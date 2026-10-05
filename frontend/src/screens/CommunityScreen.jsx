@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Globe, Lock, Settings2, UsersRound } from 'lucide-react';
+import { ChevronLeft, Flag, Globe, Lock, Settings2, UsersRound } from 'lucide-react';
 import { IconButton, ConfirmDialog } from '../components/ui';
+import ReportDialog from '../components/feed/ReportDialog';
 import { useAuth } from '../hooks/useAuth';
 import PostCard from '../components/feed/PostCard';
 import PostCardSkeleton from '../components/feed/PostCardSkeleton';
@@ -19,6 +20,7 @@ function CommunityScreen() {
   const { t } = useTranslation();
   const { id } = useParams();
   const { token, userId } = useAuth();
+  const [reportOpen, setReportOpen] = useState(false); // Day 24
   const [group, setGroup] = useState(null);
   const [groupError, setGroupError] = useState('');
   const [posts, setPosts] = useState(null);
@@ -135,10 +137,16 @@ function CommunityScreen() {
       <header className="screen-header">
         <IconButton icon={ChevronLeft} aria-label={t('groups.backToGroups')} onClick={() => navigate('/groups')} />
         <h1 className="screen-header-title">{group.name}</h1>
-        {group.is_admin && (
+        {group.is_admin ? (
           <IconButton icon={Settings2} aria-label={t('groups.manage')} onClick={() => navigate(`/groups/${id}/manage`)} />
+        ) : (
+          // Day 24
+          <IconButton icon={Flag} aria-label={t('groups.report')} onClick={() => setReportOpen(true)} />
         )}
       </header>
+      {reportOpen && (
+        <ReportDialog open onClose={() => setReportOpen(false)} targetType="community" targetId={group.id} label={group.name} />
+      )}
 
       <div className="screen-body">
         <div className="community-hero">

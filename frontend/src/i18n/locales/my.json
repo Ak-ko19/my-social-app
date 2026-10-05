@@ -719,7 +719,20 @@
     "confirmSuspend": "ယာယီပိတ်ရန် အတည်ပြုပါ",
     "suspending": "ယာယီပိတ်နေသည်…",
     "suspendedUntil": "{{date}} အထိ ယာယီပိတ်ထားသည်",
-    "liftSuspension": "{{name}} ၏ ယာယီပိတ်ခြင်းကို ရုပ်သိမ်းရန်"
+    "liftSuspension": "{{name}} ၏ ယာယီပိတ်ခြင်းကို ရုပ်သိမ်းရန်",
+    "groupNamed": "အုပ်စု <link>{{name}}</link>",
+    "pageNamed": "စာမျက်နှာ <link>{{name}}</link>",
+    "privateGroup": "သီးသန့်",
+    "madeBy": "{{name}} က ဖန်တီးသည်",
+    "groupRemoved": "အုပ်စု (ဖယ်ရှားပြီး)",
+    "pageRemoved": "စာမျက်နှာ (ဖယ်ရှားပြီး)",
+    "removeGroup": "အုပ်စုကို ဖယ်ရှားရန်",
+    "removePage": "စာမျက်နှာကို ဖယ်ရှားရန်",
+    "removedGroup": "အုပ်စု ဖယ်ရှားပြီး",
+    "removedPage": "စာမျက်နှာ ဖယ်ရှားပြီး",
+    "confirmRemoveGroup": "\"{{name}}\" အုပ်စုကို ဖယ်ရှားမလား?",
+    "confirmRemovePage": "\"{{name}}\" စာမျက်နှာကို ဖယ်ရှားမလား?",
+    "confirmRemoveBody": "၎င်း၏ ပို့စ်အားလုံးလည်း ပျက်သွားမည်။ ပြန်ယူ၍ မရပါ။"
   },
   "groups": {
     "title": "အဖွဲ့များ",
@@ -791,7 +804,8 @@
     "remove": "ဖယ်ရှားရန်",
     "removeName": "{{name}} ကို ဖယ်ရှားရန်",
     "actionFailed": "ထိုလုပ်ဆောင်ချက် မအောင်မြင်ပါ။ ထပ်စမ်းကြည့်ပါ။",
-    "manageLoadFailed": "အဖွဲ့ကို ဖွင့်၍ မရပါ"
+    "manageLoadFailed": "အဖွဲ့ကို ဖွင့်၍ မရပါ",
+    "report": "အုပ်စုကို တိုင်ကြားရန်"
   },
   "pages": {
     "title": "စာမျက်နှာများ",
@@ -842,7 +856,8 @@
       "organization": "အဖွဲ့အစည်း",
       "community": "အသိုင်းအဝိုင်း",
       "other": "အခြား"
-    }
+    },
+    "report": "စာမျက်နှာကို တိုင်ကြားရန်"
   },
   "menu": {
     "eyebrow": "MySocialApp ကို စူးစမ်းပါ",

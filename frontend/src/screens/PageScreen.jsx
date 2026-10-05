@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Flag, Pencil } from 'lucide-react';
 import { IconButton } from '../components/ui';
+import ReportDialog from '../components/feed/ReportDialog';
 import { useAuth } from '../hooks/useAuth';
 import PostCard from '../components/feed/PostCard';
 import PostCardSkeleton from '../components/feed/PostCardSkeleton';
@@ -18,6 +19,7 @@ function PageScreen() {
   const { t } = useTranslation();
   const { id } = useParams();
   const { token } = useAuth();
+  const [reportOpen, setReportOpen] = useState(false); // Day 24
   const [page, setPage] = useState(null);
   const [pageError, setPageError] = useState('');
   const [posts, setPosts] = useState(null);
@@ -91,8 +93,14 @@ function PageScreen() {
       <header className="screen-header">
         <IconButton icon={ChevronLeft} aria-label={t('pages.backToPages')} onClick={() => navigate('/pages')} />
         <h1 className="screen-header-title">{page.name}</h1>
-        {page.is_owner && <IconButton icon={Pencil} aria-label={t('pages.edit')} onClick={() => navigate(`/pages/${id}/edit`)} />}
+        {page.is_owner ? (
+          <IconButton icon={Pencil} aria-label={t('pages.edit')} onClick={() => navigate(`/pages/${id}/edit`)} />
+        ) : (
+          // Day 24
+          <IconButton icon={Flag} aria-label={t('pages.report')} onClick={() => setReportOpen(true)} />
+        )}
       </header>
+      {reportOpen && <ReportDialog open onClose={() => setReportOpen(false)} targetType="page" targetId={page.id} label={page.name} />}
 
       <div className="screen-body">
         <div className="community-hero">

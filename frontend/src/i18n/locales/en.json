@@ -720,7 +720,20 @@
     "confirmSuspend": "Confirm suspension",
     "suspending": "Suspending…",
     "suspendedUntil": "Suspended until {{date}}",
-    "liftSuspension": "Lift suspension for {{name}}"
+    "liftSuspension": "Lift suspension for {{name}}",
+    "groupNamed": "Group <link>{{name}}</link>",
+    "pageNamed": "Page <link>{{name}}</link>",
+    "privateGroup": "Private",
+    "madeBy": "Made by {{name}}",
+    "groupRemoved": "Group (removed)",
+    "pageRemoved": "Page (removed)",
+    "removeGroup": "Remove group",
+    "removePage": "Remove page",
+    "removedGroup": "Group removed",
+    "removedPage": "Page removed",
+    "confirmRemoveGroup": "Remove the group \"{{name}}\"?",
+    "confirmRemovePage": "Remove the page \"{{name}}\"?",
+    "confirmRemoveBody": "All of its posts are deleted too. This cannot be undone."
   },
   "groups": {
     "title": "Groups",
@@ -792,7 +805,8 @@
     "remove": "Remove",
     "removeName": "Remove {{name}}",
     "actionFailed": "That action failed. Please try again.",
-    "manageLoadFailed": "Could not load the group"
+    "manageLoadFailed": "Could not load the group",
+    "report": "Report group"
   },
   "pages": {
     "title": "Pages",
@@ -843,7 +857,8 @@
       "organization": "Organization",
       "community": "Community",
       "other": "Other"
-    }
+    },
+    "report": "Report page"
   },
   "menu": {
     "eyebrow": "Explore MySocialApp",

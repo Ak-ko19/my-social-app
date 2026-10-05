@@ -5,7 +5,7 @@ const { sendServerError } = require('../utils/sendError');
 // analyzable set of values for a future moderation queue -- `details` is
 // where free-text context goes instead.
 const VALID_REASONS = ['spam', 'harassment', 'inappropriate_content', 'hate_speech', 'misinformation', 'other'];
-const VALID_TARGET_TYPES = ['post', 'user', 'comment', 'message'];
+const VALID_TARGET_TYPES = ['post', 'user', 'comment', 'message', 'community', 'page'];
 const MAX_DETAILS_LENGTH = 500;
 // Day 12: the reported text is kept as it was, so editing or unsending it
 // afterwards doesn't erase the evidence.
@@ -18,7 +18,7 @@ async function createReport(req, res) {
     const details = (req.body.details || '').trim().slice(0, MAX_DETAILS_LENGTH);
 
     if (!VALID_TARGET_TYPES.includes(targetType)) {
-      return res.status(400).send('targetType must be "post", "user", "comment" or "message"');
+      return res.status(400).send('targetType must be "post", "user", "comment", "message", "community" or "page"');
     }
     if (!VALID_REASONS.includes(reason)) {
       return res.status(400).send(`reason must be one of: ${VALID_REASONS.join(', ')}`);
@@ -73,6 +73,35 @@ async function createReport(req, res) {
       }
       ownerId = message.sender_id;
       snapshot = snapshotOf(message.content); // a voice note: none; a photo: its caption
+    } else if (targetType === 'community') {
+      // Day 24: a private group can only be reported by its members --
+      // anyone else gets the same 404 as a group that doesn't exist.
+      const groupCheck = await db.query(
+        `SELECT c.name, c.description, c.created_by, c.privacy,
+           EXISTS(SELECT 1 FROM community_members cm WHERE cm.community_id = c.id AND cm.user_id = $2 AND cm.status = 'member') AS is_member
+         FROM communities c WHERE c.id = $1`,
+        [parsedTargetId, req.userId]
+      );
+      const group = groupCheck.rows[0];
+      if (!group || (group.privacy === 'private' && !group.is_member)) {
+        return res.status(404).send('Group not found');
+      }
+      if (group.created_by === req.userId) {
+        return res.status(400).send('You cannot report your own group');
+      }
+      ownerId = group.created_by;
+      snapshot = snapshotOf([group.name, group.description].filter(Boolean).join(' — '));
+    } else if (targetType === 'page') {
+      const pageCheck = await db.query('SELECT name, description, owner_id FROM pages WHERE id = $1', [parsedTargetId]);
+      const page = pageCheck.rows[0];
+      if (!page) {
+        return res.status(404).send('Page not found');
+      }
+      if (page.owner_id === req.userId) {
+        return res.status(400).send('You cannot report your own page');
+      }
+      ownerId = page.owner_id;
+      snapshot = snapshotOf([page.name, page.description].filter(Boolean).join(' — '));
     } else {
       if (parsedTargetId === req.userId) {
         return res.status(400).send('You cannot report yourself');

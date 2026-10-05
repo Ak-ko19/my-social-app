@@ -17,7 +17,7 @@ CREATE TYPE message_status AS ENUM ('sent', 'delivered', 'read');
 -- 'image' added by migration 021_add_message_image_type (B9).
 CREATE TYPE message_type AS ENUM ('text', 'voice', 'image');
 CREATE TYPE report_status AS ENUM ('pending', 'reviewed');
-CREATE TYPE report_target_type AS ENUM ('post', 'user', 'comment', 'message');
+CREATE TYPE report_target_type AS ENUM ('post', 'user', 'comment', 'message', 'community', 'page');
 
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
