@@ -9,7 +9,18 @@
    names yet. Each screen moves over to these tokens (and index.css's
    equivalent rules get removed) as its own later step, not silently here. */
 
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Noto+Sans+Myanmar:wght@400;700&family=Noto+Sans+Arabic:wght@400;700&display=swap');
+/* Day 24: self-hosted fonts (@fontsource, bundled by Vite) instead of
+   Google Fonts -- no request to Google per visitor, a stricter CSP, and the
+   app looks right offline. Each face is split by unicode-range, so a
+   browser only downloads the scripts it actually shows (Latin for
+   Manrope; Myanmar/Arabic only when that text is on screen). */
+@import '@fontsource/manrope/500.css';
+@import '@fontsource/manrope/700.css';
+@import '@fontsource/manrope/800.css';
+@import '@fontsource/noto-sans-myanmar/400.css';
+@import '@fontsource/noto-sans-myanmar/700.css';
+@import '@fontsource/noto-sans-arabic/400.css';
+@import '@fontsource/noto-sans-arabic/700.css';
 
 :root {
   /* Color */

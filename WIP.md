@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 24–25 — Next P1 features from the gap list
-**Step:** 3 — Self-host the fonts (steps 1–2 done)
+**Step:** — (steps 1–3 done; close pending)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -76,4 +76,9 @@ Step 1 plan — report groups and pages:
   username) and pages (hidden with a deactivated owner); vercel.json
   rewrites; backend 567/567 (share 13, 2 mutations caught); day19-share
   18/18 on the dist build.
-- Next: Step 3 — self-host the fonts.
+- Step 3 DONE: fonts self-hosted (@fontsource; unicode-range subsets),
+  CSP style-src/font-src now self only, fonts never inlined (vite
+  assetsInlineLimit), check-headers guards both; day19-share proves fonts
+  load from this site with no Google request; b15/b16/c3/a2/day10 + A3
+  EN/MY/AR green.
+- Next: Days 24–25 close (full browser run).

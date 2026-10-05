@@ -72,6 +72,19 @@ rewrites.forEach((r, i) => {
   if (catchAll !== -1 && i > catchAll) problems.push(`rewrite ${r.source} comes after the "/(.*)" catch-all, so it never applies.`);
 });
 
+// 2c. Day 24: fonts are self-hosted. font-src is 'self' only, so the built
+// CSS must not load fonts from elsewhere or inline them as data: URIs.
+const assetsDir = path.join(root, 'dist/assets');
+for (const file of fs.readdirSync(assetsDir).filter((f) => f.endsWith('.css'))) {
+  const css = fs.readFileSync(path.join(assetsDir, file), 'utf8');
+  if (/@import\s+url\(\s*['"]?https?:/i.test(css) || /fonts\.(googleapis|gstatic)\.com/i.test(css)) {
+    problems.push(`${file} loads fonts/styles from another site; fonts are self-hosted (@fontsource).`);
+  }
+  if (/url\(\s*['"]?data:(font|application\/(x-)?font)/i.test(css)) {
+    problems.push(`${file} inlines a font as a data: URI, which font-src 'self' blocks (see vite.config.js assetsInlineLimit).`);
+  }
+}
+
 // 3. The rest of the policy and the other headers.
 const must = {
   "default-src 'self'": (directives['default-src'] || []).join(' ') === "'self'",

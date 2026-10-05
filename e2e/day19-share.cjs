@@ -85,6 +85,27 @@ const asCrawler = (id, ua) => crawl(`/posts/${id}`, ua);
   await page.goto(`${WEB}/posts/${pub.id}`, { waitUntil: 'networkidle' });
   await page.getByText('Morning market in Yangon').first().waitFor({ timeout: 8000 }).catch(() => {});
   check('in the browser, the shared link opens the post in the app', (await page.getByText('Morning market in Yangon').count()) >= 1 && page.url() === `${WEB}/posts/${pub.id}`);
+
+  // Day 24: fonts are self-hosted -- they load from this site (under the
+  // strict CSP of this production build), and nothing goes to Google.
+  const fontCtx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await fontCtx.addInitScript(() => localStorage.setItem('lang', 'my'));
+  const fontPage = await fontCtx.newPage();
+  const external = [];
+  fontPage.on('request', (r) => { if (/fonts\.(googleapis|gstatic)\.com/.test(r.url())) external.push(r.url()); });
+  fontPage.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  await fontPage.goto(`${WEB}/welcome`, { waitUntil: 'networkidle' });
+  const fonts = await fontPage.evaluate(async () => {
+    await document.fonts.ready;
+    return {
+      manrope: document.fonts.check('700 16px Manrope'),
+      myanmar: document.fonts.check('400 16px "Noto Sans Myanmar"', 'မြန်မာ'),
+      loaded: [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/"/g, ''))
+    };
+  });
+  check('fonts: Manrope and Noto Sans Myanmar load from this site', fonts.manrope && fonts.myanmar && fonts.loaded.includes('Noto Sans Myanmar'), JSON.stringify(fonts));
+  check('fonts: no request to Google Fonts', external.length === 0, external.join(' '));
+  await fontCtx.close();
   await browser.close();
 
   console.log(results.join('\n'));
