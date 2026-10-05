@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { getOptimizedImageUrl, getPlaceholderImageUrl, isCloudinaryUrl } from '../../utils/cloudinaryImage';
+import { getOptimizedImageUrl, getPlaceholderImageUrl, getSrcSet, isCloudinaryUrl } from '../../utils/cloudinaryImage';
 import { DURATION_NORMAL, EASE_STANDARD } from '../../utils/motionTokens';
 import { useTranslation } from 'react-i18next';
 
@@ -11,7 +11,14 @@ import { useTranslation } from 'react-i18next';
 // same easing/duration tokens apply consistently across the Feed). Falls
 // back to a plain (still lazy-loaded) image for non-Cloudinary URLs, since
 // there's nothing to transform there.
-function ProgressiveImage({ src, alt, width = 640, aspectRatio = '4 / 3', className = '' }) {
+//
+// Day 27: also offers the image at several widths (srcset); `sizes` says how
+// wide it renders -- the app column is at most 480px -- so a phone gets a
+// sharp image for its pixel density and nobody downloads more than needed.
+const WIDTHS = [320, 480, 640, 960, 1440];
+const COLUMN_SIZES = '(max-width: 480px) 100vw, 480px';
+
+function ProgressiveImage({ src, alt, width = 640, sizes = COLUMN_SIZES, aspectRatio = '4 / 3', className = '' }) {
   const { t } = useTranslation();
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
@@ -42,8 +49,11 @@ function ProgressiveImage({ src, alt, width = 640, aspectRatio = '4 / 3', classN
       <motion.img
         className="feed-progressive-image-full"
         src={fullSrc}
+        srcSet={getSrcSet(src, WIDTHS) || undefined}
+        sizes={isCloudinaryUrl(src) ? sizes : undefined}
         alt={alt}
         loading="lazy"
+        decoding="async"
         onLoad={() => setLoaded(true)}
         onError={() => setErrored(true)}
         initial={false}

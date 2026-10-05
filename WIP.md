@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 27 — Performance
-**Step:** 1 — DB indexes and query shapes (day27-perf suite, migration 039)
+**Step:** 2 — responsive images + lazy loading (step 1 committed c9eb578)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -70,3 +70,10 @@ step 3: bundle check.
   ASC order mutation fails hashtagPage.test.js.
 - VERIFY green: day27-perf 30/30, b7, b8, b9, b10, day23, a2; backend
   570/570; rehearsal 015->039 passed.
+- Step 2: ui/Avatar fetches a square crop at 1x/2x/3x of its size, lazy
+  (it served full uploads before -- most avatars use it); feed images
+  have a srcset 320-1440 with sizes for the 480px column; story, DM
+  photo, search and admin images are sized. Tests:
+  cloudinaryImage.test.jsx (5; lazy-removal mutation caught). Vitest
+  65/65, eslint clean, build OK; b2, b3, b6, b9, b12, a2, day26, a3
+  EN/MY/AR green; backend 570/570.

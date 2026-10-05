@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import api, { resolveImageUrl } from './api';
+import { getOptimizedImageUrl } from './utils/cloudinaryImage';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { IconButton, Avatar } from './components/ui';
@@ -166,7 +167,7 @@ function Search() {
                     <p className="search-post-content">
                       <Link to={`/posts/${p.id}`} className="search-post-link" dir="auto">{p.content}</Link>
                     </p>
-                    {p.image_url && <img className="image-preview" src={resolveImageUrl(p.image_url)} alt={t('search.attachment')} />}
+                    {p.image_url && <img className="image-preview" src={getOptimizedImageUrl(resolveImageUrl(p.image_url), 960)} alt={t('search.attachment')} loading="lazy" decoding="async" />}
                     <span className="card-row-meta">{formatDate(p.created_at)}</span>
                   </div>
                 </li>

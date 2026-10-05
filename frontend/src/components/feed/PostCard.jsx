@@ -12,7 +12,6 @@ import { useLikeToggle } from '../../hooks/useLikeToggle';
 import { useBookmarkToggle } from '../../hooks/useBookmarkToggle';
 import { useComments } from '../../hooks/useComments';
 import { resolveImageUrl } from '../../api';
-import { getOptimizedImageUrl } from '../../utils/cloudinaryImage';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import { firstLink } from '../../utils/links';
 import { updatePost, updatePostVisibility } from '../../services/postService';
@@ -156,9 +155,8 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
   // new components/ui/Avatar doesn't (it just renders whatever `src` it's
   // given, or falls back to initials), so it's done here instead --
   // otherwise a legacy relative /uploads/... avatar path would render
-  // broken, and a real Cloudinary one would request a full-size image
-  // instead of one sized for a 42px avatar.
-  const avatarSrc = post.avatar_url ? getOptimizedImageUrl(resolveImageUrl(post.avatar_url), 84) : undefined;
+  // broken. (Sizing a Cloudinary avatar is ui/Avatar's job since Day 27.)
+  const avatarSrc = post.avatar_url ? resolveImageUrl(post.avatar_url) : undefined;
   // B14: a page post is shown as the page (the owner stays in post.username
   // for things like Report/Block, which act on the real person).
   const page = post.page || null;

@@ -6,6 +6,7 @@ import { arrowStep } from '../../utils/direction';
 import { useTranslation } from 'react-i18next';
 import { Avatar, ConfirmDialog } from '../ui';
 import { resolveImageUrl } from '../../api';
+import { getOptimizedImageUrl, getSrcSet } from '../../utils/cloudinaryImage';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import './StoryViewer.css';
 
@@ -136,7 +137,11 @@ function StoryViewer({ tray, startGroupIndex, onClose, onViewed, onDelete }) {
         <img
           key={story.id}
           className={clsx('story-viewer-image', loaded && 'is-loaded')}
-          src={resolveImageUrl(story.media_url)}
+          // Day 27: sized for the frame (at most 480px wide), not the upload.
+          src={getOptimizedImageUrl(resolveImageUrl(story.media_url), 1080)}
+          srcSet={getSrcSet(resolveImageUrl(story.media_url), [480, 720, 1080, 1440]) || undefined}
+          sizes="(max-width: 480px) 100vw, 480px"
+          decoding="async"
           alt={t('stories.alt', { n: storyIndex + 1, count: group.stories.length, name: group.username })}
           onLoad={() => setLoaded(true)}
           onError={() => setLoaded(true)}

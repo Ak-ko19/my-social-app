@@ -1,3 +1,4 @@
+import { getOptimizedImageUrl, getSrcSet } from '../../utils/cloudinaryImage';
 import { memo, useEffect, useState } from 'react';
 import { CornerUpLeft, Flag, Pencil } from 'lucide-react';
 import MessageStatusIcon from './MessageStatusIcon';
@@ -151,7 +152,16 @@ function MessageBubble({
     body = (
       <>
         <a href={message.media_url} target="_blank" rel="noreferrer" className="messages-image-link" aria-label={t('messages.openPhoto')}>
-          <img src={message.media_url} alt={message.content ? t('messages.preview.photoCaption', { caption: message.content }) : t('messages.preview.photo')} className="messages-image" loading="lazy" />
+          {/* Day 27: at most 260px wide on screen; the link still opens the original. */}
+          <img
+            src={getOptimizedImageUrl(message.media_url, 520)}
+            srcSet={getSrcSet(message.media_url, [260, 520, 780]) || undefined}
+            sizes="260px"
+            alt={message.content ? t('messages.preview.photoCaption', { caption: message.content }) : t('messages.preview.photo')}
+            className="messages-image"
+            loading="lazy"
+            decoding="async"
+          />
         </a>
         {message.content && <p className="messages-bubble-text" dir="auto">{renderTextWithLinks(message.content, { tags: false })}</p>}
       </>

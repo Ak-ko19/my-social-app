@@ -35,3 +35,20 @@ export function getOptimizedImageUrl(url, width) {
 export function getPlaceholderImageUrl(url) {
   return withTransformation(url, 'f_auto,q_1,w_32,e_blur:1000');
 }
+
+// Day 27: a `srcset` of the same image at several widths, so the browser
+// downloads the one that fits the screen (a 390px phone at 3x gets ~1170px,
+// a desktop column 480px at 1x). null for non-Cloudinary URLs.
+export function getSrcSet(url, widths) {
+  if (!isCloudinaryUrl(url)) return null;
+  return widths.map((w) => `${getOptimizedImageUrl(url, w)} ${w}w`).join(', ');
+}
+
+// Day 27: a square, centre-cropped avatar at `size` CSS pixels, with 2x and
+// 3x versions for sharp screens (an uploaded avatar can be several MB).
+// Returns { src, srcSet }; non-Cloudinary URLs come back unchanged.
+export function getAvatarSources(url, size) {
+  if (!isCloudinaryUrl(url)) return { src: url, srcSet: undefined };
+  const at = (px) => withTransformation(url, `f_auto,q_auto,w_${px},h_${px},c_fill`);
+  return { src: at(size * 2), srcSet: `${at(size)} 1x, ${at(size * 2)} 2x, ${at(size * 3)} 3x` };
+}

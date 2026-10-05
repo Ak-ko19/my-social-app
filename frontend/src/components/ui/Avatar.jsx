@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { getAvatarSources } from '../../utils/cloudinaryImage';
 
 // Circular avatar. Falls back to initials-on-color when no `src` is given.
 // `ring` is either a boolean (true -> var(--color-accent)) or any CSS color
@@ -6,7 +7,8 @@ import clsx from 'clsx';
 // the ring) so it reads as a ring around the circle rather than just a
 // thicker border -- the "active story" look. `badge` is any node (e.g. a
 // lucide <Plus/>) overlaid bottom-right, for things like the "+" on
-// "Your story".
+// "Your story". Day 27: a Cloudinary `src` is fetched cropped to `size`
+// (1x/2x/3x) and lazily, not as the original upload.
 function Avatar({
   src,
   alt = '',
@@ -33,7 +35,17 @@ function Avatar({
       }}
       {...rest}
     >
-      {src ? <img className="ui-avatar-image" src={src} alt={alt} /> : initials}
+      {src ? (
+        <img
+          className="ui-avatar-image"
+          {...getAvatarSources(src, size)}
+          alt={alt}
+          width={size}
+          height={size}
+          loading="lazy"
+          decoding="async"
+        />
+      ) : initials}
       {badge && (
         <span className="ui-avatar-badge" aria-hidden="true">
           {badge}

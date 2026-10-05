@@ -1,3 +1,4 @@
+import { getOptimizedImageUrl } from '../utils/cloudinaryImage';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ShieldAlert } from 'lucide-react';
@@ -72,7 +73,7 @@ function ReportedText({ report }) {
       )}
       {report.message_type === 'image' && report.message_media_url && (
         <a href={report.message_media_url} target="_blank" rel="noreferrer">
-          <img className="admin-report-image" src={report.message_media_url} alt={t('admin.reportedPhoto')} loading="lazy" />
+          <img className="admin-report-image" src={getOptimizedImageUrl(report.message_media_url, 640)} decoding="async" alt={t('admin.reportedPhoto')} loading="lazy" />
         </a>
       )}
       {text && <p className="admin-report-quote" dir="auto">“{text}”</p>}
