@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 30 — GO LIVE #4 (owner) + fix top AUDIT_REPORT_2 items (not started)
-**Step:** —
+**Day:** 30 — GO LIVE #4 (owner, skipped) + fix top AUDIT_REPORT_2 items
+**Step:** 1 — N1 route guard
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -58,7 +58,26 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-(written at the start of each step)
+Day 30: deploying is an owner action (LATER #2); the owner-free part
+is AUDIT_REPORT_2 N1, N4, N2.
+Step 1 (N1): components/auth/RequireAuth.jsx -- no token -> <Navigate
+to="/login" replace state={{ from }}> (router state, not a URL param, so
+no open redirect; from must start with a single /). Wrap the account-only
+routes: /menu, /settings and its sub-screens except /settings/language
+(logged-out language pick is supported since Day 16), /saved,
+/create-post, /edit-profile, /notifications, /messages/*, /admin,
+/groups, /groups/new, /groups/:id/manage, /pages, /pages/new,
+/pages/:id/edit. Public browsing stays open: /posts/:id, /profile/:id,
+/pages/:id, /hashtag/:tag, /groups/:id, /explore, /search, legal, auth
+screens, /verify-email/:token. Login returns to that page after logging in
+(a reactivation still goes Home for its banner). Also fixes the Day 16
+note: a forced logout on a protected screen now lands on /login.
+Tests: Vitest (guard, safe return path), browser suite day30-guard.
 
 ## Progress
-(nothing in progress — Day 29 closed 2026-10-05)
+- Step 1 done: RequireAuth on 22 routes, safeReturnPath, Login returns
+  to the saved page. Vitest 70/70 (guard + return path; always-render
+  mutation caught). day30-guard 9/9 (22 routes -> Login with 0 x 401,
+  14 public stay open, return after login, revoked session -> Login).
+  backend 578/578; a2, b9, b11, b12, b13, b14, c2, c3, day5, day8 x2,
+  day12-review, day16 green.

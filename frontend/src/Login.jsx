@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useFormGuard } from './hooks/useFormGuard';
 import Logo from './components/layout/Logo';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import { serverErrorText } from './utils/serverError';
 import { formatDate } from './i18n';
 import { syncLanguageAtLogin } from './utils/languageChoice';
 import { notifyAuthChange } from './hooks/useAuth';
+import { safeReturnPath } from './utils/returnPath';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -14,6 +15,8 @@ function Login() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  // Day 30: the page RequireAuth sent us from, to return to after login.
+  const returnTo = safeReturnPath(useLocation().state?.from);
   const { t } = useTranslation();
   // Honeypot only: login has no minimum fill time (password managers).
   const { honeypot, guardedPost } = useFormGuard();
@@ -24,9 +27,9 @@ function Login() {
   // mount, before the form ever renders.
   useEffect(() => {
     if (localStorage.getItem('token')) {
-      navigate('/');
+      navigate(returnTo, { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, returnTo]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -54,7 +57,9 @@ function Login() {
       // A deactivated account reactivates on this exact login (see backend
       // authController.login) -- passed via router state (not a query
       // param) so it's a one-time signal, not something a refresh replays.
-      navigate('/', response.data.reactivated ? { state: { reactivated: true } } : undefined);
+      // A reactivation goes Home, where its banner is shown.
+      if (response.data.reactivated) navigate('/', { state: { reactivated: true } });
+      else navigate(returnTo, { replace: true });
     })
     .catch((err) => {
       console.error(err);
