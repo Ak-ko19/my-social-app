@@ -525,7 +525,20 @@
       "failed": "Couldn't change notifications for this chat. Please try again."
     },
     "react": "React",
-    "reactionsSummary": "Reactions — {{list}}. Press to choose yours"
+    "reactionsSummary": "Reactions — {{list}}. Press to choose yours",
+    "forward": "Forward",
+    "forwarded": "Forwarded",
+    "forwardTitle": "Forward to",
+    "searchChats": "Search chats",
+    "forwardLimit": "You can pick up to {{max}} chats.",
+    "forwardNoChats": "No chats to show.",
+    "forwardLoadFailed": "Couldn't load your chats. Please try again.",
+    "forwardSend": "Send ({{count}})",
+    "forwardSending": "Sending…",
+    "forwardFailed": "Couldn't forward the message. Please try again.",
+    "forwardFailedSome": "Couldn't forward to: {{names}}",
+    "forwardedTo_one": "Forwarded to {{count}} chat",
+    "forwardedTo_other": "Forwarded to {{count}} chats"
   },
   "members": {
     "loadFailed": "Could not load the people you follow",

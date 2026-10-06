@@ -1117,3 +1117,112 @@
   margin-bottom: 0;
   margin-top: 4px;
 }
+
+/* Day 32: forwarding. */
+.messages-forwarded-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+  font-size: 12px;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.messages-forward-status {
+  margin: 0;
+  padding: var(--space-xs) var(--space-sm);
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.forward-sheet-title {
+  margin: 0 0 var(--space-sm);
+  font-size: 17px;
+}
+
+.forward-sheet-search {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font: inherit;
+}
+
+.forward-sheet-hint {
+  margin: var(--space-xs) 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.forward-sheet-error {
+  margin: var(--space-xs) 0;
+  font-size: 13px;
+  color: var(--color-error, #b91c1c);
+}
+
+.forward-sheet-list {
+  max-height: 45vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.forward-sheet-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 52px;
+  padding: 0 var(--space-xs);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.forward-sheet-row:hover {
+  background: var(--color-surface-muted);
+}
+
+.forward-sheet-row input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--color-primary);
+}
+
+.forward-sheet-row.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Not stretched: a Latin name in an RTL list (dir=auto) would otherwise
+   sit at the far edge, away from its checkbox. */
+.forward-sheet-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-primary);
+}
+
+.forward-sheet-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.forward-sheet-actions .btn {
+  flex: 1;
+}
+
+/* The shared sheet has no side padding (ActionSheet rows run edge to
+   edge); this one holds a form, so it gets its own, plus the phone's
+   bottom safe area. */
+.ui-modal-panel.forward-sheet {
+  padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
+}

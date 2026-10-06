@@ -427,3 +427,6 @@ CREATE TABLE message_reactions (
   PRIMARY KEY (message_id, user_id)
 );
 CREATE INDEX idx_message_reactions_user ON message_reactions (user_id);
+
+-- Day 32 (migration 041): forwarded messages are labelled.
+ALTER TABLE messages ADD COLUMN is_forwarded BOOLEAN NOT NULL DEFAULT false;

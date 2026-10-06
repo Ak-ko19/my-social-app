@@ -16,7 +16,7 @@ For EVERY step, follow this cycle:
    - re-read your whole diff as a strict reviewer against the Quality bar.
 4. FIX — Fix everything the verification found, then VERIFY again. Repeat until clean.
 5. SAVE — Commit with a clear message, push to dev, tick the checkbox, update WIP.md ("step done").
-6. PAUSE — Stop and take stock before moving on: print a short step report (what was built, what was verified, any concerns), re-read MONTH_PLAN.md and the next step, and only then start the next step's PLAN.
+6. PAUSE — Take stock before moving on: print a short step report (what was built, what was verified, any concerns), re-read MONTH_PLAN.md and the next step, then start the next step's PLAN right away, in the same turn. PAUSE does NOT mean ending the turn: keep going step after step until the owner presses Esc.
 
 Commit and push ONLY at step 5 (once per finished step). Do not commit half-finished work.
 

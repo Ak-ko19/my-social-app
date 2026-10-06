@@ -144,3 +144,12 @@ export function setMessageReactionRest(conversationId, messageId, reaction, toke
   const request = reaction ? api.put(url, { reaction }, authHeaders(token)) : api.delete(url, authHeaders(token));
   return request.then((res) => res.data);
 }
+
+// Day 32: forward a message to up to 5 chats. Resolves to { forwarded,
+// failed } (201: at least one went out); rejects when every chat refused,
+// with the same body on err.response.data.
+export function forwardMessageRest(conversationId, messageId, conversationIds, token) {
+  return api
+    .post(`/conversations/${conversationId}/messages/${messageId}/forward`, { conversationIds }, authHeaders(token))
+    .then((res) => res.data);
+}

@@ -549,7 +549,24 @@
       "failed": "تعذّر تغيير إشعارات هذه المحادثة. يرجى المحاولة مجددًا."
     },
     "react": "تفاعل",
-    "reactionsSummary": "التفاعلات — {{list}}. اضغط لاختيار تفاعلك"
+    "reactionsSummary": "التفاعلات — {{list}}. اضغط لاختيار تفاعلك",
+    "forward": "إعادة توجيه",
+    "forwarded": "مُعاد توجيهها",
+    "forwardTitle": "إعادة التوجيه إلى",
+    "searchChats": "البحث في المحادثات",
+    "forwardLimit": "يمكنك اختيار ما يصل إلى {{max}} محادثات.",
+    "forwardNoChats": "لا توجد محادثات لعرضها.",
+    "forwardLoadFailed": "تعذّر تحميل محادثاتك. يرجى المحاولة مرة أخرى.",
+    "forwardSend": "إرسال ({{count}})",
+    "forwardSending": "جارٍ الإرسال…",
+    "forwardFailed": "تعذّرت إعادة توجيه الرسالة. يرجى المحاولة مرة أخرى.",
+    "forwardFailedSome": "تعذّرت إعادة التوجيه إلى: {{names}}",
+    "forwardedTo_zero": "لم تُعَد إعادة التوجيه إلى أي محادثة",
+    "forwardedTo_one": "تمت إعادة التوجيه إلى محادثة واحدة",
+    "forwardedTo_two": "تمت إعادة التوجيه إلى محادثتين",
+    "forwardedTo_few": "تمت إعادة التوجيه إلى {{count}} محادثات",
+    "forwardedTo_many": "تمت إعادة التوجيه إلى {{count}} محادثة",
+    "forwardedTo_other": "تمت إعادة التوجيه إلى {{count}} محادثة"
   },
   "members": {
     "loadFailed": "تعذّر تحميل الأشخاص الذين تتابعهم",

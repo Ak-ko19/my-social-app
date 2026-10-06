@@ -6,7 +6,7 @@ import { useConversationMessages } from './hooks/useConversationMessages';
 import { usePresenceEvents } from './hooks/usePresenceEvents';
 import { useTypingIndicator } from './hooks/useTypingIndicator';
 import { VoicePlaybackProvider } from './context/VoicePlaybackProvider';
-import { fetchConversations, fetchConversationDetails, muteConversation } from './services/messageService';
+import { fetchConversations, fetchConversationDetails, forwardMessageRest, muteConversation } from './services/messageService';
 import { formatRelativeTime } from './utils/formatRelativeTime';
 import Avatar from './components/common/Avatar';
 import { Bell, BellOff, ChevronLeft, Users } from 'lucide-react';
@@ -17,6 +17,7 @@ import MessageThreadSkeleton from './components/messages/MessageThreadSkeleton';
 import ConversationListErrorState from './components/messages/ConversationListErrorState';
 import ConnectionBanner from './components/messages/ConnectionBanner';
 import ReportDialog from './components/feed/ReportDialog';
+import ForwardSheet from './components/messages/ForwardSheet';
 import './components/messages/Messages.css';
 import './components/feed/Feed.css';
 import { useTranslation } from 'react-i18next';
@@ -75,6 +76,16 @@ function Conversation() {
   // Day 12: the message being reported (someone else's), or null.
   const [reporting, setReporting] = useState(null);
   const handleReport = useCallback((message) => setReporting(message), []);
+  // Day 32: forwarding -- the message being forwarded, and a short
+  // confirmation ("Forwarded to 2 chats") shown for a few seconds.
+  const [forwarding, setForwarding] = useState(null);
+  const [forwardStatus, setForwardStatus] = useState('');
+  const handleForward = useCallback((message) => setForwarding(message), []);
+  useEffect(() => {
+    if (!forwardStatus) return undefined;
+    const id = setTimeout(() => setForwardStatus(''), 4000);
+    return () => clearTimeout(id);
+  }, [forwardStatus]);
   // B10: conversation details (type, group name, members + roles). Fetched
   // for every conversation (cheap); groups use it for the header, sender
   // names and typing names. Refetched when the group changes (group_updated).
@@ -390,6 +401,7 @@ function Conversation() {
                 onCancelEdit={handleCancelEdit}
                 onReport={handleReport}
                 onReact={reactToMessage}
+                onForward={handleForward}
                 currentUserId={userId}
               />
             ))}
@@ -417,6 +429,19 @@ function Conversation() {
         replyToLabel={replyTo ? replyAuthorLabel(replyTo.sender_id) : ''}
         onCancelReply={() => setReplyTo(null)}
       />
+      {forwardStatus && (
+        <p className="messages-forward-status" role="status">{forwardStatus}</p>
+      )}
+      {forwarding && (
+        <ForwardSheet
+          key={forwarding.id}
+          open
+          onClose={() => setForwarding(null)}
+          token={token}
+          onSend={(ids) => forwardMessageRest(conversationId, forwarding.id, ids, token)}
+          onDone={(count) => setForwardStatus(t('messages.forwardedTo', { count }))}
+        />
+      )}
       {reporting && (
         <ReportDialog
           open

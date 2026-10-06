@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 31-32 — Messaging upgrade
-**Step:** 1 — message reactions
+**Step:** 2 — forward a message (step 1 committed e8ea677)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -60,6 +60,24 @@
 ## Plan
 Reply, edit (15 min) and unsend already exist (B9, dm/dmExtras tests):
 verified, not rebuilt. Missing: reactions (step 1), forward (step 2).
+Step 2 (forward, like Messenger/WhatsApp): POST
+/conversations/:id/messages/:messageId/forward { conversationIds } (1-5,
+unique). Forwarder must be in the source chat (403) and the message must
+be there and not unsent (404/409). Each target goes through createMessage
+(participant, block, send rate limit, push) -- per-target result, so one
+refused chat does not fail the rest: { forwarded: [...], failed: [{
+conversationId, status, error }] }. Migration 041 messages.is_forwarded
+(shown as "Forwarded"; who wrote the original is NOT revealed, like
+WhatsApp). Text keeps its content; photo/voice files on our Cloudinary are
+COPIED per target (uploader.upload from the URL) so unsend/account
+deletion/orphan scan stay correct without reference counting; other URLs
+(legacy local) reused. Reply link not carried. new_message broadcast per
+target. Export includes is_forwarded. UI: Forward button in the bubble
+actions -> sheet with your chats (search, pick up to 5, Send), result
+line ("Forwarded to N chats" / which failed), "Forwarded" label on
+bubbles; EN/MY/AR, dark, RTL, keyboard. Tests: jest (success, media copy,
+limits, 403/404/409, block in one target, rate limit), Vitest (sheet),
+e2e day31-forward.
 Step 1 (like Messenger): one reaction per person per message, the same
 6 as posts. Migration 040 message_reactions (PK message+user, FK
 cascades, CHECK, index user_id). PUT/DELETE
@@ -89,3 +107,13 @@ broadcast), Vitest (chips/picker), browser suite day31-reactions
   mutations caught), MessageReactions.test.jsx 6, day31-reactions 18.
   backend 587/587, Vitest 76/76, rehearsal 015->040 (86 indexes),
   b9, b10, day12 x2, day23, day26, day28 green.
+- Step 2 done: migration 041 messages.is_forwarded; POST .../forward
+  (1-5 chats, per-chat result; source participant 403, not there 404,
+  unsent 409; each target through createMessage: participant, block,
+  send rate limit, push); media on our Cloudinary copied per forward.
+  UI: Forward button, ForwardSheet (search, up to 5, partial results),
+  "Forwarded" label, status line. Browser suite found: sheet had no side
+  padding; RTL names drifted from their checkbox -- both fixed.
+  messageForward.test.js 11 (copy + source-participant mutations
+  caught), ForwardSheet.test.jsx 6 (cap mutation caught), day32-forward
+  14. backend 598/598, Vitest 82/82, rehearsal 015->041.

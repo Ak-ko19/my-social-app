@@ -45,5 +45,7 @@ router.put('/conversations/:id/mute', authMiddleware, conversationController.mut
 // Day 31: react to a message (one reaction per person; DELETE removes it).
 router.put('/conversations/:id/messages/:messageId/reaction', authMiddleware, messageReactionLimiter, conversationController.setMessageReaction);
 router.delete('/conversations/:id/messages/:messageId/reaction', authMiddleware, messageReactionLimiter, conversationController.setMessageReaction);
+// Day 32: forward a message to up to 5 chats (each send is rate-limited per chat).
+router.post('/conversations/:id/messages/:messageId/forward', authMiddleware, conversationController.forwardMessage);
 
 module.exports = router;

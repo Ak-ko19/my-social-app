@@ -69,7 +69,7 @@ async function buildExport(userId) {
           JOIN users u ON u.id = other.user_id
           WHERE mine.user_id = $1 ORDER BY other.conversation_id, u.username`, [userId]),
     rows(`SELECT m.conversation_id, m.id, u.username AS sender, m.type, m.content, m.media_url,
-            m.duration_seconds, m.reply_to_message_id, m.created_at, m.edited_at, m.deleted_at
+            m.duration_seconds, m.reply_to_message_id, m.is_forwarded, m.created_at, m.edited_at, m.deleted_at
           FROM messages m
           JOIN conversation_participants mine ON mine.conversation_id = m.conversation_id AND mine.user_id = $1
           JOIN users u ON u.id = m.sender_id

@@ -34,6 +34,17 @@ function setupTestApp() {
               public_id: `${folder}/img${seq}`
             });
           }
+        }),
+        // Day 32: forwarding copies a file from its URL (a new asset).
+        upload: jest.fn(async (url, options = {}) => {
+          seq += 1;
+          const type = options.resource_type || 'image';
+          const folder = options.folder || 'test';
+          const ext = type === 'video' ? 'mp3' : 'jpg';
+          return {
+            secure_url: `https://res.cloudinary.com/test/${type}/upload/v1700000000/${folder}/img${seq}.${ext}`,
+            public_id: `${folder}/img${seq}`
+          };
         })
       },
       api: {

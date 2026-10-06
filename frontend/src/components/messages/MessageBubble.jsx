@@ -1,6 +1,6 @@
 import { getOptimizedImageUrl, getSrcSet } from '../../utils/cloudinaryImage';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { CornerUpLeft, Flag, Pencil, SmilePlus } from 'lucide-react';
+import { CornerUpLeft, Flag, Forward, Pencil, SmilePlus } from 'lucide-react';
 import MessageStatusIcon from './MessageStatusIcon';
 import { MessageReactionChips, MessageReactionPicker } from './MessageReactions';
 import VoiceMessagePlayer from './VoiceMessagePlayer';
@@ -83,6 +83,7 @@ function MessageBubble({
   onCancelEdit,
   onReport,
   onReact,
+  onForward,
   currentUserId
 }) {
   const { t } = useTranslation();
@@ -111,6 +112,8 @@ function MessageBubble({
   // Day 31: reactions (see MessageReactions.jsx). replyAuthorLabel doubles
   // as "who is this" for the reactions label ("You", a name, or "them").
   const canReact = !isDeleted && isPersisted && Boolean(onReact);
+  // Day 32: forward to other chats (ForwardSheet, opened by the parent).
+  const canForward = !isDeleted && isPersisted && Boolean(onForward);
   const reactions = isDeleted ? [] : message.reactions || [];
   const myReaction = reactions.find((x) => x.user_id === currentUserId)?.reaction || null;
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -222,6 +225,12 @@ function MessageBubble({
         )}
         {/* B10: in a group, others' bubbles say who sent them. */}
         {senderName && <span className="messages-sender-name">{senderName}</span>}
+        {message.is_forwarded && !isDeleted && (
+          <span className="messages-forwarded-label">
+            <Forward size={12} aria-hidden="true" />
+            {t('messages.forwarded')}
+          </span>
+        )}
         {message.reply_to && !isDeleted && (
           <div className="messages-reply-quote">
             <span className="messages-reply-quote-author">{replyAuthorLabel(message.reply_to.sender_id)}</span>
@@ -277,7 +286,7 @@ function MessageBubble({
         )}
         <MessageReactionChips reactions={reactions} nameOf={replyAuthorLabel} onOpen={canReact ? () => setPickerOpen(true) : undefined} />
       </div>
-      {(canReply || canEdit || canReport || canReact) && !isEditing && (
+      {(canReply || canEdit || canReport || canReact || canForward) && !isEditing && (
         <div className="messages-bubble-actions">
           {canReact && (
             <button
@@ -295,6 +304,11 @@ function MessageBubble({
           {canReply && (
             <button type="button" className="messages-action-btn" onClick={() => onReply(message)} aria-label={t('messages.replyToMessage')}>
               <CornerUpLeft size={14} aria-hidden="true" />
+            </button>
+          )}
+          {canForward && (
+            <button type="button" className="messages-action-btn" onClick={() => onForward(message)} aria-label={t('messages.forward')} title={t('messages.forward')}>
+              <Forward size={14} aria-hidden="true" />
             </button>
           )}
           {canEdit && (

@@ -9,7 +9,8 @@ const db = require('../db');
 const { pushNewMessage } = require('./pushService');
 const { isRateLimited } = require('./rateLimiter');
 const blockService = require('./blockService');
-const { deleteMedia } = require('./mediaCleanupService');
+const { deleteMedia, cloudinaryAsset } = require('./mediaCleanupService');
+const cloudinary = require('../config/cloudinary');
 const { isValidReaction } = require('./reactionService');
 
 const MAX_MESSAGE_LENGTH = 5000;
@@ -132,7 +133,7 @@ function validateClientTempId(clientTempId) {
 // (e.g. one enforcing participation and the other forgetting to). Callers
 // are expected to have already done their own type-specific validation
 // (content shape, media fields, etc.) before reaching this.
-async function createMessage({ conversationId, senderId, type, content, mediaUrl, durationSeconds, clientTempId, replyToMessageId = null }) {
+async function createMessage({ conversationId, senderId, type, content, mediaUrl, durationSeconds, clientTempId, replyToMessageId = null, isForwarded = false }) {
   // Room membership alone is never trusted as authorization -- a socket
   // could theoretically still be joined to a stale room, so every write
   // re-checks conversation_participants directly.
@@ -151,10 +152,10 @@ async function createMessage({ conversationId, senderId, type, content, mediaUrl
   }
 
   const result = await db.query(
-    `INSERT INTO messages (conversation_id, sender_id, content, client_temp_id, type, media_url, duration_seconds, reply_to_message_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO messages (conversation_id, sender_id, content, client_temp_id, type, media_url, duration_seconds, reply_to_message_id, is_forwarded)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING *`,
-    [conversationId, senderId, content ?? null, clientTempId || null, type, mediaUrl || null, durationSeconds ?? null, replyToMessageId]
+    [conversationId, senderId, content ?? null, clientTempId || null, type, mediaUrl || null, durationSeconds ?? null, replyToMessageId, isForwarded]
   );
   // Day 22: a push to participants who aren't in the app right now.
   pushNewMessage({ conversationId, senderId });
@@ -414,6 +415,86 @@ async function attachReplyPreviews(conversationId, rows) {
   });
 }
 
+// Day 32: forward a message to up to MAX_FORWARD_TARGETS chats. Each copy
+// is a new message from the forwarder (labelled is_forwarded; who wrote the
+// original is not carried over), sent through createMessage, so every
+// target gets the same checks as a normal send -- being in it, blocks, the
+// send rate limit -- and a push. Targets succeed or fail independently.
+const MAX_FORWARD_TARGETS = 5;
+
+// A photo or voice note on our Cloudinary is copied for each forward, so
+// every message owns its file: unsending one, deleting an account or the
+// orphan scan never breaks another. Anything else (an old local path) is
+// never deleted by us, so it is reused as-is.
+async function copyMediaForForward(url, type) {
+  if (!url || !cloudinaryAsset(url)) return url;
+  const result = await cloudinary.uploader.upload(url, {
+    folder: type === 'voice' ? 'voice-messages' : 'message-images',
+    resource_type: type === 'voice' ? 'video' : 'image'
+  });
+  return result.secure_url;
+}
+
+function forwardFailure(err) {
+  if (err instanceof NotParticipantError) return { status: 403, error: err.message };
+  if (err instanceof BlockedError) return { status: 403, error: err.message };
+  if (err instanceof RateLimitError) return { status: 429, error: err.message };
+  return { status: 502, error: 'Forwarding to this chat failed. Please try again.' };
+}
+
+async function forwardMessage({ conversationId, messageId, userId, targetIds }) {
+  const convId = parseInt(conversationId, 10);
+  const msgId = parseInt(messageId, 10);
+  if (isNaN(convId) || isNaN(msgId)) {
+    throw new MessageValidationError('Invalid conversationId or messageId');
+  }
+  if (!Array.isArray(targetIds) || targetIds.length === 0) {
+    throw new MessageValidationError('Choose at least one chat');
+  }
+  const targets = [...new Set(targetIds.map(Number))];
+  if (targets.some((id) => !Number.isInteger(id) || id <= 0)) {
+    throw new MessageValidationError('Invalid chat id');
+  }
+  if (targets.length > MAX_FORWARD_TARGETS) {
+    throw new MessageValidationError(`You can forward to up to ${MAX_FORWARD_TARGETS} chats at once`);
+  }
+  if (!(await isParticipant(convId, userId))) {
+    throw new NotParticipantError();
+  }
+  const found = await db.query('SELECT * FROM messages WHERE id = $1 AND conversation_id = $2', [msgId, convId]);
+  if (found.rows.length === 0) {
+    throw new MessageNotFoundError();
+  }
+  const original = found.rows[0];
+  if (original.deleted_at) {
+    throw new NotEditableError("A deleted message can't be forwarded");
+  }
+
+  const forwarded = [];
+  const failed = [];
+  for (const targetId of targets) {
+    try {
+      // Checked before copying any file, so a refused chat costs nothing.
+      if (!(await isParticipant(targetId, userId))) throw new NotParticipantError();
+      await assertNotBlocked(targetId, userId);
+      const mediaUrl = await copyMediaForForward(original.media_url, original.type);
+      const message = await createMessage({
+        conversationId: targetId,
+        senderId: userId,
+        type: original.type,
+        content: original.content,
+        mediaUrl,
+        durationSeconds: original.duration_seconds,
+        isForwarded: true
+      });
+      forwarded.push({ ...message, reactions: [] });
+    } catch (err) {
+      failed.push({ conversationId: targetId, ...forwardFailure(err) });
+    }
+  }
+  return { forwarded, failed };
+}
+
 // B9 image messages. mediaUrl comes from the caller's Cloudinary upload
 // (same split as sendVoiceMessage: this only validates and persists).
 // content is an optional caption.
@@ -561,6 +642,8 @@ module.exports = {
   attachReplyPreviews,
   attachReactions,
   setReaction,
+  forwardMessage,
+  MAX_FORWARD_TARGETS,
   markDelivered,
   markRead,
   deleteMessage,

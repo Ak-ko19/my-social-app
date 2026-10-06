@@ -490,6 +490,36 @@ async function setMessageReaction(req, res) {
   }
 }
 
+// Day 32: POST /conversations/:id/messages/:messageId/forward
+// { conversationIds: [..] } -- forward a message to up to 5 of your chats.
+// Each chat succeeds or fails on its own: { forwarded: [messages], failed:
+// [{ conversationId, status, error }] }. 201 when at least one went out;
+// otherwise the first failure's status.
+async function forwardMessage(req, res) {
+  try {
+    const result = await messageService.forwardMessage({
+      conversationId: req.params.id,
+      messageId: req.params.messageId,
+      userId: req.userId,
+      targetIds: req.body?.conversationIds
+    });
+    for (const message of result.forwarded) {
+      try {
+        getIO().to(`conv_${message.conversation_id}`).emit('new_message', message);
+      } catch (err) {
+        logger.error('socket emit failed', { event: 'new_message', err });
+      }
+    }
+    res.status(result.forwarded.length > 0 ? 201 : result.failed[0].status).json(result);
+  } catch (err) {
+    if (err instanceof messageService.MessageValidationError) return res.status(400).send(err.message);
+    if (err instanceof messageService.NotParticipantError) return res.status(403).send(err.message);
+    if (err instanceof messageService.MessageNotFoundError) return res.status(404).send(err.message);
+    if (err instanceof messageService.NotEditableError) return res.status(409).send(err.message);
+    sendServerError(res, err, 'Forwarding failed. Please try again later.');
+  }
+}
+
 // Day 23: PUT /conversations/:id/mute { duration: '8h' | '1w' | 'always' | null }
 // -- no message notifications from this chat for that long (null = unmute).
 // Only for people in the conversation; anyone else gets the same 404 as a
@@ -530,5 +560,6 @@ module.exports = {
   sendVoiceMessage,
   deleteMessage,
   markConversationRead,
-  setMessageReaction
+  setMessageReaction,
+  forwardMessage
 };
