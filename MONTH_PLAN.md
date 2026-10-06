@@ -200,7 +200,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 36 — Profile upgrade
 - [x] Cover photo, links, joined date, pinned post. *(All four built — see Progress Log.)*
 ### Day 37–38 — Friend requests (if missing)
-- [ ] Send/accept/decline/cancel, friends list, mutual friends.
+- [x] Send/accept/decline/cancel, friends list, mutual friends. *(Requests existed; friends = mutual follows, lists and mutual friends built — see Progress Log.)*
 ### Day 39 — People you may know
 - [ ] Suggestions from mutual follows/friends; no external services.
 ### Day 40–41 — Explore page
@@ -1258,3 +1258,34 @@ Build every feature the way a senior engineer at a top social media company woul
   - Rehearsal 015 → 045.
   - Full browser run: all 46 suites (new: day36-profile, day36-cover,
     day36-pinned) + A3 EN/MY/AR green.
+
+### 2026-10-06 — Days 37–38: Friends
+- **Already built, verified:** send / accept / decline / cancel exist as
+  follow requests to private accounts (cancel = unfollow while pending;
+  follow.test.js, E2E b11/a2).
+- **Better approach than a second relationship:**
+  - Friends = people who follow each other (both follows accepted),
+    like Instagram/X "mutuals".
+  - There's one graph, the one privacy, feeds, blocks and suggestions
+    already use. A separate friendship table would duplicate every rule
+    and confuse "friend" with "follow".
+- **Backend (`c260c7b`):**
+  - `GET /users/:id/connections?type=friends|followers|following`: A-Z
+    pages, each row with the viewer's relation.
+  - `GET /users/:id/mutual-friends`: count plus a sample of 3.
+  - `friendsCount` added to the counts.
+  - Fixed: deactivated accounts were still listed and counted in
+    followers/following; now hidden everywhere.
+  - The perf suite covers the new endpoints.
+- **App (`07898b9`):**
+  - Counts link to a Connections screen (tabs, keyboard, Load more,
+    private explanation), public like profiles.
+  - Follow / Follow back / Requested / Following buttons.
+  - "N mutual friends: …" on other people's profiles.
+  - Counts are proper plurals now ("1 follower" used to read "1
+    followers").
+  - The a11y audit covers the new screen.
+- **Tests at close:**
+  - backend 639/639; Vitest 98/98.
+  - Full browser run: all 47 suites (new: day37-friends) + A3 EN/MY/AR
+    green.

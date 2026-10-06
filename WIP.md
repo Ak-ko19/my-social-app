@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 37-38 — Friends (mutual follows)
-**Step:** 2 — frontend: connections screen, mutual friends, Follow back (step 1 committed c260c7b)
+**Day:** 39 — People you may know (not started)
+**Step:** —
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -62,40 +62,7 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-Verified existing: send/accept/decline/cancel = follow requests (private
-accounts; cancel = unfollow while pending). Better approach (Quality bar
-9): friends = mutual accepted follows (Instagram/X mutuals) on the one
-graph that privacy/feeds/blocks already use, not a second relationship.
-Step 1 (backend): GET /users/:id/connections?type=friends|followers|
-following&page&limit -> {users:[{id,username,avatar_url,is_following,
-follows_you}], hasMore}; same access rule as followers (private ->
-followers only, block/deactivated -> 404); excludes deactivated users and
-anyone blocked with the viewer. GET /users/:id/mutual-friends -> {count,
-sample (3)}: viewer's friends who are also the target's friends; same
-access rule; [] for yourself/logged out. follow-counts adds friendsCount;
-all counts and the old lists skip deactivated accounts (they were
-shown/counted -- contradicts "hidden"). Tests: jest.
-Step 2 (frontend): GET /profile/:id adds follows_you. FollowButton
-(Follow / Follow back / Requested / Following, pending + error).
-/profile/:id/connections?tab= (public like profiles; private ->
-explanation): Friends/Followers/Following tablist (arrow keys), rows link
-to profiles, Load more, empty states. Profile counts become links; "N
-mutual friends · names" for logged-in viewers; profile button says
-Follow back. EN/MY/AR (+ plurals), dark, RTL. Tests: Vitest
-(FollowButton), e2e day37-friends.
+(written at the start of each step)
 
 ## Progress
-- Step 1 done: FRIENDS_OF subquery (both follows accepted, active
-  users); GET /users/:id/connections (friends|followers|following, A-Z
-  pages, is_following/request_pending/follows_you, blocks+deactivated
-  excluded); GET /users/:id/mutual-friends {count, sample 3};
-  follow-counts adds friendsCount; old lists/counts skip deactivated.
-  friends.test.js 8 (one-way-friend + deactivated-count mutations
-  caught); perf suite +3 endpoints (33/33). backend 638/638.
-- Step 2 done: profile follows_you; FollowButton + utils/followLabel
-  (Follow back); ConnectionsScreen /profile/:id/connections (public,
-  tablist w/ arrows, Load more, private explanation); profile counts are
-  links; "N mutual friends: names"; followers/friends counts now plural
-  ("1 follower" was "1 followers"). a11y audit covers the new screen (92
-  checks). FollowButton.test 4, day37-friends 15. backend 639/639,
-  Vitest 98/98.
+(nothing in progress — Days 37-38 closed 2026-10-06)
