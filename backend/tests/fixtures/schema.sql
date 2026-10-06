@@ -457,3 +457,13 @@ CREATE TABLE suggestion_dismissals (
 -- The PK covers "who did I hide"; this covers the cascade when the hidden
 -- person's account is deleted.
 CREATE INDEX idx_suggestion_dismissals_dismissed ON suggestion_dismissals (dismissed_user_id);
+
+-- Migration 049: recent searches (Day 42).
+CREATE TABLE search_history (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  query VARCHAR(100) NOT NULL CHECK (query <> ''),
+  searched_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX idx_search_history_user_query ON search_history (user_id, LOWER(query));
+CREATE INDEX idx_search_history_user_recent ON search_history (user_id, searched_at DESC);

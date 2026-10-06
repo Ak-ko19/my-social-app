@@ -113,3 +113,11 @@ Data export, Privacy Policy (EN/MY/AR), account deletion cascades.
   is not freshly vacuumed -- LATERAL ... OFFSET 0 lookup per recent post;
   (2) Following button contrast 4:1 (template purple) -> brand accent.
   backend 670/670, Vitest 110/110, perf 38/38.
+- Step 3 done: search history. Migration 049 search_history (one row
+  per query any case, newest 20 kept). POST/GET/DELETE one/DELETE all,
+  private (others get 404). Saved on submit or tap, not when opened from
+  a link. RecentSearches (optimistic remove + rollback, Clear all with
+  confirm). Export recent_searches; Privacy Policy EN/MY/AR (2026-10-07).
+  searchHistory.test 6 (7 mutations caught), RecentSearches.test 4,
+  Search.test 9 (6 caught), day42-search 14. backend 676/676, Vitest
+  116/116; rehearsal 015->049.

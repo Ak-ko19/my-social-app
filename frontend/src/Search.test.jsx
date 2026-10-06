@@ -3,9 +3,12 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import Search from './Search';
-import { searchHashtags, searchPosts, searchUsers } from './services/searchService';
+import { fetchSearchHistory, saveSearch, searchHashtags, searchPosts, searchUsers } from './services/searchService';
 
-vi.mock('./services/searchService', () => ({ searchUsers: vi.fn(), searchPosts: vi.fn(), searchHashtags: vi.fn() }));
+vi.mock('./services/searchService', () => ({
+  searchUsers: vi.fn(), searchPosts: vi.fn(), searchHashtags: vi.fn(),
+  fetchSearchHistory: vi.fn(), saveSearch: vi.fn(), deleteSearch: vi.fn(), clearSearchHistory: vi.fn()
+}));
 vi.mock('./hooks/useExplore', () => ({ useTrendingHashtags: () => ({ tags: [], loaded: true }) }));
 vi.mock('./components/explore/PeopleYouMayKnow', () => ({ default: () => <p>suggestions</p> }));
 
@@ -19,6 +22,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   searchUsers.mockResolvedValue(USERS);
   searchHashtags.mockResolvedValue(TAGS);
+  fetchSearchHistory.mockResolvedValue([{ id: 1, query: 'mohinga' }]);
+  saveSearch.mockResolvedValue({});
+  localStorage.setItem('token', 'tok');
   searchPosts.mockImplementation((q, token, page = 1) => Promise.resolve(
     page === 1 ? { posts: [post(10, 'tea shop opened')], hasMore: true } : { posts: [post(11, 'older tea post')], hasMore: false }
   ));
@@ -51,7 +57,7 @@ describe('Search', () => {
     expect(within(panel).getByText('500+ posts')).toBeInTheDocument();
     expect(within(panel).getByText('2 posts')).toBeInTheDocument();
     expect(within(panel).getByText('tea shop opened')).toBeInTheDocument();
-    expect(searchUsers).toHaveBeenCalledWith('tea', null);
+    expect(searchUsers).toHaveBeenCalledWith('tea', 'tok');
   });
 
   it('See all opens the People tab with everyone, and the tab goes in the URL', async () => {
@@ -69,7 +75,7 @@ describe('Search', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Load more' }));
     expect(await screen.findByText('older tea post')).toBeInTheDocument();
     expect(screen.getByText('tea shop opened')).toBeInTheDocument();
-    expect(searchPosts).toHaveBeenLastCalledWith('tea', null, 2);
+    expect(searchPosts).toHaveBeenLastCalledWith('tea', 'tok', 2);
     expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
   });
 
@@ -93,6 +99,24 @@ describe('Search', () => {
     await screen.findByRole('tab', { name: 'All', selected: true });
     await waitFor(() => expect(searchUsers).toHaveBeenCalled());
     expect(searchHashtags).not.toHaveBeenCalled();
+  });
+
+  it('a search you run is saved to recent searches; one opened from a link is not', async () => {
+    renderAt('/search?q=from_a_link');
+    await screen.findByRole('tab', { name: 'All', selected: true });
+    expect(saveSearch).not.toHaveBeenCalled();
+    await userEvent.clear(box());
+    await userEvent.type(box(), 'tea');
+    await userEvent.click(screen.getByRole('button', { name: 'Search' }));
+    expect(saveSearch).toHaveBeenCalledWith('tea', 'tok');
+  });
+
+  it('tapping a recent search runs it again (and saves it again)', async () => {
+    renderAt();
+    await userEvent.click(await screen.findByRole('button', { name: 'mohinga' }));
+    expect(screen.getByTestId('url')).toHaveTextContent('?q=mohinga');
+    expect(box()).toHaveValue('mohinga');
+    expect(saveSearch).toHaveBeenCalledWith('mohinga', 'tok');
   });
 
   it('a slow older search never replaces a newer one', async () => {

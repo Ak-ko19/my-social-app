@@ -9,6 +9,8 @@ import { useTrendingHashtags } from './hooks/useExplore';
 import { useSearch } from './hooks/useSearch';
 import TrendingHashtags from './components/explore/TrendingHashtags';
 import PeopleYouMayKnow from './components/explore/PeopleYouMayKnow';
+import RecentSearches from './components/search/RecentSearches';
+import { saveSearch } from './services/searchService';
 import { Compass } from 'lucide-react';
 import { useFollowToggle } from './hooks/useFollowToggle';
 import FollowButton from './components/feed/FollowButton';
@@ -116,6 +118,14 @@ function Search() {
       });
   };
 
+  // A search the person runs (typed, or a recent one tapped) -- not one
+  // opened from a link -- goes into their recent searches.
+  const runSearch = (next) => {
+    // A new query is a new history entry, so Back returns to the last one.
+    setParams(type === 'all' ? { q: next } : { q: next, type });
+    if (token) saveSearch(next, token).catch((err) => console.error(err));
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     setError('');
@@ -124,8 +134,7 @@ function Search() {
       setError(t('search.enterTerm'));
       return;
     }
-    // A new query is a new history entry, so Back returns to the last one.
-    setParams(type === 'all' ? { q: next } : { q: next, type });
+    runSearch(next);
   };
 
   const selectType = (next) => {
@@ -241,6 +250,7 @@ function Search() {
 
         {search.status === 'idle' && (
           <>
+            <RecentSearches token={token} onPick={(query) => { setInput(query); runSearch(query); }} />
             <PeopleYouMayKnow token={token} />
             <TrendingHashtags tags={trending.tags} loaded={trending.loaded} />
             <Link to="/explore" className="screen-link explore-link">

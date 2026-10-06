@@ -75,7 +75,7 @@ const check = (name, ok, extra = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} 
   await visit('/hashtag/welcome', 'Hello from bob');
   await visit('/profile/2', 'bob');
   await visit('/search');
-  await page.getByPlaceholder(/search people, posts or hashtags/i).fill('bob');
+  await page.getByPlaceholder(/search people, posts/i).fill('bob');
   await page.getByRole('button', { name: /^search$/i }).click();
   await page.waitForTimeout(1000);
   check('search finds bob', (await page.locator('body').innerText()).includes('Hello from bob'));

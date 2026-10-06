@@ -428,7 +428,7 @@
     "enterTerm": "Enter a search term",
     "failed": "Search failed. Please try again.",
     "label": "Search people, posts or hashtags",
-    "placeholder": "Search people, posts or hashtags...",
+    "placeholder": "Search people, posts, #tags",
     "searching": "Searching…",
     "explore": "Explore popular posts",
     "noUsers": "No matching people.",
@@ -444,7 +444,13 @@
       "people": "People",
       "posts": "Posts",
       "hashtags": "Hashtags"
-    }
+    },
+    "recent": "Recent searches",
+    "clearRecent": "Clear all",
+    "clearRecentTitle": "Clear all recent searches?",
+    "clearRecentDescription": "They are removed from your account on every device. This cannot be undone.",
+    "removeRecent": "Remove “{{query}}” from recent searches",
+    "recentFailed": "That didn’t work. Please try again."
   },
   "notifications": {
     "title": "Notifications",
@@ -1064,7 +1070,7 @@
       "sections": [
         {
           "heading": "1. What we collect",
-          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, photos, stories, comments and replies, reactions, messages and voice messages, groups, pages, follows, saved posts, blocks, muted conversations, people you hid from suggestions and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
+          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, photos, stories, comments and replies, reactions, messages and voice messages, groups, pages, follows, saved posts, blocks, muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
         },
         {
           "heading": "2. How we use it",

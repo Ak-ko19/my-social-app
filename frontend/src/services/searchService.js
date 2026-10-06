@@ -17,3 +17,20 @@ export function searchPosts(query, token, page = 1) {
 export function searchHashtags(query, token) {
   return api.get('/search/hashtags', { params: { q: query }, headers: withAuth(token) }).then((res) => res.data);
 }
+
+// Day 42: recent searches (signed in only).
+export function fetchSearchHistory(token) {
+  return api.get('/search/history', { headers: withAuth(token) }).then((res) => res.data);
+}
+
+export function saveSearch(query, token) {
+  return api.post('/search/history', { query }, { headers: withAuth(token) });
+}
+
+export function deleteSearch(id, token) {
+  return api.delete(`/search/history/${id}`, { headers: withAuth(token) });
+}
+
+export function clearSearchHistory(token) {
+  return api.delete('/search/history', { headers: withAuth(token) });
+}

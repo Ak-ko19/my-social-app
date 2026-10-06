@@ -1,0 +1,71 @@
+/* Day 42: recent searches, above the suggestions on the Search screen.
+   Tokens only (tokens.css), so dark mode and RTL just work. */
+.recent-searches {
+  margin-top: var(--space-4);
+}
+
+.recent-searches-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.recent-searches-clear {
+  border: none;
+  background: none;
+  padding: var(--space-1) 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-accent-text);
+  cursor: pointer;
+}
+
+.recent-searches-clear:focus-visible,
+.recent-searches-query:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.recent-searches-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recent-searches-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.recent-searches-query {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 15px;
+  color: var(--color-text);
+  text-align: start;
+  cursor: pointer;
+}
+
+.recent-searches-query svg {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+}
+
+.recent-searches-query bdi {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -3,7 +3,8 @@
 // Ranked search: people (exact name first, Follow button already right),
 // posts (the whole phrase, then freshness), Burmese text inside a
 // longer word, "%" as a plain character. Tabs (All / People / Posts /
-// Hashtags) in the URL, Back, dark + Arabic at 375px.
+// Hashtags) in the URL, Back, dark + Arabic at 375px. Recent searches:
+// order, tap, remove one, clear all.
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -101,6 +102,30 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await page.locator('.search-post-link', { hasText: '100% sure' }).click();
   await page.waitForURL(/\/posts\/\d+$/);
   check('a result opens the post', true);
+
+  // Recent searches (step 3): the searches typed above, newest first.
+  const recent = () => page.locator('.recent-searches-query').allInnerTexts();
+  await page.goto(`${WEB}/search`, { waitUntil: 'networkidle' });
+  await page.locator('.recent-searches-query').first().waitFor({ timeout: 10000 }).catch(() => {});
+  const typed = await recent();
+  check('recent searches: what you searched, newest first', JSON.stringify(typed) === JSON.stringify(['tea', '%', 'ရန်ကုန်', 'tea shop', 'MYA']), JSON.stringify(typed));
+  await page.getByRole('button', { name: 'tea shop', exact: true }).click();
+  await page.waitForURL(/\/search\?q=tea(\+|%20)shop$/);
+  await page.locator('.search-post-link').first().waitFor();
+  await page.goto(`${WEB}/search`, { waitUntil: 'networkidle' });
+  await page.locator('.recent-searches-query').first().waitFor();
+  check('tapping one searches it again and moves it to the top', (await recent())[0] === 'tea shop');
+  await page.getByRole('button', { name: 'Remove “%” from recent searches' }).click();
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('.recent-searches-query').first().waitFor();
+  check('the X removes one (still gone after a reload)', !(await recent()).includes('%') && (await recent()).length === 4);
+  await page.screenshot({ path: path.join(SP, 'day42-recent-searches.png') });
+  await page.getByRole('button', { name: 'Clear all' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Clear all' }).click();
+  await page.waitForTimeout(400);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  check('Clear all (after a confirm) removes them all', (await page.locator('.recent-searches').count()) === 0);
 
   // Dark, Arabic (RTL), 375px.
   const rtl = await browser.newContext({ viewport: { width: 375, height: 812 } });
