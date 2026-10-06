@@ -15,16 +15,11 @@ import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
 import { formatDate } from './i18n';
 
-// Search's own /search/users results don't include is_following (unlike
-// /feed's posts, which are already scoped to followed users by
-// construction) -- seeding false here is a one-click-off worst case, not a
-// bug: if the searcher already follows this user, useFollowToggle's own
-// "already following" conflict handling (see its own comment) keeps the
-// optimistic true state instead of rolling back, so a stray click just
-// self-corrects instead of actually breaking anything.
+// /search/users says whether the viewer already follows each person (Day
+// 42), so the button starts right.
 function SearchUserResult({ user, token, onMessage }) {
   const { t } = useTranslation();
-  const follow = useFollowToggle(user.id, false, token);
+  const follow = useFollowToggle(user.id, user.is_following, token);
 
   return (
     <li className="card-row">

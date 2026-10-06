@@ -398,6 +398,7 @@ CREATE INDEX idx_users_reset_token ON users (reset_token) WHERE reset_token IS N
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX idx_users_username_trgm ON users USING GIN (username gin_trgm_ops);
 CREATE INDEX idx_posts_content_trgm ON posts USING GIN (content gin_trgm_ops);
+CREATE INDEX idx_posts_content_fts ON posts USING GIN (to_tsvector('english', content));
 -- 015_add_fk_lookup_indexes:
 CREATE INDEX idx_conversation_participants_user_id ON conversation_participants (user_id);
 CREATE INDEX idx_comments_user_id ON comments (user_id);

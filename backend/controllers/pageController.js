@@ -1,4 +1,5 @@
 const db = require('../db');
+const { escapeLike } = require('../utils/escapeLike');
 const { sendServerError } = require('../utils/sendError');
 const { mediaOfPage, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
@@ -104,7 +105,7 @@ async function listPages(req, res) {
          AND ($1 = '' OR p.name ILIKE '%' || $1 || '%')
        ORDER BY follower_count DESC, p.id DESC
        LIMIT 100`,
-      [q.replace(/[%_\\]/g, (ch) => `\\${ch}`), req.userId]
+      [escapeLike(q), req.userId]
     );
     const rows = result.rows.map((p) => ({ ...p, is_owner: Boolean(p.is_owner) }));
     res.json({

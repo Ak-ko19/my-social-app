@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 42 — Better search
-**Step:** — (planning)
+**Step:** 1 — ranked search
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -68,7 +68,34 @@
   for a later polish day.
 
 ## Plan
-(to be written)
+Existing: /search/users (username ILIKE, A-Z, 20) and /search/posts
+(content ILIKE, newest first) on pg_trgm indexes; Search.jsx shows both
+lists; search.test.js 5. No ranking, no hashtags, no history, no filters.
+Key constraint: Burmese has no spaces between words, so Postgres
+full-text search alone would break Burmese search -- keep the substring
+match (trigram) alongside it.
+Step 1: ranked search. Migration 047: GIN index on
+to_tsvector('english', content) (stemming for English; other scripts
+pass through). Posts match FTS (websearch_to_tsquery) OR substring;
+candidates = newest 500 matches (bounded like hashtag Top: the planner
+walks created_at for common words, the GIN index for rare ones), ranked
+by relevance (ts_rank_cd + whole-phrase bonus) x popularity (log of
+engagement) x freshness. People: exact > prefix > contains, then people
+you follow, then shorter names. Perf suite: a common word.
+Step 2: hashtag search (/search/hashtags: exact > prefix > contains, use
+counted up to 1000 -> "999+") and filter tabs All / People / Posts /
+Hashtags with the query in the URL (?q=&type=), so Back and reload keep
+them.
+Step 3: search history. Migration 048 search_history (user, query,
+searched_at; one row per query, newest 20 kept). POST on submit, GET,
+DELETE one, DELETE all. Recent searches under the box before searching.
+Data export, Privacy Policy (EN/MY/AR), account deletion cascades.
 
 ## Progress
-(nothing in progress — Days 40–41 closed 2026-10-07)
+- Step 1 done: migration 047 (GIN on to_tsvector english). Posts: FTS
+  OR substring, newest 500 candidates, relevance x popularity x
+  freshness (perf: q=perf matching 150k posts reads 1,061 rows / 46 ms).
+  People: exact, prefix, followed, shorter; is_following returned (the
+  button starts right). Fixed: % and _ were wildcards in search
+  (utils/escapeLike, now shared with groups/pages). searchRanking.test
+  12 (12 mutations caught), day42-search 6. backend 666/666.

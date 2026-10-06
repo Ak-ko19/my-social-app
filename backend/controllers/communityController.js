@@ -1,4 +1,5 @@
 const db = require('../db');
+const { escapeLike } = require('../utils/escapeLike');
 const { sendServerError } = require('../utils/sendError');
 const { mediaOfCommunity, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
@@ -122,7 +123,7 @@ async function listCommunities(req, res) {
        WHERE ($2 = '' OR c.name ILIKE '%' || $2 || '%')
        ORDER BY member_count DESC, c.id DESC
        LIMIT 100`,
-      [req.userId, q.replace(/[%_\\]/g, (ch) => `\\${ch}`)]
+      [req.userId, escapeLike(q)]
     );
     res.json({
       mine: result.rows.filter((c) => c.my_status),
