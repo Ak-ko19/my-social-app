@@ -14,6 +14,9 @@ router.put('/profile', authMiddleware, upload.single('avatar'), uploadToCloudina
 // Day 36: cover photo.
 router.put('/profile/cover', authMiddleware, upload.single('cover'), uploadToCloudinary('covers'), profileController.setCover);
 router.delete('/profile/cover', authMiddleware, profileController.removeCover);
+// Day 36: one post pinned to the top of your profile.
+router.put('/profile/pinned-post', authMiddleware, profileController.pinPost);
+router.delete('/profile/pinned-post', authMiddleware, profileController.unpinPost);
 router.put('/profile/privacy', authMiddleware, profileController.updatePrivacy);
 router.put('/profile/language', authMiddleware, profileController.updateLanguage);
 

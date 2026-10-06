@@ -455,3 +455,14 @@
   gap: 2px;
   white-space: pre;
 }
+
+/* Day 36: a post pinned to the top of a profile. */
+.post-card-pinned {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 var(--space-2);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}

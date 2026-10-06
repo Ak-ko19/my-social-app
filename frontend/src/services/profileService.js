@@ -35,3 +35,12 @@ export function setCoverPhoto(file, token) {
 export function removeCoverPhoto(token) {
   return api.delete('/profile/cover', authHeaders(token)).then((res) => res.data);
 }
+
+// Day 36: pin one of your posts to the top of your profile / unpin it.
+export function pinPost(postId, token) {
+  return api.put('/profile/pinned-post', { postId }, authHeaders(token)).then((res) => res.data);
+}
+
+export function unpinPost(token) {
+  return api.delete('/profile/pinned-post', authHeaders(token)).then((res) => res.data);
+}

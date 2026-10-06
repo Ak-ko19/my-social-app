@@ -38,3 +38,31 @@ describe('PostMenu audience items', () => {
     expect(screen.getByText('Edit post')).toBeInTheDocument();
   });
 });
+
+// Day 36: pinning to your profile -- offered only where the parent passes
+// onTogglePin (your own posts tab), and it says Unpin on the pinned one.
+describe('PostMenu pin item', () => {
+  const openWith = async (post, onTogglePin) => {
+    render(<PostMenu post={{ id: 1, user_id: 2, username: 'bob', ...post }} visibility="public" onTogglePin={onTogglePin} />);
+    await userEvent.click(screen.getByRole('button', { name: 'More options' }));
+  };
+
+  it('offers "Pin to profile" and calls back (after the sheet closes)', async () => {
+    const onTogglePin = vi.fn();
+    await openWith({}, onTogglePin);
+    await userEvent.click(screen.getByText('Pin to profile'));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(onTogglePin).toHaveBeenCalledTimes(1);
+  });
+
+  it('says "Unpin from profile" on the pinned post', async () => {
+    await openWith({ is_pinned: true }, vi.fn());
+    expect(screen.getByText('Unpin from profile')).toBeInTheDocument();
+    expect(screen.queryByText('Pin to profile')).toBeNull();
+  });
+
+  it('is not offered elsewhere (no onTogglePin)', async () => {
+    await openWith({}, undefined);
+    expect(screen.queryByText('Pin to profile')).toBeNull();
+  });
+});

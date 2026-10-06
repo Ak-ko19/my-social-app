@@ -37,7 +37,8 @@ export function useProfileTabPosts(userId, tab, token) {
       .then((data) => {
         if (requestId !== requestIdRef.current) return;
         pageRef.current = 1;
-        setPosts(data.posts);
+        // Day 36: the posts tab's pinned post (page 1 only) goes first.
+        setPosts(data.pinned ? [data.pinned, ...data.posts] : data.posts);
         setHasMore(Boolean(data.hasMore));
         setError(null);
         setIsPrivate(false);

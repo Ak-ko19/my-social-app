@@ -195,7 +195,9 @@
     "blockConfirm": "Block",
     "deleteTitle": "Delete this post?",
     "deleteDescription": "This cannot be undone.",
-    "makeOnlyMe": "Make visible to only me"
+    "makeOnlyMe": "Make visible to only me",
+    "pin": "Pin to profile",
+    "unpin": "Unpin from profile"
   },
   "report": {
     "thisPost": "this post",
@@ -364,7 +366,9 @@
     "openPost": "Open post: {{text}}",
     "sections": "Profile sections",
     "links": "Links",
-    "joined": "Joined {{date}}"
+    "joined": "Joined {{date}}",
+    "pinned": "Pinned",
+    "pinFailed": "Couldn't change the pinned post. Please try again."
   },
   "editProfile": {
     "title": "Edit Profile",

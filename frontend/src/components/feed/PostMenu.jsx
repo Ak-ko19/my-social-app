@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flag, Globe, Lock, MoreHorizontal, Pencil, Trash2, UserX, Users } from 'lucide-react';
+import { Flag, Globe, Lock, MoreHorizontal, Pencil, Pin, PinOff, Trash2, UserX, Users } from 'lucide-react';
 import { IconButton, ActionSheet, ConfirmDialog } from '../ui';
 import ReportDialog from './ReportDialog';
 import { useTranslation } from 'react-i18next';
@@ -22,7 +22,7 @@ const AUDIENCE_ITEMS = [
   { value: 'only_me', label: 'postMenu.makeOnlyMe', icon: Lock }
 ];
 
-function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, onDeleted, onEdit, canModerate = false }) {
+function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, onDeleted, onEdit, onTogglePin, canModerate = false }) {
   const { t } = useTranslation();
   const { token, userId } = useAuth();
   const isOwner = post.user_id === userId;
@@ -64,6 +64,15 @@ function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, 
           icon: a.icon,
           onSelect: () => onChangeVisibility?.(a.value)
         })),
+        // Day 36: on your own profile, pin it to the top (or unpin).
+        ...(onTogglePin
+          ? [{
+              key: 'pin',
+              label: post.is_pinned ? t('postMenu.unpin') : t('postMenu.pin'),
+              icon: post.is_pinned ? PinOff : Pin,
+              onSelect: () => onTogglePin()
+            }]
+          : []),
         {
           key: 'edit',
           label: t('postMenu.edit'),

@@ -39,7 +39,7 @@ async function getUserPosts(req, res) {
     const viewerId = req.userId ?? null;
 
     const target = await db.query(
-      `SELECT id, username, is_private, is_deactivated,
+      `SELECT id, username, is_private, is_deactivated, pinned_post_id,
          $2::int IS NOT NULL AND EXISTS(
            SELECT 1 FROM follows WHERE follower_id = $2 AND following_id = users.id AND status = 'accepted'
          ) AS viewer_is_follower
@@ -63,8 +63,16 @@ async function getUserPosts(req, res) {
     const { page, limit, offset } = getPagination(req, { defaultLimit: 12, maxLimit: 50 });
     let tabCondition;
     const params = [viewerId, limit + 1, offset, targetId];
+    // Day 36: on the posts tab the pinned post comes separately (page 1,
+    // `pinned`), so the list leaves it out -- the list keeps its plain
+    // newest-first order (index-friendly) and nothing shows twice.
+    const pinnedId = tab === 'posts' ? user.pinned_post_id : null;
     if (tab === 'posts') {
       tabCondition = 'posts.user_id = $4 AND posts.page_id IS NULL'; // B14: page posts live on the page
+      if (pinnedId) {
+        tabCondition += ' AND posts.id <> $5';
+        params.push(pinnedId);
+      }
     } else if (tab === 'photos') {
       tabCondition = 'posts.user_id = $4 AND posts.page_id IS NULL AND EXISTS (SELECT 1 FROM post_media pm WHERE pm.post_id = posts.id)';
     } else {
@@ -72,7 +80,7 @@ async function getUserPosts(req, res) {
       params.push(mentionPattern(user.username));
     }
 
-    const result = await db.query(`
+    const listSql = (condition) => `
       SELECT posts.id, posts.content, posts.visibility, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
@@ -83,7 +91,7 @@ async function getUserPosts(req, res) {
       FROM posts
       JOIN users ON posts.user_id = users.id
       -- B13: community posts live in their community feed only.
-      WHERE posts.community_id IS NULL AND ${tabCondition}
+      WHERE posts.community_id IS NULL AND ${condition}
         AND ($1::int IS NULL OR NOT EXISTS (
           SELECT 1 FROM blocks
           WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
@@ -97,10 +105,18 @@ async function getUserPosts(req, res) {
         AND (NOT users.is_deactivated OR users.id = $1)
       ORDER BY posts.created_at DESC
       LIMIT $2 OFFSET $3
-    `, params);
+    `;
+    const result = await db.query(listSql(tabCondition), params);
 
     const hasMore = result.rows.length > limit;
-    res.json({ posts: hasMore ? result.rows.slice(0, limit) : result.rows, currentPage: page, hasMore });
+    // The same visibility rules decide whether the viewer sees the pinned
+    // post (an "Only me" pin shows only to its author).
+    let pinned = null;
+    if (pinnedId && page === 1) {
+      const pin = await db.query(listSql('posts.user_id = $4 AND posts.page_id IS NULL AND posts.id = $5'), [viewerId, 1, 0, targetId, pinnedId]);
+      pinned = pin.rows[0] ? { ...pin.rows[0], is_pinned: true } : null;
+    }
+    res.json({ posts: hasMore ? result.rows.slice(0, limit) : result.rows, pinned, currentPage: page, hasMore });
   } catch (err) {
     sendServerError(res, err, 'Loading profile posts failed. Please try again later.');
   }

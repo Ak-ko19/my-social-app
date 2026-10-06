@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 36 — Profile upgrade
-**Step:** 2 — cover photo (step 1 committed d969bbc) -- done
+**Step:** 3 — pinned post (steps 1-2 committed d969bbc, 17f1a89)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -64,6 +64,16 @@
 ## Plan
 Day 36 in 3 steps: (1) joined date + links, (2) cover photo, (3) pinned
 post. None existed.
+Step 3 (pinned post, like Facebook -- one): migration 045
+users.pinned_post_id FK posts ON DELETE SET NULL + partial index (post
+delete must not scan users). PUT /profile/pinned-post {postId}: only your
+own post that shows on your profile (not group/page posts) else 404;
+DELETE unpins. GET /users/:id/posts?tab=posts: page 1 returns pinned
+separately (if the viewer may see it -- same visibility rules; an Only me
+pin only for its author), the list excludes it (keeps index order, no
+duplicates). UI: Pinned label on top; Pin to profile / Unpin in own
+post menus on your profile. Export: pinned_post_id. Tests: jest, e2e
+day36-pinned.
 Step 2 (cover photo): migration 044 users.cover_url. PUT /profile/cover
 (multipart cover, image filter, 5 MB, folder covers) and DELETE
 /profile/cover. Old file deleted on replace/remove; mediaOfUser includes
@@ -102,3 +112,11 @@ e2e day36-profile.
   from LegalScreen.jsx (e2e/legal-dates.cjs) instead of pinning it.
   coverPhoto.test.js 5, CoverPhoto 2, day36-cover 11. backend 623/623,
   Vitest 91/91, rehearsal 015->044.
+- Step 3 done: migration 045 users.pinned_post_id (SET NULL + partial
+  index); PUT/DELETE /profile/pinned-post (own, on-profile posts only);
+  posts tab page 1 returns pinned separately (visibility applies), list
+  excludes it (exclusion mutation caught). Pinned label + Pin/Unpin in
+  own posts tab. pinnedPost.test.js 7, PostMenu +3, day36-pinned 11.
+  backend 630/630, Vitest 94/94, rehearsal 015->045, perf 30/30
+  (/users/:id/posts reads 5 rows). (PLAN was written after the first
+  BUILD edits this step -- caught up before testing.)

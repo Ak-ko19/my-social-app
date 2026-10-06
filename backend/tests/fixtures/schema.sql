@@ -440,3 +440,7 @@ ALTER TABLE users ADD CONSTRAINT chk_users_links_count CHECK (cardinality(links)
 
 -- Day 36 (migration 044): a profile's cover photo.
 ALTER TABLE users ADD COLUMN cover_url TEXT;
+
+-- Day 36 (migration 045): a post pinned to the top of a profile.
+ALTER TABLE users ADD COLUMN pinned_post_id INTEGER REFERENCES posts(id) ON DELETE SET NULL;
+CREATE INDEX idx_users_pinned_post ON users (pinned_post_id) WHERE pinned_post_id IS NOT NULL;

@@ -165,6 +165,38 @@ async function removeCover(req, res) {
   }
 }
 
+// Day 36: PUT /profile/pinned-post { postId } pins one of your own posts to
+// the top of your profile (replacing any earlier pin); DELETE unpins. Only
+// a post that shows on your profile can be pinned -- not one in a group or
+// posted as a page. Anything else is the same 404 as a missing post.
+async function pinPost(req, res) {
+  try {
+    const postId = Number(req.body?.postId);
+    if (!Number.isInteger(postId) || postId <= 0) return res.status(400).send('postId is required');
+    const result = await db.query(
+      `UPDATE users SET pinned_post_id = $2
+       WHERE id = $1 AND EXISTS (
+         SELECT 1 FROM posts WHERE id = $2 AND user_id = $1 AND community_id IS NULL AND page_id IS NULL
+       )
+       RETURNING pinned_post_id`,
+      [req.userId, postId]
+    );
+    if (result.rows.length === 0) return res.status(404).send('Post not found');
+    res.json({ pinned_post_id: postId });
+  } catch (err) {
+    sendServerError(res, err, 'Pinning the post failed. Please try again later.');
+  }
+}
+
+async function unpinPost(req, res) {
+  try {
+    await db.query('UPDATE users SET pinned_post_id = NULL WHERE id = $1', [req.userId]);
+    res.json({ pinned_post_id: null });
+  } catch (err) {
+    sendServerError(res, err, 'Unpinning the post failed. Please try again later.');
+  }
+}
+
 async function updatePrivacy(req, res) {
   try {
     if (typeof req.body.isPrivate !== 'boolean') {
@@ -196,4 +228,4 @@ async function updateLanguage(req, res) {
   }
 }
 
-module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, exportMyData, setCover, removeCover };
+module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, exportMyData, setCover, removeCover, pinPost, unpinPost };

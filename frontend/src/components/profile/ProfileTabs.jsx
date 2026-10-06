@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Bookmark, Grid3x3, Image as ImageIcon, AtSign, Lock } from 'lucide-react';
 import clsx from 'clsx';
@@ -11,6 +11,8 @@ import { useProfileTabPosts } from '../../hooks/useProfileTabPosts';
 import { getOptimizedImageUrl } from '../../utils/cloudinaryImage';
 import '../feed/Feed.css';
 import './ProfileTabs.css';
+import { pinPost, unpinPost } from '../../services/profileService';
+import { serverErrorText } from '../../utils/serverError';
 
 const ALL_TABS = [
   { key: 'posts', icon: Grid3x3 },
@@ -32,6 +34,22 @@ function ProfileTabs({ userId, username, isOwn, token }) {
     userId,
     active,
     token
+  );
+
+  // Day 36: pin/unpin from your own posts tab, then reload it (the pinned
+  // post moves to the top or back into place).
+  const [pinError, setPinError] = useState('');
+  const togglePin = useCallback(
+    (post) => {
+      setPinError('');
+      (post.is_pinned ? unpinPost(token) : pinPost(post.id, token))
+        .then(() => reload())
+        .catch((err) => {
+          console.error(err);
+          setPinError(serverErrorText(err, 'profile.pinFailed'));
+        });
+    },
+    [token, reload]
   );
 
   const select = (key) => {
@@ -84,8 +102,16 @@ function ProfileTabs({ userId, username, isOwn, token }) {
   } else {
     panel = (
       <div className="profile-tab-posts">
+        {pinError && <p className="form-error" role="alert">{pinError}</p>}
         {posts.map((p) => (
-          <PostCard key={p.id} post={p} onRemovePost={removePost} onRemovePostsByUser={() => reload()} onUpdatePost={() => {}} />
+          <PostCard
+            key={p.id}
+            post={p}
+            onRemovePost={removePost}
+            onRemovePostsByUser={() => reload()}
+            onUpdatePost={() => {}}
+            onTogglePin={isOwn && active === 'posts' ? togglePin : undefined}
+          />
         ))}
       </div>
     );

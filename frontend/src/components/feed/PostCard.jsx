@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from '../../utils/serverError';
 import { AnimatePresence } from 'motion/react';
-import { Bookmark, Globe, Lock, MessageCircle, Share2, Users } from 'lucide-react';
+import { Bookmark, Globe, Lock, MessageCircle, Share2, Users, Pin } from 'lucide-react';
 import ReactionButton from './ReactionButton';
 import { topReactions } from '../../utils/reactions';
 import clsx from 'clsx';
@@ -41,7 +41,7 @@ import './PostCard.css';
 // server event the way a like/bookmark is), so it's omitted from the stats
 // row but the action itself is real: Web Share API where available,
 // clipboard-copy fallback otherwise (see handleShare below).
-function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canModerate = false }) {
+function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTogglePin, canModerate = false }) {
   const { t } = useTranslation();
   const { token, userId, username } = useAuth();
   const like = useLikeToggle(
@@ -170,6 +170,12 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
 
   return (
     <article className="post-card">
+      {post.is_pinned && (
+        <p className="post-card-pinned">
+          <Pin size={13} aria-hidden="true" />
+          {t('profile.pinned')}
+        </p>
+      )}
       <header className="post-card-header">
         <Avatar size={42} src={page ? undefined : avatarSrc} initials={initials} alt="" />
         <div className="post-card-header-text">
@@ -204,6 +210,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, canMo
           onDeleted={onRemovePost}
           onEdit={startEditing}
           canModerate={canModerate}
+          onTogglePin={onTogglePin ? () => onTogglePin(post) : undefined}
         />
       </header>
       {visibilityError && (
