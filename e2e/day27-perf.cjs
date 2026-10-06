@@ -51,7 +51,7 @@ function seqScans() {
     // Day 37: friends (mutual follows) and connections.
     '/users/1/connections?type=friends', '/users/1/connections?type=followers', `/users/${perfUser}/mutual-friends`,
     '/notifications', '/notifications/unread-count', '/conversations', `/conversations/${conv}`,
-    `/conversations/${conv}/messages`, '/explore/posts', '/explore/hashtags', '/hashtags/perf/posts', '/hashtags/mingalar/posts',
+    `/conversations/${conv}/messages`, '/explore/posts', '/explore/hashtags', '/hashtags/perf/posts', '/hashtags/perf/posts?sort=top', '/hashtags/mingalar/posts',
     '/bookmarks', '/stories', '/blocked-users',
     // Search is a substring match (ILIKE '%q%'): served by the pg_trgm
     // indexes (002). A word that matches nothing is the worst case.

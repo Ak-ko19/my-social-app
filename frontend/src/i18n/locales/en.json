@@ -464,7 +464,12 @@
     "empty": "You haven't saved any posts yet."
   },
   "hashtag": {
-    "empty": "No posts yet for #{{tag}}."
+    "empty": "No posts yet for #{{tag}}.",
+    "sections": "Posts with this hashtag",
+    "tabs": {
+      "top": "Top",
+      "recent": "Recent"
+    }
   },
   "postDetail": {
     "title": "Post",

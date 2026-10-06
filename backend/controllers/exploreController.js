@@ -2,6 +2,7 @@ const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
+const { popularityScoreSql } = require('../services/popularity');
 
 // B7 Explore. Both lists look at the last EXPLORE_WINDOW of activity.
 const EXPLORE_WINDOW = "INTERVAL '7 days'";
@@ -48,11 +49,8 @@ async function getTrendingHashtags(req, res) {
 }
 
 // GET /explore/posts -- popular recent posts the viewer can see, ranked by
-// engagement with time decay (Hacker-News-style gravity), so a fresh post
-// with some traction outranks an older one with slightly more:
-//   score = (reactions + 2 * comments) / (hours_old + 2) ^ 1.5
-// Comments weigh double -- they take more effort than a tap. Only posts
-// with at least one reaction or comment qualify ("popular", not "recent").
+// engagement with time decay (services/popularity.js). Only posts with at
+// least one reaction or comment qualify ("popular", not "recent").
 async function getPopularPosts(req, res) {
   try {
     const viewerId = req.userId ?? null;
@@ -82,8 +80,7 @@ async function getPopularPosts(req, res) {
          scored.reactions::int AS like_count,
          scored.comment_total::int AS comment_count,
          $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
-         (scored.reactions + 2 * scored.comment_total)
-           / power(EXTRACT(EPOCH FROM (now() - posts.created_at)) / 3600 + 2, 1.5) AS score
+         ${popularityScoreSql('scored.reactions', 'scored.comment_total', 'posts.created_at')} AS score
        FROM scored
        JOIN posts ON posts.id = scored.id
        JOIN users ON users.id = posts.user_id

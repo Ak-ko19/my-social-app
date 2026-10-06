@@ -6,13 +6,15 @@ const PAGE_LIMIT = 10;
 
 // Same paginated-list shape as useFeed/useSavedPosts, backed by
 // GET /hashtags/:tag/posts. Re-fetches from page 1 whenever `tag` changes
-// (tapping a different hashtag link while already on a hashtag feed).
-export function useHashtagFeed(tag, token) {
+// (tapping a different hashtag link while already on a hashtag feed) or
+// `sort` does (the Top / Recent tabs, Day 40).
+export function useHashtagFeed(tag, token, sort = 'recent') {
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [loadedTag, setLoadedTag] = useState(null);
+  const [loadedKey, setLoadedKey] = useState(null);
+  const key = `${sort}:${tag}`;
 
   const pageRef = useRef(1);
   const requestIdRef = useRef(0);
@@ -20,33 +22,33 @@ export function useHashtagFeed(tag, token) {
 
   const fetchFirstPage = useCallback(() => {
     const requestId = ++requestIdRef.current;
-    fetchPostsByHashtag(tag, token, { page: 1, limit: PAGE_LIMIT })
+    fetchPostsByHashtag(tag, token, { page: 1, limit: PAGE_LIMIT, sort })
       .then((data) => {
         if (requestId !== requestIdRef.current) return;
         pageRef.current = 1;
         setPosts(data.posts);
         setHasMore(Boolean(data.hasMore));
         setError(null);
-        setLoadedTag(tag);
+        setLoadedKey(key);
       })
       .catch((err) => {
         if (requestId !== requestIdRef.current) return;
         console.error(err);
         setError(i18n.t('errors.loadHashtag'));
-        setLoadedTag(tag);
+        setLoadedKey(key);
       });
-  }, [tag, token]);
+  }, [tag, token, sort, key]);
 
   useEffect(() => {
     fetchFirstPage();
   }, [fetchFirstPage]);
 
-  const loading = loadedTag !== tag;
+  const loading = loadedKey !== key;
 
   // For the error state's retry button (an event handler, so the
   // synchronous reset back into 'loading' is fine here).
   const reload = useCallback(() => {
-    setLoadedTag(null);
+    setLoadedKey(null);
     setError(null);
     fetchFirstPage();
   }, [fetchFirstPage]);
@@ -60,7 +62,7 @@ export function useHashtagFeed(tag, token) {
     Promise.resolve()
       .then(() => {
         setLoadingMore(true);
-        return fetchPostsByHashtag(tag, token, { page: nextPage, limit: PAGE_LIMIT });
+        return fetchPostsByHashtag(tag, token, { page: nextPage, limit: PAGE_LIMIT, sort });
       })
       .then((data) => {
         if (requestId !== requestIdRef.current) return;
@@ -80,7 +82,7 @@ export function useHashtagFeed(tag, token) {
         loadingMoreRef.current = false;
         if (requestId === requestIdRef.current) setLoadingMore(false);
       });
-  }, [tag, token, hasMore]);
+  }, [tag, token, sort, hasMore]);
 
   return { posts, loading, loadingMore, error, hasMore, loadMore, reload };
 }
