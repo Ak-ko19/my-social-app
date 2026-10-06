@@ -204,7 +204,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 39 — People you may know
 - [x] Suggestions from mutual follows/friends; no external services. *(Built in B8 and verified; hiding a suggestion added — see Progress Log.)*
 ### Day 40–41 — Explore page
-- [ ] Trending hashtags, popular posts (last 7 days), explore by hashtag.
+- [x] Trending hashtags, popular posts (last 7 days), explore by hashtag. *(Built in B7 and verified; Top/Recent tabs and a trending cache added — see Progress Log.)*
 ### Day 42 — Better search
 - [ ] PostgreSQL full-text search with ranking; search history; filters (people/posts/hashtags).
 ### Day 43 — Myanmar text support
@@ -1308,3 +1308,26 @@ Build every feature the way a senior engineer at a top social media company woul
   - backend 644/644; Vitest 100/100; rehearsal 015→046 passed.
   - Full browser run: all 48 suites (new: day39-pymk) + A3 EN/MY/AR
     (228 page checks each) green.
+
+### 2026-10-07 — Days 40–41: Explore page
+- **Already built, verified (B7):** trending hashtags (7 days, public
+  posts only, blocks hidden), popular posts (engagement with time
+  decay), a feed per hashtag (explore.test.js, hashtagPage.test.js, E2E
+  b7-explore).
+- **Top and Recent on hashtag pages (`e509928`)**, like Instagram/X:
+  - `?sort=top` ranks the tag's newest 500 visible posts by the
+    Explore score, now one shared formula (`services/popularity.js`).
+  - Bounded on purpose: 1,033 rows on the perf seed's 15k-post tag; a
+    "last 30 days" window would read the tag's whole history.
+  - Tabs open on Top, live in the URL, work by keyboard and in RTL.
+- **Trending cache, audit N3 (`8e157b4`):**
+  - One list, cached 60 s, shared by visitors and everyone without
+    blocks; viewers with blocks still get an exact live list.
+  - Not a table refreshed by the daily job: trends would be a day
+    stale. Off in browser test stacks (`TRENDING_CACHE_MS` turns it on).
+- **Noted for later:** post cards show a comment count only once the
+  comments are opened (app-wide; WIP carry-over).
+- **Tests at close:**
+  - backend 654/654; Vitest 103/103.
+  - Full browser run: all 49 suites (new: day40-hashtag-top) + A3
+    EN/MY/AR (228 page checks each) green.

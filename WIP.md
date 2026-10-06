@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 40–41 — Explore page
-**Step:** 1 — Top / Recent on hashtag pages
+**Day:** 42 — Better search
+**Step:** — (planning)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -68,27 +68,7 @@
   for a later polish day.
 
 ## Plan
-Verified existing (B7: exploreController, hashtagController, E2E b7-explore,
-explore.test/hashtag tests): trending tags (7 days, public posts only,
-blocks hidden), popular posts (engagement with time decay), hashtag feed
-(newest first, index walk). Gaps vs Instagram/X:
-Step 1: hashtag page Top / Recent tabs. GET /hashtags/:tag/posts?sort=top
-= same visibility rules, posts from the last 30 days ranked by the explore
-score (shared SQL, no copy); default stays recent. Tabs (keyboard, RTL),
-empty Top -> "No top posts this month" + link to Recent. Perf suite: +1.
-Step 2 (N3): trending tags cached in memory for 60 s, shared by viewers
-with no blocks (and logged-out); viewers with blocks keep the live query
-(exact). Not a refreshed table: the daily job would leave trends 24 h
-stale. Tests: cache hit, expiry, blocked viewer bypass.
+(to be written)
 
 ## Progress
-- Step 1 done: hashtag Top / Recent. Top = newest 500 visible tagged
-  posts (bounded: 1,033 rows / 52 ms on #perf at the perf seed; a 30-day
-  window would read the whole tag) ranked by services/popularity.js,
-  shared with Explore. Tabs in ?sort=, Top default. hashtagTop.test 6
-  (4 mutations caught), HashtagFeedScreen.test 3 (3 caught),
-  day40-hashtag-top 7, perf +1. backend 650/650, Vitest 103/103.
-- Step 2 done: trending cache (N3). Shared list for visitors and viewers
-  without blocks, 60 s, concurrent misses share one query, failures not
-  cached; viewers with blocks get it live. trendingCache.test 4 (6
-  mutations caught). backend 654/654; b7, b8, a2, day16, perf green.
+(nothing in progress — Days 40–41 closed 2026-10-07)
