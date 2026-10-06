@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 33-35 — Group chats (not started)
-**Step:** —
+**Day:** 33-35 — Group chats
+**Step:** 1 — admins: make / remove admin
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -58,7 +58,25 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-(written at the start of each step)
+Already built (B10, groups.test.js, E2E b10-groups): create, add/remove
+members, leave, rename (admins), auto-promote when the last admin leaves,
+live group_updated. Missing: managing admins (step 1), group photo (step
+2).
+Step 1: PATCH /conversations/:id/members/:userId { role: admin|member }:
+admins only (403), target in the group (404), bad role (400), never
+removes the last admin (409 -- a group always has one; leaving still
+auto-promotes). Self step-down allowed when another admin exists. Emits
+group_updated. UI (GroupInfoScreen): on others' rows admins get "Make
+admin" / "Remove as admin"; an admin's own row gets "Step down as
+admin" when another admin exists. EN/MY/AR. Tests: groups admin jest
+cases; e2e day33-group-admins (two people, live, dark, AR).
 
 ## Progress
-(nothing in progress — Days 31-32 closed 2026-10-06)
+- Step 1 done: PATCH /conversations/:id/members/:userId {role}
+  (SET_ROLE_SQL locks the group rows: a concurrent demotion waits and
+  then refuses; proven by a two-connection test -- the HTTP race test
+  could not catch a missing lock, 0/10). GroupInfoScreen: one Options
+  sheet per member (Make admin / Remove as admin / Remove; own row: Step
+  down only while another admin exists). b10-groups updated for the
+  sheet. groupAdmins.test.js 7 (guard + lock mutations caught),
+  day33-group-admins 13. backend 605/605, Vitest 82/82.

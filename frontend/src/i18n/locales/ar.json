@@ -591,7 +591,6 @@
     "rename": "إعادة التسمية",
     "admin": "مشرف",
     "remove": "إزالة",
-    "removeName": "إزالة {{name}}",
     "add": "إضافة",
     "addCount": "إضافة {{count}}",
     "leaveGroup": "مغادرة المجموعة",
@@ -599,7 +598,12 @@
     "removeTitle": "إزالة {{name}}؟",
     "leaveDescription": "لن تصلك رسائلها بعد الآن ولن ترى سجلها.",
     "removeDescription": "لن تصله الرسائل بعد الآن وسيفقد الوصول إلى السجل.",
-    "leave": "مغادرة"
+    "leave": "مغادرة",
+    "options": "خيارات",
+    "optionsFor": "خيارات {{name}}",
+    "makeAdmin": "تعيين كمشرف",
+    "removeAdmin": "إزالة من المشرفين",
+    "stepDown": "التنحي عن الإشراف"
   },
   "account": {
     "title": "إدارة الحساب",

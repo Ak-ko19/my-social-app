@@ -128,6 +128,11 @@ export function removeGroupMember(conversationId, userId, token) {
   return api.delete(`/conversations/${conversationId}/members/${userId}`, authHeaders(token)).then((res) => res.data);
 }
 
+// Day 33: make a member an admin ('admin') or remove that role ('member').
+export function setGroupMemberRole(conversationId, userId, role, token) {
+  return api.patch(`/conversations/${conversationId}/members/${userId}`, { role }, authHeaders(token)).then((res) => res.data);
+}
+
 export function renameGroup(conversationId, name, token) {
   return api.patch(`/conversations/${conversationId}`, { name }, authHeaders(token)).then((res) => res.data);
 }

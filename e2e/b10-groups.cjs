@@ -75,7 +75,9 @@ async function signup(name) {
   check('rename shows the new name', true);
 
   // 4. Remove carol -> she loses access.
-  await page.getByRole('button', { name: 'Remove carol' }).click();
+  // (Day 33: removing is in each member's Options sheet.)
+  await page.getByRole('button', { name: 'Options for carol' }).click();
+  await page.getByRole('menuitem', { name: 'Remove', exact: true }).click();
   await page.getByRole('button', { name: 'Remove', exact: true }).click();
   await page.getByText('2 members').waitFor();
   check('removing carol -> 2 members', true);

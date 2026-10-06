@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
-import { IconButton, ConfirmDialog } from '../components/ui';
+import { ChevronLeft, ShieldCheck, ShieldOff, UserMinus } from 'lucide-react';
+import { ActionSheet, IconButton, ConfirmDialog } from '../components/ui';
 import Avatar from '../components/common/Avatar';
 import { useAuth } from '../hooks/useAuth';
 import { useSocket } from '../hooks/useSocket';
@@ -13,13 +13,14 @@ import {
   fetchConversationDetails,
   addGroupMembers,
   removeGroupMember,
-  renameGroup
-} from '../services/messageService';
+  renameGroup, setGroupMemberRole } from '../services/messageService';
 import '../components/feed/Feed.css';
 import '../components/messages/Messages.css';
 
 // B10: /messages/:conversationId/info -- members + roles for everyone;
-// rename / add / remove for admins; leave for everyone.
+// rename / add / remove for admins; leave for everyone. Day 33: admins
+// manage who is an admin from each member's Options sheet (a group always
+// keeps one admin, so stepping down needs another admin).
 function GroupInfoScreen() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -34,6 +35,7 @@ function GroupInfoScreen() {
   const [adding, setAdding] = useState(false);
   const [toAdd, setToAdd] = useState([]);
   const [confirm, setConfirm] = useState(null); // { kind: 'leave' } | { kind: 'remove', member }
+  const [managing, setManaging] = useState(null); // the member whose Options sheet is open
 
   const load = useCallback(() => {
     fetchConversationDetails(conversationId, token)
@@ -80,6 +82,31 @@ function GroupInfoScreen() {
   if (!group) return <p className="screen-status" role="status">{t('common.loading')}</p>;
 
   const isAdmin = group.my_role === 'admin';
+  const adminCount = group.members.filter((m) => m.role === 'admin').length;
+
+  const changeRole = (member, role) => {
+    setActionError('');
+    setGroupMemberRole(conversationId, member.id, role, token)
+      .then(() => load())
+      .catch((err) => {
+        console.error(err);
+        setActionError(serverErrorText(err, 'common.somethingWentWrong'));
+      });
+  };
+
+  // The Options sheet for one member: their admin role, then removing them.
+  // On your own row: step down (only while another admin remains).
+  const optionsFor = (m) => {
+    if (m.id === userId) {
+      return [{ key: 'step-down', label: t('groupChat.stepDown'), icon: ShieldOff, onSelect: () => changeRole(m, 'member') }];
+    }
+    return [
+      m.role === 'admin'
+        ? { key: 'unadmin', label: t('groupChat.removeAdmin'), icon: ShieldOff, onSelect: () => changeRole(m, 'member') }
+        : { key: 'admin', label: t('groupChat.makeAdmin'), icon: ShieldCheck, onSelect: () => changeRole(m, 'admin') },
+      { key: 'remove', label: t('groupChat.remove'), icon: UserMinus, danger: true, onSelect: () => setConfirm({ kind: 'remove', member: m }) }
+    ];
+  };
   const run = (promise) => {
     setActionError('');
     return promise.catch((err) => {
@@ -159,9 +186,14 @@ function GroupInfoScreen() {
                 {m.id === userId ? t('messages.you') : m.username}
                 {m.role === 'admin' && <span className="group-admin-badge">{t('groupChat.admin')}</span>}
               </span>
-              {isAdmin && m.id !== userId && (
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setConfirm({ kind: 'remove', member: m })} aria-label={t('groupChat.removeName', { name: m.username })}>
-                  {t('groupChat.remove')}
+              {isAdmin && (m.id !== userId || adminCount > 1) && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setManaging(m)}
+                  aria-label={t('groupChat.optionsFor', { name: m.id === userId ? t('messages.you') : m.username })}
+                >
+                  {t('groupChat.options')}
                 </button>
               )}
             </li>
@@ -197,6 +229,13 @@ function GroupInfoScreen() {
           {t('groupChat.leaveGroup')}
         </button>
       </div>
+
+      <ActionSheet
+        open={Boolean(managing)}
+        onClose={() => setManaging(null)}
+        title={managing ? (managing.id === userId ? t('messages.you') : managing.username) : ''}
+        items={managing ? optionsFor(managing) : []}
+      />
 
       <ConfirmDialog
         open={Boolean(confirm)}

@@ -7,6 +7,8 @@ const { getIO } = require('../sockets');
 // - A group has a name (1-100 chars) and 2..MAX_GROUP_SIZE members
 //   including its creator, who starts as its admin.
 // - Admins can add members, remove members and rename; anyone can leave.
+// - Day 33: admins can make others admins or remove that role (their own
+//   too), but a group always keeps at least one admin.
 // - You can't add someone you've blocked or who has blocked you, or a
 //   deactivated account. (Blocks don't silence an existing group -- see
 //   messageService.assertNotBlocked.)
@@ -234,6 +236,44 @@ async function removeMember(req, res) {
   }
 }
 
+// Day 33: sets one member's role; removing an admin role only goes through
+// while another admin remains. Its CTE locks the group's rows first
+// (exported for the test that proves it).
+const SET_ROLE_SQL = `WITH locked AS (
+    SELECT user_id, role FROM conversation_participants WHERE conversation_id = $1 FOR UPDATE
+  )
+  UPDATE conversation_participants cp SET role = $3
+  WHERE cp.conversation_id = $1 AND cp.user_id = $2
+    AND ($3 = 'admin' OR EXISTS (SELECT 1 FROM locked WHERE role = 'admin' AND user_id <> $2))
+  RETURNING cp.role`;
+
+// Day 33: PATCH /conversations/:id/members/:userId { role: 'admin' | 'member' }
+// -- admins only. One statement: it locks the group's rows first, so two
+// admins removing each other's role at the same moment can't leave the
+// group with none (the second waits, then sees the first's change).
+async function setMemberRole(req, res) {
+  try {
+    const conversationId = Number(req.params.id);
+    const targetId = Number(req.params.userId);
+    if (!Number.isInteger(targetId)) throw new GroupError(400, 'Invalid user ID');
+    const role = req.body?.role;
+    if (role !== 'admin' && role !== 'member') throw new GroupError(400, "role must be 'admin' or 'member'");
+    const group = await getGroupForMember(conversationId, req.userId);
+    if (group.role !== 'admin') throw new GroupError(403, 'Only group admins can change who is an admin');
+
+    const updated = await db.query(SET_ROLE_SQL, [conversationId, targetId, role]);
+    if (updated.rows.length === 0) {
+      const member = await db.query('SELECT 1 FROM conversation_participants WHERE conversation_id = $1 AND user_id = $2', [conversationId, targetId]);
+      if (member.rows.length === 0) throw new GroupError(404, 'That person is not in this group');
+      throw new GroupError(409, 'A group needs at least one admin');
+    }
+    emitGroupUpdated(conversationId);
+    res.json({ members: await getMembers(conversationId) });
+  } catch (err) {
+    handle(res, err, 'Updating the group failed. Please try again later.');
+  }
+}
+
 // PATCH /conversations/:id { name } -- admins only.
 async function renameGroup(req, res) {
   try {
@@ -249,4 +289,4 @@ async function renameGroup(req, res) {
   }
 }
 
-module.exports = { createGroup, getConversationDetails, addMembers, removeMember, renameGroup, MAX_GROUP_SIZE };
+module.exports = { createGroup, getConversationDetails, addMembers, removeMember, renameGroup, setMemberRole, SET_ROLE_SQL, MAX_GROUP_SIZE };

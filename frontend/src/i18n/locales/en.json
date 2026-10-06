@@ -563,7 +563,6 @@
     "rename": "Rename",
     "admin": "Admin",
     "remove": "Remove",
-    "removeName": "Remove {{name}}",
     "add": "Add",
     "addCount": "Add {{count}}",
     "leaveGroup": "Leave group",
@@ -571,7 +570,12 @@
     "removeTitle": "Remove {{name}}?",
     "leaveDescription": "You'll stop getting its messages and won't see its history any more.",
     "removeDescription": "They will stop getting messages and lose access to the history.",
-    "leave": "Leave"
+    "leave": "Leave",
+    "options": "Options",
+    "optionsFor": "Options for {{name}}",
+    "makeAdmin": "Make admin",
+    "removeAdmin": "Remove as admin",
+    "stepDown": "Step down as admin"
   },
   "account": {
     "title": "Account Management",

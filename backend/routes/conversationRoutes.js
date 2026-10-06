@@ -15,6 +15,8 @@ router.get('/conversations/:id', authMiddleware, groupController.getConversation
 router.patch('/conversations/:id', authMiddleware, groupController.renameGroup);
 router.post('/conversations/:id/members', authMiddleware, groupController.addMembers);
 router.delete('/conversations/:id/members/:userId', authMiddleware, groupController.removeMember);
+// Day 33: make someone an admin, or remove that role.
+router.patch('/conversations/:id/members/:userId', authMiddleware, groupController.setMemberRole);
 router.get('/conversations/:id/messages', authMiddleware, conversationController.getMessages);
 router.post('/conversations/:id/messages', authMiddleware, conversationController.sendMessage);
 router.post(
