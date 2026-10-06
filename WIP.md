@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 31 — Messaging upgrade (not started)
-**Step:** —
+**Day:** 31-32 — Messaging upgrade
+**Step:** 1 — message reactions
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -58,7 +58,34 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-(written at the start of each step)
+Reply, edit (15 min) and unsend already exist (B9, dm/dmExtras tests):
+verified, not rebuilt. Missing: reactions (step 1), forward (step 2).
+Step 1 (like Messenger): one reaction per person per message, the same
+6 as posts. Migration 040 message_reactions (PK message+user, FK
+cascades, CHECK, index user_id). PUT/DELETE
+/conversations/:id/messages/:messageId/reaction: participant only (else
+403 like the rest of the chat API), message must be in that chat and not
+unsent, block check as for sending, own limiter (120/15 min, not the send
+budget). Real time: socket message_reaction {conversationId, messageId,
+reactions}. Messages carry reactions [{user_id, reaction}] (one query per
+page, attached in list/edit; [] on new). Unsend/moderator removal clears
+them. No notification (Messenger shows it in the chat only). Data export
+gets message_reactions. UI: React button in the bubble actions opens a
+6-emoji picker (keyboard, aria-pressed for mine; picking mine again
+removes it), chips under the bubble with counts and who reacted
+(aria-label/title). Optimistic with rollback. EN/MY/AR, dark, RTL.
+Tests: jest (success + 400/403/404, block, unsend clears, socket
+broadcast), Vitest (chips/picker), browser suite day31-reactions
+(two users live).
 
 ## Progress
-(nothing in progress — Day 30 closed 2026-10-06)
+- Step 1 done: migration 040 message_reactions; PUT/DELETE .../reaction
+  (participant, same chat, not unsent -> 409, block -> 403, own limiter);
+  socket message_reaction; reactions on list/edit; unsend and moderator
+  removal clear them; export lists them. UI: React button, 6-emoji
+  picker (keyboard, Escape, outside click; opens below when the header
+  would cover it -- found by the browser suite), pill with count and who.
+  Tests: messageReactions.test.js 9 (participant + unsend-clear
+  mutations caught), MessageReactions.test.jsx 6, day31-reactions 18.
+  backend 587/587, Vitest 76/76, rehearsal 015->040 (86 indexes),
+  b9, b10, day12 x2, day23, day26, day28 green.

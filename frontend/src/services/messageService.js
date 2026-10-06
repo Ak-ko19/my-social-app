@@ -136,3 +136,11 @@ export function renameGroup(conversationId, name, token) {
 export function fetchMyFollowing(userId, token) {
   return api.get(`/users/${userId}/following`, authHeaders(token)).then((res) => res.data);
 }
+
+// Day 31: set (reaction = 'like' | 'love' | ...) or remove (null) your
+// reaction to a message. Resolves to { conversationId, messageId, reactions }.
+export function setMessageReactionRest(conversationId, messageId, reaction, token) {
+  const url = `/conversations/${conversationId}/messages/${messageId}/reaction`;
+  const request = reaction ? api.put(url, { reaction }, authHeaders(token)) : api.delete(url, authHeaders(token));
+  return request.then((res) => res.data);
+}

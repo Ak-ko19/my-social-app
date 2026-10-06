@@ -5,6 +5,7 @@ const requireConversationParticipant = require('../middleware/requireConversatio
 const { upload, uploadAudio, uploadToCloudinary } = require('../middleware/cloudinaryUpload');
 const conversationController = require('../controllers/conversationController');
 const groupController = require('../controllers/groupController');
+const { messageReactionLimiter } = require('../middleware/rateLimiter');
 
 router.get('/conversations', authMiddleware, conversationController.getConversations);
 router.post('/conversations', authMiddleware, conversationController.createConversation);
@@ -41,5 +42,8 @@ router.put('/conversations/:id/messages/:messageId', authMiddleware, conversatio
 router.delete('/conversations/:id/messages/:messageId', authMiddleware, conversationController.deleteMessage);
 router.put('/conversations/:id/read', authMiddleware, conversationController.markConversationRead);
 router.put('/conversations/:id/mute', authMiddleware, conversationController.muteConversation);
+// Day 31: react to a message (one reaction per person; DELETE removes it).
+router.put('/conversations/:id/messages/:messageId/reaction', authMiddleware, messageReactionLimiter, conversationController.setMessageReaction);
+router.delete('/conversations/:id/messages/:messageId/reaction', authMiddleware, messageReactionLimiter, conversationController.setMessageReaction);
 
 module.exports = router;

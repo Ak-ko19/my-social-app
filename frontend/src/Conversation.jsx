@@ -52,6 +52,7 @@ function Conversation() {
     retryVoiceSend,
     deleteMessage,
     editMessage,
+    reactToMessage,
     sendImageMessage,
     retryImageSend,
     reload
@@ -388,6 +389,8 @@ function Conversation() {
                 onSaveEdit={handleSaveEdit}
                 onCancelEdit={handleCancelEdit}
                 onReport={handleReport}
+                onReact={reactToMessage}
+                currentUserId={userId}
               />
             ))}
           </VoicePlaybackProvider>

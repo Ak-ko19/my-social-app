@@ -10,6 +10,7 @@ const { pushNewMessage } = require('./pushService');
 const { isRateLimited } = require('./rateLimiter');
 const blockService = require('./blockService');
 const { deleteMedia } = require('./mediaCleanupService');
+const { isValidReaction } = require('./reactionService');
 
 const MAX_MESSAGE_LENGTH = 5000;
 const MAX_CLIENT_TEMP_ID_LENGTH = 255;
@@ -343,6 +344,8 @@ async function deleteMessage({ conversationId, messageId, userId }) {
     `UPDATE messages SET deleted_at = now() WHERE id = $1 RETURNING *`,
     [msgId]
   );
+  // Day 31: an unsent message keeps no reactions (as on Messenger).
+  await db.query('DELETE FROM message_reactions WHERE message_id = $1', [msgId]);
   // The row stays (soft delete; the API no longer exposes its media_url),
   // but the photo / voice note itself is removed from Cloudinary.
   deleteMedia([message.media_url]);
@@ -359,6 +362,7 @@ async function removeMessageAsModerator(messageId) {
   );
   const message = result.rows[0];
   if (!message) return null;
+  await db.query('DELETE FROM message_reactions WHERE message_id = $1', [messageId]);
   deleteMedia([message.media_url]);
   return message;
 }
@@ -476,7 +480,7 @@ async function editMessage({ conversationId, messageId, userId, content }) {
     'UPDATE messages SET content = $1, edited_at = now() WHERE id = $2 RETURNING *',
     [cleaned, msgId]
   );
-  const [withPreview] = await attachReplyPreviews(convId, result.rows);
+  const [withPreview] = await attachReactions(await attachReplyPreviews(convId, result.rows));
   return withPreview;
 }
 
@@ -490,7 +494,63 @@ async function editMessage({ conversationId, messageId, userId, content }) {
 // it stayed playable; the same would apply to image messages.
 function scrubDeletedContent(message) {
   if (!message.deleted_at) return message;
-  return { ...message, content: null, media_url: null, duration_seconds: null };
+  return { ...message, content: null, media_url: null, duration_seconds: null, reactions: [] };
+}
+
+// Day 31: reactions on these messages, as reactions: [{ user_id, reaction }]
+// (oldest first) on each row -- one query for the whole page.
+async function attachReactions(rows) {
+  const ids = rows.map((r) => r.id).filter((id) => id != null);
+  if (ids.length === 0) return rows.map((r) => ({ ...r, reactions: [] }));
+  const result = await db.query(
+    'SELECT message_id, user_id, reaction FROM message_reactions WHERE message_id = ANY($1::int[]) ORDER BY created_at, user_id',
+    [ids]
+  );
+  const byMessage = new Map();
+  for (const row of result.rows) {
+    if (!byMessage.has(row.message_id)) byMessage.set(row.message_id, []);
+    byMessage.get(row.message_id).push({ user_id: row.user_id, reaction: row.reaction });
+  }
+  return rows.map((r) => ({ ...r, reactions: byMessage.get(r.id) || [] }));
+}
+
+// Day 31: set (reaction = one of the six) or remove (reaction = null) the
+// user's reaction on a message. Same rules as sending in this chat: only
+// participants, not to a blocked person in a DM, and not on an unsent
+// message. Returns { conversationId, messageId, reactions } for the
+// broadcast.
+async function setReaction({ conversationId, messageId, userId, reaction }) {
+  const convId = parseInt(conversationId, 10);
+  const msgId = parseInt(messageId, 10);
+  if (isNaN(convId) || isNaN(msgId)) {
+    throw new MessageValidationError('Invalid conversationId or messageId');
+  }
+  if (reaction !== null && !isValidReaction(reaction)) {
+    throw new MessageValidationError('Unknown reaction');
+  }
+  if (!(await isParticipant(convId, userId))) {
+    throw new NotParticipantError();
+  }
+  const existing = await db.query('SELECT id, deleted_at FROM messages WHERE id = $1 AND conversation_id = $2', [msgId, convId]);
+  if (existing.rows.length === 0) {
+    throw new MessageNotFoundError();
+  }
+  if (existing.rows[0].deleted_at) {
+    throw new NotEditableError("You can't react to a deleted message");
+  }
+  await assertNotBlocked(convId, userId);
+
+  if (reaction === null) {
+    await db.query('DELETE FROM message_reactions WHERE message_id = $1 AND user_id = $2', [msgId, userId]);
+  } else {
+    await db.query(
+      `INSERT INTO message_reactions (message_id, user_id, reaction) VALUES ($1, $2, $3)
+       ON CONFLICT (message_id, user_id) DO UPDATE SET reaction = EXCLUDED.reaction, created_at = now()`,
+      [msgId, userId, reaction]
+    );
+  }
+  const [withReactions] = await attachReactions([{ id: msgId }]);
+  return { conversationId: convId, messageId: msgId, reactions: withReactions.reactions };
 }
 
 module.exports = {
@@ -499,6 +559,8 @@ module.exports = {
   sendImageMessage,
   editMessage,
   attachReplyPreviews,
+  attachReactions,
+  setReaction,
   markDelivered,
   markRead,
   deleteMessage,

@@ -250,7 +250,7 @@ async function getMessages(req, res) {
     // oldest-first so the client can render straight down the page. Any
     // soft-deleted row keeps its place (id/sender/timestamp) but never
     // sends its content to the client.
-    const withPreviews = await messageService.attachReplyPreviews(conversationId, page.reverse());
+    const withPreviews = await messageService.attachReactions(await messageService.attachReplyPreviews(conversationId, page.reverse()));
     res.json({ messages: withPreviews.map(messageService.scrubDeletedContent), nextCursor });
   } catch (err) {
     sendServerError(res, err, 'Fetch messages failed. Please try again later.');
@@ -461,6 +461,35 @@ async function editMessage(req, res) {
   }
 }
 
+// Day 31: PUT /conversations/:id/messages/:messageId/reaction { reaction }
+// sets the caller's reaction (one of the six); DELETE removes it. Everyone
+// in the chat sees it at once (socket message_reaction).
+async function setMessageReaction(req, res) {
+  try {
+    const reaction = req.method === 'DELETE' ? null : req.body?.reaction;
+    if (req.method !== 'DELETE' && typeof reaction !== 'string') return res.status(400).send('reaction is required');
+    const update = await messageService.setReaction({
+      conversationId: req.params.id,
+      messageId: req.params.messageId,
+      userId: req.userId,
+      reaction
+    });
+    try {
+      getIO().to(`conv_${update.conversationId}`).emit('message_reaction', update);
+    } catch (err) {
+      logger.error('socket emit failed', { event: 'message_reaction', err });
+    }
+    res.json(update);
+  } catch (err) {
+    if (err instanceof messageService.MessageValidationError) return res.status(400).send(err.message);
+    if (err instanceof messageService.NotParticipantError) return res.status(403).send(err.message);
+    if (err instanceof messageService.BlockedError) return res.status(403).send(err.message);
+    if (err instanceof messageService.MessageNotFoundError) return res.status(404).send(err.message);
+    if (err instanceof messageService.NotEditableError) return res.status(409).send(err.message);
+    sendServerError(res, err, 'Reacting failed. Please try again later.');
+  }
+}
+
 // Day 23: PUT /conversations/:id/mute { duration: '8h' | '1w' | 'always' | null }
 // -- no message notifications from this chat for that long (null = unmute).
 // Only for people in the conversation; anyone else gets the same 404 as a
@@ -500,5 +529,6 @@ module.exports = {
   sendMessage,
   sendVoiceMessage,
   deleteMessage,
-  markConversationRead
+  markConversationRead,
+  setMessageReaction
 };

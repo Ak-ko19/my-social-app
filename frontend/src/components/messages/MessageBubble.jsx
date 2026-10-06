@@ -1,7 +1,8 @@
 import { getOptimizedImageUrl, getSrcSet } from '../../utils/cloudinaryImage';
-import { memo, useEffect, useState } from 'react';
-import { CornerUpLeft, Flag, Pencil } from 'lucide-react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { CornerUpLeft, Flag, Pencil, SmilePlus } from 'lucide-react';
 import MessageStatusIcon from './MessageStatusIcon';
+import { MessageReactionChips, MessageReactionPicker } from './MessageReactions';
 import VoiceMessagePlayer from './VoiceMessagePlayer';
 import { useTranslation } from 'react-i18next';
 import i18n, { formatDate } from '../../i18n';
@@ -80,7 +81,9 @@ function MessageBubble({
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
-  onReport
+  onReport,
+  onReact,
+  currentUserId
 }) {
   const { t } = useTranslation();
   const isFailed = message.status === 'failed';
@@ -105,6 +108,14 @@ function MessageBubble({
   const canReply = !isDeleted && isPersisted;
   // Day 12: someone else's message can be reported to the moderators.
   const canReport = !isOwn && !isDeleted && isPersisted && Boolean(onReport);
+  // Day 31: reactions (see MessageReactions.jsx). replyAuthorLabel doubles
+  // as "who is this" for the reactions label ("You", a name, or "them").
+  const canReact = !isDeleted && isPersisted && Boolean(onReact);
+  const reactions = isDeleted ? [] : message.reactions || [];
+  const myReaction = reactions.find((x) => x.user_id === currentUserId)?.reaction || null;
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const reactButtonRef = useRef(null);
+  const closePicker = useCallback(() => setPickerOpen(false), []);
   // Whether the 15-minute edit window is still open -- state + a timer (not
   // Date.now() during render) so "Edit" disappears exactly when it closes.
   const isEditableType = isOwn && message.type !== 'voice' && message.type !== 'image';
@@ -178,7 +189,15 @@ function MessageBubble({
   }
 
   return (
-    <div className={`messages-bubble-row${isOwn ? ' messages-bubble-row-own' : ''}`}>
+    <div className={`messages-bubble-row${isOwn ? ' messages-bubble-row-own' : ''}${reactions.length ? ' messages-bubble-row-reacted' : ''}`}>
+      {pickerOpen && canReact && (
+        <MessageReactionPicker
+          myReaction={myReaction}
+          onPick={(reaction) => onReact(message.id, reaction)}
+          onClose={closePicker}
+          returnFocusRef={reactButtonRef}
+        />
+      )}
       <div
         className={[
           'messages-bubble',
@@ -256,9 +275,23 @@ function MessageBubble({
             {t('messages.sendFailed')}
           </button>
         )}
+        <MessageReactionChips reactions={reactions} nameOf={replyAuthorLabel} onOpen={canReact ? () => setPickerOpen(true) : undefined} />
       </div>
-      {(canReply || canEdit || canReport) && !isEditing && (
+      {(canReply || canEdit || canReport || canReact) && !isEditing && (
         <div className="messages-bubble-actions">
+          {canReact && (
+            <button
+              type="button"
+              ref={reactButtonRef}
+              className="messages-action-btn"
+              onClick={() => setPickerOpen((open) => !open)}
+              aria-label={t('messages.react')}
+              title={t('messages.react')}
+              aria-expanded={pickerOpen}
+            >
+              <SmilePlus size={14} aria-hidden="true" />
+            </button>
+          )}
           {canReply && (
             <button type="button" className="messages-action-btn" onClick={() => onReply(message)} aria-label={t('messages.replyToMessage')}>
               <CornerUpLeft size={14} aria-hidden="true" />

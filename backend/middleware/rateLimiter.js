@@ -187,6 +187,16 @@ const accountActionLimiter = createLimiter({
   message: 'Too many attempts. Please try again in 15 minutes.'
 });
 
+// Day 31: reacting to messages is quick and repeatable (changing your mind
+// is normal), but a script flipping reactions would spam everyone's chat.
+// Its own budget, so reactions never use up the message-send limit.
+const messageReactionLimiter = createLimiter({
+  keyBy: 'user',
+  windowMs: 15 * 60 * 1000,
+  max: 120,
+  message: 'Too many reactions. Please try again later.'
+});
+
 // Day 28: "Download your information" reads everything an account has --
 // heavy, and rarely needed more than once.
 const dataExportLimiter = createLimiter({
@@ -227,6 +237,7 @@ module.exports = {
   followLimiter,
   accountActionLimiter,
   dataExportLimiter,
+  messageReactionLimiter,
   resendVerificationLimiter,
   createLimiter,
   rateLimitKeys: { ipKey, userKey, userOrIpKey, emailKey }

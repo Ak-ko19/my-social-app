@@ -29,7 +29,7 @@ async function buildExport(userId) {
   const [
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
-    legacyMessages, notifications, reports, sessions, pushDevices
+    legacyMessages, notifications, reports, sessions, pushDevices, messageReactions
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -85,7 +85,12 @@ async function buildExport(userId) {
     rows(`SELECT user_agent, created_at, last_seen_at, expires_at, revoked_at
           FROM sessions WHERE user_id = $1 ORDER BY created_at`, [userId]),
     rows(`SELECT user_agent, created_at, last_success_at FROM push_subscriptions
-          WHERE user_id = $1 ORDER BY created_at`, [userId])
+          WHERE user_id = $1 ORDER BY created_at`, [userId]),
+    // Day 31: reactions to messages, in chats the account is still in.
+    rows(`SELECT m.conversation_id, mr.message_id, mr.reaction, mr.created_at FROM message_reactions mr
+          JOIN messages m ON m.id = mr.message_id
+          JOIN conversation_participants mine ON mine.conversation_id = m.conversation_id AND mine.user_id = $1
+          WHERE mr.user_id = $1 ORDER BY mr.created_at`, [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -139,6 +144,7 @@ async function buildExport(userId) {
         deleted_at ? { ...m, deleted_at } : { ...m, content, media_url, duration_seconds }
       ))
     })),
+    message_reactions: messageReactions,
     older_direct_messages: legacyMessages,
     notifications,
     reports_you_made: reports,

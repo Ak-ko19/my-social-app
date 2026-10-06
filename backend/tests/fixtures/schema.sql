@@ -416,3 +416,14 @@ CREATE INDEX idx_messages_conversation_id ON messages (conversation_id, id);
 CREATE INDEX idx_post_hashtags_hashtag ON post_hashtags (hashtag_id, post_id);
 CREATE INDEX idx_participants_last_read ON conversation_participants (last_read_message_id) WHERE last_read_message_id IS NOT NULL;
 CREATE INDEX idx_story_views_viewer ON story_views (viewer_id);
+
+-- Day 31 (migration 040): reactions on messages.
+CREATE TABLE message_reactions (
+  message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reaction VARCHAR(10) NOT NULL
+    CONSTRAINT chk_message_reactions_reaction CHECK (reaction IN ('like', 'love', 'haha', 'wow', 'sad', 'angry')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (message_id, user_id)
+);
+CREATE INDEX idx_message_reactions_user ON message_reactions (user_id);

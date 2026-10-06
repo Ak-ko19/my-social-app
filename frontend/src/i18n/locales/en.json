@@ -523,7 +523,9 @@
       "always": "Until I turn them back on",
       "unmute": "Unmute",
       "failed": "Couldn't change notifications for this chat. Please try again."
-    }
+    },
+    "react": "React",
+    "reactionsSummary": "Reactions — {{list}}. Press to choose yours"
   },
   "members": {
     "loadFailed": "Could not load the people you follow",

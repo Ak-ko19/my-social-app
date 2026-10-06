@@ -8,8 +8,7 @@ import {
   deleteMessageRest,
   sendVoiceMessageRest,
   editMessageRest,
-  sendImageMessageRest
-} from '../services/messageService';
+  sendImageMessageRest, setMessageReactionRest } from '../services/messageService';
 
 // B9: a reply's quote, built locally for an optimistic message the same way
 // the server builds reply_to (see backend messageService.attachReplyPreviews)
@@ -252,6 +251,18 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     socket.on('message_edited', handleMessageEdited);
     return () => socket.off('message_edited', handleMessageEdited);
   }, [socket, conversationIdNum, mergeMessages]);
+
+  // Day 31: live reactions (anyone's, including this client's own from
+  // another device). The server sends the message's whole reaction list.
+  useEffect(() => {
+    if (!socket) return;
+    const handleReaction = ({ conversationId: convId, messageId, reactions }) => {
+      if (convId !== conversationIdNum) return;
+      setMessages((current) => current.map((m) => (m.id === messageId ? { ...m, reactions } : m)));
+    };
+    socket.on('message_reaction', handleReaction);
+    return () => socket.off('message_reaction', handleReaction);
+  }, [socket, conversationIdNum]);
 
   // Ack/error for this client's own sends -- see attemptSend below for the
   // other half (arming the timeout these clear).
@@ -602,6 +613,30 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     [socket, connectionState, conversationId, token, mergeMessages]
   );
 
+  // Day 31: react (reaction = key) or remove your reaction (null).
+  // Optimistic; the REST answer (and the room's message_reaction event)
+  // carries the authoritative list; rolled back on failure.
+  const reactToMessage = useCallback(
+    (messageId, reaction) => {
+      let previous = null;
+      setMessages((current) =>
+        current.map((m) => {
+          if (m.id !== messageId || m.deleted_at) return m;
+          previous = m.reactions || [];
+          const others = previous.filter((x) => x.user_id !== currentUserId);
+          return { ...m, reactions: reaction ? [...others, { user_id: currentUserId, reaction }] : others };
+        })
+      );
+      setMessageReactionRest(conversationId, messageId, reaction, token)
+        .then(({ reactions }) => setMessages((current) => current.map((m) => (m.id === messageId ? { ...m, reactions } : m))))
+        .catch((err) => {
+          console.error(err);
+          if (previous) setMessages((current) => current.map((m) => (m.id === messageId ? { ...m, reactions: previous } : m)));
+        });
+    },
+    [conversationId, currentUserId, token]
+  );
+
   // B9 image send -- REST only (a file isn't a socket payload), optimistic
   // bubble from a local blob URL, same shape as voice sends.
   const attemptImageUpload = useCallback(
@@ -687,6 +722,7 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     retryVoiceSend,
     deleteMessage,
     editMessage,
+    reactToMessage,
     sendImageMessage,
     retryImageSend,
     reload: () => loadMessages({ markRead: false })
