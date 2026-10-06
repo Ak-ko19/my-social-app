@@ -673,3 +673,28 @@ textarea.form-input {
   font-size: 12.5px;
   color: var(--color-text-muted);
 }
+
+/* Day 36: profile links in Edit Profile. */
+.edit-profile-links {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.edit-profile-links .btn {
+  align-self: flex-start;
+}
+
+.edit-profile-link-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.edit-profile-link-row .form-input {
+  flex: 1;
+  min-width: 0;
+}

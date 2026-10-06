@@ -15,6 +15,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { serverErrorText } from '../utils/serverError';
 import './ProfileScreen.css';
 import '../components/feed/Feed.css';
+import ProfileDetails from '../components/profile/ProfileDetails';
 
 // The @mention / hashtag-adjacent "view someone else's profile" page --
 // didn't exist anywhere in the app before mentions needed somewhere to link
@@ -172,6 +173,7 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
         <Avatar size={84} src={resolveImageUrl(profile.avatar_url)} initials={initials} alt="" />
         <h2 className="profile-screen-username">{profile.username}</h2>
         {profile.bio && <p className="profile-screen-bio" dir="auto">{profile.bio}</p>}
+        <ProfileDetails links={profile.links} joinedAt={profile.created_at} />
 
         {counts && (
           <div className="profile-screen-counts">

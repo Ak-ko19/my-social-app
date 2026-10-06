@@ -433,3 +433,7 @@ ALTER TABLE messages ADD COLUMN is_forwarded BOOLEAN NOT NULL DEFAULT false;
 
 -- Day 34 (migration 042): a group chat's photo.
 ALTER TABLE conversations ADD COLUMN avatar_url TEXT;
+
+-- Day 36 (migration 043): links on a profile.
+ALTER TABLE users ADD COLUMN links TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE users ADD CONSTRAINT chk_users_links_count CHECK (cardinality(links) <= 3);

@@ -7,10 +7,15 @@ import { IconButton, Avatar } from './components/ui';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
 
+// Day 36: same limit as the server (backend/utils/profileLinks.js).
+const MAX_LINKS = 3;
+
 function EditProfile() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [bio, setBio] = useState('');
+  // Day 36: up to MAX_LINKS links, edited as text fields.
+  const [links, setLinks] = useState(['']);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -35,6 +40,7 @@ function EditProfile() {
       setUsername(response.data.username);
       setEmail(response.data.email);
       setBio(response.data.bio || '');
+      setLinks(response.data.links?.length ? response.data.links : ['']);
       setAvatarUrl(response.data.avatar_url || null);
       // Changing the email resets verification server-side -- sync it so
       // the verify-email banner reappears without a reload.
@@ -63,6 +69,7 @@ function EditProfile() {
     formData.append('username', username);
     formData.append('email', email);
     formData.append('bio', bio);
+    formData.append('links', JSON.stringify(links.map((l) => l.trim()).filter(Boolean)));
     if (avatar) {
       formData.append('avatar', avatar);
     }
@@ -122,6 +129,40 @@ function EditProfile() {
             rows="4"
           />
         </label>
+        <fieldset className="form-field edit-profile-links">
+          <legend className="form-label">{t('editProfile.links')}</legend>
+          {links.map((link, i) => (
+            <div className="edit-profile-link-row" key={i}>
+              <input
+                className="form-input"
+                type="text"
+                inputMode="url"
+                autoComplete="url"
+                dir="ltr"
+                maxLength={200}
+                value={link}
+                onChange={(e) => setLinks((current) => current.map((l, j) => (j === i ? e.target.value : l)))}
+                placeholder={t('editProfile.linkPlaceholder')}
+                aria-label={t('editProfile.linkN', { n: i + 1 })}
+              />
+              {(links.length > 1 || link) && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setLinks((current) => (current.length > 1 ? current.filter((_, j) => j !== i) : ['']))}
+                  aria-label={t('editProfile.removeLinkN', { n: i + 1 })}
+                >
+                  {t('editProfile.removeLink')}
+                </button>
+              )}
+            </div>
+          ))}
+          {links.length < MAX_LINKS && (
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setLinks((current) => [...current, ''])}>
+              {t('editProfile.addLink')}
+            </button>
+          )}
+        </fieldset>
         {error && <p className="form-error" role="alert">{error}</p>}
         {success && <p className="form-success" role="status">{success}</p>}
         <button type="submit" className="btn btn-primary btn-block">{t('common.saveChanges')}</button>

@@ -362,7 +362,9 @@
     },
     "private": "This account is private. Follow {{name}} to see their posts.",
     "openPost": "Open post: {{text}}",
-    "sections": "Profile sections"
+    "sections": "Profile sections",
+    "links": "Links",
+    "joined": "Joined {{date}}"
   },
   "editProfile": {
     "title": "Edit Profile",
@@ -373,7 +375,13 @@
     "avatarAlt": "Avatar",
     "picture": "Profile picture",
     "bio": "Bio",
-    "bioPlaceholder": "Tell people about yourself..."
+    "bioPlaceholder": "Tell people about yourself...",
+    "links": "Links",
+    "linkPlaceholder": "example.com",
+    "linkN": "Link {{n}}",
+    "addLink": "Add a link",
+    "removeLink": "Remove",
+    "removeLinkN": "Remove link {{n}}"
   },
   "explore": {
     "title": "Explore",

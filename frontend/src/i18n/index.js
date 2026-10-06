@@ -83,7 +83,8 @@ export const i18nReady = setLanguage(startLanguage).catch((err) => {
 // uses: "၂၀၂၆ စက်တင်ဘာ ၂၇", "၂၇/၉/၂၀၂၆ ၁၄:၀၅:၀၀", "၁၄:၀၅".
 // Arabic (B16) uses the browser's own Arabic data with Western digits
 // ('ar-u-nu-latn'), matching the counts shown elsewhere in the UI.
-// style: 'datetime' (default) | 'date' | 'long' | 'time' (hh:mm).
+// style: 'datetime' (default) | 'date' | 'long' | 'time' (hh:mm) |
+// 'monthYear' (Day 36: "March 2026", e.g. when someone joined).
 const MY_DIGITS = '၀၁၂၃၄၅၆၇၈၉';
 const MY_MONTHS = ['ဇန်နဝါရီ', 'ဖေဖော်ဝါရီ', 'မတ်', 'ဧပြီ', 'မေ', 'ဇွန်', 'ဇူလိုင်', 'ဩဂုတ်', 'စက်တင်ဘာ', 'အောက်တိုဘာ', 'နိုဝင်ဘာ', 'ဒီဇင်ဘာ'];
 const myDigits = (s) => String(s).replace(/\d/g, (d) => MY_DIGITS[d]);
@@ -98,6 +99,7 @@ const INTL_OPTIONS = {
   datetime: undefined,
   date: undefined,
   long: { dateStyle: 'long' },
+  monthYear: { year: 'numeric', month: 'long' },
   time: { hour: '2-digit', minute: '2-digit' }
 };
 
@@ -112,12 +114,14 @@ export function formatDate(value, style = 'datetime') {
     const locale = my ? 'my' : i18n.language === 'ar' ? 'ar-u-nu-latn' : undefined;
     if (style === 'date') return d.toLocaleDateString(locale);
     if (style === 'long') return d.toLocaleDateString(locale, INTL_OPTIONS.long);
+    if (style === 'monthYear') return d.toLocaleDateString(locale, INTL_OPTIONS.monthYear);
     if (style === 'time') return d.toLocaleTimeString(locale || [], INTL_OPTIONS.time);
     return d.toLocaleString(locale);
   }
   const date = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
   if (style === 'long') return myDigits(`${d.getFullYear()} `) + MY_MONTHS[d.getMonth()] + myDigits(` ${d.getDate()}`);
+  if (style === 'monthYear') return myDigits(`${d.getFullYear()} `) + MY_MONTHS[d.getMonth()];
   if (style === 'date') return myDigits(date);
   if (style === 'time') return myDigits(time);
   return myDigits(`${date} ${time}:${pad(d.getSeconds())}`);

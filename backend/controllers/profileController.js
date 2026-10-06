@@ -4,13 +4,14 @@ const { sendServerError } = require('../utils/sendError');
 const { deleteMedia } = require('../services/mediaCleanupService');
 const blockService = require('../services/blockService');
 const { buildExport } = require('../services/dataExportService');
+const { parseLinks, LINKS_ERROR } = require('../utils/profileLinks');
 
 // Same check signup uses (authController.EMAIL_REGEX).
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function getMyProfile(req, res) {
   try {
-    const result = await db.query('SELECT id, username, email, bio, avatar_url, is_private, email_verified, is_admin, language, created_at FROM users WHERE id = $1', [req.userId]);
+    const result = await db.query('SELECT id, username, email, bio, links, avatar_url, is_private, email_verified, is_admin, language, created_at FROM users WHERE id = $1', [req.userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).send('User not found');
@@ -52,7 +53,7 @@ async function getProfile(req, res) {
     // right Follow/Unfollow/Block button state without a second request.
     const viewerId = req.userId ?? null;
     const result = await db.query(`
-      SELECT id, username, bio, avatar_url, is_private, is_deactivated, created_at,
+      SELECT id, username, bio, links, avatar_url, is_private, is_deactivated, created_at,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = users.id AND status = 'accepted') AS is_following,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = users.id AND status = 'pending') AS follow_request_pending,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = users.id) AS is_blocked_by_me
@@ -105,6 +106,9 @@ async function updateProfile(req, res) {
     if (!EMAIL_REGEX.test(email)) {
       return res.status(400).send('Invalid email format');
     }
+    // Day 36: links -- not sent means unchanged (an older app version).
+    const links = parseLinks(req.body.links);
+    if (links === null) return res.status(400).send(LINKS_ERROR);
     const previous = avatarUrl
       ? (await db.query('SELECT avatar_url FROM users WHERE id = $1', [req.userId])).rows[0]?.avatar_url
       : null;
@@ -115,10 +119,11 @@ async function updateProfile(req, res) {
       // value as $2, passed separately so Postgres infers one type per param.) The user can
       // re-verify via POST /resend-verification (the in-app banner).
       `UPDATE users SET username = $1, email = $2, bio = $3, avatar_url = COALESCE($4, avatar_url),
-         email_verified = CASE WHEN email = $6 THEN email_verified ELSE false END
+         email_verified = CASE WHEN email = $6 THEN email_verified ELSE false END,
+         links = COALESCE($7::text[], links)
        WHERE id = $5
-       RETURNING id, username, email, bio, avatar_url, email_verified, created_at`,
-      [username, email, bio || null, avatarUrl, req.userId, email]
+       RETURNING id, username, email, bio, links, avatar_url, email_verified, created_at`,
+      [username, email, bio || null, avatarUrl, req.userId, email, links ?? null]
     );
     // Replaced: the old picture is no longer used anywhere.
     if (previous && previous !== avatarUrl) deleteMedia([previous]);

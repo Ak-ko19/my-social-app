@@ -374,7 +374,9 @@
     },
     "private": "هذا الحساب خاص. تابع {{name}} لرؤية منشوراته.",
     "openPost": "فتح المنشور: {{text}}",
-    "sections": "أقسام الملف الشخصي"
+    "sections": "أقسام الملف الشخصي",
+    "links": "الروابط",
+    "joined": "انضم في {{date}}"
   },
   "editProfile": {
     "title": "تعديل الملف الشخصي",
@@ -385,7 +387,13 @@
     "avatarAlt": "الصورة الرمزية",
     "picture": "صورة الملف الشخصي",
     "bio": "النبذة",
-    "bioPlaceholder": "عرّف الناس بنفسك..."
+    "bioPlaceholder": "عرّف الناس بنفسك...",
+    "links": "الروابط",
+    "linkPlaceholder": "example.com",
+    "linkN": "الرابط {{n}}",
+    "addLink": "إضافة رابط",
+    "removeLink": "إزالة",
+    "removeLinkN": "إزالة الرابط {{n}}"
   },
   "explore": {
     "title": "استكشاف",

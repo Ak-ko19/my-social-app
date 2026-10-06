@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 36 — Profile upgrade (not started)
-**Step:** —
+**Day:** 36 — Profile upgrade
+**Step:** 1 — joined date + links
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -62,7 +62,27 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-(written at the start of each step)
+Day 36 in 3 steps: (1) joined date + links, (2) cover photo, (3) pinned
+post. None existed.
+Step 1: migration 043 users.links TEXT[] (<= 3, CHECK). PUT /profile
+takes links (JSON array in the form; absent = unchanged, so older clients
+don't wipe them): http(s) only, "example.com" -> https://, <= 200 chars,
+no credentials, host with a dot, deduped; else 400. GET /profile/:id and
+/me return links (public like the bio); export includes them. UI:
+profile shows links (hostname, target=_blank rel=noopener noreferrer
+nofollow ugc, checked again with safeHttpUrl) and "Joined <month year>"
+(new formatDate style monthYear, Burmese fallback); Edit Profile: up to
+3 link fields. EN/MY/AR. Tests: jest (normalize, refuse, keep when
+absent, public), Vitest (formatDate monthYear, links render),
+e2e day36-profile.
 
 ## Progress
-(nothing in progress — Days 33-35 closed 2026-10-06)
+- Step 1 done: migration 043 users.links; utils/profileLinks.js (http(s)
+  only, scheme added, host:port kept, no credentials, <= 3); PUT /profile
+  links (absent = unchanged). ProfileDetails (safeHttpUrl again,
+  rel=noopener noreferrer nofollow ugc, dir=ltr) + Joined <monthYear>;
+  Edit Profile link fields. A first test let javascript://host pass the
+  mutation -- strengthened. profileLinks.test.js 6, ProfileDetails 5,
+  day36-profile 15. backend 618/618, Vitest 89/89, rehearsal 015->043.
+- TODO in step 2: Privacy Policy section 1 should list links and cover
+  photo among profile details (EN/MY/AR).

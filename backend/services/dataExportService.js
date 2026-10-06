@@ -20,7 +20,7 @@ async function rows(sql, params) {
 
 async function buildExport(userId) {
   const [profile] = await rows(
-    `SELECT id, username, email, bio, avatar_url, is_private, language, email_verified, created_at
+    `SELECT id, username, email, bio, links, avatar_url, is_private, language, email_verified, created_at
      FROM users WHERE id = $1`,
     [userId]
   );
