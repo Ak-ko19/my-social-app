@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 33-35 — Group chats
-**Step:** 2 — group photo (step 1 committed 555d1d0)
+**Day:** 36 — Profile upgrade (not started)
+**Step:** —
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -47,6 +47,10 @@
 - Privacy Policy (legal.privacy in the locales) is written from the
   code: when a feature changes what is collected, shared or kept,
   update it (EN/MY/AR) and its date in LegalScreen.jsx.
+- Cloudinary: a new upload folder must be added to
+  scripts/cloudinary-orphans.js APP_FOLDERS (a test checks), and any new
+  column holding a file URL to its referencedKeys (else the scan deletes
+  it!).
 - New account-only screens: wrap their route in authOnly() in App.jsx
   and add them to e2e/day30-guard.cjs GUARDED.
 - Accessibility: e2e/day26-a11y.cjs must stay at 0 serious/critical.
@@ -58,47 +62,7 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-Already built (B10, groups.test.js, E2E b10-groups): create, add/remove
-members, leave, rename (admins), auto-promote when the last admin leaves,
-live group_updated. Missing: managing admins (step 1), group photo (step
-2).
-Step 2 (group photo): migration 042 conversations.avatar_url. PUT
-/conversations/:id/photo (multipart photo; admin checked BEFORE the
-upload so a refused request never uploads; image filter, 5 MB) and
-DELETE /conversations/:id/photo. Replacing/removing deletes the old file;
-mediaOfConversation includes it (group deleted when the last member
-leaves); the orphan scan counts it as in use (else it would be deleted!).
-Shown in the inbox, chat header and group info; live via group_updated.
-UI (GroupInfoScreen, admins): Change photo / Remove photo, pending and
-error states. Export: conversations carry avatar_url. Tests: jest (admin
-only, no upload when refused, old file deleted, orphan scan, group
-deletion), Vitest?, e2e day34-group-photo (stubbed upload not possible
-without Cloudinary -> UI flow with API-set URL + local image; the
-upload path is covered by jest with the mocked Cloudinary).
-Step 1: PATCH /conversations/:id/members/:userId { role: admin|member }:
-admins only (403), target in the group (404), bad role (400), never
-removes the last admin (409 -- a group always has one; leaving still
-auto-promotes). Self step-down allowed when another admin exists. Emits
-group_updated. UI (GroupInfoScreen): on others' rows admins get "Make
-admin" / "Remove as admin"; an admin's own row gets "Step down as
-admin" when another admin exists. EN/MY/AR. Tests: groups admin jest
-cases; e2e day33-group-admins (two people, live, dark, AR).
+(written at the start of each step)
 
 ## Progress
-- Step 1 done: PATCH /conversations/:id/members/:userId {role}
-  (SET_ROLE_SQL locks the group rows: a concurrent demotion waits and
-  then refuses; proven by a two-connection test -- the HTTP race test
-  could not catch a missing lock, 0/10). GroupInfoScreen: one Options
-  sheet per member (Make admin / Remove as admin / Remove; own row: Step
-  down only while another admin exists). b10-groups updated for the
-  sheet. groupAdmins.test.js 7 (guard + lock mutations caught),
-  day33-group-admins 13. backend 605/605, Vitest 82/82.
-- Step 2 done: migration 042 conversations.avatar_url; PUT/DELETE
-  /conversations/:id/photo (admin checked before upload -- mutation
-  caught); old file deleted on replace/remove and with the group; orphan
-  scan now lists group-photos (+ a guard test that every upload folder
-  is scanned; it was missing). GroupAvatar in inbox/header/info;
-  Add/Change/Remove photo for admins. b10-groups selector tightened
-  (/^Add/ also matched Add photo). groupPhoto.test.js 6, GroupAvatar
-  2, day34-group-photo 14. backend 612/612, Vitest 84/84, rehearsal
-  015->042.
+(nothing in progress — Days 33-35 closed 2026-10-06)

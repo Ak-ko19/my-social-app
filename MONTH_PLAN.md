@@ -196,7 +196,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 31–32 — Messaging upgrade
 - [x] Reply to a message, react to a message, edit/unsend, forward. *(Reply, edit, unsend existed (B9); reactions and forward built — see Progress Log.)*
 ### Day 33–35 — Group chats
-- [ ] Create group, add/remove members, admins, group name/photo, real-time via Socket.io.
+- [x] Create group, add/remove members, admins, group name/photo, real-time via Socket.io. *(Create/add/remove/rename/live existed (B10); admin management and group photo built — see Progress Log.)*
 ### Day 36 — Profile upgrade
 - [ ] Cover photo, links, joined date, pinned post.
 ### Day 37–38 — Friend requests (if missing)
@@ -1188,3 +1188,34 @@ Build every feature the way a senior engineer at a top social media company woul
   - Rehearsal 015 → 041.
   - Full browser run: all 41 suites (new: day31-reactions,
     day32-forward) + A3 EN/MY/AR green.
+
+### 2026-10-06 — Days 33–35: Group chats
+- **Already built (B10), verified:** create, add/remove members, leave,
+  rename (admins), automatic admin hand-over when the last admin
+  leaves, live `group_updated` (groups.test.js, E2E b10-groups).
+- **Admins (`555d1d0`):**
+  - `PATCH /conversations/:id/members/:userId { role }`: admins make or
+    remove admins, including themselves. A group always keeps one admin
+    (409).
+  - Better approach: one statement that locks the group's rows, so two
+    admins demoting each other at once can't leave none. A plain HTTP
+    race test passed 10/10 without the lock, so the lock is proven by a
+    two-connection test instead.
+  - UI: one Options sheet per member (Make admin / Remove as admin /
+    Remove; Step down on your own row), replacing the per-row Remove
+    button. b10-groups was updated for it.
+- **Group photo (`8e41022`):**
+  - Migration 042 `conversations.avatar_url`; `PUT/DELETE
+    /conversations/:id/photo`. Admins only, checked before the upload,
+    so a refused request never uploads.
+  - The old file is deleted on replace or remove and with the group.
+  - Found while building: the orphan scan would have treated group
+    photos as orphans and deleted them. They now count as in use, and a
+    new test checks that every folder the routes upload into is
+    scanned.
+  - `GroupAvatar` shows in the inbox, chat header and group info.
+- **Tests at close:**
+  - backend 612/612; Vitest 84/84.
+  - Rehearsal 015 → 042.
+  - Full browser run: all 43 suites (new: day33-group-admins,
+    day34-group-photo) + A3 EN/MY/AR green.
