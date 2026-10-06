@@ -9,6 +9,8 @@ const ELIGIBLE_SQL = `
   u.id <> $1
   AND NOT u.is_deactivated
   AND NOT EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $1 AND f.following_id = u.id)
+  -- Day 39: people you hid from suggestions stay hidden.
+  AND NOT EXISTS (SELECT 1 FROM suggestion_dismissals sd WHERE sd.user_id = $1 AND sd.dismissed_user_id = u.id)
   AND NOT EXISTS (
     SELECT 1 FROM blocks b
     WHERE (b.blocker_id = $1 AND b.blocked_id = u.id) OR (b.blocker_id = u.id AND b.blocked_id = $1)
@@ -97,4 +99,29 @@ async function getSuggestions(req, res) {
   }
 }
 
-module.exports = { getSuggestions };
+// Day 39: POST /users/suggestions/:id/dismiss -- hide this person from your
+// suggestions (like the X on Facebook's / Instagram's). Idempotent; it
+// doesn't block or unfollow anyone and they aren't told.
+async function dismissSuggestion(req, res) {
+  try {
+    const targetId = Number(req.params.id);
+    if (!Number.isInteger(targetId) || targetId <= 0) return res.status(400).send('Invalid user ID');
+    if (targetId === req.userId) return res.status(400).send("You can't hide yourself");
+    const result = await db.query(
+      `INSERT INTO suggestion_dismissals (user_id, dismissed_user_id)
+       SELECT $1, id FROM users WHERE id = $2
+       ON CONFLICT DO NOTHING
+       RETURNING dismissed_user_id`,
+      [req.userId, targetId]
+    );
+    if (result.rows.length === 0) {
+      const exists = await db.query('SELECT 1 FROM users WHERE id = $1', [targetId]);
+      if (exists.rows.length === 0) return res.status(404).send('User not found');
+    }
+    res.status(204).end();
+  } catch (err) {
+    sendServerError(res, err, 'Hiding the suggestion failed. Please try again later.');
+  }
+}
+
+module.exports = { getSuggestions, dismissSuggestion };

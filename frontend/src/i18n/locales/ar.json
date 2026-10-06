@@ -450,7 +450,9 @@
       "followedByOthers_many": "يتابعه {{first}} و{{count}} شخصًا آخر",
       "followedByOthers_other": "يتابعه {{first}} و{{count}} شخص آخر",
       "followedBy": "يتابعه {{first}}"
-    }
+    },
+    "hideSuggestion": "إخفاء {{name}} من الاقتراحات",
+    "hideFailed": "تعذّر إخفاء هذا الاقتراح. يرجى المحاولة مرة أخرى."
   },
   "search": {
     "title": "بحث",

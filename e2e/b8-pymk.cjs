@@ -1,3 +1,4 @@
+// (Day 39: cards also have a Hide button, so the follow button is .feed-btn.)
 // B8 People you may know in headless Edge (throwaway stack: alice(1)
 // follows bob(2)).
 const fs = require('fs');
@@ -58,14 +59,14 @@ async function signup(name) {
   const card = (name) => page.locator('.pymk-card', { has: page.locator('.pymk-name', { hasText: new RegExp(`^${name}$`) }) });
   await card('carol').getByRole('button', { name: 'Follow' }).click();
   await page.waitForTimeout(700);
-  check('following carol shows "Following"', (await card('carol').getByRole('button').innerText()) === 'Following');
+  check('following carol shows "Following"', (await card('carol').locator('.feed-btn').innerText()) === 'Following');
   const aliceFollowing = await (await call('GET', '/users/1/following', aliceToken)).json();
   check('server: alice now follows carol', aliceFollowing.some((u) => u.id === carol.id));
 
   // Follow eve (private) -> Requested (the useFollowToggle pending fix).
   await card('eve').getByRole('button', { name: 'Follow' }).click();
   await page.waitForTimeout(700);
-  check('following private eve shows "Requested", not "Following"', (await card('eve').getByRole('button').innerText()) === 'Requested');
+  check('following private eve shows "Requested", not "Following"', (await card('eve').locator('.feed-btn').innerText()) === 'Requested');
   const eveRequests = await (await call('GET', '/follow-requests', eve.token)).json();
   check('server: eve has a pending request from alice', eveRequests.some((u) => u.id === 1));
 

@@ -100,6 +100,7 @@
 }
 
 .pymk-card {
+  position: relative;
   flex: 0 0 148px;
   scroll-snap-align: start;
   display: flex;
@@ -147,4 +148,32 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Day 39: the X that hides a suggestion (top corner, logical side). */
+.pymk-hide {
+  position: absolute;
+  top: 4px;
+  inset-inline-end: 4px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.pymk-hide:hover {
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+}
+
+.pymk-hide:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }

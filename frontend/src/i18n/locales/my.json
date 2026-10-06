@@ -418,7 +418,9 @@
       "followedByOthers_one": "{{first}} နှင့် အခြား {{count}} ယောက်က ဖော်လိုးထားသည်",
       "followedByOthers_other": "{{first}} နှင့် အခြား {{count}} ယောက်က ဖော်လိုးထားသည်",
       "followedBy": "{{first}} က ဖော်လိုးထားသည်"
-    }
+    },
+    "hideSuggestion": "{{name}} ကို အကြံပြုချက်များမှ ဖျောက်ရန်",
+    "hideFailed": "ထိုအကြံပြုချက်ကို မဖျောက်နိုင်ပါ။ ထပ်စမ်းကြည့်ပါ။"
   },
   "search": {
     "title": "ရှာဖွေရန်",

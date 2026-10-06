@@ -29,7 +29,7 @@ async function buildExport(userId) {
   const [
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
-    legacyMessages, notifications, reports, sessions, pushDevices, messageReactions
+    legacyMessages, notifications, reports, sessions, pushDevices, messageReactions, hiddenSuggestions
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -90,7 +90,10 @@ async function buildExport(userId) {
     rows(`SELECT m.conversation_id, mr.message_id, mr.reaction, mr.created_at FROM message_reactions mr
           JOIN messages m ON m.id = mr.message_id
           JOIN conversation_participants mine ON mine.conversation_id = m.conversation_id AND mine.user_id = $1
-          WHERE mr.user_id = $1 ORDER BY mr.created_at`, [userId])
+          WHERE mr.user_id = $1 ORDER BY mr.created_at`, [userId]),
+    // Day 39: people you hid from your suggestions.
+    rows(`SELECT u.username, sd.created_at FROM suggestion_dismissals sd JOIN users u ON u.id = sd.dismissed_user_id
+          WHERE sd.user_id = $1 ORDER BY sd.created_at`, [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -145,6 +148,7 @@ async function buildExport(userId) {
       ))
     })),
     message_reactions: messageReactions,
+    hidden_suggestions: hiddenSuggestions,
     older_direct_messages: legacyMessages,
     notifications,
     reports_you_made: reports,

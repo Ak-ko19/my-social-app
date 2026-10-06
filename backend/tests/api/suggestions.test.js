@@ -89,4 +89,61 @@ describe('follow suggestions (B8)', () => {
     expect(list[0]).toMatchObject({ id: fof.id, reason: 'mutuals' });
     expect(new Set(ids(list)).size).toBe(list.length);
   });
+
+  // Day 39: hide someone from your suggestions (the X on a card).
+  describe('hiding a suggestion', () => {
+    const dismiss = (user, target) => request(app).post(`/users/suggestions/${target.id}/dismiss`).set(auth(user));
+
+    it('a hidden friend-of-friend stops being suggested; others stay', async () => {
+      const me = await registerAndLogin(app);
+      const friend = await registerAndLogin(app);
+      const hideMe = await registerAndLogin(app);
+      const keep = await registerAndLogin(app);
+      await follow(me, friend);
+      await follow(friend, hideMe);
+      await follow(friend, keep);
+      expect(ids(await suggest(me))).toEqual(expect.arrayContaining([hideMe.id, keep.id]));
+      expect((await dismiss(me, hideMe)).status).toBe(204);
+      const got = ids(await suggest(me));
+      expect(got).not.toContain(hideMe.id);
+      expect(got).toContain(keep.id);
+    });
+
+    it('also from the popular fallback', async () => {
+      const newbie = await registerAndLogin(app);
+      const star = await registerAndLogin(app);
+      await follow(await registerAndLogin(app), star);
+      expect(ids(await suggest(newbie))).toContain(star.id);
+      await dismiss(newbie, star);
+      expect(ids(await suggest(newbie))).not.toContain(star.id);
+    });
+
+    it('is private to the person who hid: others still get the suggestion, nobody is unfollowed', async () => {
+      const me = await registerAndLogin(app);
+      const other = await registerAndLogin(app);
+      const star = await registerAndLogin(app);
+      await follow(await registerAndLogin(app), star);
+      await dismiss(me, star);
+      expect(ids(await suggest(other))).toContain(star.id);
+    });
+
+    it('idempotent; refuses yourself (400), unknown people (404), bad ids (400), no login (401)', async () => {
+      const me = await registerAndLogin(app);
+      const x = await registerAndLogin(app);
+      expect((await dismiss(me, x)).status).toBe(204);
+      expect((await dismiss(me, x)).status).toBe(204);
+      expect((await dismiss(me, me)).status).toBe(400);
+      expect((await dismiss(me, { id: 999999 })).status).toBe(404);
+      expect((await request(app).post('/users/suggestions/abc/dismiss').set(auth(me))).status).toBe(400);
+      expect((await request(app).post(`/users/suggestions/${x.id}/dismiss`)).status).toBe(401);
+    });
+
+    it('the data download lists who you hid', async () => {
+      const me = await registerAndLogin(app);
+      const x = await registerAndLogin(app);
+      await dismiss(me, x);
+      const data = JSON.parse((await request(app).get('/profile/export').set(auth(me))).text);
+      expect(data.hidden_suggestions).toEqual([expect.objectContaining({ username: x.username })]);
+    });
+  });
 });

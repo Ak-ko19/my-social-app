@@ -418,7 +418,9 @@
       "followedByOthers_one": "Followed by {{first}} and {{count}} other",
       "followedByOthers_other": "Followed by {{first}} and {{count}} others",
       "followedBy": "Followed by {{first}}"
-    }
+    },
+    "hideSuggestion": "Hide {{name}} from suggestions",
+    "hideFailed": "Couldn't hide that suggestion. Please try again."
   },
   "search": {
     "title": "Search",

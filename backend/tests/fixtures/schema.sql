@@ -444,3 +444,14 @@ ALTER TABLE users ADD COLUMN cover_url TEXT;
 -- Day 36 (migration 045): a post pinned to the top of a profile.
 ALTER TABLE users ADD COLUMN pinned_post_id INTEGER REFERENCES posts(id) ON DELETE SET NULL;
 CREATE INDEX idx_users_pinned_post ON users (pinned_post_id) WHERE pinned_post_id IS NOT NULL;
+
+-- Day 39 (migration 046): people hidden from your suggestions.
+CREATE TABLE suggestion_dismissals (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  dismissed_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, dismissed_user_id)
+);
+-- The PK covers "who did I hide"; this covers the cascade when the hidden
+-- person's account is deleted.
+CREATE INDEX idx_suggestion_dismissals_dismissed ON suggestion_dismissals (dismissed_user_id);

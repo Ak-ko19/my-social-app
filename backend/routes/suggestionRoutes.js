@@ -7,5 +7,7 @@ const suggestionsController = require('../controllers/suggestionsController');
 // route could shadow it -- 'suggestions' isn't numeric, but keeping the
 // literal path first avoids relying on each :id handler's isNaN check.
 router.get('/users/suggestions', authMiddleware, suggestionsController.getSuggestions);
+// Day 39: hide someone from your suggestions.
+router.post('/users/suggestions/:id/dismiss', authMiddleware, suggestionsController.dismissSuggestion);
 
 module.exports = router;
