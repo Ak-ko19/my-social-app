@@ -48,6 +48,8 @@ function seqScans() {
     '/feed', '/feed?page=5', '/posts?page=1&limit=10', `/posts/${perfPost}`, `/posts/${perfPost}/comments`, `/posts/${perfPost}/likes`,
     `/profile/${perfUser}`, '/profile/me', `/users/${perfUser}/posts`, `/users/${perfUser}/follow-counts`,
     '/users/1/followers', '/users/1/following', '/users/suggestions', '/follow-requests',
+    // Day 37: friends (mutual follows) and connections.
+    '/users/1/connections?type=friends', '/users/1/connections?type=followers', `/users/${perfUser}/mutual-friends`,
     '/notifications', '/notifications/unread-count', '/conversations', `/conversations/${conv}`,
     `/conversations/${conv}/messages`, '/explore/posts', '/explore/hashtags', '/hashtags/perf/posts', '/hashtags/mingalar/posts',
     '/bookmarks', '/stories', '/blocked-users',

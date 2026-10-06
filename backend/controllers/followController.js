@@ -1,4 +1,5 @@
 const db = require('../db');
+const { getPagination } = require('../utils/pagination');
 const { sendServerError } = require('../utils/sendError');
 const blockService = require('../services/blockService');
 const notificationService = require('../services/notificationService');
@@ -108,6 +109,91 @@ async function unfollowUser(req, res) {
   }
 }
 
+// Day 37: friends = people who follow each other (both follows accepted).
+// FRIENDS_OF(param) is a FROM-clause subquery of a user's active friends,
+// as rows (friend_id). Both follows are looked up by the unique
+// (follower_id, following_id) index.
+const FRIENDS_OF = (param) => `(
+  SELECT f1.following_id AS friend_id
+  FROM follows f1
+  JOIN follows f2 ON f2.follower_id = f1.following_id AND f2.following_id = f1.follower_id AND f2.status = 'accepted'
+  JOIN users fu ON fu.id = f1.following_id AND NOT fu.is_deactivated
+  WHERE f1.follower_id = ${param} AND f1.status = 'accepted'
+) friends`;
+
+const CONNECTION_TYPES = ['friends', 'followers', 'following'];
+
+// GET /users/:id/connections?type=friends|followers|following&page=&limit=
+// -- one page, A-Z, with the viewer's relation to each person (for the
+// Follow / Follow back / Following button). Same access rule as the lists
+// above; deactivated accounts and anyone blocked with the viewer are left
+// out.
+async function getConnections(req, res) {
+  try {
+    if (isNaN(req.params.id)) return res.status(400).send('Invalid user ID');
+    const type = req.query.type || 'friends';
+    if (!CONNECTION_TYPES.includes(type)) return res.status(400).send(`type must be one of: ${CONNECTION_TYPES.join(', ')}`);
+    const denied = await connectionsAccessError(req.params.id, req.userId);
+    if (denied) return res.status(denied.status).send(denied.message);
+    const { page, limit, offset } = getPagination(req, { defaultLimit: 30, maxLimit: 100 });
+    const people = {
+      friends: `SELECT friend_id AS id FROM ${FRIENDS_OF('$1')}`,
+      followers: "SELECT follower_id AS id FROM follows WHERE following_id = $1 AND status = 'accepted'",
+      following: "SELECT following_id AS id FROM follows WHERE follower_id = $1 AND status = 'accepted'"
+    }[type];
+    const result = await db.query(
+      `SELECT u.id, u.username, u.avatar_url,
+         $2::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = $2 AND following_id = u.id AND status = 'accepted') AS is_following,
+         $2::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = $2 AND following_id = u.id AND status = 'pending') AS request_pending,
+         $2::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = u.id AND following_id = $2 AND status = 'accepted') AS follows_you
+       FROM users u
+       WHERE u.id IN (${people}) AND NOT u.is_deactivated
+         AND ($2::int IS NULL OR NOT EXISTS (
+           SELECT 1 FROM blocks b WHERE (b.blocker_id = $2 AND b.blocked_id = u.id) OR (b.blocker_id = u.id AND b.blocked_id = $2)
+         ))
+       ORDER BY LOWER(u.username), u.id
+       LIMIT $3 OFFSET $4`,
+      [req.params.id, req.userId ?? null, limit + 1, offset]
+    );
+    const hasMore = result.rows.length > limit;
+    res.json({ users: hasMore ? result.rows.slice(0, limit) : result.rows, page, hasMore });
+  } catch (err) {
+    sendServerError(res, err, 'Loading connections failed. Please try again later.');
+  }
+}
+
+// GET /users/:id/mutual-friends -- the viewer's friends who are also this
+// person's friends: { count, sample: up to 3 [{ id, username, avatar_url }] }
+// for "Friends with A, B and 2 others". Same access rule as the lists; empty
+// for yourself or a logged-out visitor.
+async function getMutualFriends(req, res) {
+  try {
+    if (isNaN(req.params.id)) return res.status(400).send('Invalid user ID');
+    const targetId = Number(req.params.id);
+    if (req.userId == null || req.userId === targetId) return res.json({ count: 0, sample: [] });
+    const denied = await connectionsAccessError(targetId, req.userId);
+    if (denied) return res.status(denied.status).send(denied.message);
+    const result = await db.query(
+      `WITH mine AS (SELECT friend_id FROM ${FRIENDS_OF('$1')}),
+       theirs AS (SELECT friend_id FROM ${FRIENDS_OF('$2')}),
+       mutual AS (
+         SELECT friend_id FROM mine
+         WHERE friend_id IN (SELECT friend_id FROM theirs) AND friend_id <> $2
+       )
+       SELECT (SELECT COUNT(*)::int FROM mutual) AS count,
+         COALESCE((SELECT json_agg(s) FROM (
+           SELECT u.id, u.username, u.avatar_url FROM users u
+           WHERE u.id IN (SELECT friend_id FROM mutual)
+           ORDER BY LOWER(u.username), u.id LIMIT 3
+         ) s), '[]'::json) AS sample`,
+      [req.userId, targetId]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    sendServerError(res, err, 'Loading mutual friends failed. Please try again later.');
+  }
+}
+
 async function getFollowers(req, res) {
   try {
     if (isNaN(req.params.id)) {
@@ -121,7 +207,7 @@ async function getFollowers(req, res) {
       SELECT users.id, users.username, users.avatar_url
       FROM follows
       JOIN users ON follows.follower_id = users.id
-      WHERE follows.following_id = $1 AND follows.status = 'accepted'
+      WHERE follows.following_id = $1 AND follows.status = 'accepted' AND NOT users.is_deactivated
     `, [req.params.id]);
     res.json(result.rows);
   } catch (err) {
@@ -142,7 +228,7 @@ async function getFollowing(req, res) {
       SELECT users.id, users.username, users.avatar_url
       FROM follows
       JOIN users ON follows.following_id = users.id
-      WHERE follows.follower_id = $1 AND follows.status = 'accepted'
+      WHERE follows.follower_id = $1 AND follows.status = 'accepted' AND NOT users.is_deactivated
     `, [req.params.id]);
     res.json(result.rows);
   } catch (err) {
@@ -155,18 +241,22 @@ async function getFollowCounts(req, res) {
     if (isNaN(req.params.id)) {
       return res.status(400).send('Invalid user ID');
     }
-    const followersResult = await db.query(
-      "SELECT COUNT(*) FROM follows WHERE following_id = $1 AND status = 'accepted'",
-      [req.params.id]
-    );
-    const followingResult = await db.query(
-      "SELECT COUNT(*) FROM follows WHERE follower_id = $1 AND status = 'accepted'",
+    // Day 37: deactivated accounts aren't counted (they're hidden), and
+    // friends = people who follow each other.
+    const counts = await db.query(
+      `SELECT
+         (SELECT COUNT(*)::int FROM follows f JOIN users u ON u.id = f.follower_id
+            WHERE f.following_id = $1 AND f.status = 'accepted' AND NOT u.is_deactivated) AS followers,
+         (SELECT COUNT(*)::int FROM follows f JOIN users u ON u.id = f.following_id
+            WHERE f.follower_id = $1 AND f.status = 'accepted' AND NOT u.is_deactivated) AS following,
+         (SELECT COUNT(*)::int FROM ${FRIENDS_OF('$1')}) AS friends`,
       [req.params.id]
     );
     res.json({
       userId: req.params.id,
-      followersCount: parseInt(followersResult.rows[0].count),
-      followingCount: parseInt(followingResult.rows[0].count)
+      followersCount: counts.rows[0].followers,
+      followingCount: counts.rows[0].following,
+      friendsCount: counts.rows[0].friends
     });
   } catch (err) {
     sendServerError(res, err, 'Fetch follow counts failed. Please try again later.');
@@ -236,5 +326,7 @@ module.exports = {
   getFollowCounts,
   getFollowRequests,
   approveFollowRequest,
-  denyFollowRequest
+  denyFollowRequest,
+  getConnections,
+  getMutualFriends
 };

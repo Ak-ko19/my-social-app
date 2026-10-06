@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 37-38 — Friend requests (if missing) (not started)
-**Step:** —
+**Day:** 37-38 — Friends (mutual follows)
+**Step:** 1 — backend: connections, friends, mutual friends
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -62,7 +62,25 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-(written at the start of each step)
+Verified existing: send/accept/decline/cancel = follow requests (private
+accounts; cancel = unfollow while pending). Better approach (Quality bar
+9): friends = mutual accepted follows (Instagram/X mutuals) on the one
+graph that privacy/feeds/blocks already use, not a second relationship.
+Step 1 (backend): GET /users/:id/connections?type=friends|followers|
+following&page&limit -> {users:[{id,username,avatar_url,is_following,
+follows_you}], hasMore}; same access rule as followers (private ->
+followers only, block/deactivated -> 404); excludes deactivated users and
+anyone blocked with the viewer. GET /users/:id/mutual-friends -> {count,
+sample (3)}: viewer's friends who are also the target's friends; same
+access rule; [] for yourself/logged out. follow-counts adds friendsCount;
+all counts and the old lists skip deactivated accounts (they were
+shown/counted -- contradicts "hidden"). Tests: jest. Step 2: frontend.
 
 ## Progress
-(nothing in progress — Day 36 closed 2026-10-06)
+- Step 1 done: FRIENDS_OF subquery (both follows accepted, active
+  users); GET /users/:id/connections (friends|followers|following, A-Z
+  pages, is_following/request_pending/follows_you, blocks+deactivated
+  excluded); GET /users/:id/mutual-friends {count, sample 3};
+  follow-counts adds friendsCount; old lists/counts skip deactivated.
+  friends.test.js 8 (one-way-friend + deactivated-count mutations
+  caught); perf suite +3 endpoints (33/33). backend 638/638.
