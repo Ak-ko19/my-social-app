@@ -194,7 +194,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ## PHASE 2 — Days 31–60: Richer social features
 
 ### Day 31–32 — Messaging upgrade
-- [ ] Reply to a message, react to a message, edit/unsend, forward.
+- [x] Reply to a message, react to a message, edit/unsend, forward. *(Reply, edit, unsend existed (B9); reactions and forward built — see Progress Log.)*
 ### Day 33–35 — Group chats
 - [ ] Create group, add/remove members, admins, group name/photo, real-time via Socket.io.
 ### Day 36 — Profile upgrade
@@ -1151,3 +1151,40 @@ Build every feature the way a senior engineer at a top social media company woul
   - backend 578/578 (several full runs); Vitest 70/70.
   - Full browser run: all 39 suites (new: day30-guard) + A3 EN/MY/AR
     green.
+
+### 2026-10-06 — Days 31–32: Messaging upgrade
+- **Already built (B9), verified:** reply, edit (15 minutes), unsend
+  (dm/dmExtras tests, E2E b9-dm).
+- **Reactions (`e8ea677`):**
+  - Migration 040 `message_reactions`: one reaction per person per
+    message, the six post reactions.
+  - `PUT/DELETE /conversations/:id/messages/:messageId/reaction`:
+    people in the chat only; not an unsent message (409); not across a
+    block (403); its own limiter, separate from the send budget.
+  - Socket `message_reaction` carries the full list. Unsending or a
+    moderator removal clears reactions, and the data download lists
+    yours.
+  - UI: a React button and a 6-emoji picker (keyboard, Escape,
+    outside click). The picker opens below the bubble when the chat
+    header would cover it, which the browser suite found. A pill on the
+    bubble names who reacted.
+- **Forward (`ef3b57e`):**
+  - Migration 041 `messages.is_forwarded`; forwards to up to 5 chats.
+  - Each forward goes through the normal send path (membership,
+    blocks, send rate limit, push) and succeeds or fails on its own.
+  - The original author isn't revealed (like WhatsApp).
+  - Better approach than sharing the file: a photo or voice note on our
+    Cloudinary is copied per forward. Unsending, account deletion and
+    the orphan scan then stay correct with no reference counting, at
+    the cost of one upload per media forward (bounded by the 5-chat cap
+    and send limits).
+  - UI: a forward sheet (search, up to 5, partial failures named) and a
+    "Forwarded" label. The browser suite caught the sheet's missing
+    padding and RTL name alignment.
+- **Rule change:** the MONTH_PLAN PAUSE step now says a step report is
+  followed immediately by the next step in the same turn.
+- **Tests at close:**
+  - backend 598/598; Vitest 82/82.
+  - Rehearsal 015 → 041.
+  - Full browser run: all 41 suites (new: day31-reactions,
+    day32-forward) + A3 EN/MY/AR green.
