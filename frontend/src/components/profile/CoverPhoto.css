@@ -1,0 +1,30 @@
+/* Day 36: cover photo -- a 3:1 banner across the body (the body's side
+   padding is cancelled), with the avatar overlapping its bottom edge. */
+.profile-cover {
+  align-self: stretch;
+  margin: 0 calc(-1 * var(--space-4));
+  aspect-ratio: 3 / 1;
+  overflow: hidden;
+  background: var(--color-subtle-bg);
+}
+
+.profile-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-cover-empty {
+  background: linear-gradient(135deg, var(--badge-indigo-bg), var(--badge-teal-bg));
+}
+
+:root[data-theme='dark'] .profile-cover-empty {
+  background: linear-gradient(135deg, #23234a, #123a3a);
+}
+
+/* In Edit Profile the preview is a plain rounded banner. */
+.profile-cover.edit-profile-cover-preview {
+  margin: 0;
+  border-radius: var(--radius-md);
+}

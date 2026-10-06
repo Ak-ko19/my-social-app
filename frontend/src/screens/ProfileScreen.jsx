@@ -16,6 +16,7 @@ import { serverErrorText } from '../utils/serverError';
 import './ProfileScreen.css';
 import '../components/feed/Feed.css';
 import ProfileDetails from '../components/profile/ProfileDetails';
+import CoverPhoto from '../components/profile/CoverPhoto';
 
 // The @mention / hashtag-adjacent "view someone else's profile" page --
 // didn't exist anywhere in the app before mentions needed somewhere to link
@@ -170,6 +171,7 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
       </header>
 
       <div className="profile-screen-body">
+        <CoverPhoto src={profile.cover_url} />
         <Avatar size={84} src={resolveImageUrl(profile.avatar_url)} initials={initials} alt="" />
         <h2 className="profile-screen-username">{profile.username}</h2>
         {profile.bio && <p className="profile-screen-bio" dir="auto">{profile.bio}</p>}

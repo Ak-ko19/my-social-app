@@ -151,3 +151,9 @@
   font-size: 13px;
   color: var(--color-text-muted);
 }
+
+/* Day 36: the avatar overlaps the cover's bottom edge (CoverPhoto.css). */
+.profile-cover + .ui-avatar {
+  margin-top: -42px;
+  box-shadow: 0 0 0 4px var(--color-bg);
+}

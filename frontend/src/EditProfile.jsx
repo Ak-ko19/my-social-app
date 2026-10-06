@@ -6,6 +6,8 @@ import { ChevronLeft } from 'lucide-react';
 import { IconButton, Avatar } from './components/ui';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
+import CoverPhoto from './components/profile/CoverPhoto';
+import { removeCoverPhoto, setCoverPhoto } from './services/profileService';
 
 // Day 36: same limit as the server (backend/utils/profileLinks.js).
 const MAX_LINKS = 3;
@@ -16,6 +18,10 @@ function EditProfile() {
   const [bio, setBio] = useState('');
   // Day 36: up to MAX_LINKS links, edited as text fields.
   const [links, setLinks] = useState(['']);
+  // Day 36: cover photo -- saved as soon as it's picked or removed.
+  const [coverUrl, setCoverUrl] = useState(null);
+  const [coverBusy, setCoverBusy] = useState(false);
+  const [coverError, setCoverError] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -41,6 +47,7 @@ function EditProfile() {
       setEmail(response.data.email);
       setBio(response.data.bio || '');
       setLinks(response.data.links?.length ? response.data.links : ['']);
+      setCoverUrl(response.data.cover_url || null);
       setAvatarUrl(response.data.avatar_url || null);
       // Changing the email resets verification server-side -- sync it so
       // the verify-email banner reappears without a reload.
@@ -58,6 +65,23 @@ function EditProfile() {
     const file = e.target.files[0] || null;
     setAvatar(file);
     setAvatarPreview(file ? URL.createObjectURL(file) : null);
+  };
+
+  const changeCover = (request) => {
+    setCoverError('');
+    setCoverBusy(true);
+    request
+      .then((data) => setCoverUrl(data.cover_url))
+      .catch((err) => {
+        console.error(err);
+        setCoverError(serverErrorText(err, 'editProfile.coverFailed'));
+      })
+      .finally(() => setCoverBusy(false));
+  };
+  const pickCover = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // picking the same file again still fires
+    if (file) changeCover(setCoverPhoto(file, token));
   };
 
   const handleSubmit = (e) => {
@@ -99,6 +123,22 @@ function EditProfile() {
         <h1 className="screen-header-title">{t('editProfile.title')}</h1>
       </header>
       <form className="screen-body form-stack" onSubmit={handleSubmit}>
+        <section className="edit-profile-cover" aria-labelledby="cover-heading">
+          <span className="form-label" id="cover-heading">{t('editProfile.cover')}</span>
+          <CoverPhoto src={coverUrl} className="edit-profile-cover-preview" />
+          <div className="edit-profile-cover-actions">
+            <label className={`btn btn-secondary btn-sm${coverBusy ? ' is-busy' : ''}`} aria-busy={coverBusy}>
+              {coverBusy ? t('editProfile.coverUploading') : coverUrl ? t('editProfile.changeCover') : t('editProfile.addCover')}
+              <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="feed-visually-hidden" onChange={pickCover} disabled={coverBusy} />
+            </label>
+            {coverUrl && (
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => changeCover(removeCoverPhoto(token))} disabled={coverBusy}>
+                {t('editProfile.removeCover')}
+              </button>
+            )}
+          </div>
+          {coverError && <p className="form-error" role="alert">{coverError}</p>}
+        </section>
         <div className="edit-profile-avatar">
           <Avatar
             size={96}

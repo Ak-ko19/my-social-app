@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 36 — Profile upgrade
-**Step:** 1 — joined date + links
+**Step:** 2 — cover photo (step 1 committed d969bbc) -- done
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -64,6 +64,15 @@
 ## Plan
 Day 36 in 3 steps: (1) joined date + links, (2) cover photo, (3) pinned
 post. None existed.
+Step 2 (cover photo): migration 044 users.cover_url. PUT /profile/cover
+(multipart cover, image filter, 5 MB, folder covers) and DELETE
+/profile/cover. Old file deleted on replace/remove; mediaOfUser includes
+it (account deletion); orphan scan: covers folder + users.cover_url
+(else covers would be deleted!). Returned by /profile/:id, /me, export.
+UI: banner on the profile (3:1, srcset, avatar overlapping); Edit Profile
+has Cover photo with Change/Remove (saved at once, pending/error). Privacy
+Policy section 1 lists links and cover photo. Tests: jest, e2e
+day36-cover.
 Step 1: migration 043 users.links TEXT[] (<= 3, CHECK). PUT /profile
 takes links (JSON array in the form; absent = unchanged, so older clients
 don't wipe them): http(s) only, "example.com" -> https://, <= 200 chars,
@@ -84,5 +93,12 @@ e2e day36-profile.
   Edit Profile link fields. A first test let javascript://host pass the
   mutation -- strengthened. profileLinks.test.js 6, ProfileDetails 5,
   day36-profile 15. backend 618/618, Vitest 89/89, rehearsal 015->043.
-- TODO in step 2: Privacy Policy section 1 should list links and cover
-  photo among profile details (EN/MY/AR).
+- Step 2 done: migration 044 users.cover_url; PUT/DELETE /profile/cover;
+  old file deleted on replace/remove and with the account (mediaOfUser);
+  orphan scan knows covers (folder + column; both mutations caught).
+  CoverPhoto (3:1 banner, srcset, avatar overlaps) on the profile; cover
+  section in Edit Profile. Privacy Policy sections 1 and 7 mention cover
+  photo and links (date 2026-10-06); c2-legal/b16-rtl now read the date
+  from LegalScreen.jsx (e2e/legal-dates.cjs) instead of pinning it.
+  coverPhoto.test.js 5, CoverPhoto 2, day36-cover 11. backend 623/623,
+  Vitest 91/91, rehearsal 015->044.

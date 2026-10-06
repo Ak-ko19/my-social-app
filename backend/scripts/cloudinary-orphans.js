@@ -24,7 +24,7 @@ const { cloudinaryAsset, deleteAssets } = require('../services/mediaCleanupServi
 // Every folder the upload middleware writes to (see routes/*):
 // 'mysocialapp' is uploadToCloudinary's default.
 // Every folder the routes upload into (a test keeps this list complete).
-const APP_FOLDERS = ['posts', 'avatars', 'stories', 'message-images', 'voice-messages', 'group-photos', 'mysocialapp'];
+const APP_FOLDERS = ['posts', 'avatars', 'stories', 'message-images', 'voice-messages', 'group-photos', 'covers', 'mysocialapp'];
 const RESOURCE_TYPES = ['image', 'video']; // voice notes are Cloudinary 'video'
 const MAX_DELETE_SHARE = 0.5;
 
@@ -72,6 +72,7 @@ async function listAssets(api) {
 async function referencedKeys(db, cloud) {
   const result = await db.query(`
     SELECT avatar_url AS url FROM users WHERE avatar_url IS NOT NULL
+    UNION SELECT cover_url FROM users WHERE cover_url IS NOT NULL
     UNION SELECT image_url FROM posts WHERE image_url IS NOT NULL
     UNION SELECT url FROM post_media
     UNION SELECT media_url FROM stories

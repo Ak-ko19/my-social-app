@@ -76,7 +76,7 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   // Legal page date in Arabic (Western digits).
   await p.goto(`${WEB}/privacy`, { waitUntil: 'networkidle' });
   const updated = await p.locator('.legal-updated').innerText();
-  check('dates in Arabic', updated.includes('5 أكتوبر 2026'), updated); // privacy policy date since Day 28
+  check('dates in Arabic', updated.includes(require('./legal-dates.cjs').legalDate('privacy').ar), updated);
   check('Arabic font available', await p.evaluate(() => document.fonts.check('16px "Noto Sans Arabic"', 'مرحبا')));
   await p.screenshot({ path: path.join(SP, 'b16-privacy-ar.png') });
 

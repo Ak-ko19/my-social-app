@@ -23,3 +23,15 @@ export function fetchUserPosts(userId, tab, token, { page = 1, limit = 12 } = {}
 export function saveLanguage(language, token) {
   return api.put('/profile/language', { language }, authHeaders(token)).then((res) => res.data);
 }
+
+// Day 36: cover photo (saved at once, not with the Edit Profile form).
+// Both resolve to { cover_url }.
+export function setCoverPhoto(file, token) {
+  const form = new FormData();
+  form.append('cover', file);
+  return api.put('/profile/cover', form, authHeaders(token)).then((res) => res.data);
+}
+
+export function removeCoverPhoto(token) {
+  return api.delete('/profile/cover', authHeaders(token)).then((res) => res.data);
+}

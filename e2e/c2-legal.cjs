@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('./node_modules/playwright-core');
+const PRIVACY_DATE = require('./legal-dates.cjs').legalDate('privacy');
 const SP = __dirname;
 const WEB = 'http://localhost:5173';
 const aliceToken = fs.readFileSync(path.join(SP, 'alice.token'), 'utf8').trim();
@@ -28,7 +29,7 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   // Day 28: the policy now matches the app -- 11 sections, its own date,
   // and it covers the new things (data download, retention, link previews).
   const privacyText = await anon.locator('.legal-body').innerText();
-  check('Privacy Policy (Day 28): 11 sections dated 5 October 2026', (await anon.locator('.legal-section').count()) === 11 && privacyText.includes('October 5, 2026'), privacyText.slice(0, 120));
+  check(`Privacy Policy: 11 sections dated ${PRIVACY_DATE.en}`, (await anon.locator('.legal-section').count()) === 11 && privacyText.includes(PRIVACY_DATE.en), privacyText.slice(0, 120));
   check('it covers data download, retention, link previews and push', ['download a copy of your information', 'How long we keep it', 'preview card', 'push service'].every((p) => privacyText.includes(p)));
   await anon.getByRole('button', { name: 'Back' }).click();
   await anon.waitForURL(`${WEB}/terms`);
@@ -57,7 +58,7 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await mp.getByRole('heading', { name: 'ကိုယ်ရေးလုံခြုံမှု မူဝါဒ' }).waitFor();
   check('Myanmar Privacy Policy renders', (await mp.locator('.legal-section').count()) === 11);
   const updated = await mp.locator('.legal-updated').innerText();
-  check('date is in Burmese even though Chromium has no Burmese ICU data', updated.includes('၂၀၂၆ အောက်တိုဘာ ၅'), updated);
+  check('date is in Burmese even though Chromium has no Burmese ICU data', updated.includes(PRIVACY_DATE.my), updated);
   check('375px dark Myanmar: no horizontal scroll', !(await mp.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)));
   await mp.screenshot({ path: path.join(SP, 'c2-privacy-my-dark-375.png') });
 

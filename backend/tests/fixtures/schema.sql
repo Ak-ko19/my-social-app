@@ -437,3 +437,6 @@ ALTER TABLE conversations ADD COLUMN avatar_url TEXT;
 -- Day 36 (migration 043): links on a profile.
 ALTER TABLE users ADD COLUMN links TEXT[] NOT NULL DEFAULT '{}';
 ALTER TABLE users ADD CONSTRAINT chk_users_links_count CHECK (cardinality(links) <= 3);
+
+-- Day 36 (migration 044): a profile's cover photo.
+ALTER TABLE users ADD COLUMN cover_url TEXT;

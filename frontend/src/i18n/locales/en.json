@@ -381,7 +381,13 @@
     "linkN": "Link {{n}}",
     "addLink": "Add a link",
     "removeLink": "Remove",
-    "removeLinkN": "Remove link {{n}}"
+    "removeLinkN": "Remove link {{n}}",
+    "cover": "Cover photo",
+    "addCover": "Add cover photo",
+    "changeCover": "Change cover photo",
+    "removeCover": "Remove cover photo",
+    "coverUploading": "Uploading…",
+    "coverFailed": "Couldn't update the cover photo. Please try again."
   },
   "explore": {
     "title": "Explore",
@@ -1031,7 +1037,7 @@
       "sections": [
         {
           "heading": "1. What we collect",
-          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, private-account setting, language); and what you create or do: posts and who can see them, photos, stories, comments and replies, reactions, messages and voice messages, groups, pages, follows, saved posts, blocks, muted conversations and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
+          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, photos, stories, comments and replies, reactions, messages and voice messages, groups, pages, follows, saved posts, blocks, muted conversations and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
         },
         {
           "heading": "2. How we use it",
@@ -1055,7 +1061,7 @@
         },
         {
           "heading": "7. How long we keep it",
-          "body": "What you post stays until you delete it or delete your account. Stories are removed with their photos after 24 hours, notifications after 90 days, and signed-out sessions within a day. Records of server errors, which may note which account ran into the error, are deleted after 90 days without a new occurrence. Deleting a post, story or message, or changing your profile picture, also deletes the old file from our media provider."
+          "body": "What you post stays until you delete it or delete your account. Stories are removed with their photos after 24 hours, notifications after 90 days, and signed-out sessions within a day. Records of server errors, which may note which account ran into the error, are deleted after 90 days without a new occurrence. Deleting a post, story or message, or changing your profile picture or cover photo, also deletes the old file from our media provider."
         },
         {
           "heading": "8. Security",

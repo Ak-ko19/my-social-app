@@ -107,7 +107,7 @@ const mediaOfConversation = (conversationId) =>
 // (created_by is SET NULL), so other members' posts there are untouched.
 async function mediaOfUser(userId) {
   const [avatar, posts, stories, messages] = await Promise.all([
-    urlsOf('SELECT avatar_url AS url FROM users WHERE id = $1', [userId]),
+    urlsOf('SELECT avatar_url AS url FROM users WHERE id = $1 UNION ALL SELECT cover_url FROM users WHERE id = $1', [userId]),
     postMediaUrls('posts.user_id = $1', [userId]),
     urlsOf('SELECT media_url AS url FROM stories WHERE user_id = $1', [userId]),
     urlsOf('SELECT media_url AS url FROM messages WHERE sender_id = $1 AND media_url IS NOT NULL', [userId])

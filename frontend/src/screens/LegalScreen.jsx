@@ -8,8 +8,9 @@ import './LegalScreen.css';
 // C2: /terms and /privacy -- public (no login needed), text from the
 // locale files (legal.<doc>.sections) so both exist in English and Myanmar.
 // Marked as a draft until the owner has it reviewed (see ROADMAP NEEDS OWNER).
-// Each document has its own date (Day 28 rewrote the privacy policy only).
-const LAST_UPDATED = { terms: '2026-09-27', privacy: '2026-10-05' };
+// Each document has its own date (Day 28 rewrote the privacy policy;
+// Day 36 added cover photo and links to it).
+const LAST_UPDATED = { terms: '2026-09-27', privacy: '2026-10-06' };
 
 function LegalScreen({ doc }) {
   const navigate = useNavigate();

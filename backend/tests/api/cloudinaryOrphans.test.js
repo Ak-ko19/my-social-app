@@ -45,7 +45,7 @@ describe('cloudinary-orphans script', () => {
   const remaining = (api) => api.store.map((f) => `${f.type}:${f.public_id}`).sort();
 
   // The database uses: an avatar, a post (image_url + 2 post_media), a
-  // story, a live voice note, a group photo (Day 34). A soft-deleted
+  // story, a live voice note, a group photo (Day 34), a cover (Day 36). A soft-deleted
   // message's photo is NOT used.
   let user;
   beforeEach(async () => {
@@ -67,6 +67,7 @@ describe('cloudinary-orphans script', () => {
       [conv.id, user.id, url('video', 'voice-messages/v1'), url('image', 'message-images/deleted')]
     );
     await pool.query('UPDATE conversations SET avatar_url = $1 WHERE id = $2', [url('image', 'group-photos/g1'), conv.id]);
+    await pool.query('UPDATE users SET cover_url = $1 WHERE id = $2', [url('image', 'covers/c1'), user.id]);
   });
 
   const USED = [
@@ -75,7 +76,8 @@ describe('cloudinary-orphans script', () => {
     { type: 'image', public_id: 'posts/p2', created_at: OLD },
     { type: 'image', public_id: 'stories/s1', created_at: OLD },
     { type: 'video', public_id: 'voice-messages/v1', created_at: OLD },
-    { type: 'image', public_id: 'group-photos/g1', created_at: OLD }
+    { type: 'image', public_id: 'group-photos/g1', created_at: OLD },
+    { type: 'image', public_id: 'covers/c1', created_at: OLD }
   ];
   const ORPHANS = [
     { type: 'image', public_id: 'message-images/deleted', created_at: OLD }, // soft-deleted message
@@ -103,8 +105,8 @@ describe('cloudinary-orphans script', () => {
     const api = fakeApi(ALL);
     expect(await scan(api)).toBe(0);
     expect(api.delete_resources).not.toHaveBeenCalled();
-    expect(output()).toMatch(/Cloudinary files in the app's folders: 10/); // not marketing/
-    expect(output()).toMatch(/Files the database uses: 6/);
+    expect(output()).toMatch(/Cloudinary files in the app's folders: 11/); // not marketing/
+    expect(output()).toMatch(/Files the database uses: 7/);
     expect(output()).toMatch(/Orphans older than 24 h: 3 .*1 newer unused file\(s\) skipped/);
     for (const o of ORPHANS) expect(output()).toContain(o.public_id);
     expect(output()).toMatch(/Dry run: nothing deleted/);
@@ -128,7 +130,7 @@ describe('cloudinary-orphans script', () => {
     const many = Array.from({ length: 7 }, (_, i) => ({ type: 'image', public_id: `posts/x${i}`, created_at: OLD }));
     const api = fakeApi([...USED, ...many]);
     await scan(api);
-    expect(output()).toMatch(/Cloudinary files in the app's folders: 13/);
+    expect(output()).toMatch(/Cloudinary files in the app's folders: 14/);
     expect(output()).toMatch(/Orphans older than 24 h: 7/);
   });
 
@@ -146,7 +148,7 @@ describe('cloudinary-orphans script', () => {
     const many = Array.from({ length: 10 }, (_, i) => ({ type: 'image', public_id: `posts/x${i}`, created_at: OLD }));
     const api = fakeApi([...USED, ...many]);
     expect(await scan(api, ['--delete'])).toBe(1);
-    expect(output()).toMatch(/Refusing to delete 10 of 16 files/);
+    expect(output()).toMatch(/Refusing to delete 10 of 17 files/);
     expect(api.delete_resources).not.toHaveBeenCalled();
     expect(await scan(api, ['--delete', '--force'])).toBe(0);
     expect(remaining(api)).toHaveLength(USED.length);

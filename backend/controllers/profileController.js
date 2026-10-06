@@ -11,7 +11,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function getMyProfile(req, res) {
   try {
-    const result = await db.query('SELECT id, username, email, bio, links, avatar_url, is_private, email_verified, is_admin, language, created_at FROM users WHERE id = $1', [req.userId]);
+    const result = await db.query('SELECT id, username, email, bio, links, avatar_url, cover_url, is_private, email_verified, is_admin, language, created_at FROM users WHERE id = $1', [req.userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).send('User not found');
@@ -53,7 +53,7 @@ async function getProfile(req, res) {
     // right Follow/Unfollow/Block button state without a second request.
     const viewerId = req.userId ?? null;
     const result = await db.query(`
-      SELECT id, username, bio, links, avatar_url, is_private, is_deactivated, created_at,
+      SELECT id, username, bio, links, avatar_url, cover_url, is_private, is_deactivated, created_at,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = users.id AND status = 'accepted') AS is_following,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = users.id AND status = 'pending') AS follow_request_pending,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = users.id) AS is_blocked_by_me
@@ -137,6 +137,34 @@ async function updateProfile(req, res) {
   }
 }
 
+// Day 36: cover photo. PUT /profile/cover (multipart "cover") sets it;
+// DELETE /profile/cover removes it. The replaced file is deleted.
+async function replaceCover(userId, url) {
+  const previous = (await db.query('SELECT cover_url FROM users WHERE id = $1', [userId])).rows[0]?.cover_url;
+  await db.query('UPDATE users SET cover_url = $1 WHERE id = $2', [url, userId]);
+  if (previous && previous !== url) deleteMedia([previous]);
+}
+
+async function setCover(req, res) {
+  try {
+    if (!req.cloudinaryResult) return res.status(400).send('Choose a photo');
+    const url = req.cloudinaryResult.secure_url;
+    await replaceCover(req.userId, url);
+    res.json({ cover_url: url });
+  } catch (err) {
+    sendServerError(res, err, 'Updating the cover photo failed. Please try again later.');
+  }
+}
+
+async function removeCover(req, res) {
+  try {
+    await replaceCover(req.userId, null);
+    res.json({ cover_url: null });
+  } catch (err) {
+    sendServerError(res, err, 'Updating the cover photo failed. Please try again later.');
+  }
+}
+
 async function updatePrivacy(req, res) {
   try {
     if (typeof req.body.isPrivate !== 'boolean') {
@@ -168,4 +196,4 @@ async function updateLanguage(req, res) {
   }
 }
 
-module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, exportMyData };
+module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, exportMyData, setCover, removeCover };
