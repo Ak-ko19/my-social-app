@@ -50,6 +50,56 @@ describe('ranked search (Day 42)', () => {
     });
   });
 
+  describe('hashtags', () => {
+    const searchTags = (q) => request(app).get(`/search/hashtags?q=${encodeURIComponent(q)}`);
+
+    it('exact tag, then tags starting with it, each by use; then tags containing it; # is ignored', async () => {
+      const author = await registerAndLogin(app);
+      await post(author, '#teatime #teashop #greentea');
+      await post(author, '#teashop #greentea');
+      await post(author, '#tea #greentea');
+      const res = await searchTags('#TEA');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([
+        { tag: 'tea', post_count: 1, capped: false },
+        { tag: 'teashop', post_count: 2, capped: false },
+        { tag: 'teatime', post_count: 1, capped: false },
+        { tag: 'greentea', post_count: 3, capped: false }
+      ]);
+    });
+
+    it('never counts or reveals tags from private or followers-only posts', async () => {
+      const author = await registerAndLogin(app);
+      const hidden = await registerAndLogin(app);
+      await post(author, '#pagoda public');
+      await post(author, '#pagoda only followers', 'followers');
+      await post(hidden, '#pagodasecret');
+      await request(app).put('/profile/privacy').set(auth(hidden)).send({ isPrivate: true });
+      expect((await searchTags('pagoda')).body).toEqual([{ tag: 'pagoda', post_count: 1, capped: false }]);
+    });
+
+    it('counts up to the cap and says so ("500+")', async () => {
+      const { TAG_COUNT_CAP } = require('../../controllers/searchController');
+      const author = await registerAndLogin(app);
+      await post(author, '#busy');
+      const tagId = (await pool.query("SELECT id FROM hashtags WHERE tag = 'busy'")).rows[0].id;
+      await pool.query(
+        `WITH p AS (INSERT INTO posts (user_id, content) SELECT $1, 'more #busy' FROM generate_series(1, $2) RETURNING id)
+         INSERT INTO post_hashtags (post_id, hashtag_id) SELECT id, $3 FROM p`,
+        [author.id, TAG_COUNT_CAP, tagId]
+      );
+      expect((await searchTags('busy')).body).toEqual([{ tag: 'busy', post_count: TAG_COUNT_CAP, capped: true }]);
+    });
+
+    it('% and _ are plain characters; an empty query (or just #) is a 400', async () => {
+      const author = await registerAndLogin(app);
+      await post(author, '#snake_case #snakecase');
+      expect((await searchTags('e_c')).body.map((t) => t.tag)).toEqual(['snake_case']);
+      expect((await searchTags('%')).body).toEqual([]);
+      expect((await searchTags('#')).status).toBe(400);
+    });
+  });
+
   describe('posts', () => {
     it('finds other forms of an English word ("runs" finds "running")', async () => {
       const author = await registerAndLogin(app);

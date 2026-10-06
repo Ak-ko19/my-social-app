@@ -111,4 +111,50 @@ async function searchPosts(req, res) {
   }
 }
 
-module.exports = { searchUsers, searchPosts, SEARCH_CANDIDATES };
+// Hashtag search counts at most TAG_COUNT_CAP posts per tag ("500+"), so
+// a busy tag costs no more than a quiet one.
+const TAG_COUNT_CAP = 500;
+
+// Tags containing the query (a leading # is ignored). The 20 closest (the
+// exact tag, then tags starting with it, then shorter ones) are listed
+// exact first, then those starting with it, each by most used. Counts are of publicly visible posts only, like trending (B7) --
+// a private post's tag is never revealed, not even as a number, so a tag
+// with no public posts is left out.
+async function searchHashtags(req, res) {
+  try {
+    const q = (req.query.q || '').trim().replace(/^#+/, '').toLowerCase();
+    if (!q) {
+      return res.status(400).send('Search query is required');
+    }
+    const result = await db.query(
+      `WITH matches AS (
+         SELECT hashtags.id, hashtags.tag FROM hashtags
+         WHERE LOWER(hashtags.tag) LIKE '%' || $1 || '%'
+         ORDER BY LOWER(hashtags.tag) = $2 DESC, LOWER(hashtags.tag) LIKE $1 || '%' DESC, LENGTH(hashtags.tag), hashtags.tag
+         LIMIT 20
+       )
+       SELECT matches.tag, counts.post_count
+       FROM matches
+       CROSS JOIN LATERAL (
+         SELECT COUNT(*)::int AS post_count FROM (
+           SELECT 1 FROM post_hashtags
+           JOIN posts ON posts.id = post_hashtags.post_id
+           JOIN users ON users.id = posts.user_id
+           WHERE post_hashtags.hashtag_id = matches.id
+             AND posts.community_id IS NULL
+             AND (NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public'
+             AND NOT users.is_deactivated
+           LIMIT ${TAG_COUNT_CAP}
+         ) visible
+       ) counts
+       WHERE counts.post_count > 0
+       ORDER BY LOWER(matches.tag) = $2 DESC, LOWER(matches.tag) LIKE $1 || '%' DESC, counts.post_count DESC, LENGTH(matches.tag), matches.tag`,
+      [escapeLike(q), q]
+    );
+    res.status(200).json(result.rows.map((row) => ({ ...row, capped: row.post_count >= TAG_COUNT_CAP })));
+  } catch (err) {
+    sendServerError(res, err, 'Search hashtags failed. Please try again later.');
+  }
+}
+
+module.exports = { searchUsers, searchPosts, searchHashtags, SEARCH_CANDIDATES, TAG_COUNT_CAP };

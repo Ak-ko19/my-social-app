@@ -55,7 +55,7 @@ function seqScans() {
     '/bookmarks', '/stories', '/blocked-users',
     // Search is a substring match (ILIKE '%q%'): served by the pg_trgm
     // indexes (002). A word that matches nothing is the worst case.
-    '/search/posts?q=shwedagon', '/search/posts?q=mohinga', '/search/posts?q=perf', '/search/posts?q=sunset%20shwedagon', '/search/users?q=perf12', '/search/users?q=zawgyi'
+    '/search/posts?q=shwedagon', '/search/posts?q=mohinga', '/search/posts?q=perf', '/search/posts?q=sunset%20shwedagon', '/search/users?q=perf12', '/search/users?q=zawgyi', '/search/hashtags?q=t1', '/search/hashtags?q=perf'
   ];
 
   const results = [];

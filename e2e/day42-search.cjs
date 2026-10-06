@@ -2,7 +2,8 @@
 // bob(2); mya and myanmar_tea are signed up here).
 // Ranked search: people (exact name first, Follow button already right),
 // posts (the whole phrase, then freshness), Burmese text inside a
-// longer word, "%" as a plain character.
+// longer word, "%" as a plain character. Tabs (All / People / Posts /
+// Hashtags) in the URL, Back, dark + Arabic at 375px.
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -40,6 +41,8 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await fetch(`${API}/posts/${scattered.id}/like`, { method: 'POST', headers: as(mya) });
   await post(myanmarTea, 'မင်္ဂလာပါ ရန်ကုန်မြို့ကနေ');
   await post(myanmarTea, '100% sure about this');
+  await post(bob, 'Morning cup #tea #teatime');
+  await post(bob, 'Again #teatime');
   await fetch(`${API}/users/${mya.id}/follow`, { method: 'POST', headers: as(alice) });
 
   const browser = await chromium.launch({ channel: 'msedge', headless: true });
@@ -54,12 +57,13 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await page.goto(`${WEB}/search`, { waitUntil: 'networkidle' });
 
   const search = async (q) => {
-    await page.getByRole('searchbox', { name: 'Search users or posts' }).fill(q);
+    await page.getByRole('searchbox', { name: 'Search people, posts or hashtags' }).fill(q);
     await page.getByRole('button', { name: 'Search', exact: true }).click();
-    await page.getByRole('heading', { name: 'Posts' }).waitFor();
+    await page.locator('#search-panel').waitFor();
+    await page.waitForFunction(() => !document.querySelector('#search-panel [role="status"]'));
     await page.waitForTimeout(200);
   };
-  const people = () => page.locator('.card-list').first().locator('.screen-link').allInnerTexts();
+  const people = () => page.locator('#search-panel .card-list').first().locator('.screen-link').allInnerTexts();
   const postTexts = () => page.locator('.search-post-link').allInnerTexts();
 
   await search('MYA');
@@ -80,9 +84,42 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await search('%');
   check('"%" is a plain character, not "match everything"', JSON.stringify(await postTexts()) === JSON.stringify(['100% sure about this']));
 
+  // Tabs (step 2): hashtags, the URL, Back.
+  await search('tea');
+  check('All tab: hashtags section, the exact tag first', JSON.stringify(await page.getByRole('region', { name: 'Hashtags' }).locator('.screen-link').allInnerTexts()) === JSON.stringify(['#tea', '#teatime']));
+  await page.getByRole('tab', { name: 'Hashtags' }).click();
+  await page.waitForURL(`${WEB}/search?q=tea&type=hashtags`);
+  await page.getByRole('tab', { name: 'Hashtags', selected: true }).waitFor();
+  await page.waitForTimeout(200);
+  const tagRows = await page.locator('#search-panel .card-row').allInnerTexts();
+  check('Hashtags tab: tags with their post counts; the tab is in the URL', tagRows.length === 2 && tagRows[0].includes('#tea') && tagRows[0].includes('1 post') && tagRows[1].includes('2 posts'), JSON.stringify(tagRows));
+  await page.goBack();
+  await page.waitForURL(`${WEB}/search?q=%25`);
+  await page.waitForTimeout(400);
+  check('Back returns to the previous search, box and results', (await page.getByRole('searchbox').inputValue()) === '%' && JSON.stringify(await postTexts()) === JSON.stringify(['100% sure about this']));
+
   await page.locator('.search-post-link', { hasText: '100% sure' }).click();
   await page.waitForURL(/\/posts\/\d+$/);
   check('a result opens the post', true);
+
+  // Dark, Arabic (RTL), 375px.
+  const rtl = await browser.newContext({ viewport: { width: 375, height: 812 } });
+  await rtl.addInitScript((t) => {
+    localStorage.setItem('token', t); localStorage.setItem('userId', '1'); localStorage.setItem('username', 'alice');
+    localStorage.setItem('emailVerified', 'true'); localStorage.setItem('theme', 'dark'); localStorage.setItem('lang', 'ar');
+  }, alice.token);
+  const ar = await rtl.newPage();
+  ar.on('pageerror', (e) => errors.push(e.message));
+  await ar.goto(`${WEB}/search?q=tea&type=hashtags`, { waitUntil: 'networkidle' });
+  await ar.locator('#search-panel .card-row').first().waitFor({ timeout: 10000 }).catch(() => {});
+  const tabX = await ar.locator('[role="tab"]').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().x)));
+  const selected = await ar.getByRole('tab', { name: 'الوسوم' }).getAttribute('aria-selected');
+  const noScroll = await ar.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
+  check('dark/ar 375px: Hashtags tab selected, tabs right to left, no sideways scroll', selected === 'true' && tabX[0] > tabX[3] && noScroll, JSON.stringify({ selected, tabX, noScroll }));
+  await ar.screenshot({ path: path.join(SP, 'day42-search-dark-ar.png') });
+  await page.goto(`${WEB}/search?q=tea`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: path.join(SP, 'day42-search-all-en.png'), fullPage: true });
 
   await browser.close();
   console.log(results.join('\n'));

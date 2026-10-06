@@ -341,6 +341,24 @@ textarea.form-input {
   text-decoration: underline;
 }
 
+/* Day 42: a hashtag result's round # badge, the size of a person's avatar. */
+.search-tag-icon {
+  flex: 0 0 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+}
+
+/* "See all" under the All tab's people / hashtags previews. */
+.search-see-all {
+  margin: 0 0 var(--space-3);
+}
+
 /* ---------- Conversation: full-height chat column ----------
    Header, then the thread filling the remaining height and scrolling on
    its own, then the composer pinned to the bottom edge. Replaces the old
@@ -724,4 +742,9 @@ textarea.form-input {
 .edit-profile-cover-actions label.is-busy {
   opacity: 0.7;
   cursor: progress;
+}
+
+/* Day 42: room between the search tabs and the first result. */
+.search-panel {
+  padding-top: var(--space-3);
 }

@@ -27,10 +27,17 @@ const NOT_BLOCKED_SQL = `
 async function queryTrending(viewerId) {
   const result = await db.query(
     `SELECT hashtags.tag, COUNT(DISTINCT posts.id)::int AS post_count, MAX(posts.created_at) AS last_used_at
-     FROM post_hashtags
-     JOIN hashtags ON hashtags.id = post_hashtags.hashtag_id
-     JOIN posts ON posts.id = post_hashtags.post_id
+     FROM posts
      JOIN users ON users.id = posts.user_id
+     -- Day 42: each recent post's tags, looked up by post. OFFSET 0 keeps
+     -- Postgres from turning this into a plain join, which it plans as a
+     -- read of ALL of post_hashtags whenever the table hasn't been vacuumed
+     -- lately -- a cost that grows with every tag ever used, not with the
+     -- week's posts.
+     CROSS JOIN LATERAL (
+       SELECT post_hashtags.hashtag_id FROM post_hashtags WHERE post_hashtags.post_id = posts.id OFFSET 0
+     ) tagged
+     JOIN hashtags ON hashtags.id = tagged.hashtag_id
      WHERE posts.community_id IS NULL -- B13: not in global explore
        AND posts.created_at > now() - ${EXPLORE_WINDOW}
        AND ${PUBLICLY_VISIBLE_SQL}

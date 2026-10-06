@@ -124,11 +124,11 @@
 }
 
 .feed-btn:hover {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
 }
 
 .feed-btn:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
@@ -138,11 +138,13 @@
 }
 
 /* Like/Follow are real toggles now (Step 5) -- aria-pressed carries the
-   actual state, and this makes that state visible, not just announced. */
+   actual state, and this makes that state visible, not just announced.
+   Day 42: the brand accent (tokens.css), made for white text in both
+   themes -- the old template purple failed contrast with white (4:1). */
 .feed-btn[aria-pressed='true'] {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-on-primary);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
 }
 
 @media (prefers-reduced-motion: reduce) {

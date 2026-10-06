@@ -67,6 +67,11 @@
   comment_count). FB/IG show "N comments" up front -- an app-wide change
   for a later polish day.
 
+- FOR DAY 43 (Myanmar text): backend/services/hashtagService.js uses
+  /#(\w+)/g -- ASCII only, so Burmese hashtags (#ရန်ကုန်) are never
+  recognised; the frontend link renderer likely has the same rule. Fix
+  with Unicode letters/marks (\p{L}\p{M}\p{N}_, u flag) on both sides.
+
 ## Plan
 Existing: /search/users (username ILIKE, A-Z, 20) and /search/posts
 (content ILIKE, newest first) on pg_trgm indexes; Search.jsx shows both
@@ -99,3 +104,12 @@ Data export, Privacy Policy (EN/MY/AR), account deletion cascades.
   button starts right). Fixed: % and _ were wildcards in search
   (utils/escapeLike, now shared with groups/pages). searchRanking.test
   12 (12 mutations caught), day42-search 6. backend 666/666.
+- Step 2 done: /search/hashtags (migration 048 trigram on LOWER(tag);
+  exact, prefix, by use; public posts only, count capped at 500 -> 500+;
+  7 mutations caught). Search tabs All/People/Posts/Hashtags in the URL
+  (useSearch hook; button never disabled, newer query wins; Load more).
+  Search.test 7 (7 caught), day42-search 10, a11y +2 routes. Found and
+  fixed: (1) trending planned a full post_hashtags scan when the table
+  is not freshly vacuumed -- LATERAL ... OFFSET 0 lookup per recent post;
+  (2) Following button contrast 4:1 (template purple) -> brand accent.
+  backend 670/670, Vitest 110/110, perf 38/38.

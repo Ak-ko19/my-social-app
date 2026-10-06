@@ -427,15 +427,24 @@
     "openFailed": "Could not open a conversation. Please try again.",
     "enterTerm": "Enter a search term",
     "failed": "Search failed. Please try again.",
-    "label": "Search users or posts",
-    "placeholder": "Search users or posts...",
+    "label": "Search people, posts or hashtags",
+    "placeholder": "Search people, posts or hashtags...",
     "searching": "Searching…",
     "explore": "Explore popular posts",
-    "users": "Users",
-    "noUsers": "No matching users.",
-    "posts": "Posts",
+    "noUsers": "No matching people.",
     "noPosts": "No matching posts.",
-    "attachment": "Post attachment"
+    "attachment": "Post attachment",
+    "noHashtags": "No matching hashtags.",
+    "noResults": "No results for “{{query}}”.",
+    "seeAll": "See all",
+    "filters": "Search results",
+    "manyPosts": "{{n}}+ posts",
+    "tabs": {
+      "all": "All",
+      "people": "People",
+      "posts": "Posts",
+      "hashtags": "Hashtags"
+    }
   },
   "notifications": {
     "title": "Notifications",
