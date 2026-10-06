@@ -185,6 +185,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Repeat the full read-only audit; write AUDIT_REPORT_2.md comparing with the first audit. *(AUDIT_REPORT_2.md — see Progress Log.)*
 
 ### Day 30 — GO LIVE #4 (only if you have the access)
+*GO LIVE skipped 2026-10-06: no production access (CLAUDE.md hard limits) — owner action, LATER.md #2. The owner-free part is done: AUDIT_REPORT_2 N1 (route guard), N2 (flaky test) and N4 (dead code) fixed — see Progress Log.*
 - [ ] Deploy and smoke test. Fix any top items from AUDIT_REPORT_2.md first.
 
 
@@ -1113,3 +1114,40 @@ Build every feature the way a senior engineer at a top social media company woul
   behind (owner GO LIVE, fully rehearsed).
 - **Next (Day 30):** GO LIVE is an owner action; the owner-free part is
   fixing N1, N2 and N4.
+
+### 2026-10-06 — Day 30: GO LIVE #4 skipped; AUDIT_REPORT_2 top items fixed
+- **GO LIVE:** skipped (no production access; LATER.md #2). The
+  rehearsal for 015 → 039 passed on Day 29.
+- **N1, route guard (`6f8a373`):**
+  - Before: 22 account-only routes (settings, messages, saved,
+    create/edit screens, admin, group and page management) rendered
+    their UI to logged-out visitors, whose every request was then
+    refused.
+  - `RequireAuth` now sends visitors to Login, keeping the wanted page
+    in router state (no URL parameter, so no open redirect). Login
+    returns there afterwards; `safeReturnPath` accepts only in-app
+    paths.
+  - It's reactive, which also closes the Day 16 note: a revoked session
+    or a logout on these screens ends on Login.
+  - Public browsing (posts, profiles, pages, groups, hashtags, explore,
+    search, legal, language) is unchanged.
+  - Tests: RequireAuth.test.jsx (5; an always-render mutation is
+    caught); browser suite day30-guard (9): 22 routes with 0 refused
+    calls, 14 public routes, return after login, a revoked session.
+- **N4, dead code (`202c830`):** PostContent.jsx and 3 Vite template
+  images were removed.
+- **N2, flaky test (`2ead62a`):**
+  - Caught by looping the backend suite: botProtection.test.js "forged"
+    a token by replacing the signature's last character with 'A'. That's
+    the real signature 1 time in 16, because base64's last character
+    carries only 4 bits.
+  - Measured: 244/4000 accepted before, 0/4000 after (the first
+    character is swapped instead).
+  - The code was right; only the test was wrong. It then passed 30/30
+    runs.
+- **Left for later:** N3 (precomputed trending) goes to Days 40–41
+  Explore; N5/N6 are informational.
+- **Tests at close:**
+  - backend 578/578 (several full runs); Vitest 70/70.
+  - Full browser run: all 39 suites (new: day30-guard) + A3 EN/MY/AR
+    green.

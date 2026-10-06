@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 30 — GO LIVE #4 (owner, skipped) + fix top AUDIT_REPORT_2 items
-**Step:** 3 — N2 flaky backend test (steps 1-2 committed 6f8a373, 202c830)
+**Day:** 31 — Messaging upgrade (not started)
+**Step:** —
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -47,6 +47,8 @@
 - Privacy Policy (legal.privacy in the locales) is written from the
   code: when a feature changes what is collected, shared or kept,
   update it (EN/MY/AR) and its date in LegalScreen.jsx.
+- New account-only screens: wrap their route in authOnly() in App.jsx
+  and add them to e2e/day30-guard.cjs GUARDED.
 - Accessibility: e2e/day26-a11y.cjs must stay at 0 serious/critical.
   Accent colour as TEXT uses --color-accent-text (lighter in dark mode),
   never --color-accent.
@@ -56,35 +58,7 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-Day 30: deploying is an owner action (LATER #2); the owner-free part
-is AUDIT_REPORT_2 N1, N4, N2.
-Step 1 (N1): components/auth/RequireAuth.jsx -- no token -> <Navigate
-to="/login" replace state={{ from }}> (router state, not a URL param, so
-no open redirect; from must start with a single /). Wrap the account-only
-routes: /menu, /settings and its sub-screens except /settings/language
-(logged-out language pick is supported since Day 16), /saved,
-/create-post, /edit-profile, /notifications, /messages/*, /admin,
-/groups, /groups/new, /groups/:id/manage, /pages, /pages/new,
-/pages/:id/edit. Public browsing stays open: /posts/:id, /profile/:id,
-/pages/:id, /hashtag/:tag, /groups/:id, /explore, /search, legal, auth
-screens, /verify-email/:token. Login returns to that page after logging in
-(a reactivation still goes Home for its banner). Also fixes the Day 16
-note: a forced logout on a protected screen now lands on /login.
-Tests: Vitest (guard, safe return path), browser suite day30-guard.
+(written at the start of each step)
 
 ## Progress
-- Step 1 done: RequireAuth on 22 routes, safeReturnPath, Login returns
-  to the saved page. Vitest 70/70 (guard + return path; always-render
-  mutation caught). day30-guard 9/9 (22 routes -> Login with 0 x 401,
-  14 public stay open, return after login, revoked session -> Login).
-  backend 578/578; a2, b9, b11, b12, b13, b14, c2, c3, day5, day8 x2,
-  day12-review, day16 green.
-- Step 2 done: removed PostContent.jsx and src/assets/{hero.png,
-  react.svg,vite.svg} (nothing imported them); stale comment fixed.
-  lint, build, bundle 213.9 kB, Vitest 70/70, backend 578/578, a2, b9,
-  a3 EN green.
-- Step 3 done: caught it in run 3 of 4: botProtection.test.js forged a
-  token by replacing the signature's last char with A -- the real one
-  1 time in 16 (base64 last char = 4 bits). Measured 244/4000 old vs
-  0/4000 new (first char swapped). 30/30 runs of the file, 2 full runs
-  578/578.
+(nothing in progress — Day 30 closed 2026-10-06)
