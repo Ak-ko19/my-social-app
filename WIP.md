@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 36 — Profile upgrade
-**Step:** 3 — pinned post (steps 1-2 committed d969bbc, 17f1a89)
+**Day:** 37-38 — Friend requests (if missing) (not started)
+**Step:** —
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -62,61 +62,7 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-Day 36 in 3 steps: (1) joined date + links, (2) cover photo, (3) pinned
-post. None existed.
-Step 3 (pinned post, like Facebook -- one): migration 045
-users.pinned_post_id FK posts ON DELETE SET NULL + partial index (post
-delete must not scan users). PUT /profile/pinned-post {postId}: only your
-own post that shows on your profile (not group/page posts) else 404;
-DELETE unpins. GET /users/:id/posts?tab=posts: page 1 returns pinned
-separately (if the viewer may see it -- same visibility rules; an Only me
-pin only for its author), the list excludes it (keeps index order, no
-duplicates). UI: Pinned label on top; Pin to profile / Unpin in own
-post menus on your profile. Export: pinned_post_id. Tests: jest, e2e
-day36-pinned.
-Step 2 (cover photo): migration 044 users.cover_url. PUT /profile/cover
-(multipart cover, image filter, 5 MB, folder covers) and DELETE
-/profile/cover. Old file deleted on replace/remove; mediaOfUser includes
-it (account deletion); orphan scan: covers folder + users.cover_url
-(else covers would be deleted!). Returned by /profile/:id, /me, export.
-UI: banner on the profile (3:1, srcset, avatar overlapping); Edit Profile
-has Cover photo with Change/Remove (saved at once, pending/error). Privacy
-Policy section 1 lists links and cover photo. Tests: jest, e2e
-day36-cover.
-Step 1: migration 043 users.links TEXT[] (<= 3, CHECK). PUT /profile
-takes links (JSON array in the form; absent = unchanged, so older clients
-don't wipe them): http(s) only, "example.com" -> https://, <= 200 chars,
-no credentials, host with a dot, deduped; else 400. GET /profile/:id and
-/me return links (public like the bio); export includes them. UI:
-profile shows links (hostname, target=_blank rel=noopener noreferrer
-nofollow ugc, checked again with safeHttpUrl) and "Joined <month year>"
-(new formatDate style monthYear, Burmese fallback); Edit Profile: up to
-3 link fields. EN/MY/AR. Tests: jest (normalize, refuse, keep when
-absent, public), Vitest (formatDate monthYear, links render),
-e2e day36-profile.
+(written at the start of each step)
 
 ## Progress
-- Step 1 done: migration 043 users.links; utils/profileLinks.js (http(s)
-  only, scheme added, host:port kept, no credentials, <= 3); PUT /profile
-  links (absent = unchanged). ProfileDetails (safeHttpUrl again,
-  rel=noopener noreferrer nofollow ugc, dir=ltr) + Joined <monthYear>;
-  Edit Profile link fields. A first test let javascript://host pass the
-  mutation -- strengthened. profileLinks.test.js 6, ProfileDetails 5,
-  day36-profile 15. backend 618/618, Vitest 89/89, rehearsal 015->043.
-- Step 2 done: migration 044 users.cover_url; PUT/DELETE /profile/cover;
-  old file deleted on replace/remove and with the account (mediaOfUser);
-  orphan scan knows covers (folder + column; both mutations caught).
-  CoverPhoto (3:1 banner, srcset, avatar overlaps) on the profile; cover
-  section in Edit Profile. Privacy Policy sections 1 and 7 mention cover
-  photo and links (date 2026-10-06); c2-legal/b16-rtl now read the date
-  from LegalScreen.jsx (e2e/legal-dates.cjs) instead of pinning it.
-  coverPhoto.test.js 5, CoverPhoto 2, day36-cover 11. backend 623/623,
-  Vitest 91/91, rehearsal 015->044.
-- Step 3 done: migration 045 users.pinned_post_id (SET NULL + partial
-  index); PUT/DELETE /profile/pinned-post (own, on-profile posts only);
-  posts tab page 1 returns pinned separately (visibility applies), list
-  excludes it (exclusion mutation caught). Pinned label + Pin/Unpin in
-  own posts tab. pinnedPost.test.js 7, PostMenu +3, day36-pinned 11.
-  backend 630/630, Vitest 94/94, rehearsal 015->045, perf 30/30
-  (/users/:id/posts reads 5 rows). (PLAN was written after the first
-  BUILD edits this step -- caught up before testing.)
+(nothing in progress — Day 36 closed 2026-10-06)

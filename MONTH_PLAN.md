@@ -198,7 +198,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 33–35 — Group chats
 - [x] Create group, add/remove members, admins, group name/photo, real-time via Socket.io. *(Create/add/remove/rename/live existed (B10); admin management and group photo built — see Progress Log.)*
 ### Day 36 — Profile upgrade
-- [ ] Cover photo, links, joined date, pinned post.
+- [x] Cover photo, links, joined date, pinned post. *(All four built — see Progress Log.)*
 ### Day 37–38 — Friend requests (if missing)
 - [ ] Send/accept/decline/cancel, friends list, mutual friends.
 ### Day 39 — People you may know
@@ -1219,3 +1219,42 @@ Build every feature the way a senior engineer at a top social media company woul
   - Rehearsal 015 → 042.
   - Full browser run: all 43 suites (new: day33-group-admins,
     day34-group-photo) + A3 EN/MY/AR green.
+
+### 2026-10-06 — Day 36: Profile upgrade
+- **Links and joined date (`d969bbc`):**
+  - Migration 043 `users.links`: up to 3, public like the bio.
+  - `utils/profileLinks.js` allows http(s) only. It refuses
+    `javascript:`, `data:`, `mailto:`, `ftp:` and `javascript://host`
+    tricks, and credentials in the address. It adds `https://` when
+    missing, keeps host:port, and removes duplicates.
+  - Links are checked again before going into an href, open in a new
+    tab with `rel=noopener noreferrer nofollow ugc`, and stay
+    left-to-right in RTL.
+  - "Joined <month year>" uses a new `formatDate` style with a Burmese
+    fallback.
+  - The first refusal test missed `javascript://host`, so a mutation
+    survived; the test was strengthened.
+- **Cover photo (`17f1a89`):**
+  - Migration 044 `users.cover_url`; `PUT/DELETE /profile/cover`. The
+    old file is deleted on replace or remove and with the account.
+  - The orphan scan knows covers (folder and column); both mutations
+    are caught.
+  - A 3:1 banner, with the avatar overlapping it.
+  - The Privacy Policy now lists cover photo and links. The legal
+    browser tests read the policy date from the app instead of pinning
+    it.
+- **Pinned post (`0684753`):**
+  - Migration 045 `users.pinned_post_id` (SET NULL, partial index).
+  - Only your own post that's on your profile can be pinned.
+  - Better approach than an expression sort: page 1 returns the pin
+    separately (visibility still applies), and the list excludes it.
+    The list keeps its index order (the perf suite still reads 5 rows),
+    and the pin never appears twice.
+  - "Pinned" label; Pin/Unpin in your own posts' menus.
+- **Process note:** step 3's plan was written after the first build edits;
+  it was caught up in WIP before testing.
+- **Tests at close:**
+  - backend 630/630; Vitest 94/94.
+  - Rehearsal 015 → 045.
+  - Full browser run: all 46 suites (new: day36-profile, day36-cover,
+    day36-pinned) + A3 EN/MY/AR green.
