@@ -143,7 +143,7 @@ async function getConversationDetails(req, res) {
     const conversationId = Number(req.params.id);
     if (!Number.isInteger(conversationId)) throw new GroupError(400, 'Invalid conversation ID');
     const result = await db.query(
-      `SELECT c.id, c.type, c.name, c.created_by, cp.role AS my_role,
+      `SELECT c.id, c.type, c.name, c.avatar_url, c.created_by, cp.role AS my_role,
          -- Day 23: muted for you; muted_until 'infinity' = until unmuted
          COALESCE(cp.muted_until > now(), false) AS muted,
          CASE WHEN cp.muted_until > now() AND cp.muted_until <> 'infinity' THEN cp.muted_until END AS muted_until
@@ -274,6 +274,51 @@ async function setMemberRole(req, res) {
   }
 }
 
+// Day 34: group photo. requireGroupAdmin runs BEFORE the upload middleware,
+// so someone who may not change the photo never uploads a file at all.
+async function requireGroupAdmin(req, res, next) {
+  try {
+    const conversationId = Number(req.params.id);
+    if (!Number.isInteger(conversationId)) throw new GroupError(400, 'Invalid conversation ID');
+    const group = await getGroupForMember(conversationId, req.userId);
+    if (group.role !== 'admin') throw new GroupError(403, 'Only group admins can change the group photo');
+    next();
+  } catch (err) {
+    handle(res, err, 'Updating the group failed. Please try again later.');
+  }
+}
+
+// Sets (url) or removes (null) the photo; the old file is deleted.
+async function replaceGroupPhoto(conversationId, url) {
+  const previous = await db.query('SELECT avatar_url FROM conversations WHERE id = $1', [conversationId]);
+  await db.query('UPDATE conversations SET avatar_url = $1 WHERE id = $2', [url, conversationId]);
+  const old = previous.rows[0]?.avatar_url;
+  if (old && old !== url) deleteMedia([old]);
+  emitGroupUpdated(conversationId);
+}
+
+// PUT /conversations/:id/photo (multipart "photo") -- admins only.
+async function setGroupPhoto(req, res) {
+  try {
+    if (!req.cloudinaryResult) throw new GroupError(400, 'Choose a photo');
+    const url = req.cloudinaryResult.secure_url;
+    await replaceGroupPhoto(Number(req.params.id), url);
+    res.json({ avatar_url: url });
+  } catch (err) {
+    handle(res, err, 'Updating the group photo failed. Please try again later.');
+  }
+}
+
+// DELETE /conversations/:id/photo -- admins only.
+async function removeGroupPhoto(req, res) {
+  try {
+    await replaceGroupPhoto(Number(req.params.id), null);
+    res.json({ avatar_url: null });
+  } catch (err) {
+    handle(res, err, 'Updating the group photo failed. Please try again later.');
+  }
+}
+
 // PATCH /conversations/:id { name } -- admins only.
 async function renameGroup(req, res) {
   try {
@@ -289,4 +334,4 @@ async function renameGroup(req, res) {
   }
 }
 
-module.exports = { createGroup, getConversationDetails, addMembers, removeMember, renameGroup, setMemberRole, SET_ROLE_SQL, MAX_GROUP_SIZE };
+module.exports = { createGroup, getConversationDetails, addMembers, removeMember, renameGroup, setMemberRole, requireGroupAdmin, setGroupPhoto, removeGroupPhoto, SET_ROLE_SQL, MAX_GROUP_SIZE };

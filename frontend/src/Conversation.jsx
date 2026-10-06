@@ -9,7 +9,7 @@ import { VoicePlaybackProvider } from './context/VoicePlaybackProvider';
 import { fetchConversations, fetchConversationDetails, forwardMessageRest, muteConversation } from './services/messageService';
 import { formatRelativeTime } from './utils/formatRelativeTime';
 import Avatar from './components/common/Avatar';
-import { Bell, BellOff, ChevronLeft, Users } from 'lucide-react';
+import { Bell, BellOff, ChevronLeft } from 'lucide-react';
 import { ActionSheet, IconButton } from './components/ui';
 import MessageBubble from './components/messages/MessageBubble';
 import MessageComposer from './components/messages/MessageComposer';
@@ -18,6 +18,7 @@ import ConversationListErrorState from './components/messages/ConversationListEr
 import ConnectionBanner from './components/messages/ConnectionBanner';
 import ReportDialog from './components/feed/ReportDialog';
 import ForwardSheet from './components/messages/ForwardSheet';
+import GroupAvatar from './components/messages/GroupAvatar';
 import './components/messages/Messages.css';
 import './components/feed/Feed.css';
 import { useTranslation } from 'react-i18next';
@@ -303,9 +304,7 @@ function Conversation() {
             onClick={() => navigate(`/messages/${conversationId}/info`)}
             aria-label={t('messages.groupInfoLabel', { name: details.name, count: details.members.length })}
           >
-            <span className="messages-group-avatar" aria-hidden="true">
-              <Users size={20} />
-            </span>
+            <GroupAvatar src={details.avatar_url} size={40} />
             <span className="conversation-header-text">
               <span className="screen-header-title">{details.name}</span>
               <small className="messages-header-status">{t('messages.membersTapInfo', { count: details.members.length })}</small>

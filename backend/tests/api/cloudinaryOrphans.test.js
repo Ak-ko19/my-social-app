@@ -7,7 +7,7 @@ const { pool } = require('../helpers/testDb');
 // (dry run by default) and deletes them with --delete, with safety guards.
 describe('cloudinary-orphans script', () => {
   const { app, reset } = setupTestApp();
-  const { run, parseArgs } = require('../../scripts/cloudinary-orphans');
+  const { run, parseArgs, APP_FOLDERS } = require('../../scripts/cloudinary-orphans');
 
   const NOW = new Date('2026-09-28T12:00:00Z');
   const OLD = '2026-09-01T00:00:00Z';
@@ -45,7 +45,8 @@ describe('cloudinary-orphans script', () => {
   const remaining = (api) => api.store.map((f) => `${f.type}:${f.public_id}`).sort();
 
   // The database uses: an avatar, a post (image_url + 2 post_media), a
-  // story, a live voice note. A soft-deleted message's photo is NOT used.
+  // story, a live voice note, a group photo (Day 34). A soft-deleted
+  // message's photo is NOT used.
   let user;
   beforeEach(async () => {
     await reset();
@@ -65,6 +66,7 @@ describe('cloudinary-orphans script', () => {
          ($1, $2, 'image', $4, NULL, now())`,
       [conv.id, user.id, url('video', 'voice-messages/v1'), url('image', 'message-images/deleted')]
     );
+    await pool.query('UPDATE conversations SET avatar_url = $1 WHERE id = $2', [url('image', 'group-photos/g1'), conv.id]);
   });
 
   const USED = [
@@ -72,7 +74,8 @@ describe('cloudinary-orphans script', () => {
     { type: 'image', public_id: 'posts/p1', created_at: OLD },
     { type: 'image', public_id: 'posts/p2', created_at: OLD },
     { type: 'image', public_id: 'stories/s1', created_at: OLD },
-    { type: 'video', public_id: 'voice-messages/v1', created_at: OLD }
+    { type: 'video', public_id: 'voice-messages/v1', created_at: OLD },
+    { type: 'image', public_id: 'group-photos/g1', created_at: OLD }
   ];
   const ORPHANS = [
     { type: 'image', public_id: 'message-images/deleted', created_at: OLD }, // soft-deleted message
@@ -83,12 +86,25 @@ describe('cloudinary-orphans script', () => {
   const NOT_OURS = { type: 'image', public_id: 'marketing/banner', created_at: OLD };
   const ALL = [...USED, ...ORPHANS, IN_PROGRESS, NOT_OURS];
 
+  // Day 34: a folder the routes upload into but the scan doesn't list would
+  // never have its orphans found.
+  it('scans every folder the routes upload into', () => {
+    const routesDir = require('path').join(__dirname, '../../routes');
+    const used = new Set();
+    for (const file of require('fs').readdirSync(routesDir)) {
+      const src = require('fs').readFileSync(require('path').join(routesDir, file), 'utf8');
+      for (const m of src.matchAll(/(?:uploadToCloudinary|uploadManyToCloudinary)\('([a-z-]+)'/g)) used.add(m[1]);
+    }
+    expect(used.size).toBeGreaterThan(4);
+    for (const folder of used) expect(APP_FOLDERS).toContain(folder);
+  });
+
   it('dry run: reports the orphans and deletes nothing', async () => {
     const api = fakeApi(ALL);
     expect(await scan(api)).toBe(0);
     expect(api.delete_resources).not.toHaveBeenCalled();
-    expect(output()).toMatch(/Cloudinary files in the app's folders: 9/); // not marketing/
-    expect(output()).toMatch(/Files the database uses: 5/);
+    expect(output()).toMatch(/Cloudinary files in the app's folders: 10/); // not marketing/
+    expect(output()).toMatch(/Files the database uses: 6/);
     expect(output()).toMatch(/Orphans older than 24 h: 3 .*1 newer unused file\(s\) skipped/);
     for (const o of ORPHANS) expect(output()).toContain(o.public_id);
     expect(output()).toMatch(/Dry run: nothing deleted/);
@@ -112,7 +128,7 @@ describe('cloudinary-orphans script', () => {
     const many = Array.from({ length: 7 }, (_, i) => ({ type: 'image', public_id: `posts/x${i}`, created_at: OLD }));
     const api = fakeApi([...USED, ...many]);
     await scan(api);
-    expect(output()).toMatch(/Cloudinary files in the app's folders: 12/);
+    expect(output()).toMatch(/Cloudinary files in the app's folders: 13/);
     expect(output()).toMatch(/Orphans older than 24 h: 7/);
   });
 
@@ -130,10 +146,10 @@ describe('cloudinary-orphans script', () => {
     const many = Array.from({ length: 10 }, (_, i) => ({ type: 'image', public_id: `posts/x${i}`, created_at: OLD }));
     const api = fakeApi([...USED, ...many]);
     expect(await scan(api, ['--delete'])).toBe(1);
-    expect(output()).toMatch(/Refusing to delete 10 of 15 files/);
+    expect(output()).toMatch(/Refusing to delete 10 of 16 files/);
     expect(api.delete_resources).not.toHaveBeenCalled();
     expect(await scan(api, ['--delete', '--force'])).toBe(0);
-    expect(remaining(api)).toHaveLength(5);
+    expect(remaining(api)).toHaveLength(USED.length);
   });
 
   it('reports failed deletes with a non-zero exit code', async () => {

@@ -133,6 +133,17 @@ export function setGroupMemberRole(conversationId, userId, role, token) {
   return api.patch(`/conversations/${conversationId}/members/${userId}`, { role }, authHeaders(token)).then((res) => res.data);
 }
 
+// Day 34: group photo (admins). Resolve to { avatar_url }.
+export function setGroupPhoto(conversationId, file, token) {
+  const form = new FormData();
+  form.append('photo', file);
+  return api.put(`/conversations/${conversationId}/photo`, form, authHeaders(token)).then((res) => res.data);
+}
+
+export function removeGroupPhoto(conversationId, token) {
+  return api.delete(`/conversations/${conversationId}/photo`, authHeaders(token)).then((res) => res.data);
+}
+
 export function renameGroup(conversationId, name, token) {
   return api.patch(`/conversations/${conversationId}`, { name }, authHeaders(token)).then((res) => res.data);
 }

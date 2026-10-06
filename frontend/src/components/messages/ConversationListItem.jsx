@@ -1,5 +1,6 @@
 import { memo } from 'react';
-import { BellOff, Users } from 'lucide-react';
+import { BellOff } from 'lucide-react';
+import GroupAvatar from './GroupAvatar';
 import Avatar from '../common/Avatar';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import { useTranslation } from 'react-i18next';
@@ -52,10 +53,8 @@ function ConversationListItem({ conversation, isOnline = false, onClick }) {
     >
       <span className="messages-avatar-wrap">
         {isGroup ? (
-          // B10: groups have no avatar of their own -- a group glyph instead.
-          <span className="messages-group-avatar" aria-hidden="true">
-            <Users size={22} />
-          </span>
+          // Day 34: the group's photo, or the group glyph (GroupAvatar).
+          <GroupAvatar src={avatarUrl} size={48} />
         ) : (
           <Avatar src={avatarUrl} size={48} alt={t('messages.profilePicture', { name: username })} />
         )}

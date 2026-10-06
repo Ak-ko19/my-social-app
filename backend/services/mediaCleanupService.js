@@ -93,8 +93,13 @@ const mediaOfCommunity = (communityId) => postMediaUrls('posts.community_id = $1
 const mediaOfPage = (pageId) => postMediaUrls('posts.page_id = $1', [pageId]);
 
 const mediaOfStory = (storyId) => urlsOf('SELECT media_url AS url FROM stories WHERE id = $1', [storyId]);
+// Every photo/voice note in the chat, and (Day 34) the group's own photo.
 const mediaOfConversation = (conversationId) =>
-  urlsOf('SELECT media_url AS url FROM messages WHERE conversation_id = $1 AND media_url IS NOT NULL', [conversationId]);
+  urlsOf(
+    `SELECT media_url AS url FROM messages WHERE conversation_id = $1 AND media_url IS NOT NULL
+     UNION ALL SELECT avatar_url FROM conversations WHERE id = $1 AND avatar_url IS NOT NULL`,
+    [conversationId]
+  );
 
 // Everything that goes when the account is deleted (FK cascades): the
 // avatar, every post they wrote (incl. as their pages and in groups), their

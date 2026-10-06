@@ -575,7 +575,11 @@
     "optionsFor": "Options for {{name}}",
     "makeAdmin": "Make admin",
     "removeAdmin": "Remove as admin",
-    "stepDown": "Step down as admin"
+    "stepDown": "Step down as admin",
+    "addPhoto": "Add photo",
+    "changePhoto": "Change photo",
+    "removePhoto": "Remove photo",
+    "photoUploading": "Uploading…"
   },
   "account": {
     "title": "Account Management",

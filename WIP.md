@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 33-35 — Group chats
-**Step:** 1 — admins: make / remove admin
+**Step:** 2 — group photo (step 1 committed 555d1d0)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -62,6 +62,19 @@ Already built (B10, groups.test.js, E2E b10-groups): create, add/remove
 members, leave, rename (admins), auto-promote when the last admin leaves,
 live group_updated. Missing: managing admins (step 1), group photo (step
 2).
+Step 2 (group photo): migration 042 conversations.avatar_url. PUT
+/conversations/:id/photo (multipart photo; admin checked BEFORE the
+upload so a refused request never uploads; image filter, 5 MB) and
+DELETE /conversations/:id/photo. Replacing/removing deletes the old file;
+mediaOfConversation includes it (group deleted when the last member
+leaves); the orphan scan counts it as in use (else it would be deleted!).
+Shown in the inbox, chat header and group info; live via group_updated.
+UI (GroupInfoScreen, admins): Change photo / Remove photo, pending and
+error states. Export: conversations carry avatar_url. Tests: jest (admin
+only, no upload when refused, old file deleted, orphan scan, group
+deletion), Vitest?, e2e day34-group-photo (stubbed upload not possible
+without Cloudinary -> UI flow with API-set URL + local image; the
+upload path is covered by jest with the mocked Cloudinary).
 Step 1: PATCH /conversations/:id/members/:userId { role: admin|member }:
 admins only (403), target in the group (404), bad role (400), never
 removes the last admin (409 -- a group always has one; leaving still
@@ -80,3 +93,12 @@ cases; e2e day33-group-admins (two people, live, dark, AR).
   down only while another admin exists). b10-groups updated for the
   sheet. groupAdmins.test.js 7 (guard + lock mutations caught),
   day33-group-admins 13. backend 605/605, Vitest 82/82.
+- Step 2 done: migration 042 conversations.avatar_url; PUT/DELETE
+  /conversations/:id/photo (admin checked before upload -- mutation
+  caught); old file deleted on replace/remove and with the group; orphan
+  scan now lists group-photos (+ a guard test that every upload folder
+  is scanned; it was missing). GroupAvatar in inbox/header/info;
+  Add/Change/Remove photo for admins. b10-groups selector tightened
+  (/^Add/ also matched Add photo). groupPhoto.test.js 6, GroupAvatar
+  2, day34-group-photo 14. backend 612/612, Vitest 84/84, rehearsal
+  015->042.

@@ -1226,3 +1226,40 @@
 .ui-modal-panel.forward-sheet {
   padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
 }
+
+/* Day 34: group photo. */
+.messages-group-photo {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.group-photo-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.group-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-xs);
+}
+
+.group-photo-actions label {
+  cursor: pointer;
+}
+
+/* The file input itself is visually hidden; show its focus on the button. */
+.group-photo-actions label:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.group-photo-actions label.is-busy {
+  opacity: 0.7;
+  cursor: progress;
+}

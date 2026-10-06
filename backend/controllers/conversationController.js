@@ -84,7 +84,7 @@ async function getConversations(req, res) {
         c.name,
         c.name AS username,
         NULL::int AS other_user_id,
-        NULL AS avatar_url,
+        c.avatar_url,
         (SELECT COUNT(*)::int FROM conversation_participants m WHERE m.conversation_id = c.id) AS member_count,
         lm.id AS last_message_id,
         CASE

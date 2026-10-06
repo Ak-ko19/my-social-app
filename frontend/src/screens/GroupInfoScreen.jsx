@@ -6,6 +6,7 @@ import Avatar from '../components/common/Avatar';
 import { useAuth } from '../hooks/useAuth';
 import { useSocket } from '../hooks/useSocket';
 import MemberPicker from '../components/messages/MemberPicker';
+import GroupAvatar from '../components/messages/GroupAvatar';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from '../utils/serverError';
@@ -13,7 +14,7 @@ import {
   fetchConversationDetails,
   addGroupMembers,
   removeGroupMember,
-  renameGroup, setGroupMemberRole } from '../services/messageService';
+  renameGroup, setGroupMemberRole, setGroupPhoto, removeGroupPhoto } from '../services/messageService';
 import '../components/feed/Feed.css';
 import '../components/messages/Messages.css';
 
@@ -36,6 +37,7 @@ function GroupInfoScreen() {
   const [toAdd, setToAdd] = useState([]);
   const [confirm, setConfirm] = useState(null); // { kind: 'leave' } | { kind: 'remove', member }
   const [managing, setManaging] = useState(null); // the member whose Options sheet is open
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   const load = useCallback(() => {
     fetchConversationDetails(conversationId, token)
@@ -92,6 +94,34 @@ function GroupInfoScreen() {
         console.error(err);
         setActionError(serverErrorText(err, 'common.somethingWentWrong'));
       });
+  };
+
+  // Day 34: group photo (admins). The file input is reset so picking the
+  // same file again still fires a change.
+  const choosePhoto = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setActionError('');
+    setPhotoBusy(true);
+    setGroupPhoto(conversationId, file, token)
+      .then(() => load())
+      .catch((err) => {
+        console.error(err);
+        setActionError(serverErrorText(err, 'common.somethingWentWrong'));
+      })
+      .finally(() => setPhotoBusy(false));
+  };
+  const deletePhoto = () => {
+    setActionError('');
+    setPhotoBusy(true);
+    removeGroupPhoto(conversationId, token)
+      .then(() => load())
+      .catch((err) => {
+        console.error(err);
+        setActionError(serverErrorText(err, 'common.somethingWentWrong'));
+      })
+      .finally(() => setPhotoBusy(false));
   };
 
   // The Options sheet for one member: their admin role, then removing them.
@@ -157,6 +187,22 @@ function GroupInfoScreen() {
       </header>
 
       <div className="screen-body">
+        <div className="group-photo-block">
+          <GroupAvatar src={group.avatar_url} size={88} />
+          {isAdmin && (
+            <div className="group-photo-actions">
+              <label className={`btn btn-secondary btn-sm${photoBusy ? ' is-busy' : ''}`} aria-busy={photoBusy}>
+                {photoBusy ? t('groupChat.photoUploading') : group.avatar_url ? t('groupChat.changePhoto') : t('groupChat.addPhoto')}
+                <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="feed-visually-hidden" onChange={choosePhoto} disabled={photoBusy} />
+              </label>
+              {group.avatar_url && (
+                <button type="button" className="btn btn-secondary btn-sm" onClick={deletePhoto} disabled={photoBusy}>
+                  {t('groupChat.removePhoto')}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         {renaming ? (
           <form className="inline-form" onSubmit={saveName}>
             <label className="feed-visually-hidden" htmlFor="group-name-input">{t('groupChat.groupName')}</label>

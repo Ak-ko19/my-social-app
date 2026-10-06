@@ -603,7 +603,11 @@
     "optionsFor": "خيارات {{name}}",
     "makeAdmin": "تعيين كمشرف",
     "removeAdmin": "إزالة من المشرفين",
-    "stepDown": "التنحي عن الإشراف"
+    "stepDown": "التنحي عن الإشراف",
+    "addPhoto": "إضافة صورة",
+    "changePhoto": "تغيير الصورة",
+    "removePhoto": "إزالة الصورة",
+    "photoUploading": "جارٍ الرفع…"
   },
   "account": {
     "title": "إدارة الحساب",

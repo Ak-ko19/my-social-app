@@ -430,3 +430,6 @@ CREATE INDEX idx_message_reactions_user ON message_reactions (user_id);
 
 -- Day 32 (migration 041): forwarded messages are labelled.
 ALTER TABLE messages ADD COLUMN is_forwarded BOOLEAN NOT NULL DEFAULT false;
+
+-- Day 34 (migration 042): a group chat's photo.
+ALTER TABLE conversations ADD COLUMN avatar_url TEXT;

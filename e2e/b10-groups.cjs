@@ -88,7 +88,8 @@ async function signup(name) {
   await page.getByRole('checkbox', { name: 'carol' }).waitFor();
   check('picker marks existing members (bob) as In group', await page.getByRole('checkbox', { name: 'bob' }).isDisabled());
   await page.getByRole('checkbox', { name: 'carol' }).check();
-  await page.getByRole('button', { name: /^Add/ }).click();
+  // "Add 1" -- not "Add photo" (Day 34) or "Add people".
+  await page.getByRole('button', { name: /^Add \d/ }).click();
   await page.getByText('3 members').waitFor();
   check('adding carol back -> 3 members', true);
 
