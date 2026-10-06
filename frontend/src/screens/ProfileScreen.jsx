@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Flag, MoreHorizontal, UserX } from 'lucide-react';
 import { Avatar, IconButton, ActionSheet, ConfirmDialog } from '../components/ui';
 import ReportDialog from '../components/feed/ReportDialog';
 import ProfileTabs from '../components/profile/ProfileTabs';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import { useAuth } from '../hooks/useAuth';
-import { fetchProfile } from '../services/profileService';
+import { fetchMutualFriends, fetchProfile } from '../services/profileService';
 import { fetchFollowCounts, followUser, unfollowUser } from '../services/postService';
 import { blockUser } from '../services/blockService';
 import { createConversation } from '../services/messageService';
@@ -17,6 +17,7 @@ import './ProfileScreen.css';
 import '../components/feed/Feed.css';
 import ProfileDetails from '../components/profile/ProfileDetails';
 import CoverPhoto from '../components/profile/CoverPhoto';
+import { followLabelKey } from '../utils/followLabel';
 
 // The @mention / hashtag-adjacent "view someone else's profile" page --
 // didn't exist anywhere in the app before mentions needed somewhere to link
@@ -127,7 +128,19 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
       .finally(() => setFollowPending(false));
   };
 
-  const followLabel = { none: t('follow.follow'), pending: t('follow.requested'), following: t('follow.following') }[followState];
+  // Day 37: "Follow back" when they already follow you.
+  const followLabel = t(followLabelKey(followState, profile.follows_you));
+
+  // Day 37: friends in common ("3 mutual friends: alice, bob, carol").
+  const [mutual, setMutual] = useState(null);
+  useEffect(() => {
+    if (!token || isOwnProfile) return undefined;
+    let cancelled = false;
+    fetchMutualFriends(profile.id, token)
+      .then((data) => { if (!cancelled) setMutual(data); })
+      .catch(() => {}); // e.g. a private account you don't follow: nothing to show
+    return () => { cancelled = true; };
+  }, [profile.id, token, isOwnProfile]);
 
   const handleMessage = () => {
     createConversation(profile.id, token)
@@ -179,13 +192,22 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
 
         {counts && (
           <div className="profile-screen-counts">
-            <span>
-              <Trans i18nKey="profile.followers" values={{ count: counts.followersCount }} components={{ b: <strong /> }} />
-            </span>
-            <span>
+            {/* Day 37: each count opens that list (friends = follow each other). */}
+            <Link to={`/profile/${profile.id}/connections?tab=friends`} className="profile-count-link">
+              <Trans i18nKey="profile.friendsCount" count={counts.friendsCount ?? 0} values={{ count: counts.friendsCount ?? 0 }} components={{ b: <strong /> }} />
+            </Link>
+            <Link to={`/profile/${profile.id}/connections?tab=followers`} className="profile-count-link">
+              <Trans i18nKey="profile.followers" count={counts.followersCount} values={{ count: counts.followersCount }} components={{ b: <strong /> }} />
+            </Link>
+            <Link to={`/profile/${profile.id}/connections?tab=following`} className="profile-count-link">
               <Trans i18nKey="profile.following" values={{ count: counts.followingCount }} components={{ b: <strong /> }} />
-            </span>
+            </Link>
           </div>
+        )}
+        {mutual?.count > 0 && (
+          <p className="profile-mutual">
+            {t('profile.mutualFriends', { count: mutual.count, names: mutual.sample.map((m) => m.username).join(', ') })}
+          </p>
         )}
 
         <div className="profile-screen-actions">

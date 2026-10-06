@@ -254,7 +254,9 @@
   "follow": {
     "requested": "Requested",
     "following": "Following",
-    "follow": "Follow"
+    "follow": "Follow",
+    "followBack": "Follow back",
+    "buttonFor": "{{action}} {{name}}"
   },
   "media": {
     "carousel": "{{prefix}} ({{count}} images)",
@@ -346,7 +348,6 @@
     "notFound": "User not found",
     "loadFailed": "Failed to load profile",
     "blocked": "You've blocked {{name}}.",
-    "followers": "<b>{{count}}</b> followers",
     "following": "<b>{{count}}</b> following",
     "editProfile": "Edit Profile",
     "options": "Profile options",
@@ -368,7 +369,13 @@
     "links": "Links",
     "joined": "Joined {{date}}",
     "pinned": "Pinned",
-    "pinFailed": "Couldn't change the pinned post. Please try again."
+    "pinFailed": "Couldn't change the pinned post. Please try again.",
+    "friendsCount_one": "<b>{{count}}</b> friend",
+    "friendsCount_other": "<b>{{count}}</b> friends",
+    "followers_one": "<b>{{count}}</b> follower",
+    "followers_other": "<b>{{count}}</b> followers",
+    "mutualFriends_one": "{{count}} mutual friend: {{names}}",
+    "mutualFriends_other": "{{count}} mutual friends: {{names}}"
   },
   "editProfile": {
     "title": "Edit Profile",
@@ -1160,5 +1167,20 @@
     "body": "This page ran into a problem. Reloading usually fixes it — we have been told about it.",
     "reload": "Reload",
     "home": "Go to Home"
+  },
+  "connections": {
+    "sections": "Connections",
+    "private": "{{name}}'s lists are only visible to their followers.",
+    "loadFailed": "Couldn't load this list. Please try again.",
+    "tabs": {
+      "friends": "Friends",
+      "followers": "Followers",
+      "following": "Following"
+    },
+    "empty": {
+      "friends": "No friends yet — friends are people who follow each other.",
+      "followers": "No followers yet.",
+      "following": "Not following anyone yet."
+    }
   }
 }

@@ -56,6 +56,8 @@ async function getProfile(req, res) {
       SELECT id, username, bio, links, avatar_url, cover_url, is_private, is_deactivated, created_at,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = users.id AND status = 'accepted') AS is_following,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = users.id AND status = 'pending') AS follow_request_pending,
+        -- Day 37: they follow the viewer (the button then says Follow back).
+        $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = users.id AND following_id = $1 AND status = 'accepted') AS follows_you,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = users.id) AS is_blocked_by_me
       FROM users WHERE ${isUsername ? 'LOWER(username) = LOWER($2)' : 'id = $2::int'}
     `, [viewerId, id]);

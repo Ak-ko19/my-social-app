@@ -266,7 +266,9 @@
   "follow": {
     "requested": "تم الطلب",
     "following": "تتابعه",
-    "follow": "متابعة"
+    "follow": "متابعة",
+    "followBack": "رد المتابعة",
+    "buttonFor": "{{action}} {{name}}"
   },
   "media": {
     "carousel": "{{prefix}} ({{count}} صور)",
@@ -358,7 +360,6 @@
     "notFound": "المستخدم غير موجود",
     "loadFailed": "تعذّر تحميل الملف الشخصي",
     "blocked": "لقد حظرت {{name}}.",
-    "followers": "<b>{{count}}</b> متابِع",
     "following": "يتابع <b>{{count}}</b>",
     "editProfile": "تعديل الملف الشخصي",
     "options": "خيارات الملف الشخصي",
@@ -380,7 +381,25 @@
     "links": "الروابط",
     "joined": "انضم في {{date}}",
     "pinned": "مثبّت",
-    "pinFailed": "تعذّر تغيير المنشور المثبّت. يرجى المحاولة مرة أخرى."
+    "pinFailed": "تعذّر تغيير المنشور المثبّت. يرجى المحاولة مرة أخرى.",
+    "friendsCount_zero": "<b>{{count}}</b> صديق",
+    "friendsCount_one": "<b>{{count}}</b> صديق",
+    "friendsCount_two": "<b>{{count}}</b> صديقان",
+    "friendsCount_few": "<b>{{count}}</b> أصدقاء",
+    "friendsCount_many": "<b>{{count}}</b> صديقًا",
+    "friendsCount_other": "<b>{{count}}</b> صديق",
+    "followers_zero": "<b>{{count}}</b> متابِع",
+    "followers_one": "<b>{{count}}</b> متابِع",
+    "followers_two": "<b>{{count}}</b> متابِعان",
+    "followers_few": "<b>{{count}}</b> متابِعين",
+    "followers_many": "<b>{{count}}</b> متابِعًا",
+    "followers_other": "<b>{{count}}</b> متابِع",
+    "mutualFriends_zero": "لا أصدقاء مشتركين",
+    "mutualFriends_one": "صديق مشترك واحد: {{names}}",
+    "mutualFriends_two": "صديقان مشتركان: {{names}}",
+    "mutualFriends_few": "{{count}} أصدقاء مشتركين: {{names}}",
+    "mutualFriends_many": "{{count}} صديقًا مشتركًا: {{names}}",
+    "mutualFriends_other": "{{count}} صديق مشترك: {{names}}"
   },
   "editProfile": {
     "title": "تعديل الملف الشخصي",
@@ -1200,5 +1219,20 @@
     "body": "واجهت هذه الصفحة مشكلة. إعادة التحميل تحلّها عادةً — وقد أُبلغنا بها.",
     "reload": "إعادة التحميل",
     "home": "الذهاب إلى الرئيسية"
+  },
+  "connections": {
+    "sections": "الاتصالات",
+    "private": "قوائم {{name}} مرئية لمتابعيه فقط.",
+    "loadFailed": "تعذّر تحميل هذه القائمة. يرجى المحاولة مرة أخرى.",
+    "tabs": {
+      "friends": "الأصدقاء",
+      "followers": "المتابِعون",
+      "following": "يتابعهم"
+    },
+    "empty": {
+      "friends": "لا أصدقاء بعد — الأصدقاء هم من يتابع كل منهم الآخر.",
+      "followers": "لا متابعين بعد.",
+      "following": "لا يتابع أحدًا بعد."
+    }
   }
 }

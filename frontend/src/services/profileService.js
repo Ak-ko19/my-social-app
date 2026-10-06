@@ -44,3 +44,17 @@ export function pinPost(postId, token) {
 export function unpinPost(token) {
   return api.delete('/profile/pinned-post', authHeaders(token)).then((res) => res.data);
 }
+
+// Day 37: one page of a person's friends (mutual follows), followers or
+// following -- { users, page, hasMore }, each user with is_following /
+// request_pending / follows_you for the viewer.
+export function fetchConnections(userId, type, token, { page = 1, limit = 30 } = {}) {
+  return api
+    .get(`/users/${userId}/connections`, { ...(token ? authHeaders(token) : {}), params: { type, page, limit } })
+    .then((res) => res.data);
+}
+
+// Day 37: { count, sample } -- the viewer's friends who are this person's too.
+export function fetchMutualFriends(userId, token) {
+  return api.get(`/users/${userId}/mutual-friends`, token ? authHeaders(token) : undefined).then((res) => res.data);
+}

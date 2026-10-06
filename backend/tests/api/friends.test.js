@@ -47,6 +47,15 @@ describe('friends and connections (Day 37)', () => {
     expect(rows.find((u) => u.id === y.id)).toMatchObject({ is_following: false, follows_you: true });
   });
 
+  it('a profile says whether that person follows you (for Follow back)', async () => {
+    const me = await registerAndLogin(app);
+    const fan = await registerAndLogin(app);
+    await follow(fan, me);
+    expect((await request(app).get(`/profile/${fan.id}`).set(auth(me))).body.follows_you).toBe(true);
+    expect((await request(app).get(`/profile/${me.id}`).set(auth(fan))).body.follows_you).toBe(false);
+    expect((await request(app).get(`/profile/${fan.id}`)).body.follows_you).toBe(false);
+  });
+
   it('pages A-Z without gaps or repeats', async () => {
     const owner = await registerAndLogin(app);
     const fans = [];

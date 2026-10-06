@@ -45,6 +45,7 @@ const LandingScreen = lazy(() => import('./screens/LandingScreen'));
 const CreatePageScreen = lazy(() => import('./screens/CreatePageScreen'));
 const PageScreen = lazy(() => import('./screens/PageScreen'));
 const EditPageScreen = lazy(() => import('./screens/EditPageScreen'));
+const ConnectionsScreen = lazy(() => import('./screens/ConnectionsScreen'));
 
 // Day 30: routes that need an account (see RequireAuth). Public browsing
 // -- a post, profile, page, group, hashtag, explore, search, the legal and
@@ -184,6 +185,8 @@ function App() {
             PhoneShell (its own Suspense instead). Logged-out "/" lands here. */}
         <Route path="/welcome" element={<Suspense fallback={null}><LandingScreen /></Suspense>} />
         {/* C2: public legal pages (no login needed). */}
+        {/* Day 37: friends / followers / following -- public like profiles. */}
+        <Route path="/profile/:id/connections" element={<PhoneShell><ConnectionsScreen /></PhoneShell>} />
         <Route path="/terms" element={<PhoneShell hideTabBar><LegalScreen doc="terms" /></PhoneShell>} />
         <Route path="/privacy" element={<PhoneShell hideTabBar><LegalScreen doc="privacy" /></PhoneShell>} />
         <Route path="/pages/new" element={authOnly(<PhoneShell hideTabBar><CreatePageScreen /></PhoneShell>)} />
