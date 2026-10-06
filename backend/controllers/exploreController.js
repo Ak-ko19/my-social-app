@@ -21,28 +21,79 @@ const NOT_BLOCKED_SQL = `
        OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
   ))`;
 
-// GET /explore/hashtags -- the most-used tags in the window, by how many
-// distinct (publicly visible) posts used them; ties go to the most
-// recently used. At most 10.
+// The most-used tags in the window, by how many distinct (publicly
+// visible) posts used them; ties go to the most recently used. At most 10.
+// viewerId null = nobody's blocks are hidden.
+async function queryTrending(viewerId) {
+  const result = await db.query(
+    `SELECT hashtags.tag, COUNT(DISTINCT posts.id)::int AS post_count, MAX(posts.created_at) AS last_used_at
+     FROM post_hashtags
+     JOIN hashtags ON hashtags.id = post_hashtags.hashtag_id
+     JOIN posts ON posts.id = post_hashtags.post_id
+     JOIN users ON users.id = posts.user_id
+     WHERE posts.community_id IS NULL -- B13: not in global explore
+       AND posts.created_at > now() - ${EXPLORE_WINDOW}
+       AND ${PUBLICLY_VISIBLE_SQL}
+       AND ${NOT_BLOCKED_SQL}
+     GROUP BY hashtags.id, hashtags.tag
+     ORDER BY post_count DESC, last_used_at DESC
+     LIMIT 10`,
+    [viewerId]
+  );
+  return result.rows.map(({ tag, post_count }) => ({ tag, post_count }));
+}
+
+// Day 40 (audit N3): counting a week of tagged posts on every request
+// grows with weekly volume, so the list everyone shares is cached in memory
+// for TRENDING_TTL_MS -- trends move over hours, a minute's delay is fine
+// (X refreshes them every few minutes). A table refreshed by the daily
+// cleanup job would be up to a day stale. Concurrent misses share one
+// query; a failed query is not cached. Off under NODE_ENV=test (browser
+// suites post a tag and check Explore at once) unless TRENDING_CACHE_MS is
+// set, like the bot checks.
+const TRENDING_TTL_MS = 60 * 1000;
+let sharedTrending = null; // { expires, promise }
+
+function trendingTtlMs() {
+  if (process.env.TRENDING_CACHE_MS !== undefined) return Number(process.env.TRENDING_CACHE_MS);
+  return process.env.NODE_ENV === 'test' ? 0 : TRENDING_TTL_MS;
+}
+
+function getSharedTrending() {
+  const now = Date.now();
+  if (sharedTrending && sharedTrending.expires > now) return sharedTrending.promise;
+  const ttl = trendingTtlMs();
+  const entry = { expires: now + ttl, promise: queryTrending(null) };
+  if (ttl > 0) {
+    sharedTrending = entry;
+    entry.promise.catch(() => { if (sharedTrending === entry) sharedTrending = null; });
+  }
+  return entry.promise;
+}
+
+function clearTrendingCache() {
+  sharedTrending = null;
+}
+
+// Whether a block hides anyone from this viewer (either direction). Only
+// then does their trending list differ from the shared one.
+async function hasBlocks(viewerId) {
+  const result = await db.query(
+    `SELECT EXISTS (SELECT 1 FROM blocks WHERE blocker_id = $1)
+         OR EXISTS (SELECT 1 FROM blocks WHERE blocked_id = $1) AS has_blocks`,
+    [viewerId]
+  );
+  return result.rows[0].has_blocks;
+}
+
+// GET /explore/hashtags -- shared (cached) for visitors and for people
+// with no blocks, which is nearly everyone; worked out live for the rest,
+// so a blocked author's posts never count towards their trends.
 async function getTrendingHashtags(req, res) {
   try {
     const viewerId = req.userId ?? null;
-    const result = await db.query(
-      `SELECT hashtags.tag, COUNT(DISTINCT posts.id)::int AS post_count, MAX(posts.created_at) AS last_used_at
-       FROM post_hashtags
-       JOIN hashtags ON hashtags.id = post_hashtags.hashtag_id
-       JOIN posts ON posts.id = post_hashtags.post_id
-       JOIN users ON users.id = posts.user_id
-       WHERE posts.community_id IS NULL -- B13: not in global explore
-         AND posts.created_at > now() - ${EXPLORE_WINDOW}
-         AND ${PUBLICLY_VISIBLE_SQL}
-         AND ${NOT_BLOCKED_SQL}
-       GROUP BY hashtags.id, hashtags.tag
-       ORDER BY post_count DESC, last_used_at DESC
-       LIMIT 10`,
-      [viewerId]
-    );
-    res.json(result.rows.map(({ tag, post_count }) => ({ tag, post_count })));
+    const tags = viewerId !== null && await hasBlocks(viewerId) ? await queryTrending(viewerId) : await getSharedTrending();
+    res.json(tags);
   } catch (err) {
     sendServerError(res, err, 'Loading trending hashtags failed. Please try again later.');
   }
@@ -97,4 +148,4 @@ async function getPopularPosts(req, res) {
   }
 }
 
-module.exports = { getTrendingHashtags, getPopularPosts };
+module.exports = { getTrendingHashtags, getPopularPosts, clearTrendingCache, TRENDING_TTL_MS };

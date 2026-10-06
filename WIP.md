@@ -37,9 +37,10 @@
   (Admin, EditPage, ManageCommunity, …) re-render briefly with no token
   on a forced logout. Consider a route-level guard (Day 20 a11y/quality
   or Day 25 security round).
-- Explore (posts and hashtags) aggregates the last 7 days on every
-  request (~5.7k rows read at the perf seed). Fine now; at real scale
-  precompute it (a table refreshed by the cleanup job) -- Phase 2.
+- Explore: trending tags are cached 60 s in memory (Day 40, N3; off
+  under NODE_ENV=test unless TRENDING_CACHE_MS is set). Popular posts
+  still aggregate 7 days per request (~5.7k rows at the perf seed; per-
+  viewer visibility, so not shared) -- revisit at real scale.
 - Performance: e2e/day27-perf.cjs must stay green; new list queries get
   an index (check with the suite). Any new index goes in the migration,
   the fixture AND the rehearsal compares them. npm run check:bundle
@@ -87,3 +88,7 @@ stale. Tests: cache hit, expiry, blocked viewer bypass.
   shared with Explore. Tabs in ?sort=, Top default. hashtagTop.test 6
   (4 mutations caught), HashtagFeedScreen.test 3 (3 caught),
   day40-hashtag-top 7, perf +1. backend 650/650, Vitest 103/103.
+- Step 2 done: trending cache (N3). Shared list for visitors and viewers
+  without blocks, 60 s, concurrent misses share one query, failures not
+  cached; viewers with blocks get it live. trendingCache.test 4 (6
+  mutations caught). backend 654/654; b7, b8, a2, day16, perf green.
