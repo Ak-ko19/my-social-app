@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 39 — People you may know
-**Step:** 1 — hide a suggestion
+**Day:** 40–41 — Explore page
+**Step:** — (planning)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -62,24 +62,7 @@
   cards show public posts to link-preview crawlers.
 
 ## Plan
-Verified existing (B8, suggestions.test.js 6, E2E b8-pymk): friends-of-
-friends by mutual count + sample, follows-you boost, exclusions (self,
-followed/requested, blocked, deactivated), popular fallback, no external
-service. Gap: no way to dismiss a suggestion (FB/IG have X).
-Step 1: migration 046 suggestion_dismissals (user_id, dismissed_user_id,
-created_at; PK; both FK cascade; index on dismissed_user_id for the
-cascade). POST /users/suggestions/:id/dismiss (auth, not yourself, user
-must exist -> 404; idempotent). Suggestions exclude dismissed people
-(network and popular). UI: X "Hide <name>" on each card, optimistic
-with rollback + error. Export: hidden_suggestions (usernames). Fixture,
-testDb TABLES, checklist. Tests: jest, e2e (extend b8-pymk? new
-day39-pymk).
+(to be written)
 
 ## Progress
-- Step 1 done: migration 046 suggestion_dismissals; POST
-  /users/suggestions/:id/dismiss (idempotent, 400 self, 404 unknown);
-  ELIGIBLE_SQL excludes hidden (network + popular; mutation caught);
-  export hidden_suggestions. X on each card (optimistic + rollback +
-  message). b8-pymk selector updated (cards have 2 buttons now).
-  suggestions.test +5, PeopleYouMayKnow.test 2, day39-pymk 7. backend
-  644/644, Vitest 100/100, rehearsal 015->046.
+(nothing in progress — Day 39 closed 2026-10-06)

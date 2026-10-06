@@ -202,7 +202,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 37–38 — Friend requests (if missing)
 - [x] Send/accept/decline/cancel, friends list, mutual friends. *(Requests existed; friends = mutual follows, lists and mutual friends built — see Progress Log.)*
 ### Day 39 — People you may know
-- [ ] Suggestions from mutual follows/friends; no external services.
+- [x] Suggestions from mutual follows/friends; no external services. *(Built in B8 and verified; hiding a suggestion added — see Progress Log.)*
 ### Day 40–41 — Explore page
 - [ ] Trending hashtags, popular posts (last 7 days), explore by hashtag.
 ### Day 42 — Better search
@@ -1289,3 +1289,22 @@ Build every feature the way a senior engineer at a top social media company woul
   - backend 639/639; Vitest 98/98.
   - Full browser run: all 47 suites (new: day37-friends) + A3 EN/MY/AR
     green.
+
+### 2026-10-06 — Day 39: People you may know
+- **Already built, verified (B8):** friends-of-friends ranked by mutual
+  count with a sample, a boost for people who follow you, exclusions
+  (yourself, followed/requested, blocked, deactivated), a popular
+  fallback, no outside service (suggestions.test.js, E2E b8-pymk).
+- **Gap filled (`1795672`): hide a suggestion**, like the X on
+  Facebook/Instagram cards.
+  - Migration 046 `suggestion_dismissals` (both FKs cascade).
+  - `POST /users/suggestions/:id/dismiss`: private (no block, unfollow
+    or notification), idempotent; 400 for yourself, 404 for unknown.
+    Hidden people are left out of network and popular suggestions.
+  - X on each card: the card goes at once and comes back with a
+    message if the server refuses. EN/MY/AR, end corner in RTL.
+  - The data download and the Privacy Policy list hidden suggestions.
+- **Tests at close:**
+  - backend 644/644; Vitest 100/100; rehearsal 015→046 passed.
+  - Full browser run: all 48 suites (new: day39-pymk) + A3 EN/MY/AR
+    (228 page checks each) green.
