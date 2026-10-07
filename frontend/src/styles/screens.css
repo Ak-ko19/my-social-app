@@ -531,6 +531,40 @@ textarea.form-input {
   outline-offset: 2px;
 }
 
+/* Day 44: CreatePost's poll builder (the post's text is the question). */
+.compose-poll-toggle,
+.poll-editor-add {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+}
+
+.poll-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.poll-editor legend {
+  padding: 0 var(--space-1);
+}
+
+.poll-editor-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.poll-editor-row .form-input {
+  flex: 1;
+  min-inline-size: 0;
+}
+
 /* ---------- B10 group screens ---------- */
 .member-picker {
   display: flex;

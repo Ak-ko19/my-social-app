@@ -93,3 +93,8 @@ export function approveFollowRequest(followerId, token) {
 export function denyFollowRequest(followerId, token) {
   return api.delete(`/follow-requests/${followerId}`, authHeaders(token));
 }
+
+// Day 44: vote in a poll post; resolves to the poll with its results.
+export function votePoll(postId, optionId, token) {
+  return api.post(`/posts/${postId}/poll/vote`, { optionId }, authHeaders(token)).then((res) => res.data);
+}

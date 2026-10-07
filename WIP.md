@@ -124,3 +124,12 @@ Steps: 1 backend (migration, create, read, vote, export + tests);
   rehearsal 015->050 (GO_LIVE_CHECKLIST: 050 in the list, 14/11/8).
   Note: Explore only lists posts with likes/comments -- votes don't
   count as engagement (left as is).
+- Step 2 done (UI): composer poll builder (2-4 options, 1d/3d/1w; poll
+  and photos exclude each other; empty/repeated options explained);
+  PollView (options -> results bars, your vote ticked, leader bold,
+  rounded "3 days left", ticks each minute; 409 refetches; logged out
+  -> login); EN/MY/AR (+ all Arabic plural forms) and server messages;
+  Privacy Policy (polls collected; votes anonymous). PollView.test 7
+  (12 mutations), CreatePost.test 5 (7 mutations), day44-polls 16 (RTL
+  bar proven on a 50% bar, axe on both states). Vitest 134/134, bundle
+  218.3 kB.

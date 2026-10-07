@@ -306,7 +306,39 @@
     "removeImage": "Remove image {{n}}",
     "posting": "Posting…",
     "post": "Post",
-    "onlyMe": "Only me"
+    "onlyMe": "Only me",
+    "addPoll": "Add a poll",
+    "removePoll": "Remove poll",
+    "pollNoPhotos": "A poll can't have photos — remove them to add one.",
+    "pollLegend": "Poll",
+    "pollOption": "Option {{n}}",
+    "removePollOption": "Remove option {{n}}",
+    "addPollOption": "Add option",
+    "pollLength": "Poll length",
+    "pollOneDay": "1 day",
+    "pollThreeDays": "3 days",
+    "pollOneWeek": "1 week",
+    "pollPlaceholder": "Ask a question…",
+    "pollOptionsEmpty": "Fill in every option, or remove the empty ones.",
+    "pollOptionsSame": "Each option must be different."
+  },
+  "poll": {
+    "label": "Poll",
+    "yourVote": "Your vote",
+    "percent": "{{value}}%",
+    "votes_one": "{{count}} vote",
+    "votes_other": "{{count}} votes",
+    "totalVotes_one": "{{count}} vote",
+    "totalVotes_other": "{{count}} votes",
+    "daysLeft_one": "{{count}} day left",
+    "daysLeft_other": "{{count}} days left",
+    "hoursLeft_one": "{{count}} hour left",
+    "hoursLeft_other": "{{count}} hours left",
+    "minutesLeft_one": "{{count}} minute left",
+    "minutesLeft_other": "{{count}} minutes left",
+    "finalResults": "Final results",
+    "ended": "Poll ended",
+    "voteFailed": "Couldn't vote. Please try again."
   },
   "ui": {
     "verified": "Verified",
@@ -1070,7 +1102,7 @@
       "sections": [
         {
           "heading": "1. What we collect",
-          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, photos, stories, comments and replies, reactions, messages and voice messages, groups, pages, follows, saved posts, blocks, muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
+          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts, blocks, muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
         },
         {
           "heading": "2. How we use it",
@@ -1078,7 +1110,7 @@
         },
         {
           "heading": "3. Who can see what",
-          "body": "Public posts, public profiles and pages can be seen by anyone. Followers-only posts, private accounts and private groups are limited to the people allowed in, and \"Only me\" posts are visible only to you. Stories disappear after 24 hours. Direct and group messages are visible only to the people in that conversation, who can also see when you are online or were last active. Blocking someone hides you from each other. Our moderators can see content that has been reported, so they can review it."
+          "body": "Public posts, public profiles and pages can be seen by anyone. Followers-only posts, private accounts and private groups are limited to the people allowed in, and \"Only me\" posts are visible only to you. Stories disappear after 24 hours. Direct and group messages are visible only to the people in that conversation, who can also see when you are online or were last active. Blocking someone hides you from each other. Our moderators can see content that has been reported, so they can review it. Poll votes are anonymous: everyone, including the poll's author, sees only how many votes each option has."
         },
         {
           "heading": "4. Links and sharing",

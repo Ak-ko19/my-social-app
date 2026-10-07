@@ -1,0 +1,132 @@
+/* Day 44: poll posts (PollView.jsx). Logical properties throughout, so the
+   bars fill from the right in Arabic. */
+.poll {
+  margin-top: var(--space-3);
+}
+
+.poll-options,
+.poll-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Before voting: one button per option, full width, 44px tall. */
+.poll-option {
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding: var(--space-2) var(--space-4);
+  border: 1.5px solid var(--color-accent);
+  border-radius: 999px;
+  background: none;
+  color: var(--color-accent-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.poll-option:hover:not(:disabled) {
+  background: var(--color-subtle-bg);
+}
+
+.poll-option:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.poll-option:disabled {
+  cursor: default;
+}
+
+.poll-option:disabled:not(.is-choosing) {
+  opacity: 0.6;
+}
+
+.poll-option.is-choosing {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+/* After voting: a bar behind each option, the percentage at the end. */
+.poll-result {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-block-size: 40px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-subtle-bg);
+  font-size: 14px;
+  overflow: hidden;
+}
+
+.poll-result-bar {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  background: rgba(79, 70, 229, 0.18); /* --color-accent, for browsers without color-mix */
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  transition: inline-size 0.4s ease;
+}
+
+.poll-result.is-leading .poll-result-bar {
+  background: rgba(79, 70, 229, 0.32);
+  background: color-mix(in srgb, var(--color-accent) 32%, transparent);
+}
+
+.poll-result-label,
+.poll-result-percent {
+  position: relative; /* above the bar */
+}
+
+.poll-result-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.poll-result.is-leading .poll-result-label,
+.poll-result.is-leading .poll-result-percent {
+  font-weight: 700;
+}
+
+.poll-result-mine {
+  flex-shrink: 0;
+  color: var(--color-accent-text);
+}
+
+.poll-result-percent {
+  flex-shrink: 0;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.poll-error {
+  margin: var(--space-2) 0 0;
+  font-size: 13px;
+  color: var(--color-accent-3);
+}
+
+.poll-footer {
+  margin: var(--space-2) 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poll-option,
+  .poll-result-bar {
+    transition: none;
+  }
+}

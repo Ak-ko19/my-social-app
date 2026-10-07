@@ -21,6 +21,7 @@ import CommentSection from './CommentSection';
 import { MAX_POST_LENGTH } from '../../utils/textLimits';
 import PostMenu from './PostMenu';
 import PostText from './PostText';
+import PollView from './PollView';
 import LinkPreviewCard from '../common/LinkPreviewCard';
 import './PostCard.css';
 
@@ -247,6 +248,9 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
       ) : (
         <PostText content={post.content} className="post-card-body" />
       )}
+
+      {/* Day 44: a poll post's options or results, under its question. */}
+      {post.poll && <PollView postId={post.id} poll={post.poll} />}
 
       <MediaCarousel
         media={media}

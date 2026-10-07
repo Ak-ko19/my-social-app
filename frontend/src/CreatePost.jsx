@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import api from './api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Globe, Lock, Users, X } from 'lucide-react';
+import { ChevronLeft, Globe, ListChecks, Lock, Plus, Users, X } from 'lucide-react';
 import { IconButton } from './components/ui';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
@@ -11,6 +11,15 @@ import { useMentionAutocomplete, applyMentionSelection } from './hooks/useMentio
 
 // Matches the backend's MAX_POST_IMAGES (middleware/cloudinaryUpload.js).
 const MAX_IMAGES = 10;
+// Day 44: polls -- the backend's limits (services/pollService.js).
+const POLL_MIN_OPTIONS = 2;
+const POLL_MAX_OPTIONS = 4;
+const POLL_LABEL_MAX = 50;
+const POLL_LENGTHS = [
+  { hours: 24, key: 'compose.pollOneDay' },
+  { hours: 72, key: 'compose.pollThreeDays' },
+  { hours: 168, key: 'compose.pollOneWeek' }
+];
 
 function CreatePost() {
   const [content, setContent] = useState('');
@@ -18,6 +27,10 @@ function CreatePost() {
   const [submitting, setSubmitting] = useState(false);
   const [visibility, setVisibility] = useState('public'); // B5 audience
   const [error, setError] = useState('');
+  // Day 44: an optional poll; the post's text is its question.
+  const [pollOn, setPollOn] = useState(false);
+  const [pollOptions, setPollOptions] = useState(['', '']);
+  const [pollHours, setPollHours] = useState(24);
   const navigate = useNavigate();
   const { t } = useTranslation();
   // B13: /create-post?communityId=N posts inside that group.
@@ -71,6 +84,10 @@ function CreatePost() {
     setError('');
   };
 
+  const setPollOption = (index, value) => setPollOptions((current) => current.map((o, i) => (i === index ? value : o)));
+  const addPollOption = () => setPollOptions((current) => (current.length < POLL_MAX_OPTIONS ? [...current, ''] : current));
+  const removePollOption = (index) => setPollOptions((current) => current.filter((_, i) => i !== index));
+
   // Free the preview blob URLs when leaving the screen.
   const imagesRef = useRef(images);
   useEffect(() => {
@@ -90,8 +107,20 @@ function CreatePost() {
       return;
     }
 
+    // Day 44: the same rules the server applies, so they're explained here.
+    const options = pollOptions.map((o) => o.trim());
+    if (pollOn && options.some((o) => !o)) {
+      setError(t('compose.pollOptionsEmpty'));
+      return;
+    }
+    if (pollOn && new Set(options.map((o) => o.toLowerCase())).size !== options.length) {
+      setError(t('compose.pollOptionsSame'));
+      return;
+    }
+
     const formData = new FormData();
     formData.append('content', content);
+    if (pollOn) formData.append('poll', JSON.stringify({ options, durationHours: pollHours }));
     if (communityId) formData.append('communityId', communityId);
     else if (pageId) formData.append('pageId', pageId);
     else formData.append('visibility', visibility);
@@ -126,13 +155,56 @@ function CreatePost() {
             className="form-input"
             value={content}
             onChange={handleContentChange}
-            placeholder={t('compose.placeholder')}
+            placeholder={pollOn ? t('compose.pollPlaceholder') : t('compose.placeholder')}
             maxLength={MAX_POST_LENGTH}
             rows="5"
             required
           />
         </label>
         {mention.active && <MentionAutocomplete suggestions={mention.suggestions} onSelect={handleMentionSelect} />}
+        {/* Day 44: a poll instead of photos (a poll post has none, like X). */}
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm compose-poll-toggle"
+          onClick={() => { setPollOn((on) => !on); setError(''); }}
+          disabled={submitting || (!pollOn && images.length > 0)}
+        >
+          <ListChecks size={16} aria-hidden="true" /> {pollOn ? t('compose.removePoll') : t('compose.addPoll')}
+        </button>
+        {!pollOn && images.length > 0 && <p className="form-hint">{t('compose.pollNoPhotos')}</p>}
+        {pollOn && (
+          <fieldset className="poll-editor">
+            <legend className="form-label">{t('compose.pollLegend')}</legend>
+            {pollOptions.map((value, i) => (
+              <div key={i} className="poll-editor-row">
+                <input
+                  className="form-input"
+                  value={value}
+                  onChange={(e) => setPollOption(i, e.target.value)}
+                  maxLength={POLL_LABEL_MAX}
+                  placeholder={t('compose.pollOption', { n: i + 1 })}
+                  aria-label={t('compose.pollOption', { n: i + 1 })}
+                  required
+                />
+                {pollOptions.length > POLL_MIN_OPTIONS && (
+                  <IconButton icon={X} aria-label={t('compose.removePollOption', { n: i + 1 })} onClick={() => removePollOption(i)} />
+                )}
+              </div>
+            ))}
+            {pollOptions.length < POLL_MAX_OPTIONS && (
+              <button type="button" className="btn btn-secondary btn-sm poll-editor-add" onClick={addPollOption}>
+                <Plus size={16} aria-hidden="true" /> {t('compose.addPollOption')}
+              </button>
+            )}
+            <label className="form-field">
+              <span className="form-label">{t('compose.pollLength')}</span>
+              <select className="form-input" value={pollHours} onChange={(e) => setPollHours(Number(e.target.value))}>
+                {POLL_LENGTHS.map((l) => <option key={l.hours} value={l.hours}>{t(l.key)}</option>)}
+              </select>
+            </label>
+          </fieldset>
+        )}
+        {!pollOn && (
         <label className="form-field">
           <span className="form-label">
             {t('compose.images', { max: MAX_IMAGES })}{images.length > 0 && t('compose.selectedCount', { count: images.length })}
@@ -146,6 +218,7 @@ function CreatePost() {
             disabled={images.length >= MAX_IMAGES || submitting}
           />
         </label>
+        )}
         {!communityId && !pageId && (
         <fieldset className="audience-picker">
           <legend className="form-label">{t('compose.audience')}</legend>
