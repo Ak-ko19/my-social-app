@@ -5,6 +5,11 @@ const { deleteMedia } = require('../services/mediaCleanupService');
 const blockService = require('../services/blockService');
 const { buildExport } = require('../services/dataExportService');
 const { parseLinks, LINKS_ERROR } = require('../utils/profileLinks');
+const { toUnicode } = require('../utils/myanmarText');
+
+// Day 43: bios had no limit. Generous next to Instagram (150) or X (160),
+// so existing bios still save.
+const MAX_BIO_LENGTH = 500;
 
 // Same check signup uses (authController.EMAIL_REGEX).
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -101,10 +106,20 @@ async function updateProfile(req, res) {
   try {
     const username = (req.body.username || '').trim();
     const email = (req.body.email || '').trim();
-    const { bio } = req.body;
+    const typedBio = req.body.bio;
     if (!username || !email) {
       return res.status(400).send('Username and email are required');
     }
+    if (typedBio !== undefined && typedBio !== null && typeof typedBio !== 'string') {
+      return res.status(400).send('Invalid bio');
+    }
+    // The limit counts the text as typed (like the bio field's maxLength).
+    if (typedBio && typedBio.length > MAX_BIO_LENGTH) {
+      return res.status(400).send(`Bio must be ${MAX_BIO_LENGTH} characters or fewer`);
+    }
+    // Day 43: Zawgyi Myanmar text is stored as Unicode (utils/myanmarText).
+    // Not the username: it is how people find and mention you.
+    const bio = toUnicode(typedBio);
     if (!EMAIL_REGEX.test(email)) {
       return res.status(400).send('Invalid email format');
     }

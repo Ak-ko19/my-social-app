@@ -604,7 +604,12 @@ export function useConversationMessages(conversationId, token, currentUserId) {
         return;
       }
       editMessageRest(conversationId, messageId, trimmed, token)
-        .then((updated) => mergeMessages([updated]))
+        .then((updated) => {
+          // Same as message_edited: the server's text (Day 43: Zawgyi ->
+          // Unicode) for the bubble and the quotes of it.
+          mergeMessages([updated]);
+          setMessages((current) => syncQuotes(current, messageId, { content: (updated.content || '').slice(0, 120) }));
+        })
         .catch((err) => {
           console.error(err);
           setMessages((current) => current.map((m) => (m.id === messageId ? previous : m)));

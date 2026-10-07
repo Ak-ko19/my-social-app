@@ -124,11 +124,16 @@ export function useComments(postId, token, currentUser) {
     setEditingCommentId(null);
     setEditText('');
 
-    updateComment(commentId, nextContent, token).catch((err) => {
-      console.error(err);
-      setComments((current) => current.map((c) => (c.id === commentId ? { ...c, content: previous.content } : c)));
-      setEditError(serverErrorText(err, 'errors.updateComment'));
-    });
+    updateComment(commentId, nextContent, token)
+      .then((updated) => {
+        // The server's text, which can differ (Day 43: Zawgyi -> Unicode).
+        setComments((current) => current.map((c) => (c.id === commentId ? { ...c, content: updated.content } : c)));
+      })
+      .catch((err) => {
+        console.error(err);
+        setComments((current) => current.map((c) => (c.id === commentId ? { ...c, content: previous.content } : c)));
+        setEditError(serverErrorText(err, 'errors.updateComment'));
+      });
   };
 
   // Reply to `comment` (top-level or itself a reply). Pre-fills an

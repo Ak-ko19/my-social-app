@@ -9,6 +9,7 @@ import { renderTextWithLinks } from '../../utils/renderTextWithLinks';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import MentionAutocomplete from './MentionAutocomplete';
 import ReportDialog from './ReportDialog';
+import { MAX_COMMENT_LENGTH } from '../../utils/textLimits';
 import { useMentionAutocomplete, applyMentionSelection } from '../../hooks/useMentionAutocomplete';
 import { DURATION_NORMAL, EASE_STANDARD } from '../../utils/motionTokens';
 
@@ -44,7 +45,7 @@ function CommentItem({ c, comments, currentUserId, onReply, onReport }) {
         <label className="feed-visually-hidden" htmlFor={`edit-comment-${c.id}`}>
           {t('comments.editLabel')}
         </label>
-        <input id={`edit-comment-${c.id}`} type="text" value={editText} onChange={(e) => setEditText(e.target.value)} />
+        <input id={`edit-comment-${c.id}`} type="text" maxLength={MAX_COMMENT_LENGTH} value={editText} onChange={(e) => setEditText(e.target.value)} />
         <button type="submit" className="feed-btn">
           {t('common.save')}
         </button>
@@ -197,6 +198,7 @@ function CommentSection({ postId, comments }) {
           id={`comment-input-${postId}`}
           ref={commentInputRef}
           type="text"
+          maxLength={MAX_COMMENT_LENGTH}
           value={commentInput}
           onChange={(e) => {
             setCommentInput(e.target.value);

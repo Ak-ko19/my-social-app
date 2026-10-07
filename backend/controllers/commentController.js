@@ -4,15 +4,29 @@ const mentionService = require('../services/mentionService');
 const { getVisiblePost } = require('../services/postVisibilityService');
 const blockService = require('../services/blockService');
 const notificationService = require('../services/notificationService');
+const { toUnicode } = require('../utils/myanmarText');
+
+// Day 43: comments had no length limit; same as a chat message.
+const MAX_COMMENT_LENGTH = 5000;
+
+// Day 43: Zawgyi Myanmar text is stored as Unicode (utils/myanmarText).
+// Returns the text to store, or an error message for a 400.
+// The limit counts the text as typed (like the comment box's maxLength).
+function readContent(body) {
+  const typed = body.content;
+  if (typeof typed !== 'string' || typed.trim() === '') return { error: 'Comment cannot be empty' };
+  if (typed.length > MAX_COMMENT_LENGTH) return { error: `Comment must be ${MAX_COMMENT_LENGTH} characters or fewer` };
+  return { content: toUnicode(typed) };
+}
 
 async function createComment(req, res) {
   try {
     if (isNaN(req.params.id)) {
       return res.status(400).send('Invalid post ID');
     }
-    const { content } = req.body;
-    if (!content || content.trim() === '') {
-      return res.status(400).send('Comment cannot be empty');
+    const { content, error } = readContent(req.body);
+    if (error) {
+      return res.status(400).send(error);
     }
     // Same visibility rules as GET /posts/:id -- see postVisibilityService.
     const post = await getVisiblePost(req.params.id, req.userId);
@@ -118,9 +132,9 @@ async function updateComment(req, res) {
     if (isNaN(req.params.id)) {
       return res.status(400).send('Invalid comment ID');
     }
-    const { content } = req.body;
-    if (!content || content.trim() === '') {
-      return res.status(400).send('Comment cannot be empty');
+    const { content, error } = readContent(req.body);
+    if (error) {
+      return res.status(400).send(error);
     }
     const commentCheck = await db.query('SELECT * FROM comments WHERE id = $1', [req.params.id]);
     if (commentCheck.rows.length === 0) {

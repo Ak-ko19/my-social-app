@@ -6,6 +6,7 @@ import { ChevronLeft } from 'lucide-react';
 import { IconButton, Avatar } from './components/ui';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
+import { MAX_BIO_LENGTH } from './utils/textLimits';
 import CoverPhoto from './components/profile/CoverPhoto';
 import { removeCoverPhoto, setCoverPhoto } from './services/profileService';
 
@@ -104,6 +105,8 @@ function EditProfile() {
     )
     .then((response) => {
       setSuccess(t('editProfile.updated'));
+      // The saved bio, which can differ (Day 43: Zawgyi -> Unicode).
+      setBio(response.data.bio || '');
       setAvatarUrl(response.data.avatar_url || null);
       setAvatar(null);
       setAvatarPreview(null);
@@ -166,6 +169,7 @@ function EditProfile() {
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder={t('editProfile.bioPlaceholder')}
+            maxLength={MAX_BIO_LENGTH}
             rows="4"
           />
         </label>

@@ -2,6 +2,7 @@ const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { mediaOfConversation, deleteMedia } = require('../services/mediaCleanupService');
 const { getIO } = require('../sockets');
+const { toUnicode } = require('../utils/myanmarText'); // Day 43: Zawgyi -> Unicode
 
 // B10 group chat. Rules:
 // - A group has a name (1-100 chars) and 2..MAX_GROUP_SIZE members
@@ -25,7 +26,7 @@ class GroupError extends Error {
 }
 
 function cleanName(raw) {
-  const name = typeof raw === 'string' ? raw.trim() : '';
+  const name = typeof raw === 'string' ? toUnicode(raw).trim() : '';
   if (!name) throw new GroupError(400, 'A group needs a name');
   if (name.length > MAX_NAME_LENGTH) throw new GroupError(400, `Group name must be ${MAX_NAME_LENGTH} characters or fewer`);
   return name;

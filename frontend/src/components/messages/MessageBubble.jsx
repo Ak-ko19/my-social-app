@@ -4,6 +4,7 @@ import { CornerUpLeft, Flag, Forward, Pencil, SmilePlus } from 'lucide-react';
 import MessageStatusIcon from './MessageStatusIcon';
 import { MessageReactionChips, MessageReactionPicker } from './MessageReactions';
 import VoiceMessagePlayer from './VoiceMessagePlayer';
+import { MAX_MESSAGE_LENGTH } from '../../utils/textLimits';
 import { useTranslation } from 'react-i18next';
 import i18n, { formatDate } from '../../i18n';
 import LinkPreviewCard from '../common/LinkPreviewCard';
@@ -41,6 +42,7 @@ function EditForm({ message, onSave, onCancel }) {
       <input
         id={`edit-message-${message.id}`}
         type="text"
+        maxLength={MAX_MESSAGE_LENGTH}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {

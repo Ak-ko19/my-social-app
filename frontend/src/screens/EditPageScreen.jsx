@@ -75,6 +75,8 @@ function EditPageScreen() {
     updatePage(id, form, token)
       .then((p) => {
         setPage(p);
+        // The saved text, which can differ (Day 43: Zawgyi -> Unicode).
+        setForm({ name: p.name, category: p.category, description: p.description || '' });
         setSaved(true);
       })
       .catch((err) => {

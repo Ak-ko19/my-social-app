@@ -90,6 +90,10 @@ const MY = {
   'A group needs a name': 'အဖွဲ့အမည် လိုအပ်ပါသည်',
   'Group name must be 100 characters or fewer': 'အဖွဲ့အမည်သည် စာလုံး ၁၀၀ ထက် မပိုရပါ',
   'Description must be 1000 characters or fewer': 'ဖော်ပြချက်သည် စာလုံး ၁၀၀၀ ထက် မပိုရပါ',
+  // Day 43: text length limits
+  'Post must be 10000 characters or fewer': 'ပို့စ်သည် စာလုံး ၁၀၀၀၀ ထက် မပိုရပါ',
+  'Comment must be 5000 characters or fewer': 'မှတ်ချက်သည် စာလုံး ၅၀၀၀ ထက် မပိုရပါ',
+  'Bio must be 500 characters or fewer': 'ကိုယ်ရေးအကျဉ်းသည် စာလုံး ၅၀၀ ထက် မပိုရပါ',
   'Group not found': 'အဖွဲ့ မတွေ့ပါ',
   'Join this group to post in it': 'ပို့စ်တင်ရန် ဤအဖွဲ့သို့ ဝင်ပါ',
   'Join this group to see its members': 'အဖွဲ့ဝင်များကို ကြည့်ရန် ဤအဖွဲ့သို့ ဝင်ပါ',
@@ -194,6 +198,10 @@ const AR = {
   'A group needs a name': 'تحتاج المجموعة إلى اسم',
   'Group name must be 100 characters or fewer': 'يجب ألا يزيد اسم المجموعة عن 100 حرف',
   'Description must be 1000 characters or fewer': 'يجب ألا يزيد الوصف عن 1000 حرف',
+  // Day 43: text length limits
+  'Post must be 10000 characters or fewer': 'يجب ألا يزيد المنشور عن 10000 حرف',
+  'Comment must be 5000 characters or fewer': 'يجب ألا يزيد التعليق عن 5000 حرف',
+  'Bio must be 500 characters or fewer': 'يجب ألا تزيد النبذة عن 500 حرف',
   'Group not found': 'المجموعة غير موجودة',
   'Join this group to post in it': 'انضم إلى هذه المجموعة للنشر فيها',
   'Join this group to see its members': 'انضم إلى هذه المجموعة لرؤية أعضائها',

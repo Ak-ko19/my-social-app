@@ -4,19 +4,28 @@ const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../servic
 // B5: keep in sync with migration 020's CHECK constraint.
 // Day 20: 'only_me' -- seen by its author only.
 const POST_VISIBILITIES = ['public', 'followers', 'only_me'];
+// Day 43: posts had no length limit (a multipart field could be 1 MB).
+const MAX_POST_LENGTH = 10000;
 const { sendServerError } = require('../utils/sendError');
 const { mediaOfPost, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
 const { getVisiblePost } = require('../services/postVisibilityService');
 const hashtagService = require('../services/hashtagService');
 const mentionService = require('../services/mentionService');
+const { toUnicode } = require('../utils/myanmarText');
 
 async function createPost(req, res) {
   try {
-    const { content } = req.body;
-    if (!content || content.trim() === '') {
+    const typed = req.body.content;
+    if (typeof typed !== 'string' || typed.trim() === '') {
       return res.status(400).send('Post content cannot be empty');
     }
+    // The limit counts the text as typed (like the composer's maxLength).
+    if (typed.length > MAX_POST_LENGTH) {
+      return res.status(400).send(`Post must be ${MAX_POST_LENGTH} characters or fewer`);
+    }
+    // Day 43: Zawgyi Myanmar text is stored as Unicode (utils/myanmarText).
+    const content = toUnicode(typed);
     // B5: audience -- 'public' unless the client asks for 'followers'.
     const visibility = req.body.visibility || 'public';
     if (!POST_VISIBILITIES.includes(visibility)) {
@@ -249,13 +258,18 @@ async function updatePost(req, res) {
     // Either field may be sent on its own (B5 lets you change just the
     // audience). Previously a missing/empty `content` reached the NOT NULL
     // column and came back as a 500.
-    const { content, visibility } = req.body;
-    if (content === undefined && visibility === undefined) {
+    const { content: typed, visibility } = req.body;
+    if (typed === undefined && visibility === undefined) {
       return res.status(400).send('Nothing to update');
     }
-    if (content !== undefined && (typeof content !== 'string' || content.trim() === '')) {
+    if (typed !== undefined && (typeof typed !== 'string' || typed.trim() === '')) {
       return res.status(400).send('Post content cannot be empty');
     }
+    if (typed !== undefined && typed.length > MAX_POST_LENGTH) {
+      return res.status(400).send(`Post must be ${MAX_POST_LENGTH} characters or fewer`);
+    }
+    // Day 43: Zawgyi Myanmar text is stored as Unicode (utils/myanmarText).
+    const content = toUnicode(typed);
     if (visibility !== undefined && !POST_VISIBILITIES.includes(visibility)) {
       return res.status(400).send(`visibility must be one of: ${POST_VISIBILITIES.join(', ')}`);
     }

@@ -4,6 +4,7 @@ const { sendServerError } = require('../utils/sendError');
 const { mediaOfCommunity, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
+const { toUnicode } = require('../utils/myanmarText'); // Day 43: Zawgyi -> Unicode
 
 // B13 Groups ("communities" in the code, to stay distinct from B10 group
 // chats). Rules:
@@ -28,13 +29,13 @@ const handle = (res, err, fallback) =>
 function cleanFields(body, { partial = false } = {}) {
   const out = {};
   if (!partial || body.name !== undefined) {
-    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    const name = typeof body.name === 'string' ? toUnicode(body.name).trim() : '';
     if (!name) throw new CommunityError(400, 'A group needs a name');
     if (name.length > 100) throw new CommunityError(400, 'Group name must be 100 characters or fewer');
     out.name = name;
   }
   if (!partial || body.description !== undefined) {
-    const description = typeof body.description === 'string' ? body.description.trim() : '';
+    const description = typeof body.description === 'string' ? toUnicode(body.description).trim() : '';
     if (description.length > 1000) throw new CommunityError(400, 'Description must be 1000 characters or fewer');
     out.description = description || null;
   }

@@ -12,6 +12,7 @@ const blockService = require('./blockService');
 const { deleteMedia, cloudinaryAsset } = require('./mediaCleanupService');
 const cloudinary = require('../config/cloudinary');
 const { isValidReaction } = require('./reactionService');
+const { toUnicode } = require('../utils/myanmarText');
 
 const MAX_MESSAGE_LENGTH = 5000;
 const MAX_CLIENT_TEMP_ID_LENGTH = 255;
@@ -73,6 +74,9 @@ class BlockedError extends Error {
 // Chat messages are rendered as plain text everywhere in this app -- rather
 // than trying to allow-list "safe" HTML, strip all markup entirely so
 // <script>/onerror=/etc. can never reach a client that renders it unescaped.
+// Day 43: callers then check the length on the text as typed (like the
+// composer's maxLength) and store it with Zawgyi Myanmar converted to
+// Unicode (utils/myanmarText) -- send, caption and edit, HTTP and socket.
 function sanitizeContent(raw) {
   return sanitizeHtml(raw || '', { allowedTags: [], allowedAttributes: {} }).trim();
 }
@@ -182,7 +186,7 @@ async function sendMessage({ conversationId, senderId, content, clientTempId, re
   validateClientTempId(clientTempId);
 
   const replyTo = await validateReplyTo(convId, replyToMessageId);
-  return createMessage({ conversationId: convId, senderId, type: 'text', content: cleaned, clientTempId, replyToMessageId: replyTo });
+  return createMessage({ conversationId: convId, senderId, type: 'text', content: toUnicode(cleaned), clientTempId, replyToMessageId: replyTo });
 }
 
 // mediaUrl/durationSeconds come from the Cloudinary upload result the
@@ -516,7 +520,7 @@ async function sendImageMessage({ conversationId, senderId, mediaUrl, caption, c
     conversationId: convId,
     senderId,
     type: 'image',
-    content: cleanedCaption || null,
+    content: toUnicode(cleanedCaption) || null,
     mediaUrl,
     clientTempId,
     replyToMessageId: replyTo
@@ -559,7 +563,7 @@ async function editMessage({ conversationId, messageId, userId, content }) {
 
   const result = await db.query(
     'UPDATE messages SET content = $1, edited_at = now() WHERE id = $2 RETURNING *',
-    [cleaned, msgId]
+    [toUnicode(cleaned), msgId]
   );
   const [withPreview] = await attachReactions(await attachReplyPreviews(convId, result.rows));
   return withPreview;

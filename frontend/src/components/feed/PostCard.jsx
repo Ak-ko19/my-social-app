@@ -18,6 +18,7 @@ import { updatePost, updatePostVisibility } from '../../services/postService';
 import { Avatar, VerifiedTick } from '../ui';
 import MediaCarousel from './MediaCarousel';
 import CommentSection from './CommentSection';
+import { MAX_POST_LENGTH } from '../../utils/textLimits';
 import PostMenu from './PostMenu';
 import PostText from './PostText';
 import LinkPreviewCard from '../common/LinkPreviewCard';
@@ -225,6 +226,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
             className="post-card-edit-textarea"
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
+            maxLength={MAX_POST_LENGTH}
             rows={3}
             autoFocus
           />

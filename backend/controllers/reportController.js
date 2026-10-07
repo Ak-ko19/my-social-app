@@ -1,5 +1,6 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const { toUnicode } = require('../utils/myanmarText');
 
 // Kept as an allowlist (not free text) so the reason column stays a small,
 // analyzable set of values for a future moderation queue -- `details` is
@@ -15,7 +16,9 @@ const snapshotOf = (text) => (text ? text.slice(0, MAX_SNAPSHOT_LENGTH) : null);
 async function createReport(req, res) {
   try {
     const { targetType, targetId, reason } = req.body;
-    const details = (req.body.details || '').trim().slice(0, MAX_DETAILS_LENGTH);
+    // Day 43: Zawgyi Myanmar text stored as Unicode (cut first, so the
+    // conversion's work stays bounded).
+    const details = toUnicode((req.body.details || '').trim().slice(0, MAX_DETAILS_LENGTH));
 
     if (!VALID_TARGET_TYPES.includes(targetType)) {
       return res.status(400).send('targetType must be "post", "user", "comment", "message", "community" or "page"');

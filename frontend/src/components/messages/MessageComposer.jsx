@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, X } from 'lucide-react';
 import VoiceRecorderButton from './VoiceRecorderButton';
+import { MAX_MESSAGE_LENGTH } from '../../utils/textLimits';
 import { Trans, useTranslation } from 'react-i18next';
 
 // Debounce the "should I check whether to fire typing?" trigger by 300ms
@@ -104,6 +105,7 @@ function MessageComposer({ onSend, onSendVoice, onSendImage, onTyping, replyTo, 
               ref={inputRef}
               id="message-composer-input"
               type="text"
+              maxLength={MAX_MESSAGE_LENGTH}
               value={content}
               onChange={handleChange}
               onKeyDown={(e) => {

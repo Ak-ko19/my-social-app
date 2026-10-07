@@ -5,6 +5,7 @@ import { ChevronLeft, Globe, Lock, Users, X } from 'lucide-react';
 import { IconButton } from './components/ui';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
+import { MAX_POST_LENGTH } from './utils/textLimits';
 import MentionAutocomplete from './components/feed/MentionAutocomplete';
 import { useMentionAutocomplete, applyMentionSelection } from './hooks/useMentionAutocomplete';
 
@@ -126,6 +127,7 @@ function CreatePost() {
             value={content}
             onChange={handleContentChange}
             placeholder={t('compose.placeholder')}
+            maxLength={MAX_POST_LENGTH}
             rows="5"
             required
           />
