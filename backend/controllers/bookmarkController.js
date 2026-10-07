@@ -1,5 +1,6 @@
 const db = require('../db');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
+const { pollColumnSql } = require('../services/pollService');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const { getVisiblePost, communityVisibleSql } = require('../services/postVisibilityService');
@@ -61,6 +62,7 @@ async function getBookmarks(req, res) {
         EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
+        ${pollColumnSql('$1')},
         ${pageColumnSql()},
         true AS bookmarked_by_me
       FROM bookmarks

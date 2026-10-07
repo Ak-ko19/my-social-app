@@ -29,7 +29,8 @@ async function buildExport(userId) {
   const [
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
-    legacyMessages, notifications, reports, sessions, pushDevices, messageReactions, hiddenSuggestions, searches
+    legacyMessages, notifications, reports, sessions, pushDevices, messageReactions, hiddenSuggestions, searches,
+    pollOptions, pollVotes
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -95,7 +96,16 @@ async function buildExport(userId) {
     rows(`SELECT u.username, sd.created_at FROM suggestion_dismissals sd JOIN users u ON u.id = sd.dismissed_user_id
           WHERE sd.user_id = $1 ORDER BY sd.created_at`, [userId]),
     // Day 42: recent searches.
-    rows(`SELECT query, searched_at FROM search_history WHERE user_id = $1 ORDER BY searched_at DESC`, [userId])
+    rows(`SELECT query, searched_at FROM search_history WHERE user_id = $1 ORDER BY searched_at DESC`, [userId]),
+    // Day 44: the polls in your posts (with their counts, which you see
+    // as their author), and your votes in anyone's polls.
+    rows(`SELECT o.post_id, o.label, pl.closes_at,
+            (SELECT COUNT(*)::int FROM poll_votes v WHERE v.option_id = o.id) AS votes
+          FROM poll_options o JOIN polls pl ON pl.post_id = o.post_id JOIN posts p ON p.id = o.post_id
+          WHERE p.user_id = $1 ORDER BY o.post_id, o.position`, [userId]),
+    rows(`SELECT v.post_id, o.label AS option, v.created_at AS voted_at
+          FROM poll_votes v JOIN poll_options o ON o.id = v.option_id
+          WHERE v.user_id = $1 ORDER BY v.created_at`, [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -103,6 +113,7 @@ async function buildExport(userId) {
     return map;
   }, {});
   const mediaByPost = groupBy(media, 'post_id');
+  const pollByPost = groupBy(pollOptions, 'post_id');
   const viewsByStory = groupBy(storyViews, 'story_id');
   const peopleByConversation = groupBy(participants, 'conversation_id');
   const messagesByConversation = groupBy(messages, 'conversation_id');
@@ -122,7 +133,10 @@ async function buildExport(userId) {
     },
     posts: posts.map((p) => ({
       ...p,
-      media: (mediaByPost[p.id] || []).map((m) => m.url)
+      media: (mediaByPost[p.id] || []).map((m) => m.url),
+      poll: pollByPost[p.id]
+        ? { closes_at: pollByPost[p.id][0].closes_at, options: pollByPost[p.id].map(({ label, votes }) => ({ label, votes })) }
+        : null
     })),
     comments,
     reactions,
@@ -152,6 +166,7 @@ async function buildExport(userId) {
     message_reactions: messageReactions,
     hidden_suggestions: hiddenSuggestions,
     recent_searches: searches,
+    poll_votes: pollVotes,
     older_direct_messages: legacyMessages,
     notifications,
     reports_you_made: reports,

@@ -10,6 +10,8 @@ router.get('/posts', optionalAuth, postController.getPosts);
 router.get('/feed', authMiddleware, postController.getFeed);
 router.get('/posts/:id', optionalAuth, postController.getPost);
 router.put('/posts/:id', authMiddleware, postController.updatePost);
+// Day 44: vote in a poll post.
+router.post('/posts/:id/poll/vote', authMiddleware, postController.votePoll);
 router.delete('/posts/:id', authMiddleware, postController.deletePost);
 
 module.exports = router;

@@ -82,7 +82,45 @@
   mention regexes are [\p{L}\p{M}\p{N}_] with the u flag on both sides.
 
 ## Plan
-(none yet)
+Like X/Facebook/LinkedIn polls. The post text is the question.
+- Data (migration 050): polls(post_id PK -> posts CASCADE, closes_at),
+  poll_options(id, post_id -> polls CASCADE, position, label
+  varchar(50)), poll_votes(post_id, user_id -> users CASCADE, option_id
+  -> poll_options CASCADE, created_at, PK(post_id, user_id) = vote once).
+  Index poll_votes(option_id) not needed: counts are WHERE post_id (PK).
+- Create: POST /posts with `poll` = JSON {options: [2..4 labels],
+  durationHours: 24|72|168} (a JSON string in multipart). Labels 1..50
+  chars after trim + Zawgyi conversion, unique ignoring case; no images
+  with a poll (400); groups/pages allowed. Post + poll + options in one
+  statement (like post_media) so a post never exists half-made.
+- Read: pollColumnSql(viewer) next to mediaColumnSql in every post
+  listing (9 queries) + GET /posts/:id: {closes_at, closed, total_votes,
+  my_vote, show_results, options:[{id,label,votes|null}]}. Per-option
+  counts only when show_results (voted, author, or closed) -- never
+  leaked in the API otherwise.
+- Vote: POST /posts/:id/poll/vote {optionId}: getVisiblePost (blocks,
+  private, groups) -> 404; no poll 404; closed 409; option not in poll
+  400; same vote again 200 (double tap); another option 409. Returns
+  the poll. Anonymous: nobody sees who voted.
+- Not editable: options/duration (X); the question (post text) is.
+- Export: my votes + my polls; Privacy Policy (anonymous votes).
+- UI: composer "Poll" toggle (2 option inputs, add to 4, remove,
+  duration select; turns images off); PostCard PollView: options as
+  buttons -> results bars (%, my vote ticked, leader bold), "N votes ·
+  2 days left / Final results"; optimistic vote + rollback; keyboard,
+  labels, RTL bars, dark; EN/MY/AR plurals.
+- No "poll ended" notification yet: only a daily cron exists (up to a
+  day late). Day 45 needs a frequent scheduler; add it there.
+Steps: 1 backend (migration, create, read, vote, export + tests);
+2 frontend (composer + PollView + i18n + browser suite) + policy.
 
 ## Progress
 (none yet)
+- Step 1 done (backend): migration 050 (polls, poll_options,
+  poll_votes; PK(post_id,user_id) = vote once), services/pollService
+  (parsePollInput, pollColumnSql in all 9 listings + GET, vote), POST
+  /posts with `poll`, POST /posts/:id/poll/vote, export (polls + votes).
+  polls.test 12 (31/31 mutations). backend 714/714, perf 38/38,
+  rehearsal 015->050 (GO_LIVE_CHECKLIST: 050 in the list, 14/11/8).
+  Note: Explore only lists posts with likes/comments -- votes don't
+  count as engagement (left as is).

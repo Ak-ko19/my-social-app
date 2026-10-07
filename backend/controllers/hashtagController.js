@@ -1,5 +1,6 @@
 const db = require('../db');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
+const { pollColumnSql } = require('../services/pollService');
 const { popularityScoreSql } = require('../services/popularity');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
@@ -44,6 +45,7 @@ const POST_COLUMNS_SQL = `
   $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
   ${reactionColumnsSql('$1')},
   ${mediaColumnSql()},
+  ${pollColumnSql('$1')},
   ${pageColumnSql()},
   $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me`;
 

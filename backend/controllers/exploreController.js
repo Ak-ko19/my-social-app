@@ -2,6 +2,7 @@ const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
+const { pollColumnSql } = require('../services/pollService');
 const { popularityScoreSql } = require('../services/popularity');
 
 // B7 Explore. Both lists look at the last EXPLORE_WINDOW of activity.
@@ -134,6 +135,7 @@ async function getPopularPosts(req, res) {
          $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
          ${reactionColumnsSql('$1')},
          ${mediaColumnSql()},
+         ${pollColumnSql('$1')},
         ${pageColumnSql()},
          scored.reactions::int AS like_count,
          scored.comment_total::int AS comment_count,

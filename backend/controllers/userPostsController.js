@@ -3,6 +3,7 @@ const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const blockService = require('../services/blockService');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
+const { pollColumnSql } = require('../services/pollService');
 
 // B6 profile tabs: GET /users/:id/posts?tab=posts|photos|tagged
 //   posts  -- the user's own posts
@@ -85,6 +86,7 @@ async function getUserPosts(req, res) {
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
+        ${pollColumnSql('$1')},
         ${pageColumnSql()},
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me

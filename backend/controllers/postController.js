@@ -13,6 +13,7 @@ const { getVisiblePost } = require('../services/postVisibilityService');
 const hashtagService = require('../services/hashtagService');
 const mentionService = require('../services/mentionService');
 const { toUnicode } = require('../utils/myanmarText');
+const pollService = require('../services/pollService');
 
 async function createPost(req, res) {
   try {
@@ -30,6 +31,14 @@ async function createPost(req, res) {
     const visibility = req.body.visibility || 'public';
     if (!POST_VISIBILITIES.includes(visibility)) {
       return res.status(400).send(`visibility must be one of: ${POST_VISIBILITIES.join(', ')}`);
+    }
+    // Day 44: an optional poll; the post's text is its question.
+    let poll;
+    try {
+      poll = pollService.parsePollInput(req.body.poll);
+    } catch (err) {
+      if (err instanceof pollService.PollError) return res.status(err.status).send(err.message);
+      throw err;
     }
     // Day 20: "only me" is for your own profile; a group post is for the
     // group.
@@ -71,9 +80,14 @@ async function createPost(req, res) {
     }
     // B2: every uploaded image, in the order sent (see uploadManyToCloudinary).
     const imageUrls = (req.cloudinaryResults || []).map((r) => r.secure_url);
-    // One statement inserts the post AND its post_media rows, so a post can
-    // never exist with only some of its images. posts.image_url mirrors the
-    // first image for older readers (see migration 017).
+    // Like X: a poll post has no photos. (The upload middleware deletes
+    // the uploaded ones again.)
+    if (poll && imageUrls.length > 0) {
+      return res.status(400).send("A poll can't have photos");
+    }
+    // One statement inserts the post AND its post_media rows (and poll), so
+    // a post can never exist with only some of them. posts.image_url
+    // mirrors the first image for older readers (see migration 017).
     const result = await db.query(
       `WITH new_post AS (
          INSERT INTO posts (user_id, content, image_url, visibility, community_id, page_id) VALUES ($1, $2, $3, $5, $6, $7) RETURNING *
@@ -81,11 +95,24 @@ async function createPost(req, res) {
          INSERT INTO post_media (post_id, url, position)
          SELECT new_post.id, m.url, (m.ord - 1)::smallint
          FROM new_post, unnest($4::text[]) WITH ORDINALITY AS m(url, ord)
+       ), new_poll AS (
+         INSERT INTO polls (post_id, closes_at)
+         SELECT new_post.id, now() + make_interval(hours => $8::int) FROM new_post WHERE $8::int IS NOT NULL
+         RETURNING post_id
+       ), new_options AS (
+         INSERT INTO poll_options (post_id, position, label)
+         SELECT new_poll.post_id, (o.ord - 1)::smallint, o.label
+         FROM new_poll, unnest($9::text[]) WITH ORDINALITY AS o(label, ord)
        )
        SELECT * FROM new_post`,
-      [req.userId, content, imageUrls[0] || null, imageUrls, pageId ? 'public' : visibility, communityId, pageId]
+      [req.userId, content, imageUrls[0] || null, imageUrls, pageId ? 'public' : visibility, communityId, pageId,
+        poll ? poll.durationHours : null, poll ? poll.labels : []]
     );
-    const post = { ...result.rows[0], media: imageUrls.map((url) => ({ url })) };
+    const post = {
+      ...result.rows[0],
+      media: imageUrls.map((url) => ({ url })),
+      poll: poll ? await pollService.getPoll(result.rows[0].id, req.userId) : null
+    };
     await hashtagService.syncPostHashtags(post.id, content);
     await mentionService.notifyMentions({ content, authorId: req.userId, postId: post.id });
     res.status(201).json(post);
@@ -112,6 +139,7 @@ async function getPosts(req, res) {
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
+        ${pollService.pollColumnSql('$1')},
         ${pageColumnSql()},
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me
@@ -161,6 +189,7 @@ async function getFeed(req, res) {
         EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
+        ${pollService.pollColumnSql('$1')},
         ${pageColumnSql()},
         EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
         EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = posts.user_id AND follows.status = 'accepted') AS is_following
@@ -222,6 +251,7 @@ async function getPost(req, res) {
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
+        ${pollService.pollColumnSql('$1')},
         ${pageColumnSql()},
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted') AS viewer_is_follower
@@ -329,4 +359,26 @@ async function deletePost(req, res) {
   }
 }
 
-module.exports = { createPost, getPosts, getFeed, getPost, updatePost, deletePost };
+// POST /posts/:id/poll/vote { optionId } -- Day 44. Anyone who can see the
+// post can vote, once. Returns the poll with its results (201; 200 when
+// it repeats the vote already cast, e.g. a double tap).
+async function votePoll(req, res) {
+  try {
+    if (isNaN(req.params.id)) {
+      return res.status(400).send('Invalid post ID');
+    }
+    // Same visibility rules as GET /posts/:id (blocks, private accounts,
+    // groups) -- 404 so a hidden post's poll isn't confirmed to exist.
+    const post = await getVisiblePost(req.params.id, req.userId);
+    if (!post) {
+      return res.status(404).send('Post not found');
+    }
+    const { created, poll } = await pollService.vote(post.id, req.userId, req.body?.optionId);
+    res.status(created ? 201 : 200).json(poll);
+  } catch (err) {
+    if (err instanceof pollService.PollError) return res.status(err.status).send(err.message);
+    sendServerError(res, err, 'Voting failed. Please try again later.');
+  }
+}
+
+module.exports = { createPost, getPosts, getFeed, getPost, updatePost, deletePost, votePoll };

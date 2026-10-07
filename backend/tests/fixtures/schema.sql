@@ -467,3 +467,26 @@ CREATE TABLE search_history (
 );
 CREATE UNIQUE INDEX idx_search_history_user_query ON search_history (user_id, LOWER(query));
 CREATE INDEX idx_search_history_user_recent ON search_history (user_id, searched_at DESC);
+
+-- Added by migration 050_add_polls (Day 44): poll posts. The post's text
+-- is the question; one anonymous vote per person per poll.
+CREATE TABLE polls (
+  post_id INTEGER PRIMARY KEY REFERENCES posts(id) ON DELETE CASCADE,
+  closes_at TIMESTAMPTZ NOT NULL
+);
+CREATE TABLE poll_options (
+  id SERIAL PRIMARY KEY,
+  post_id INTEGER NOT NULL REFERENCES polls(post_id) ON DELETE CASCADE,
+  position SMALLINT NOT NULL,
+  label VARCHAR(50) NOT NULL CHECK (btrim(label) <> ''),
+  UNIQUE (post_id, position)
+);
+CREATE TABLE poll_votes (
+  post_id INTEGER NOT NULL REFERENCES polls(post_id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  option_id INTEGER NOT NULL REFERENCES poll_options(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (post_id, user_id)
+);
+CREATE INDEX idx_poll_votes_user ON poll_votes (user_id);
+CREATE INDEX idx_poll_votes_option ON poll_votes (option_id);
