@@ -7,7 +7,8 @@ const { getVisiblePost } = require('./postVisibilityService');
 const { pushNotification } = require('./pushService');
 const { allowedSql } = require('./notificationService');
 
-const MENTION_REGEX = /@(\w+)/g;
+// Day 43: names in any script (see hashtagService's HASHTAG_REGEX).
+const MENTION_REGEX = /@([\p{L}\p{M}\p{N}_]+)/gu;
 const MAX_USERNAME_LENGTH = 50; // matches users.username's practical length
 
 function parseMentionUsernames(content) {

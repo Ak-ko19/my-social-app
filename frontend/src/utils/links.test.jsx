@@ -51,6 +51,16 @@ describe('renderTextWithLinks', () => {
     expect(screen.queryAllByRole('link')).toHaveLength(0);
   });
 
+  it('Burmese and Arabic hashtags and names link whole (Day 43)', () => {
+    renderText('ညနေ #ရန်ကုန်။ #ကော်ဖီ၊ @ကိုကို #مرحبا #၁၂၃ #Tea_Time');
+    const hrefs = screen.getAllByRole('link').map((a) => decodeURIComponent(a.getAttribute('href')));
+    // Burmese punctuation (။ ၊) ends a tag; an all-digit one still links
+    // here (the server just has nothing for it), as with #123.
+    expect(hrefs).toEqual(['/hashtag/ရန်ကုန်', '/hashtag/ကော်ဖီ', '/profile/ကိုကို', '/hashtag/مرحبا', '/hashtag/၁၂၃', '/hashtag/tea_time']);
+    expect(screen.getByRole('link', { name: '#ရန်ကုန်' })).toBeInTheDocument();
+    expect(document.querySelector('p').textContent).toBe('ညနေ #ရန်ကုန်။ #ကော်ဖီ၊ @ကိုကို #مرحبا #၁၂၃ #Tea_Time');
+  });
+
   it('messages: links only, no hashtags or mentions', () => {
     renderText('https://example.com #tag @bob', { tags: false });
     expect(screen.getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['https://example.com/']);

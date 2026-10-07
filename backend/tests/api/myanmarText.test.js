@@ -215,6 +215,55 @@ describe('Zawgyi is stored as Unicode (Day 43)', () => {
     expect((await pool.query('SELECT details FROM reports WHERE reporter_id = $1', [a.id])).rows[0].details).toBe(UNICODE);
   });
 
+  describe('Burmese hashtags and mentions', () => {
+    const tagsOf = async (postId) =>
+      (await pool.query('SELECT h.tag FROM post_hashtags ph JOIN hashtags h ON h.id = ph.hashtag_id WHERE ph.post_id = $1 ORDER BY h.tag', [postId])).rows.map((r) => r.tag);
+    const tagPage = (user, tag) => request(app).get(`/hashtags/${encodeURIComponent(tag)}/posts`).set(auth(user));
+
+    it('tags in any script; Burmese punctuation ends a tag; digits alone are not one', async () => {
+      const a = await registerAndLogin(app);
+      const p = (await newPost(a, 'ညနေ #ရန်ကုန်။ #ကော်ဖီ၊ #مرحبا #၁၂၃ #123 #Tea_Time')).body;
+      expect((await tagsOf(p.id)).sort()).toEqual(['tea_time', 'ကော်ဖီ', 'ရန်ကုန်', 'مرحبا'].sort());
+    });
+
+    it('a tag written in Zawgyi is the Unicode tag; its page opens typed either way', async () => {
+      const a = await registerAndLogin(app);
+      const p = (await newPost(a, 'ညနေ #ရန္ကုန္')).body;
+      expect(await tagsOf(p.id)).toEqual(['ရန်ကုန်']);
+      for (const tag of ['ရန်ကုန်', 'ရန္ကုန္']) {
+        const page = await tagPage(a, tag);
+        expect(page.status).toBe(200);
+        expect(page.body.posts.map((x) => x.id)).toEqual([p.id]);
+      }
+      const found = (await request(app).get('/search/hashtags').query({ q: '#ရန်' }).set(auth(a))).body;
+      expect(found.map((t) => t.tag)).toEqual(['ရန်ကုန်']);
+    });
+
+    it('one tag whatever order its marks were typed in (NFC)', async () => {
+      const a = await registerAndLogin(app);
+      const c = String.fromCharCode;
+      // U+103A then U+1037: Unicode's canonical (NFC) order is the reverse.
+      const typed = `ပြော${c(0x103a, 0x1037)}ပါ`;
+      const nfc = typed.normalize('NFC');
+      expect(typed).not.toBe(nfc);
+      const one = (await newPost(a, `#${typed}`)).body;
+      const two = (await newPost(a, `#${nfc}`)).body;
+      expect(await tagsOf(one.id)).toEqual([nfc]);
+      expect((await pool.query('SELECT COUNT(*)::int AS n FROM hashtags')).rows[0].n).toBe(1);
+      expect((await tagPage(a, typed)).body.posts.map((x) => x.id).sort()).toEqual([one.id, two.id].sort());
+      const found = (await request(app).get('/search/hashtags').query({ q: `#${typed}` }).set(auth(a))).body;
+      expect(found.map((t) => t.tag)).toEqual([nfc]);
+    });
+
+    it('@ a Burmese name notifies them', async () => {
+      const a = await registerAndLogin(app);
+      const ko = await registerAndLogin(app, { username: 'ကိုကို' });
+      await newPost(a, 'မင်္ဂလာပါ @ကိုကို။');
+      const notes = (await request(app).get('/notifications').set(auth(ko))).body.notifications;
+      expect(notes.map((n) => n.type)).toEqual(['mention']);
+    });
+  });
+
   describe('search queries', () => {
     const search = (user, type, q) => request(app).get(`/search/${type}`).query({ q }).set(auth(user));
 

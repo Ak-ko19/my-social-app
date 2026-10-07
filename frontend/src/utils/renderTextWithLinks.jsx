@@ -10,7 +10,10 @@ import { safeHttpUrl } from './safeUrl';
 // same as searching for a tag/user that doesn't exist).
 // Day 19: web links come first, so a "#fragment" inside a URL stays part
 // of the URL rather than becoming a hashtag.
-const TOKEN_SPLIT_REGEX = new RegExp(`(${URL_PATTERN.source}|#\\w+|@\\w+)`, 'gi');
+// Day 43: tags and names in any script (Burmese needs its marks, \p{M}),
+// the same class as the backend's HASHTAG_REGEX / MENTION_REGEX.
+const NAME = '[\\p{L}\\p{M}\\p{N}_]+';
+const TOKEN_SPLIT_REGEX = new RegExp(`(${URL_PATTERN.source}|#${NAME}|@${NAME})`, 'giu');
 const STARTS_WITH_SCHEME = /^https?:\/\//i;
 
 // An external link: opens in a new tab, tells the site nothing about us
@@ -45,7 +48,8 @@ export function renderTextWithLinks(content, { tags = true } = {}) {
     if (STARTS_WITH_SCHEME.test(part)) return webLink(part, i);
     if (tags && part.length > 1 && (part[0] === '#' || part[0] === '@')) {
       const name = part.slice(1);
-      const to = part[0] === '#' ? `/hashtag/${name.toLowerCase()}` : `/profile/${name}`;
+      // Day 43: the backend keeps tags in NFC, lower case.
+      const to = part[0] === '#' ? `/hashtag/${name.normalize('NFC').toLowerCase()}` : `/profile/${name}`;
       const linkClass = part[0] === '#' ? 'post-text-hashtag' : 'post-text-mention';
       return (
         <Link key={i} to={to} className={linkClass} onClick={(e) => e.stopPropagation()}>

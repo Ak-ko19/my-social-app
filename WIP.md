@@ -123,3 +123,19 @@ LATER.md + GO_LIVE_CHECKLIST note (owner runs it on production).
   mutations; day43-zawgyi 20; perf 38/38; backend 694/694.
   Noted, not fixed (pre-existing): /search/users and /search/posts 500
   on an array q (?q=a&q=b) -- .trim() on a non-string.
+- Step 3 PLAN (Burmese hashtags + mentions): tags/mentions were ASCII
+  \w only (both sides), so #ရန်ကုန် / #مرحبا / @ကိုကို never linked or
+  indexed. Class [\p{L}\p{M}\p{N}_] with the u flag (Burmese needs its
+  vowel signs and stacking marks = \p{M}); Burmese ။ ၊ (\p{P}) end a tag
+  like a space. All-digit rule with \p{N} (#၁၂၃ is not a tag). Tags
+  NFC-normalized (parse, hashtag page, hashtag search). Backend:
+  hashtagService, mentionService, hashtagController, searchHashtags.
+  Frontend: renderTextWithLinks split regex, mention autocomplete
+  trigger. Existing posts' Burmese tags get indexed by step 4's script.
+- Step 3 done: Burmese/Arabic hashtags and @mentions, both sides
+  (hashtagService, mentionService, renderTextWithLinks, mention
+  autocomplete). Tags NFC + lower case (normalizeTag) at parse, tag page
+  (also converts a Zawgyi-typed tag) and tag search; #၁၂၃ not a tag.
+  4 backend tests (8/8 mutations), links.test +1, mention test 3 (both
+  regexes mutation-checked); day43-zawgyi 26. backend 698/698, Vitest
+  122/122.

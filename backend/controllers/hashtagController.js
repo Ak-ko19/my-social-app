@@ -3,6 +3,8 @@ const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../servic
 const { popularityScoreSql } = require('../services/popularity');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
+const { normalizeTag } = require('../services/hashtagService');
+const { toUnicode } = require('../utils/myanmarText');
 
 // Day 40: Top ranks only the tag's newest TOP_CANDIDATES visible posts, so
 // a request reads a bounded number of rows however old and busy the tag
@@ -78,7 +80,8 @@ const TOP_SQL = `
 // GET /hashtags/:tag/posts?sort=recent|top (recent by default).
 async function getPostsByHashtag(req, res) {
   try {
-    const tag = (req.params.tag || '').trim().toLowerCase();
+    // Day 43: tags are kept in Unicode, NFC (hashtagService.normalizeTag).
+    const tag = normalizeTag(toUnicode((req.params.tag || '').trim()));
     if (!tag) {
       return res.status(400).send('A hashtag is required');
     }

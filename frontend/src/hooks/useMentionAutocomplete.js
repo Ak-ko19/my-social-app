@@ -5,7 +5,8 @@ import { useAuth } from './useAuth';
 // Matches an in-progress "@partial" mention ending exactly at the cursor --
 // only triggers right after a word boundary (start of string or
 // whitespace) so an email-like "foo@bar" mid-word never opens the dropdown.
-const ACTIVE_MENTION_REGEX = /(?:^|\s)@(\w*)$/;
+// Day 43: names in any script (see utils/renderTextWithLinks).
+const ACTIVE_MENTION_REGEX = /(?:^|\s)@([\p{L}\p{M}\p{N}_]*)$/u;
 
 // Shared by the post composer (CreatePost.jsx) and comment composer
 // (CommentSection.jsx) -- feed the current text + cursor position on every

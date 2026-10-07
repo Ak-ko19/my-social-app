@@ -4,22 +4,31 @@
 const db = require('../db');
 
 const MAX_TAG_LENGTH = 100;
-// Word characters only (letters/digits/underscore) -- matches the common
-// hashtag convention (no spaces/punctuation inside a tag) and keeps the
-// regex simple and safe against pathological input.
-const HASHTAG_REGEX = /#(\w+)/g;
+// Letters, marks, digits and underscore -- the common hashtag convention
+// (no spaces/punctuation inside a tag), simple and safe against
+// pathological input. Day 43: of ANY script, not just ASCII \w: Burmese
+// (#ရန်ကုန်) needs its vowel signs and stacking marks (\p{M}); Arabic
+// works too. Burmese punctuation (။ ၊) ends a tag like a space does.
+// frontend/src/utils/renderTextWithLinks.jsx links the same shape.
+const HASHTAG_REGEX = /#([\p{L}\p{M}\p{N}_]+)/gu;
+
+// One spelling per tag: Unicode can put the same marks in a different
+// order, so tags are compared in NFC form, lower case.
+function normalizeTag(tag) {
+  return tag.normalize('NFC').toLowerCase();
+}
 
 function parseHashtags(content) {
   if (!content) return [];
   const matches = content.matchAll(HASHTAG_REGEX);
   const tags = new Set();
   for (const match of matches) {
-    const tag = match[1].slice(0, MAX_TAG_LENGTH);
+    const tag = normalizeTag(match[1]).slice(0, MAX_TAG_LENGTH);
     // A bare "#" or "#123" made of only digits isn't a useful tag, but
     // digits mixed with letters (e.g. "#web3") are fine -- only reject
-    // all-digit matches.
-    if (tag && !/^\d+$/.test(tag)) {
-      tags.add(tag.toLowerCase());
+    // all-digit matches (any script's digits: #၁၂၃ too).
+    if (tag && !/^\p{N}+$/u.test(tag)) {
+      tags.add(tag);
     }
   }
   return [...tags];
@@ -62,4 +71,4 @@ async function syncPostHashtags(postId, content) {
   );
 }
 
-module.exports = { parseHashtags, syncPostHashtags };
+module.exports = { parseHashtags, syncPostHashtags, normalizeTag };

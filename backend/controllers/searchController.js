@@ -4,6 +4,7 @@ const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const { escapeLike } = require('../utils/escapeLike');
 const { toUnicode } = require('../utils/myanmarText');
+const { normalizeTag } = require('../services/hashtagService');
 
 // Day 42: post search ranks only the newest SEARCH_CANDIDATES matches, so
 // a common word reads a bounded number of rows (the planner walks posts
@@ -127,7 +128,7 @@ const TAG_COUNT_CAP = 500;
 // with no public posts is left out.
 async function searchHashtags(req, res) {
   try {
-    const q = toUnicode((req.query.q || '').trim()).replace(/^#+/, '').toLowerCase();
+    const q = normalizeTag(toUnicode((req.query.q || '').trim()).replace(/^#+/, ''));
     if (!q) {
       return res.status(400).send('Search query is required');
     }

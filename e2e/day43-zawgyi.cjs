@@ -1,10 +1,11 @@
-// Day 43 steps 1-2: Zawgyi Myanmar text is stored and shown as Unicode
+// Day 43 steps 1-3: Zawgyi Myanmar text is stored and shown as Unicode
 // (headless Edge, throwaway stack: alice(1), bob(2), conversation 1).
 // Alice types Zawgyi into the post composer, a comment, a comment edit, a
 // chat message, a message edit and her bio; every screen then shows the
 // Unicode text (rendered with Noto Sans Myanmar), and bob sees the same.
 // Text fields stop at the server's limits; a Zawgyi search finds it and is
-// remembered in Unicode. Myanmar + dark, Arabic (RTL).
+// remembered in Unicode; a Burmese #tag links whole and opens its page.
+// Myanmar + dark, Arabic (RTL).
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('./node_modules/playwright-core');
@@ -133,7 +134,32 @@ const U_HELLO = 'မင်္ဂလာပါ';
   check('the recent search shows in Unicode', JSON.stringify(recent) === JSON.stringify([U_YANGON]), JSON.stringify(recent));
   await finder.context().close();
 
-  // 7. Over the limit (e.g. an old app version): the server refuses.
+  // 7. Burmese hashtags (step 3): the tag in a post links whole (up to the
+  // Burmese full stop) and opens its page; in Arabic too.
+  const tagged = new FormData();
+  tagged.append('content', 'ညနေ #ကော်ဖီ။ @bob');
+  const taggedPost = await (await fetch(`${API}/posts`, { method: 'POST', headers: { Authorization: `Bearer ${tokens.alice}` }, body: tagged })).json();
+  for (const [theme, lang] of [['light', 'my'], ['dark', 'ar']]) {
+    const home = await open('bob', '/profile/1', { theme, lang });
+    const tagLink = home.locator('a.post-text-hashtag').first();
+    await tagLink.waitFor({ timeout: 10000 }).catch(() => {});
+    check(`${lang}: the Burmese tag is one link, without the full stop`, (await tagLink.innerText()) === '#ကော်ဖီ', await tagLink.innerText().catch(() => 'none'));
+    check(`${lang}: the @mention links too`, (await home.locator('a.post-text-mention', { hasText: '@bob' }).count()) === 1);
+    await tagLink.click();
+    await home.waitForURL(/\/hashtag\//, { timeout: 8000 }).catch(() => {});
+    await home.locator('.hashtag-feed-header-title').waitFor({ timeout: 8000 }).catch(() => {});
+    await home.locator('article.post-card').first().waitFor({ timeout: 10000 }).catch(() => {});
+    const title = await home.locator('.hashtag-feed-header-title').innerText().catch(() => '');
+    const cardsText = await home.locator('article.post-card').allInnerTexts();
+    const overflow = await home.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    check(`${theme}/${lang}: the tag page shows #ကော်ဖီ and the post, no sideways scroll`,
+      title === '#ကော်ဖီ' && cardsText.length === 1 && cardsText[0].includes('ညနေ') && !overflow, `${title} / ${cardsText.length}`);
+    await home.screenshot({ path: path.join(SP, `day43-hashtag-${theme}-${lang}.png`) });
+    await home.context().close();
+  }
+  await fetch(`${API}/posts/${taggedPost.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${tokens.alice}` } });
+
+  // 8. Over the limit (e.g. an old app version): the server refuses.
   const over = await fetch(`${API}/posts`, {
     method: 'POST', headers: { Authorization: `Bearer ${tokens.alice}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ content: 'x'.repeat(10001) })
