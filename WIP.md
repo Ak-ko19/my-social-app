@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 42 — Better search
-**Step:** 1 — ranked search
+**Day:** 43 — Myanmar text support
+**Step:** 1 — PLAN (not started)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -72,52 +72,12 @@
   recognised; the frontend link renderer likely has the same rule. Fix
   with Unicode letters/marks (\p{L}\p{M}\p{N}_, u flag) on both sides.
 
+- Full browser run timing: day27-perf and the A3 matrix each need most
+  of a 10-minute tool call. Run day27-perf alone, and A3 one language
+  at a time (`A3_LANG=xx node a3-visual.cjs` on a fresh e2e-up.sh).
+
 ## Plan
-Existing: /search/users (username ILIKE, A-Z, 20) and /search/posts
-(content ILIKE, newest first) on pg_trgm indexes; Search.jsx shows both
-lists; search.test.js 5. No ranking, no hashtags, no history, no filters.
-Key constraint: Burmese has no spaces between words, so Postgres
-full-text search alone would break Burmese search -- keep the substring
-match (trigram) alongside it.
-Step 1: ranked search. Migration 047: GIN index on
-to_tsvector('english', content) (stemming for English; other scripts
-pass through). Posts match FTS (websearch_to_tsquery) OR substring;
-candidates = newest 500 matches (bounded like hashtag Top: the planner
-walks created_at for common words, the GIN index for rare ones), ranked
-by relevance (ts_rank_cd + whole-phrase bonus) x popularity (log of
-engagement) x freshness. People: exact > prefix > contains, then people
-you follow, then shorter names. Perf suite: a common word.
-Step 2: hashtag search (/search/hashtags: exact > prefix > contains, use
-counted up to 1000 -> "999+") and filter tabs All / People / Posts /
-Hashtags with the query in the URL (?q=&type=), so Back and reload keep
-them.
-Step 3: search history. Migration 048 search_history (user, query,
-searched_at; one row per query, newest 20 kept). POST on submit, GET,
-DELETE one, DELETE all. Recent searches under the box before searching.
-Data export, Privacy Policy (EN/MY/AR), account deletion cascades.
+(none yet)
 
 ## Progress
-- Step 1 done: migration 047 (GIN on to_tsvector english). Posts: FTS
-  OR substring, newest 500 candidates, relevance x popularity x
-  freshness (perf: q=perf matching 150k posts reads 1,061 rows / 46 ms).
-  People: exact, prefix, followed, shorter; is_following returned (the
-  button starts right). Fixed: % and _ were wildcards in search
-  (utils/escapeLike, now shared with groups/pages). searchRanking.test
-  12 (12 mutations caught), day42-search 6. backend 666/666.
-- Step 2 done: /search/hashtags (migration 048 trigram on LOWER(tag);
-  exact, prefix, by use; public posts only, count capped at 500 -> 500+;
-  7 mutations caught). Search tabs All/People/Posts/Hashtags in the URL
-  (useSearch hook; button never disabled, newer query wins; Load more).
-  Search.test 7 (7 caught), day42-search 10, a11y +2 routes. Found and
-  fixed: (1) trending planned a full post_hashtags scan when the table
-  is not freshly vacuumed -- LATERAL ... OFFSET 0 lookup per recent post;
-  (2) Following button contrast 4:1 (template purple) -> brand accent.
-  backend 670/670, Vitest 110/110, perf 38/38.
-- Step 3 done: search history. Migration 049 search_history (one row
-  per query any case, newest 20 kept). POST/GET/DELETE one/DELETE all,
-  private (others get 404). Saved on submit or tap, not when opened from
-  a link. RecentSearches (optimistic remove + rollback, Clear all with
-  confirm). Export recent_searches; Privacy Policy EN/MY/AR (2026-10-07).
-  searchHistory.test 6 (7 mutations caught), RecentSearches.test 4,
-  Search.test 9 (6 caught), day42-search 14. backend 676/676, Vitest
-  116/116; rehearsal 015->049.
+(none yet)

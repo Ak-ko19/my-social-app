@@ -206,7 +206,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 40–41 — Explore page
 - [x] Trending hashtags, popular posts (last 7 days), explore by hashtag. *(Built in B7 and verified; Top/Recent tabs and a trending cache added — see Progress Log.)*
 ### Day 42 — Better search
-- [ ] PostgreSQL full-text search with ranking; search history; filters (people/posts/hashtags).
+- [x] PostgreSQL full-text search with ranking; search history; filters (people/posts/hashtags). *(Ranked search, hashtag search with tabs, recent searches — see Progress Log.)*
 ### Day 43 — Myanmar text support
 - [ ] Detect Zawgyi text and convert to Unicode (local library, no API) in posts, comments, messages, search.
 ### Day 44 — Polls
@@ -1331,3 +1331,42 @@ Build every feature the way a senior engineer at a top social media company woul
   - backend 654/654; Vitest 103/103.
   - Full browser run: all 49 suites (new: day40-hashtag-top) + A3
     EN/MY/AR (228 page checks each) green.
+
+### 2026-10-07 — Day 42: Better search
+- **Before:** username/content ILIKE on trigram indexes, newest first;
+  no ranking, hashtags, history or filters.
+- **Key choice:** Burmese has no spaces between words, so Postgres
+  full-text search alone would break Burmese search. Posts match
+  full-text (English stemming) OR the old substring match.
+- **Ranked search (`521a332`):**
+  - Migration 047: GIN index on `to_tsvector('english', content)`.
+  - Posts: the newest 500 matches, ranked by relevance (ts_rank_cd +
+    whole-phrase bonus) x popularity x freshness. Perf: a word in 150k
+    posts reads 1,061 rows / 46 ms.
+  - People: exact > prefix > people you follow > shorter names; the
+    Follow button starts in the right state.
+  - Found and fixed: `%` and `_` acted as wildcards in search
+    (`utils/escapeLike`, now shared with groups/pages).
+- **Hashtags + tabs (`2e3cf75`):**
+  - `/search/hashtags` (migration 048, trigram on LOWER(tag)): exact >
+    prefix > by use; public posts only; counts capped at "500+".
+  - Tabs All / People / Posts / Hashtags live in the URL (`?q=&type=`),
+    so Back and reload keep them; the newest query always wins.
+  - Found and fixed: trending could plan a full post_hashtags scan on a
+    table that wasn't freshly vacuumed; the Following button's contrast
+    was 4:1.
+- **Recent searches (`4540462`):**
+  - Migration 049 `search_history`: one row per query (any case), the
+    newest 20 kept, private to the owner (others get 404).
+  - Saved on submit or tap, not when a search is opened from a link.
+    Remove one (optimistic, rolls back on error) or Clear all.
+  - In the data download, the Privacy Policy (EN/MY/AR) and account
+    deletion.
+- **Found at close:** the A3 visual suite clicked "Search" in Arabic by
+  substring and also hit the new remove button's label; fixed with
+  `exact: true` (test only).
+- **Tests at close:**
+  - backend 676/676; Vitest 116/116; rehearsal 015 → 049.
+  - Full browser run: all 50 suites (new: day42-search) + A3 EN/MY/AR
+    (228 page checks each) green. Run in batches: one MY run lost its
+    Chromium tab to low memory and passed on rerun.

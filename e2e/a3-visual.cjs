@@ -78,7 +78,9 @@ let checks = 0;
           await page.waitForTimeout(400); // let screen-enter animation finish
           if (route === '/search') {
             await page.getByRole('searchbox').fill('bob');
-            await page.getByRole('button', { name: { my: 'ရှာဖွေရန်', ar: 'بحث' }[LANG] || /^search$/i }).click();
+            // exact: once "bob" is a recent search, its remove button's label
+            // contains the word "search" too (substring match otherwise).
+            await page.getByRole('button', { name: { my: 'ရှာဖွေရန်', ar: 'بحث' }[LANG] || /^search$/i, exact: true }).click();
             await page.waitForTimeout(800);
           }
           const tag = `${LANG} ${theme} ${width}px ${route}`;
