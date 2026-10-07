@@ -54,6 +54,21 @@ async function notify({ userId, actorId, type, postId = null, commentId = null }
   if (result.rowCount > 0) pushNotification({ userId, actorId, type, postId, commentId });
 }
 
+// Day 45: notifications about your OWN content that nobody else caused --
+// a scheduled post went up, or couldn't. The actor is you; they have no
+// setting (like Facebook's), since they tell you what happened to
+// something you made.
+const SYSTEM_TYPES = ['scheduled_post', 'scheduled_failed'];
+
+async function notifySystem({ userId, type, postId = null }) {
+  if (!SYSTEM_TYPES.includes(type)) throw new Error(`Unknown system notification type: ${type}`);
+  await db.query(
+    'INSERT INTO notifications (user_id, actor_id, type, post_id) VALUES ($1, $1, $2, $3)',
+    [userId, type, postId]
+  );
+  pushNotification({ userId, actorId: userId, type, postId });
+}
+
 // { likes, comments, mentions, follows, follow_accepted, messages } -- all true when
 // the user never saved settings.
 async function getPreferences(userId) {
@@ -79,4 +94,4 @@ async function updatePreferences(userId, changes) {
   return next;
 }
 
-module.exports = { notify, getPreferences, updatePreferences, allowedSql, CATEGORIES, CATEGORY_BY_TYPE };
+module.exports = { notify, notifySystem, SYSTEM_TYPES, getPreferences, updatePreferences, allowedSql, CATEGORIES, CATEGORY_BY_TYPE };

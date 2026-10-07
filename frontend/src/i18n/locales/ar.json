@@ -575,7 +575,9 @@
       "followAccepted": "قبل <b>{{name}}</b> طلب متابعتك",
       "reply": "ردّ <b>{{name}}</b> على تعليقك",
       "commentLike": "أعجب <b>{{name}}</b> بتعليقك",
-      "other": "تفاعل <b>{{name}}</b> معك"
+      "other": "تفاعل <b>{{name}}</b> معك",
+      "scheduledPost": "نُشر منشورك المجدول",
+      "scheduledFailed": "تعذّر نشر منشورك المجدول. أُعيد إلى مسوداتك."
     }
   },
   "saved": {

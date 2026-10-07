@@ -10,6 +10,7 @@ router.post('/drafts', authMiddleware, uploadPostImages, uploadManyToCloudinary(
 router.get('/drafts', authMiddleware, draftController.listDrafts);
 router.get('/drafts/:id', authMiddleware, draftController.getDraft);
 router.put('/drafts/:id', authMiddleware, uploadPostImages, uploadManyToCloudinary('posts'), draftController.updateDraft);
+router.put('/drafts/:id/schedule', authMiddleware, draftController.scheduleDraft);
 router.delete('/drafts/:id', authMiddleware, draftController.deleteDraft);
 router.post('/drafts/:id/publish', authMiddleware, draftController.publishDraft);
 

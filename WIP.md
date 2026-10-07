@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 45 — Drafts + scheduled posts
-**Step:** 1 — drafts API: done (committed). Next: step 2, scheduling.
+**Step:** 2 — scheduling: done (committed). Next: step 3, UI.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -130,6 +130,26 @@ Facebook's Drafts / Scheduled lists.
 - Step 4: "poll ended" notification (Day 44 carry-over) via the same
   ticker: polls closed since the last run, once (polls.ended_notified).
 
+### Step 2 plan (scheduling)
+- API: POST/PUT /drafts take scheduledFor (ISO; '' = not scheduled; PUT
+  without it keeps the current time). PUT /drafts/:id/schedule
+  { scheduledFor | null } to reschedule/unschedule from the list. 5 min
+  .. 30 days ahead. A scheduled draft must be publishable NOW (same
+  checks as publishing) so mistakes show at once, not at 3:15 pm.
+- Publisher (services/scheduledPostService): due rows FOR UPDATE SKIP
+  LOCKED, one per transaction, up to 25 per run, via the same
+  publishRow as POST /drafts/:id/publish. Banned / suspended /
+  deactivated author or a failed check -> back to drafts (scheduled_for
+  NULL, last_error) + notification. An unexpected error -> rollback,
+  log, stop this run (retried next tick).
+- Runs: every 30 s in the server + once at start (off under
+  NODE_ENV=test), and from the daily cleanup (dry run counts due ones).
+- Notifications: system types scheduled_post / scheduled_failed, about
+  your own content (actor = you), always on; push EN/AR; Notifications
+  screen texts EN/AR.
+- Tests: validation, due vs not due, failure paths, concurrency (two
+  runs -> one post), cleanup, notifications + push text.
+
 ## Progress
 - Step 1 (drafts API) done: migration 052, postCreationService (POST /posts
   and publishing share it), /drafts CRUD + publish, orphan scan, export,
@@ -138,3 +158,12 @@ Facebook's Drafts / Scheduled lists.
   (now 403), keepMedia duplicates, check:i18n resolves imported
   constants. Verified: backend 733/733 (drafts 16), rehearsal 015-052,
   8 post-creation browser suites + c2-legal, Vitest 141.
+- Step 2 (scheduling) done: scheduledFor on POST/PUT /drafts + PUT
+  /drafts/:id/schedule (5 min..30 days, must be publishable now);
+  scheduledPostService (SKIP LOCKED, one per transaction, 25 per run,
+  30 s ticker + start-up + daily cleanup); bad account / failed check
+  -> back to drafts with last_error; system notifications
+  scheduled_post / scheduled_failed (push + UI, EN/AR). check:i18n now
+  reads double-quoted messages: 7 older ones got Arabic. Verified:
+  backend 745/745 (scheduledPosts 12, 4 mutations), Vitest 143, live
+  stack: published 28 s after due.

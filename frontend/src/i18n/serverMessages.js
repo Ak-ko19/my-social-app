@@ -198,6 +198,17 @@ const AR = {
   'Invalid draft ID': 'معرّف المسودة غير صالح',
   'A draft needs text, a photo or a poll': 'تحتاج المسودة إلى نص أو صورة أو استطلاع',
   'You can keep up to 50 drafts': 'يمكنك الاحتفاظ بـ 50 مسودة كحد أقصى',
+  'Pick a time at least 5 minutes from now': 'اختر وقتًا بعد 5 دقائق على الأقل من الآن',
+  'You can schedule a post up to 30 days ahead': 'يمكنك جدولة منشور حتى 30 يومًا مقدمًا',
+  "Your account can't post right now": 'لا يمكن لحسابك النشر الآن',
+  // messages written with double quotes, found once the scan read them
+  "Group and page posts don't have their own audience": 'منشورات المجموعات والصفحات ليس لها جمهور خاص بها',
+  "Some of those people can't be added": 'لا يمكن إضافة بعض هؤلاء الأشخاص',
+  "You can't follow your own page": 'لا يمكنك متابعة صفحتك',
+  "You can't hide yourself": 'لا يمكنك إخفاء نفسك',
+  "You can't react to a deleted message": 'لا يمكنك التفاعل مع رسالة محذوفة',
+  "You can't ban yourself": 'لا يمكنك حظر نفسك',
+  "Admins can't be banned here -- remove their admin role first": 'لا يمكن حظر المشرفين من هنا — أزل دور المشرف عنهم أولًا',
   // admin screens
   'Accounts cannot be removed here; ban or suspend the user instead': 'لا يمكن حذف الحسابات من هنا؛ احظر المستخدم أو أوقفه مؤقتًا بدلًا من ذلك',
   'That user is not banned': 'هذا المستخدم غير محظور',

@@ -164,5 +164,8 @@ if (require.main === module) {
 
   httpServer.listen(PORT, () => {
     logger.info('server started', { port: httpServer.address().port });
+    // Day 45: scheduled posts go up within ~30 s of their time (and any
+    // that fell due while the server slept, right away).
+    require('./services/scheduledPostService').start();
   });
 }

@@ -92,9 +92,9 @@ const isDevOnly = (msg) => DEV_ONLY.has(msg) || /^[a-z]/.test(msg) || /\b[a-z]+[
   const FAILED = / failed\. Please try again later\.$/; // the generic translation covers these
   const BACKEND = path.join(__dirname, '..', '..', 'backend');
   const SENT = [
-    /\.status\(\d{3}\)\s*\.(?:send|json)\(\s*(?:\{\s*(?:error|message):\s*)?(['`])((?:(?!\1)[^\\]|\\.)*)\1/g,
-    /new (?!Error\()[A-Z]\w*Error\(\s*(?:\d{3},\s*)?(['`])((?:(?!\1)[^\\]|\\.)*)\1/g,
-    /\b(?:message|error):\s*(['`])((?:(?!\1)[^\\]|\\.)*)\1/g,
+    /\.status\(\d{3}\)\s*\.(?:send|json)\(\s*(?:\{\s*(?:error|message):\s*)?(['"`])((?:(?!\1)[^\\]|\\.)*)\1/g,
+    /new (?!Error\()[A-Z]\w*Error\(\s*(?:\d{3},\s*)?(['"`])((?:(?!\1)[^\\]|\\.)*)\1/g,
+    /\b(?:message|error):\s*(['"`])((?:(?!\1)[^\\]|\\.)*)\1/g,
     /sendServerError\([^,]+,[^,]+,\s*(')((?:[^'\\]|\\.)*)'/g
   ];
   const sources = [];

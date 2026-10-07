@@ -19,6 +19,9 @@ function notificationKey(n) {
   if (n.type === 'follow_accepted') return 'followAccepted';
   if (n.type === 'reply') return 'reply';
   if (n.type === 'comment_like') return 'commentLike';
+  // Day 45: about your own scheduled post.
+  if (n.type === 'scheduled_post') return 'scheduledPost';
+  if (n.type === 'scheduled_failed') return 'scheduledFailed';
   return 'other';
 }
 

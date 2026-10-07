@@ -41,6 +41,11 @@ const updateDraft = withId('Saving the draft failed. Please try again later.', a
   res.json(await draftService.update(req.userId, id, req.body, uploadedUrls(req)));
 });
 
+// PUT /drafts/:id/schedule { scheduledFor } -- a time, or null to unschedule.
+const scheduleDraft = withId('Scheduling failed. Please try again later.', async (req, res, id) => {
+  res.json(await draftService.schedule(req.userId, id, req.body));
+});
+
 const deleteDraft = withId('Deleting the draft failed. Please try again later.', async (req, res, id) => {
   await draftService.remove(req.userId, id);
   res.json({ deleted: true });
@@ -51,4 +56,4 @@ const publishDraft = withId('Publishing failed. Please try again later.', async 
   res.status(201).json(await draftService.publish(req.userId, id));
 });
 
-module.exports = { createDraft, listDrafts, getDraft, updateDraft, deleteDraft, publishDraft };
+module.exports = { createDraft, listDrafts, getDraft, updateDraft, scheduleDraft, deleteDraft, publishDraft };

@@ -9,6 +9,28 @@ const { MAX_POST_IMAGES } = require('../middleware/cloudinaryUpload');
 
 const { PostInputError } = postCreation;
 const MAX_DRAFTS = 50;
+// Step 2: a scheduled post goes up between 5 minutes and 30 days from now
+// (Facebook's range is 20 min .. 29 days). A little slack under the 5
+// minutes, for the time between picking it and the request arriving.
+const MIN_SCHEDULE_MINUTES = 5;
+const MAX_SCHEDULE_DAYS = 30;
+const SCHEDULE_SLACK_MS = 60 * 1000;
+
+// body.scheduledFor: undefined = not given, '' or null = not scheduled, or
+// an ISO time in the allowed range -> a Date.
+function readSchedule(raw, now = new Date()) {
+  if (raw === undefined) return undefined;
+  if (raw === null || raw === '') return null;
+  const when = typeof raw === 'string' ? new Date(raw) : null;
+  if (!when || Number.isNaN(when.getTime())) throw new PostInputError(400, 'Invalid scheduledFor');
+  if (when.getTime() < now.getTime() + MIN_SCHEDULE_MINUTES * 60 * 1000 - SCHEDULE_SLACK_MS) {
+    throw new PostInputError(400, `Pick a time at least ${MIN_SCHEDULE_MINUTES} minutes from now`);
+  }
+  if (when.getTime() > now.getTime() + MAX_SCHEDULE_DAYS * 24 * 60 * 60 * 1000) {
+    throw new PostInputError(400, `You can schedule a post up to ${MAX_SCHEDULE_DAYS} days ahead`);
+  }
+  return when;
+}
 
 // What the API returns for a draft. The poll is shaped as POST /posts
 // takes it ({ options, durationHours }), so the composer can send it back.
@@ -61,15 +83,23 @@ async function checkDraft(userId, fields, mediaUrls) {
   await postCreation.checkAudience(userId, fields);
 }
 
+// A scheduled post must be one that could go up right now: better to hear
+// about a missing question or photos-with-a-poll today than at 3:15 pm.
+async function checkSchedulable(userId, fields, mediaUrls, scheduledFor) {
+  if (scheduledFor) await postCreation.checkCanPublish(userId, fields, mediaUrls.length);
+}
+
 async function create(userId, body, newMediaUrls) {
   const fields = postCreation.readPostFields(body, { allowEmpty: true });
+  const scheduledFor = readSchedule(body.scheduledFor) ?? null;
   await checkDraft(userId, fields, newMediaUrls);
+  await checkSchedulable(userId, fields, newMediaUrls, scheduledFor);
   const count = await db.query('SELECT COUNT(*)::int AS n FROM post_drafts WHERE user_id = $1', [userId]);
   if (count.rows[0].n >= MAX_DRAFTS) throw new PostInputError(400, `You can keep up to ${MAX_DRAFTS} drafts`);
   const result = await db.query(
-    `INSERT INTO post_drafts (user_id, content, visibility, community_id, page_id, poll, media_urls)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-    [userId, fields.content, fields.visibility, fields.communityId, fields.pageId, fields.poll, newMediaUrls]
+    `INSERT INTO post_drafts (user_id, content, visibility, community_id, page_id, poll, media_urls, scheduled_for)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+    [userId, fields.content, fields.visibility, fields.communityId, fields.pageId, fields.poll, newMediaUrls, scheduledFor]
   );
   return loadSerialized(result.rows[0].id);
 }
@@ -89,10 +119,13 @@ async function get(userId, draftId) {
 
 // Replaces the draft's fields. `keepMedia` (a JSON list of its photo URLs,
 // in order) says which photos stay; new uploads are added after them, and
-// the photos left out are deleted. Without it, every photo stays.
+// the photos left out are deleted. Without it, every photo stays. Without
+// scheduledFor the draft keeps its time (if any); '' takes it off.
 async function update(userId, draftId, body, newMediaUrls) {
   const row = await load(userId, draftId);
   const fields = postCreation.readPostFields(body, { allowEmpty: true });
+  const given = readSchedule(body.scheduledFor);
+  const scheduledFor = given === undefined ? row.scheduled_for : given;
   let kept = row.media_urls;
   if (body.keepMedia !== undefined) {
     let keep;
@@ -107,16 +140,33 @@ async function update(userId, draftId, body, newMediaUrls) {
   }
   const mediaUrls = [...kept, ...newMediaUrls];
   await checkDraft(userId, fields, mediaUrls);
+  await checkSchedulable(userId, fields, mediaUrls, scheduledFor);
   const updated = await db.query(
     `UPDATE post_drafts SET content = $1, visibility = $2, community_id = $3, page_id = $4, poll = $5,
-       media_urls = $6, last_error = NULL, updated_at = now()
-     WHERE id = $7 AND user_id = $8 RETURNING id`,
-    [fields.content, fields.visibility, fields.communityId, fields.pageId, fields.poll, mediaUrls, draftId, userId]
+       media_urls = $6, scheduled_for = $7, last_error = NULL, updated_at = now()
+     WHERE id = $8 AND user_id = $9 RETURNING id`,
+    [fields.content, fields.visibility, fields.communityId, fields.pageId, fields.poll, mediaUrls, scheduledFor, draftId, userId]
   );
   // Published or deleted meanwhile: nothing to update (and the new photos
   // are deleted by the upload middleware with the 404).
   if (updated.rows.length === 0) throw new PostInputError(404, 'Draft not found');
   deleteMedia(row.media_urls.filter((url) => !kept.includes(url)));
+  return loadSerialized(draftId);
+}
+
+// PUT /drafts/:id/schedule -- (re)schedule, or null to make it a plain
+// draft again, without sending the whole form.
+async function schedule(userId, draftId, body) {
+  const scheduledFor = readSchedule(body?.scheduledFor);
+  if (scheduledFor === undefined) throw new PostInputError(400, 'Invalid scheduledFor');
+  const row = await load(userId, draftId);
+  await checkSchedulable(userId, fieldsOf(row), row.media_urls, scheduledFor);
+  const updated = await db.query(
+    `UPDATE post_drafts SET scheduled_for = $1, last_error = NULL, updated_at = now()
+     WHERE id = $2 AND user_id = $3 RETURNING id`,
+    [scheduledFor, draftId, userId]
+  );
+  if (updated.rows.length === 0) throw new PostInputError(404, 'Draft not found');
   return loadSerialized(draftId);
 }
 
@@ -126,9 +176,19 @@ async function remove(userId, draftId) {
   deleteMedia(result.rows[0].media_urls);
 }
 
-// Publishes the draft as a post, under the checks of this moment, and
-// removes it -- in one transaction, so it can't be published twice (the
-// scheduler takes the same row lock). Its photos become the post's.
+// Inside a transaction that holds the draft's row lock: checks it as a
+// post of this moment, inserts the post and removes the draft. Its photos
+// become the post's. Shared by "publish now" and the scheduler.
+async function publishRow(client, row) {
+  const fields = fieldsOf(row);
+  await postCreation.checkCanPublish(row.user_id, fields, row.media_urls.length);
+  const postRow = await postCreation.insertPost(client, row.user_id, fields, row.media_urls);
+  await client.query('DELETE FROM post_drafts WHERE id = $1', [row.id]);
+  return postRow;
+}
+
+// Publishes the draft now -- in one transaction, so it can't be published
+// twice (the scheduler takes the same row lock).
 async function publish(userId, draftId) {
   const client = await db.connect();
   let row;
@@ -136,10 +196,7 @@ async function publish(userId, draftId) {
   try {
     await client.query('BEGIN');
     row = await load(userId, draftId, client, 'FOR UPDATE');
-    const fields = fieldsOf(row);
-    await postCreation.checkCanPublish(userId, fields, row.media_urls.length);
-    postRow = await postCreation.insertPost(client, userId, fields, row.media_urls);
-    await client.query('DELETE FROM post_drafts WHERE id = $1', [draftId]);
+    postRow = await publishRow(client, row);
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
@@ -150,4 +207,7 @@ async function publish(userId, draftId) {
   return postCreation.finishPost(postRow, userId, fieldsOf(row), row.media_urls);
 }
 
-module.exports = { MAX_DRAFTS, create, list, get, update, remove, publish, fieldsOf, serialize };
+module.exports = {
+  MAX_DRAFTS, MIN_SCHEDULE_MINUTES, MAX_SCHEDULE_DAYS,
+  create, list, get, update, schedule, remove, publish, publishRow, fieldsOf, serialize, readSchedule
+};
