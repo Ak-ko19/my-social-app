@@ -171,7 +171,8 @@ function pushNotification({ userId, actorId, type, postId = null, commentId = nu
     const actor = (await db.query('SELECT username FROM users WHERE id = $1', [actorId])).rows[0];
     if (!actor) return;
     const key = type === 'mention' ? (commentId ? 'mention_comment' : 'mention_post') : type;
-    const url = postId ? `/posts/${postId}` : '/notifications';
+    // Day 45: a scheduled post that couldn't go up is back in the drafts.
+    const url = postId ? `/posts/${postId}` : type === 'scheduled_failed' ? '/drafts' : '/notifications';
     await sendToUser(userId, (language) => ({
       title: 'MySocialApp',
       body: pushText(language, key, { name: actor.username }),

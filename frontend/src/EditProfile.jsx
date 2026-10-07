@@ -149,10 +149,14 @@ function EditProfile() {
             initials={(username || '?').slice(0, 2).toUpperCase()}
             alt={t('editProfile.avatarAlt')}
           />
-          <label className="form-field">
+          <div className="form-field">
             <span className="form-label">{t('editProfile.picture')}</span>
-            <input className="form-file" type="file" accept="image/*" onChange={handleAvatarChange} />
-          </label>
+            {/* A translated button, not the browser's own file picker text. */}
+            <label className="btn btn-secondary btn-sm form-file-button">
+              {t('editProfile.choosePicture')}
+              <input className="feed-visually-hidden" type="file" accept="image/*" onChange={handleAvatarChange} />
+            </label>
+          </div>
         </div>
         <label className="form-field">
           <span className="form-label">{t('auth.username')}</span>

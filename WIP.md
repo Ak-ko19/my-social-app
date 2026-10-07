@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 45 — Drafts + scheduled posts
-**Step:** 2 — scheduling: done (committed). Next: step 3, UI.
+**Step:** 3 — UI: done (committed). Next: step 4, poll-ended notification.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -167,3 +167,13 @@ Facebook's Drafts / Scheduled lists.
   reads double-quoted messages: 7 older ones got Arabic. Verified:
   backend 745/745 (scheduledPosts 12, 4 mutations), Vitest 143, live
   stack: published 28 s after due.
+- Step 3 (UI) done: composer Save draft / Schedule for later (local
+  time + zone hint; range checked in the app language, no native
+  min/max/required bubbles) / open a draft (?draftId) with its photos;
+  /drafts screen (Drafts / Scheduled tabs, post now, edit, change time,
+  move to drafts, delete with confirm, failure reason translated); Menu
+  row; push for a failed one opens /drafts. Native file pickers on
+  CreatePost and EditProfile showed browser-language text: now
+  translated buttons. Verified: Vitest 159, backend 746, day45-drafts
+  27/27, A3 EN+AR 234 each, a11y 95 page checks, guard, b2/a2/day44.
+  Known: the date-time picker's own format follows the browser locale.

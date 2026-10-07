@@ -23,6 +23,7 @@ const SettingsScreen = lazy(() => import('./screens/SettingsScreen'));
 const BlockedUsersScreen = lazy(() => import('./screens/BlockedUsersScreen'));
 const SessionsScreen = lazy(() => import('./screens/SessionsScreen'));
 const SavedPostsScreen = lazy(() => import('./screens/SavedPostsScreen'));
+const DraftsScreen = lazy(() => import('./screens/DraftsScreen'));
 const PostDetailScreen = lazy(() => import('./screens/PostDetailScreen'));
 const HashtagFeedScreen = lazy(() => import('./screens/HashtagFeedScreen'));
 const ProfileScreen = lazy(() => import('./screens/ProfileScreen'));
@@ -163,6 +164,8 @@ function App() {
             bookmarks still land somewhere real instead of a dead route. */}
         <Route path="/feed" element={<Navigate to="/" replace />} />
         <Route path="/create-post" element={authOnly(<PhoneShell><CreatePost /></PhoneShell>)} />
+        {/* Day 45: drafts and scheduled posts. */}
+        <Route path="/drafts" element={authOnly(<PhoneShell><DraftsScreen /></PhoneShell>)} />
         <Route path="/edit-profile" element={authOnly(<PhoneShell><EditProfile /></PhoneShell>)} />
         <Route path="/forgot-password" element={<PhoneShell hideTabBar><ForgotPassword /></PhoneShell>} />
         <Route path="/reset-password/:token" element={<PhoneShell hideTabBar><ResetPassword /></PhoneShell>} />

@@ -23,10 +23,12 @@ const AUTHED = [
   '/admin', '/groups', '/groups/new', '/groups/1', '/groups/1/manage', '/pages', '/pages/new', '/pages/1', '/pages/1/edit',
   '/profile/1/connections?tab=friends', '/profile/2/connections?tab=followers',
   // Day 42: search results (tabs, people, hashtags, posts).
-  '/search?q=welcome', '/search?q=bob&type=people'
+  '/search?q=welcome', '/search?q=bob&type=people',
+  // Day 45: drafts and scheduled posts.
+  '/drafts', '/drafts?tab=scheduled'
 ];
 const PUBLIC = ['/welcome', '/login', '/signup', '/forgot-password', '/reset-password/sometoken', '/terms', '/privacy'];
-const LANG_PAGES = ['/', '/messages/1', '/profile/2', '/settings', '/login', '/welcome'];
+const LANG_PAGES = ['/', '/messages/1', '/profile/2', '/settings', '/login', '/welcome', '/drafts'];
 const SERIOUS = new Set(['serious', 'critical']);
 
 const byRule = new Map(); // rule id -> { impact, help, pages:Set, sample }

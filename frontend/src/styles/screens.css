@@ -93,11 +93,24 @@ textarea.form-input {
   line-height: 1.5;
 }
 
-.form-file {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  color: var(--color-text-muted);
-  max-width: 100%;
+/* A file picker shown as a translated button (the input inside is
+   visually hidden but still focusable). */
+.form-file-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  cursor: pointer;
+}
+
+.form-file-button:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.form-file-button.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .form-error {
@@ -529,6 +542,30 @@ textarea.form-input {
 .audience-option:focus-within {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+/* Day 45: "Schedule for later" in CreatePost. */
+.compose-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.compose-schedule-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: flex-start;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.compose-schedule-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent);
 }
 
 /* Day 44: CreatePost's poll builder (the post's text is the question). */

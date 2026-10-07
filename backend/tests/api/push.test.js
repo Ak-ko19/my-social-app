@@ -139,6 +139,23 @@ describe('web push (Day 22)', () => {
       expect(sent[0].options.vapidDetails.publicKey).toBe(keys.publicKey);
     });
 
+    // Day 45: about your own scheduled post, in your language; a failed one
+    // opens the drafts.
+    it('scheduled post published / failed', async () => {
+      await pool.query("UPDATE users SET language = 'ar' WHERE id = $1", [alice.id]);
+      const post = (await request(app).post('/posts').set(auth(alice)).field('content', 'hi')).body;
+      const { notifySystem } = require('../../services/notificationService');
+      await notifySystem({ userId: alice.id, type: 'scheduled_post', postId: post.id });
+      await notifySystem({ userId: alice.id, type: 'scheduled_failed' });
+      await push().whenIdle();
+      // Sent in parallel: in either order.
+      expect(sent).toHaveLength(2);
+      expect(sent.map((s) => s.payload)).toEqual(expect.arrayContaining([
+        { title: 'MySocialApp', body: 'نُشر منشورك المجدول', url: `/posts/${post.id}`, tag: `post-${post.id}` },
+        { title: 'MySocialApp', body: 'تعذّر نشر منشورك المجدول. أُعيد إلى مسوداتك.', url: '/drafts', tag: `notify-scheduled_failed-${alice.id}` }
+      ]));
+    });
+
     it('respects the notification settings (likes off -> no push)', async () => {
       await request(app).put('/notification-preferences').set(auth(alice)).send({ likes: false });
       const post = (await request(app).post('/posts').set(auth(alice)).field('content', 'hi')).body;

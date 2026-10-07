@@ -1,0 +1,155 @@
+/* Day 45: Drafts and scheduled posts. Tokens only (tokens.css), so dark
+   mode is automatic; logical properties only, so Arabic mirrors. */
+
+.drafts-tablist {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.drafts-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 0 var(--space-1);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.drafts-tab.is-active {
+  color: var(--color-accent-text);
+  border-bottom-color: var(--color-accent);
+}
+
+.drafts-tab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.drafts-tab-count {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.drafts-panel {
+  text-align: start;
+}
+
+.drafts-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.draft-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.draft-card-skeleton {
+  min-height: 112px;
+  background: var(--color-subtle-bg);
+  animation: drafts-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes drafts-pulse {
+  50% { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draft-card-skeleton { animation: none; }
+}
+
+.draft-card-text {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 15px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  /* Long drafts: the start is enough to recognise it. */
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.draft-card-text-empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.draft-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.draft-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.draft-card-when {
+  color: var(--color-accent-text);
+  font-weight: 700;
+}
+
+.draft-card-failed {
+  margin: 0;
+  padding: var(--space-2);
+  border-inline-start: 3px solid var(--color-accent-3);
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.draft-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.draft-card-delete {
+  margin-inline-start: auto;
+}
+
+.draft-card-reschedule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.drafts-posted {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+}

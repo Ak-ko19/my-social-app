@@ -324,7 +324,8 @@
     "pollOneWeek": "1 week",
     "pollPlaceholder": "Ask a question…",
     "pollOptionsEmpty": "Fill in every option, or remove the empty ones.",
-    "pollOptionsSame": "Each option must be different."
+    "pollOptionsSame": "Each option must be different.",
+    "choosePhotos": "Choose photos"
   },
   "poll": {
     "label": "Poll",
@@ -434,7 +435,8 @@
     "changeCover": "Change cover photo",
     "removeCover": "Remove cover photo",
     "coverUploading": "Uploading…",
-    "coverFailed": "Couldn't update the cover photo. Please try again."
+    "coverFailed": "Couldn't update the cover photo. Please try again.",
+    "choosePicture": "Choose a photo"
   },
   "explore": {
     "title": "Explore",
@@ -1058,7 +1060,9 @@
         "title": "Loyalty & Rewards",
         "subtitle": "Earn points & enjoy rewards"
       }
-    }
+    },
+    "drafts": "Drafts & scheduled",
+    "draftsSub": "Posts you saved for later or scheduled"
   },
   "legal": {
     "draftNote": "Draft — this document will be reviewed before MySocialApp's public launch.",
@@ -1242,5 +1246,54 @@
       "followers": "No followers yet.",
       "following": "Not following anyone yet."
     }
+  },
+  "drafts": {
+    "title": "Drafts",
+    "tabs": "Drafts and scheduled posts",
+    "tab": {
+      "drafts": "Drafts",
+      "scheduled": "Scheduled"
+    },
+    "new": "New post",
+    "open": "Drafts",
+    "editTitle": "Edit draft",
+    "backToDrafts": "Back to drafts",
+    "notFound": "This draft is gone — it may have been posted or deleted.",
+    "empty": "Write something, add a photo or a poll before saving a draft.",
+    "saveDraft": "Save draft",
+    "scheduleLater": "Schedule for later",
+    "when": "Date and time",
+    "timeZone": "Your time zone: {{zone}}",
+    "schedule": "Schedule",
+    "scheduling": "Scheduling…",
+    "saveFailed": "Couldn't save the draft. Please try again.",
+    "publishFailed": "Couldn't post it. Please try again.",
+    "actionFailed": "That didn't work. Please try again.",
+    "scheduleInvalid": "Pick a date and time.",
+    "scheduleTooSoon": "Pick a time at least {{min}} minutes from now.",
+    "scheduleTooLate": "You can schedule up to {{max}} days ahead.",
+    "inGroup": "In {{name}}",
+    "asPage": "As {{name}}",
+    "noText": "No text yet",
+    "photos_one": "{{count}} photo",
+    "photos_other": "{{count}} photos",
+    "poll": "Poll",
+    "postsOn": "Posts {{date}}",
+    "edited": "Edited {{date}}",
+    "failedReason": "Couldn't be posted at its time: {{reason}}",
+    "saveTime": "Save time",
+    "postNow": "Post now",
+    "edit": "Edit",
+    "reschedule": "Change time",
+    "unschedule": "Move to drafts",
+    "scheduleIt": "Schedule",
+    "delete": "Delete",
+    "deleteTitle": "Delete this draft?",
+    "deleteText": "Its text and photos will be gone for good.",
+    "posted": "Posted.",
+    "viewPost": "View post",
+    "loadFailed": "Couldn't load your drafts.",
+    "emptyDrafts": "No drafts. Use \"Save draft\" when you write a post to finish it later.",
+    "emptyScheduled": "Nothing scheduled. Pick \"Schedule for later\" when you write a post."
   }
 }
