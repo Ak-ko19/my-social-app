@@ -210,7 +210,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 43 — Myanmar text support
 - [x] Detect Zawgyi text and convert to Unicode (local library, no API) in posts, comments, messages, search. *(Plus Burmese/Arabic hashtags and mentions, and a backfill script — see Progress Log.)*
 ### Day 44 — Polls
-- [ ] Poll posts with options, vote once, results bar.
+- [x] Poll posts with options, vote once, results bar. *(See Progress Log; the "poll ended" notification waits for Day 45's scheduler.)*
 ### Day 45 — Drafts + scheduled posts
 - [ ] Save drafts; schedule a post (runs via the existing cron job).
 ### Day 46 — Saved collections
@@ -1433,3 +1433,48 @@ Build every feature the way a senior engineer at a top social media company woul
     (228 page checks each) green.
 - **LATER.md:** #8, run `convert:zawgyi` on production after the next
   GO LIVE (GO_LIVE_CHECKLIST step 5).
+
+### 2026-10-07 — Day 44: Polls
+- **Model:** like X/Facebook/LinkedIn. The post's text is the question;
+  2–4 options of 1–50 characters (stored as Unicode, Day 43); 1 day,
+  3 days or a week. Polls work in groups and on pages. A poll post has
+  no photos, like X.
+- **Backend (`99ba020`):**
+  - Migration 050: `polls`, `poll_options`, `poll_votes`. The primary
+    key is one vote per person per poll. Everything goes with its post,
+    and votes with their account.
+  - The post, poll and options are inserted in one statement.
+  - Every post list (9 queries) and `GET /posts/:id` carry the viewer's
+    poll.
+  - **Better approach than the plan:** results are anonymous, and
+    per-option counts are sent only to voters, the author, or anyone
+    once the poll has ended (X does this so counts can't sway a vote).
+    Nobody, the author included, can see who voted.
+  - `POST /posts/:id/poll/vote` uses the post's visibility rules (404).
+    Repeating your vote is harmless (200). Changing it, or voting after
+    the end, is refused (409). The open-poll check is inside the insert.
+  - The data download has your polls and votes.
+- **UI (`1fab603`):**
+  - The composer's poll builder swaps out the photo picker. Empty or
+    repeated options are explained before sending.
+  - The post shows options, then results: bars with percentages, your
+    vote ticked, the leader bold.
+  - The footer reads "N votes · 3 days left" (rounded, so a new 3-day
+    poll doesn't say 2, and it updates each minute) or "Final results".
+  - A 409 (already voted elsewhere, or just ended) shows where the poll
+    stands. Logged out, an option leads to login.
+  - The bars use logical CSS and fill from the right in Arabic (proven
+    on a 50% bar).
+  - EN/MY/AR with every Arabic plural form. The Privacy Policy now
+    covers polls and anonymous votes.
+- **Not done, on purpose:** a "poll ended" notification. The only
+  scheduler is a daily cron, so it would arrive up to a day late. Day 45
+  (scheduled posts) needs a frequent scheduler, and it can ride on that.
+- **Noted:** Explore lists posts with likes or comments, so a vote
+  doesn't make a post "popular". Left as is.
+- **Tests at close:**
+  - backend 714/714 (polls.test 12, 31 mutations caught); Vitest
+    134/134 (PollView 7, CreatePost 5, 19 mutations); rehearsal 015 →
+    050; perf 38/38; bundle 218.3 kB.
+  - Full browser run: all 52 suites (new: day44-polls, with axe on the
+    poll) + A3 EN/MY/AR (228 each) green.
