@@ -16,19 +16,6 @@ const TEXT = {
     message: '{name} sent you a message',
     group_message: '{name} sent a message in {group}'
   },
-  my: {
-    like: '{name} က သင့်ပို့စ်ကို လိုက်ခ်လုပ်ခဲ့သည်',
-    comment: '{name} က သင့်ပို့စ်တွင် မှတ်ချက်ပေးခဲ့သည်',
-    reply: '{name} က သင့်မှတ်ချက်ကို ပြန်ဖြေခဲ့သည်',
-    comment_like: '{name} က သင့်မှတ်ချက်ကို လိုက်ခ်လုပ်ခဲ့သည်',
-    mention_post: '{name} က ပို့စ်တစ်ခုတွင် သင့်ကို ဖော်ပြခဲ့သည်',
-    mention_comment: '{name} က မှတ်ချက်တစ်ခုတွင် သင့်ကို ဖော်ပြခဲ့သည်',
-    follow: '{name} က သင့်ကို စတင် ဖော်လိုးခဲ့သည်',
-    follow_request: '{name} က သင့်ကို ဖော်လိုးရန် တောင်းဆိုခဲ့သည်',
-    follow_accepted: '{name} က သင့် ဖော်လိုး တောင်းဆိုချက်ကို လက်ခံခဲ့သည်',
-    message: '{name} က သင့်ထံ မက်ဆေ့ချ် ပို့ခဲ့သည်',
-    group_message: '{name} က {group} တွင် မက်ဆေ့ချ် ပို့ခဲ့သည်'
-  },
   ar: {
     like: 'أعجب {name} بمنشورك',
     comment: 'علّق {name} على منشورك',

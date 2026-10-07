@@ -29,8 +29,8 @@ describe('Login errors', () => {
     expect(alert.textContent).not.toMatch(/:\d\d:\d\d/); // no seconds
   });
 
-  it('...in Myanmar too', async () => {
-    await setLanguage('my');
+  it('...in Arabic too', async () => {
+    await setLanguage('ar');
     api.post.mockRejectedValue({ response: { status: 403, data: { message: 'This account is suspended', until: '2026-10-03T12:00:00Z' } } });
     render(<MemoryRouter><Login /></MemoryRouter>);
     const [email, password] = document.querySelectorAll('form input:not([name=website])');
@@ -38,7 +38,7 @@ describe('Login errors', () => {
     await userEvent.type(password, 'a-fine-password-123');
     await userEvent.click(document.querySelector('form button[type=submit]'));
     const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toMatch(/^သင့်အကောင့်ကို .+ အထိ ယာယီ ပိတ်ထားပါသည်။$/);
+    expect(alert.textContent).toMatch(/^حسابك موقوف مؤقتًا حتى .*2026.*.$/);
   });
 
   it('a banned account gets the server\'s message', async () => {

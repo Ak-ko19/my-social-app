@@ -101,15 +101,15 @@ const sidOf = (token) => JSON.parse(Buffer.from(token.split('.')[1], 'base64url'
   check('Settings -> Log Out also ends the session on the server', revoked === 't');
   await page.context().close();
 
-  // ---- AR dark 375 and MY: translated, RTL, fits ----
-  for (const [lang, theme, width] of [['ar', 'dark', 375], ['my', 'light', 390]]) {
+  // ---- AR dark 375 (translated, RTL, fits) and EN light 390 ----
+  for (const [lang, theme, width] of [['ar', 'dark', 375], ['en', 'light', 390]]) {
     const L = locale(lang);
     await apiLogin(IPHONE);
     page = await newPage({ lang, theme, width });
     await uiLogin(page);
     await page.goto(`${WEB}/settings/sessions`, { waitUntil: 'networkidle' });
     await page.locator('li.sessions-row:not(.sessions-skeleton)').first().waitFor();
-    // exact: "this device" also appears inside the Myanmar intro sentence.
+    // exact: "this device" can also appear inside the intro sentence.
     check(`${lang}: title and "this device" translated`, (await page.getByRole('heading', { name: L.sessions.title }).count()) === 1
       && (await page.getByText(L.sessions.thisDevice, { exact: true }).count()) === 1);
     if (lang === 'ar') {

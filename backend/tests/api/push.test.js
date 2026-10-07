@@ -126,14 +126,14 @@ describe('web push (Day 22)', () => {
     });
 
     it('a like on your post, in your language, linking to the post', async () => {
-      await pool.query("UPDATE users SET language = 'my' WHERE id = $1", [alice.id]);
+      await pool.query("UPDATE users SET language = 'ar' WHERE id = $1", [alice.id]);
       const post = (await request(app).post('/posts').set(auth(alice)).field('content', 'hi')).body;
       await request(app).post(`/posts/${post.id}/like`).set(auth(bob));
       await push().whenIdle();
       expect(sent).toHaveLength(1);
       expect(sent[0].endpoint).toBe(fcm('alice-phone'));
       expect(sent[0].payload).toEqual({
-        title: 'MySocialApp', body: `${bob.username} က သင့်ပို့စ်ကို လိုက်ခ်လုပ်ခဲ့သည်`, url: `/posts/${post.id}`, tag: `post-${post.id}`
+        title: 'MySocialApp', body: `أعجب ${bob.username} بمنشورك`, url: `/posts/${post.id}`, tag: `post-${post.id}`
       });
       expect(sent[0].options.TTL).toBe(86400);
       expect(sent[0].options.vapidDetails.publicKey).toBe(keys.publicKey);

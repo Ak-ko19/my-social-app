@@ -1,7 +1,7 @@
 // Day 36 step 1: profile links and joined date (headless Edge, throwaway
 // stack: alice(1), bob(2)). Alice adds links in Edit Profile; a script link
 // is refused with a message; bob (and a logged-out visitor) sees the links
-// and "Joined <month year>" on her profile; Burmese and Arabic dates; dark
+// and "Joined <month year>" on her profile; Arabic dates; dark
 // mode; RTL with the links kept left-to-right.
 const fs = require('fs');
 const path = require('path');
@@ -69,12 +69,7 @@ const thisMonth = new Date().toLocaleDateString('en-US', { year: 'numeric', mont
     await p.context().close();
   }
 
-  // 3. Burmese and Arabic dates; dark; RTL keeps links left-to-right.
-  const my = await open('bob', '/profile/1', { lang: 'my' });
-  await my.locator('.profile-joined').waitFor({ timeout: 10000 });
-  const myText = await my.locator('.profile-joined').innerText();
-  check('Burmese: the joined date is in Burmese', /[၀-၉]{4}/.test(myText) && myText.includes('စတင်ပါဝင်ခဲ့သည်'), myText);
-  await my.context().close();
+  // 3. Arabic dates; dark; RTL keeps links left-to-right.
   for (const [theme, lang] of [['dark', 'en'], ['light', 'ar']]) {
     const p = await open('bob', '/profile/1', { theme, lang });
     await p.locator('.profile-joined').waitFor({ timeout: 10000 });

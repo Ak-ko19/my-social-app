@@ -18,14 +18,14 @@ local stack. They were used to verify every roadmap item and the C4 audit
    port 55433) that these suites reuse.
 
 Nothing here reads your `.env` database. Every suite runs against a fresh
-`mysocialapp_e2e` database on the test cluster, with the backend on :3000
+`(`A3_LANG=en|ar`)socialapp_e2e` database on the test cluster, with the backend on :3000
 and Vite on :5173 (stop your own dev servers first).
 
 ## Running
 
 ```bash
 cd e2e
-npm test              # all feature suites + the visual matrix in EN/MY/AR (~40 min)
+npm test              # all feature suites + the visual matrix in EN/AR (~35 min)
 npm run test:audit    # also the demo-seed check and the C4 audit checks
 ```
 
@@ -47,8 +47,8 @@ has Microsoft Edge, and the scripts find the PostgreSQL tools on PATH
   reports/moderation, the production build + CSP, and the bot checks.
   About 10 minutes; the repo is private and its CI minutes are limited.
 - **Browser tests (full)**, on pull requests to `master` and by hand
-  (Actions → CI → Run workflow): everything, including the EN/MY/AR
-  visual matrix, with Noto fonts installed for Myanmar and Arabic.
+  (Actions → CI → Run workflow): everything, including the EN/AR
+  visual matrix, with Noto fonts installed (Arabic, and other scripts in test posts).
 - **When a job fails:** it uploads `out-*.txt`, the logs and the
   screenshots as an artifact named `e2e-output-…`.
 - `backend/tests/api/ciWorkflow.test.js` checks the workflow against
@@ -70,16 +70,16 @@ error. Full output goes to `out-<suite>.txt`, and screenshots to `*.png` /
 | Suite | What it checks |
 | --- | --- |
 | `a2-walkthrough` | The main user journey from signup to logout |
-| `a3-visual` | Every route × 375/390/430 px × light/dark (`A3_LANG=en\|my\|ar`) |
+| `a3-visual` | Every route × 375/390/430 px × light/dark (`A3_LANG=en\|ar`) |
 | `b1-reactions` … `b16-rtl` | One suite per roadmap feature (B1–B16) |
 | `c1-seed` | The world created by `npm run seed:demo` (needs the seed first) |
 | `c2-legal` | Terms and Privacy pages |
 | `c3-landing` | The public landing page |
 | `c4-audit-checks` | Route auth table, Phase 1 fixes, API timings, `npm audit`, the deployed keep-alive ping |
-| `day2-own-post` | Day 2: a new post is the first card on Home (EN/MY/AR, light/dark, 375px–desktop) |
-| `day5-email-off` | Day 5: with no email provider the verify banner hides and forgot-password explains itself (EN/MY/AR); with email on both still work |
+| `day2-own-post` | Day 2: a new post is the first card on Home (EN/AR, light/dark, 375px–desktop; one post in Burmese) |
+| `day5-email-off` | Day 5: with no email provider the verify banner hides and forgot-password explains itself (EN/AR); with email on both still work |
 | `day8-sessions` | Day 8: changing the password in Settings signs out the other devices (sent to login), keeps this one signed in; a mistyped password no longer logs you out (EN, AR RTL) |
-| `day8-sessions-list` | Day 8: Settings → Where you're logged in: lists devices, logs one or all others out, and Log Out ends the session on the server (EN, AR RTL incl. word order, MY) |
+| `day8-sessions-list` | Day 8: Settings → Where you're logged in: lists devices, logs one or all others out, and Log Out ends the session on the server (EN, AR RTL incl. word order) |
 | `day10-errors` | Day 10 (production build only, run by run-all on a dist stack): a render crash shows a translated "Something went wrong" screen instead of a blank page, is reported, grouped with a count, and can be read and resolved in Admin → Errors (EN, AR RTL) |
 | `golive-rehearsal.sh` | `bash golive-rehearsal.sh [--old]`: GO LIVE rehearsal. It runs every migration from 015 on a local copy of the live (014) schema, compares the result with the dev schema, smoke-tests the new backend (and with `--old`, the live `master` backend) on it, and checks that the `.down.sql` files restore the live schema (see `../GO_LIVE_CHECKLIST.md`) |
 | `pixel-compare` | `node pixel-compare.cjs <baselineDir> <currentDir>`: pixel diff of two sets of A3 screenshots |

@@ -35,9 +35,9 @@ describe('ProfileDetails', () => {
     expect(linkLabel(`https://example.com/${'a'.repeat(60)}`)).toHaveLength(40);
   });
 
-  it('monthYear dates in English and Burmese', async () => {
+  it('monthYear dates in English and Arabic', async () => {
     expect(formatDate('2026-03-15T10:00:00Z', 'monthYear')).toBe('March 2026');
-    await setLanguage('my');
-    expect(formatDate('2026-03-15T10:00:00Z', 'monthYear')).toBe('၂၀၂၆ မတ်');
+    await setLanguage('ar');
+    expect(formatDate('2026-03-15T10:00:00Z', 'monthYear')).toBe('مارس 2026');
   });
 });

@@ -31,10 +31,14 @@
   },
   "time": {
     "justNow": "just now",
-    "y": "{{count}}y ago",
-    "mo": "{{count}}mo ago",
-    "w": "{{count}}w ago",
-    "d": "{{count}}d ago",
+    "y_one": "{{count}}y ago",
+    "y_other": "{{count}}y ago",
+    "mo_one": "{{count}}mo ago",
+    "mo_other": "{{count}}mo ago",
+    "w_one": "{{count}}w ago",
+    "w_other": "{{count}}w ago",
+    "d_one": "{{count}}d ago",
+    "d_other": "{{count}}d ago",
     "h": "{{count}}h ago",
     "m": "{{count}}m ago"
   },
@@ -1122,7 +1126,7 @@
         },
         {
           "heading": "6. Data on your device",
-          "body": "The app keeps your login session, theme (light/dark) and language choice in your browser's local storage, and keeps a copy of the app's own files so it can open when you are offline — never your posts or messages. Your language choice is also saved to your account, so it follows you to other devices. Logging out removes your login session from the device. We don't use advertising or tracking cookies."
+          "body": "The app keeps your login session, theme (light/dark) and language choice in your browser's local storage, and keeps a copy of the app's own files so it can open when you are offline — never your posts or messages. Your language choice (English or Arabic) is also saved to your account, so it follows you to other devices and our emails and push notifications to you use it. Logging out removes your login session from the device. We don't use advertising or tracking cookies."
         },
         {
           "heading": "7. How long we keep it",
@@ -1151,12 +1155,12 @@
     "navLogin": "Log in",
     "navSignup": "Sign up",
     "heroTitle": "Stay close to the people and places you love.",
-    "heroText": "MySocialApp is a friendly social network for Myanmar and beyond — share moments, chat with friends, join groups and follow the pages you care about, in English or Myanmar.",
+    "heroText": "MySocialApp is a friendly social network — share moments, chat with friends, join groups and follow the pages you care about, in English or Arabic.",
     "ctaSignup": "Create your free account",
     "ctaLogin": "I already have an account",
     "ctaOpen": "Open the app",
     "previewCaption": "A peek at the Home feed",
-    "previewPost": "Sunday sketch session at the tea shop ☕ #Yangon",
+    "previewPost": "Sunday sketch session at the tea shop ☕ #sketching",
     "previewReactions": "24 reactions",
     "featuresTitle": "Everything you need in one app",
     "features": {
@@ -1181,18 +1185,18 @@
         "text": "Private accounts, followers-only posts, blocking, reporting and notification settings — your choice."
       },
       "language": {
-        "title": "Myanmar & English",
-        "text": "The whole app works in မြန်မာ and English. Switch any time in Settings."
+        "title": "English & Arabic",
+        "text": "The whole app works in English and العربية, with a full right-to-left layout in Arabic. Switch any time in Settings."
       }
     },
-    "localTitle": "Made for Myanmar",
-    "localText": "Built with Burmese from the start — proper Myanmar fonts, Myanmar-language menus and messages, and a light app that works well on everyday phones and slower connections. Install it to your home screen like a native app.",
+    "localTitle": "Light, fast and bilingual",
+    "localText": "Built for English and Arabic from the start — a full right-to-left layout in Arabic, posts and messages in any language, and a light app that works well on everyday phones and slower connections. Install it to your home screen like a native app.",
     "finalTitle": "Join MySocialApp today",
     "finalText": "It's free and takes less than a minute.",
     "footerTerms": "Terms",
     "footerPrivacy": "Privacy",
     "footerLanguage": "Language",
-    "previewMsgIn": "Mount Popa this weekend? 🥾",
+    "previewMsgIn": "Hiking this weekend? 🥾",
     "previewMsgOut": "I’m in!"
   },
   "sessions": {

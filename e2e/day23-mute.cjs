@@ -1,6 +1,6 @@
 // Day 23: message notification settings -- the "Messages" switch and muting
 // one chat (8 hours / 1 week / until turned back on). Throwaway stack:
-// alice(1), bob(2), conversation 1. EN, MY, AR (RTL).
+// alice(1), bob(2), conversation 1. EN, AR (RTL).
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -77,8 +77,8 @@ const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysoci
   check('turning it off is saved', sql('SELECT messages FROM notification_preferences WHERE user_id = 1') === 'f');
   await page.context().close();
 
-  // 5. Myanmar and Arabic (RTL): the header button and the sheet, translated, fit.
-  for (const [lang, theme, width] of [['my', 'dark', 375], ['ar', 'dark', 430]]) {
+  // 5. Arabic (RTL), and English at 375px dark: the header button and the sheet, translated, fit.
+  for (const [lang, theme, width] of [['en', 'dark', 375], ['ar', 'dark', 430]]) {
     const L = locale(lang);
     const p = await newPage({ lang, theme, width });
     await p.goto(`${WEB}/messages/1`, { waitUntil: 'networkidle' });

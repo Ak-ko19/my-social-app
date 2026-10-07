@@ -8,6 +8,7 @@ const { createSession, revokeOtherSessions, disconnectOtherSockets } = require('
 const botProtection = require('../services/botProtection');
 const { banState, liftExpiredSuspension } = require('../services/moderationService');
 const { isAppLanguage } = require('../config/languages');
+const { emailText } = require('../config/emailText');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Base URL of the frontend that verify-email/reset-password links point
@@ -45,8 +46,9 @@ function hashToken(token) {
 
 // Shared by signup and resendVerification -- generates a fresh token,
 // stores its hash (same reasoning as reset tokens: a DB leak shouldn't hand
-// out a usable link), and "sends" the verification email.
-async function issueVerificationEmail(userId, email) {
+// out a usable link), and "sends" the verification email in the account's
+// app language (English when never chosen).
+async function issueVerificationEmail(userId, email, language) {
   const token = crypto.randomBytes(32).toString('hex');
   const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
@@ -55,11 +57,7 @@ async function issueVerificationEmail(userId, email) {
     [hashToken(token), expiry, userId]
   );
 
-  await sendEmail({
-    to: email,
-    subject: 'Verify your MySocialApp email',
-    text: `Verify your email: ${FRONTEND_URL}/verify-email/${token}`
-  });
+  await sendEmail({ to: email, ...emailText(language, 'verify', { link: `${FRONTEND_URL}/verify-email/${token}` }) });
 }
 
 async function signup(req, res) {
@@ -85,7 +83,7 @@ async function signup(req, res) {
       'INSERT INTO users (username, email, password, language) VALUES ($1, $2, $3, $4) RETURNING id, username, email',
       [username, email, hashedPassword, language]
     );
-    await issueVerificationEmail(result.rows[0].id, result.rows[0].email);
+    await issueVerificationEmail(result.rows[0].id, result.rows[0].email, language);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
@@ -124,7 +122,7 @@ async function verifyEmail(req, res) {
 
 async function resendVerification(req, res) {
   try {
-    const result = await db.query('SELECT email, email_verified FROM users WHERE id = $1', [req.userId]);
+    const result = await db.query('SELECT email, email_verified, language FROM users WHERE id = $1', [req.userId]);
     if (result.rows.length === 0) {
       return res.status(404).send('User not found');
     }
@@ -134,7 +132,7 @@ async function resendVerification(req, res) {
     if (!emailEnabled()) {
       return res.status(503).send('Email verification is not available right now.');
     }
-    await issueVerificationEmail(req.userId, result.rows[0].email);
+    await issueVerificationEmail(req.userId, result.rows[0].email, result.rows[0].language);
     res.status(200).send('Verification email sent');
   } catch (err) {
     sendServerError(res, err, 'Resend verification failed. Please try again later.');
@@ -222,7 +220,7 @@ async function forgotPassword(req, res) {
     }
 
     const genericMessage = 'If that email exists, a password reset link has been sent';
-    const result = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    const result = await db.query('SELECT id, language FROM users WHERE email = $1', [email]);
 
     if (result.rows.length === 0) {
       return res.status(200).send(genericMessage);
@@ -236,11 +234,7 @@ async function forgotPassword(req, res) {
       [hashToken(token), expiry, result.rows[0].id]
     );
 
-    await sendEmail({
-      to: email,
-      subject: 'Reset your MySocialApp password',
-      text: `Reset link: ${FRONTEND_URL}/reset-password/${token}`
-    });
+    await sendEmail({ to: email, ...emailText(result.rows[0].language, 'reset', { link: `${FRONTEND_URL}/reset-password/${token}` }) });
     res.status(200).send(genericMessage);
   } catch (err) {
     sendServerError(res, err, 'Forgot password failed. Please try again later.');

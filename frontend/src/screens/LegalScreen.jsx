@@ -6,7 +6,7 @@ import { formatDate } from '../i18n';
 import './LegalScreen.css';
 
 // C2: /terms and /privacy -- public (no login needed), text from the
-// locale files (legal.<doc>.sections) so both exist in English and Myanmar.
+// locale files (legal.<doc>.sections) so both exist in English and Arabic.
 // Marked as a draft until the owner has it reviewed (see ROADMAP NEEDS OWNER).
 // Each document has its own date (Day 28 rewrote the privacy policy;
 // Day 36 added cover photo and links to it).

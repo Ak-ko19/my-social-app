@@ -12,7 +12,7 @@ For EVERY step, follow this cycle:
 3. VERIFY — When the step looks finished, check it thoroughly:
    - run the FULL backend test suite plus the browser suites related to this step — all must pass (the FULL browser suite, `e2e/run-all.sh`, runs once at the end of each Day, before the Day's Progress Log entry);
    - try the feature yourself in the running app: main flow, failure cases, edge cases;
-   - check light/dark theme, mobile width, and EN/MY/AR + RTL (once i18n exists);
+   - check light/dark theme, mobile width, and EN/AR + RTL;
    - re-read your whole diff as a strict reviewer against the Quality bar.
 4. FIX — Fix everything the verification found, then VERIFY again. Repeat until clean.
 5. SAVE — Commit with a clear message, push to dev, tick the checkbox, update WIP.md ("step done").
@@ -31,8 +31,8 @@ The owner may press Esc for an emergency, when the usage limit is near, or to en
 ## Quality bar (every task, no exceptions)
 Build every feature the way a senior engineer at a top social media company would ship it to millions of users.
 1. Think first: before coding, read the related code, check how Facebook/Instagram/X handle the same feature, and write a short plan in WIP.md covering data model, API, UI, edge cases, and security.
-2. Complete, not minimal: backend + database migration + API validation + frontend UI + real-time updates where it makes sense + notifications where it makes sense + translations (EN/MY/AR, RTL correct — once i18n exists) + light and dark theme.
-3. Edge cases: empty states, loading states (skeletons), errors, offline, very long text, Myanmar and Arabic text, blocked users, private accounts, deleted content, duplicate clicks, slow network.
+2. Complete, not minimal: backend + database migration + API validation + frontend UI + real-time updates where it makes sense + notifications where it makes sense + translations (EN/AR, RTL correct in Arabic) + light and dark theme.
+3. Edge cases: empty states, loading states (skeletons), errors, offline, very long text, Arabic (RTL) text and text in other scripts (people may write in any language), blocked users, private accounts, deleted content, duplicate clicks, slow network.
 4. Security: auth and ownership checks on every route and socket event, input validation, rate limits, no data leaks to blocked/private users.
 5. Performance: indexes for new queries, pagination for every list, no N+1 queries, optimized images, optimistic UI.
 6. UI/UX: follows the existing design tokens, smooth animations, mobile-first and responsive, accessible (keyboard, labels, contrast, alt text).
@@ -55,6 +55,7 @@ Build every feature the way a senior engineer at a top social media company woul
 11. The owner is a student with exams and will only paste the daily prompt. Choose only work you can finish alone, that runs on free tiers (Render 512MB, Neon 0.5GB, Cloudinary free), and needs no new outside account or API key.
 12. NEVER-ENDING RULE: when every Day in this file is ticked, do NOT stop. Run a full read-only audit, write AUDIT_REPORT_<next number>.md, then append the next 30 Days to this file (same format, same rules, owner-free only), and start the first new Day in the same session.
 13. Keep the live site safe: after any GO LIVE, smoke test it; if anything breaks, roll back first and fix later on dev.
+14. UI languages are English and Arabic only. Every new feature must ship fully translated in both, with correct RTL in Arabic. *(Owner decision 2026-10-07: Myanmar was removed as a UI language. User content — posts, comments, messages, search — stays open to any language. `npm run check:i18n` enforces EN/AR only, every Arabic string, and an Arabic version of every user-facing server message.)*
 
 ---
 
@@ -138,8 +139,8 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 15 — i18n framework
 - [x] Add react-i18next; move all UI text into English translation files. *(Already built in B15; verified 2026-10-01 — see Progress Log.)*
 
-### Day 16 — Myanmar
-- [x] Myanmar translations (Unicode) + a proper Myanmar web font; language switcher in Settings; save choice per user. *(Translations, Noto Sans Myanmar and the switcher since B15; per-user saving added Day 16.)*
+### Day 16 — Language per user
+- [x] Language switcher in Settings; save choice per user. *(Built Day 16. Its Myanmar translations and Myanmar web font were removed on 2026-10-07 — the UI is EN/AR only, standing rule 14.)*
 
 ### Day 17 — Arabic + RTL
 - [x] Arabic translations; full right-to-left layout (dir="rtl", logical CSS properties); check every screen. *(Built in B16; verified Day 17 — see Progress Log.)*
@@ -207,8 +208,8 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Trending hashtags, popular posts (last 7 days), explore by hashtag. *(Built in B7 and verified; Top/Recent tabs and a trending cache added — see Progress Log.)*
 ### Day 42 — Better search
 - [x] PostgreSQL full-text search with ranking; search history; filters (people/posts/hashtags). *(Ranked search, hashtag search with tabs, recent searches — see Progress Log.)*
-### Day 43 — Myanmar text support
-- [x] Detect Zawgyi text and convert to Unicode (local library, no API) in posts, comments, messages, search. *(Plus Burmese/Arabic hashtags and mentions, and a backfill script — see Progress Log.)*
+### Day 43 — (removed from the plan, owner decision 2026-10-07)
+*Myanmar is no longer a UI language, so this Myanmar-specific step is out of the plan. What it already shipped for user content stays, because people may still write in any language (standing rule 14): any-script hashtags and @mentions, and the server turning old-style Zawgyi Burmese into Unicode. See the 2026-10-07 Progress Log entry.*
 ### Day 44 — Polls
 - [x] Poll posts with options, vote once, results bar. *(See Progress Log; the "poll ended" notification waits for Day 45's scheduler.)*
 ### Day 45 — Drafts + scheduled posts
@@ -220,7 +221,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 48 — Activity log
 - [ ] Your likes, comments, searches; delete items.
 ### Day 49 — Content filtering
-- [ ] Local bad-word list (EN/MY/AR) with hide-or-warn option; spam detection (repeated links, flood posting).
+- [ ] Local bad-word list (EN/AR) with hide-or-warn option; spam detection (repeated links, flood posting).
 ### Day 50–52 — Groups (basic)
 - [ ] Create group, public/private, join/leave/request, group posts, group admins, group moderation.
 ### Day 53–54 — Pages (basic)
@@ -230,7 +231,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 57 — Storage safety
 - [ ] Check Neon and Cloudinary usage; client-side image compression before upload; limits per user; warn in admin panel near limits.
 ### Day 58 — Accessibility + translations check
-- [ ] All new screens translated (EN/MY/AR) and RTL-correct.
+- [ ] All new screens translated (EN/AR) and RTL-correct.
 ### Day 59 — Re-audit (AUDIT_REPORT_3.md)
 ### Day 60 — GO LIVE (only if you have the access)
 
@@ -274,6 +275,8 @@ Build every feature the way a senior engineer at a top social media company woul
 
 ## Progress Log
 (Claude Code adds one entry per Day: date, Day number, what was done, commits, tests passing, anything added to LATER.md.)
+
+*Note: entries before 2026-10-07 say "EN/MY/AR" — that is what was built and tested at the time. Since the owner decision of 2026-10-07 the UI languages are English and Arabic only (standing rule 14).*
 
 ### 2026-09-28 — Day 1: Back up everything
 - **Done:**
@@ -1478,3 +1481,60 @@ Build every feature the way a senior engineer at a top social media company woul
     050; perf 38/38; bundle 218.3 kB.
   - Full browser run: all 52 suites (new: day44-polls, with axe on the
     poll) + A3 EN/MY/AR (228 each) green.
+
+### 2026-10-07 — Owner decision: UI languages are English and Arabic only
+- **What changed:** Myanmar is no longer a UI language, everywhere:
+  - The switcher (Settings and landing page) offers English and العربية.
+    `my.json`, the Myanmar date formatting, the Myanmar push texts and
+    server-message table, the `@fontsource/noto-sans-myanmar` font and
+    the `:lang(my)` CSS are gone. Browsers set to Burmese now get English.
+  - Accounts that had chosen Myanmar move to English (migration 051,
+    which also limits `users.language` to en/ar). A device that had
+    Myanmar saved opens in English and saves that. An old logged-out
+    Myanmar pick is dropped, not pushed to the account as a "choice".
+    An unknown code (e.g. a stale account) means English.
+  - Content is untouched: people can still post, comment, message and
+    search in any language. Burmese hashtags, mentions, search and the
+    server's Zawgyi→Unicode cleanup stay, because they handle what people
+    write, not the app's own text. Burmese now shows in the device's own
+    font.
+- **Full EN/AR audit (owner item 4), and what it fixed:**
+  - Server messages: 129 backend texts had no Arabic (only messages that
+    existed in the Myanmar table had been translated). Every message a
+    person or an admin can hit now has one. `check:i18n` scans the
+    backend (`res.status().send`, `{ error }` results, thrown
+    `XxxError(status, '…')`) and fails on a missing one. Developer-only
+    validation is exempt by rule: lowercase field names, camelCase API
+    fields, run-time lists.
+  - Emails were English-only. Verification and reset emails now follow
+    the account's language (`config/emailText.js`, EN/AR). The Privacy
+    Policy says so (EN/AR).
+  - Arabic relative times read "منذ 3 يوم". Years, months, weeks and days
+    now use real plural forms ("منذ يومين", "منذ 3 أيام", "منذ 11 شهرًا").
+  - `nav.shorts` was still English in Arabic. `check:i18n` now fails on
+    any Arabic string that is just the English one, and on any locale
+    other than en/ar.
+  - Arabic letters join up, so headings and labels no longer get
+    letter-spacing in Arabic.
+  - The landing page said "Made for Myanmar" and "in English or Myanmar".
+    It is rewritten for EN/AR, with neutral sample posts.
+  - JSX scan: no hard-coded UI text. The PWA manifest and the page's meta
+    description stay English: they are static files for installers and
+    search engines, not per-person.
+- **Docs:** standing rule 14; Day 16 and Day 43 updated (Day 43 is out of
+  the plan); Day 49/58 now EN/AR; CLAUDE.md, the guide, ROADMAP (decision
+  notes, NEEDS OWNER: Arabic review now covers emails and push), LATER
+  #8 (still applies: it is about content), GO_LIVE_CHECKLIST (migrations
+  015 → 051, EN/AR smoke test).
+- **Tests:**
+  - Backend: 717/717 tests in 67 suites, including the 051 migration on a
+    Myanmar account and Arabic/English email and push. Vitest: 141/141
+    in 28 files (new i18n.test, formatRelativeTime.test), with mutation
+    checks. check:i18n: 980 keys each, 22 plural keys. Bundle: 216.7 kB.
+  - Rehearsal 015 → 051 passed (up, down, data, smoke).
+  - Browser: all 52 suites green, plus A3 EN and AR (228 page checks each)
+    and day26-a11y (90 page checks). b15-lang, day16-language, c2-legal,
+    c3-landing, day44-polls and the loop suites now run EN/AR. Where a
+    Myanmar pass was the only dark/390px one, it became an English one.
+- **Parked:** Day 45 (drafts) was mid-step in `git stash`. It resumes
+  next, and its migration becomes 052.

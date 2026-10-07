@@ -13,7 +13,7 @@ vi.mock('../hooks/useTheme', () => ({ useTheme: () => ({ theme: 'light' }) }));
 
 // Day 16: the app language follows the account to every device.
 beforeEach(() => {
-  api.put.mockResolvedValue({ data: { language: 'my' } });
+  api.put.mockResolvedValue({ data: { language: 'ar' } });
 });
 
 const logIn = () => {
@@ -26,9 +26,9 @@ describe('Language screen', () => {
   it('logged in: switches the app and saves the choice to the account', async () => {
     logIn();
     screenEl();
-    await userEvent.click(screen.getByRole('radio', { name: /မြန်မာ/ }));
-    await waitFor(() => expect(i18n.language).toBe('my'));
-    expect(api.put).toHaveBeenCalledWith('/profile/language', { language: 'my' }, { headers: { Authorization: 'Bearer tok' } });
+    await userEvent.click(screen.getByRole('radio', { name: /العربية/ }));
+    await waitFor(() => expect(i18n.language).toBe('ar'));
+    expect(api.put).toHaveBeenCalledWith('/profile/language', { language: 'ar' }, { headers: { Authorization: 'Bearer tok' } });
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
@@ -43,10 +43,10 @@ describe('Language screen', () => {
 
   it('logged out: this device now, and remembered for the next login here', async () => {
     screenEl();
-    await userEvent.click(screen.getByRole('radio', { name: /မြန်မာ/ }));
-    await waitFor(() => expect(i18n.language).toBe('my'));
+    await userEvent.click(screen.getByRole('radio', { name: /العربية/ }));
+    await waitFor(() => expect(i18n.language).toBe('ar'));
     expect(api.put).not.toHaveBeenCalled();
-    expect(pickedLanguage()).toBe('my');
+    expect(pickedLanguage()).toBe('ar');
   });
 });
 
@@ -76,11 +76,11 @@ describe('Login and the account language', () => {
   });
 
   it('a language picked here while logged out wins at login and is saved to the account', async () => {
-    await chooseLanguage('my', null);
+    await chooseLanguage('ar', null);
     api.post.mockResolvedValue(loginReply('en'));
     await submit();
-    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/profile/language', { language: 'my' }, { headers: { Authorization: 'Bearer new-token' } }));
-    expect(i18n.language).toBe('my');
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/profile/language', { language: 'ar' }, { headers: { Authorization: 'Bearer new-token' } }));
+    expect(i18n.language).toBe('ar');
     expect(pickedLanguage()).toBeUndefined(); // used up
   });
 

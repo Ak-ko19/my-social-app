@@ -170,7 +170,7 @@ jobs:
           --health-retries 10
     env:
       E2E_EXTERNAL_DB: '1'
-      # Myanmar and Arabic fonts for the visual matrix.
+      # Noto fonts: Arabic for the visual matrix, and any script in test posts.
       E2E_FONTS: '1'
     steps:
       - uses: actions/checkout@v4

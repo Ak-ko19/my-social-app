@@ -2,10 +2,10 @@
 // (headless Edge, throwaway stack: alice(1), bob(2), conversation 1).
 // Alice types Zawgyi into the post composer, a comment, a comment edit, a
 // chat message, a message edit and her bio; every screen then shows the
-// Unicode text (rendered with Noto Sans Myanmar), and bob sees the same.
+// Unicode text (in the device's own Burmese font), and bob sees the same.
 // Text fields stop at the server's limits; a Zawgyi search finds it and is
 // remembered in Unicode; a Burmese #tag links whole and opens its page.
-// Myanmar + dark, Arabic (RTL).
+// English + dark, Arabic (RTL) -- Burmese is content here, not the UI.
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('./node_modules/playwright-core');
@@ -55,7 +55,9 @@ const U_HELLO = 'မင်္ဂလာပါ';
   const cardText = await card.innerText();
   check('the new post shows the Unicode text', cardText.includes(UNICODE) && cardText.includes(U_YANGON) && !cardText.includes(ZAWGYI), cardText.slice(0, 80));
   const font = await card.getByText(UNICODE).first().evaluate((el) => getComputedStyle(el).fontFamily);
-  check('Burmese is set in a font list with Noto Sans Myanmar', /Noto Sans Myanmar/.test(font), font);
+  // Myanmar is not a UI language (2026-10-07): no web font for it; the
+  // app's font list ends in the system font, which has Burmese.
+  check('Burmese falls through to the system font', /system-ui/.test(font) && !/Myanmar/.test(font), font);
 
   // 2. Comment, then edit the comment, both in Zawgyi.
   await card.getByRole('button', { name: 'Comment', exact: true }).click();
@@ -105,8 +107,8 @@ const U_HELLO = 'မင်္ဂလာပါ';
   const me = await (await fetch(`${API}/profile/me`, { headers: { Authorization: `Bearer ${tokens.alice}` } })).json();
   check('stored as Unicode (bio)', me.bio === UNICODE);
 
-  // 5. Bob, in Myanmar + dark and Arabic (RTL), sees Unicode everywhere.
-  for (const [theme, lang, width] of [['dark', 'my', 375], ['light', 'ar', 430]]) {
+  // 5. Bob, in English + dark and Arabic (RTL), sees Unicode everywhere.
+  for (const [theme, lang, width] of [['dark', 'en', 375], ['light', 'ar', 430]]) {
     const p = await open('bob', '/profile/1', { theme, lang, width });
     await p.getByText(UNICODE).first().waitFor({ timeout: 10000 }).catch(() => {});
     const body = await p.locator('main, body').first().innerText();
@@ -139,7 +141,7 @@ const U_HELLO = 'မင်္ဂလာပါ';
   const tagged = new FormData();
   tagged.append('content', 'ညနေ #ကော်ဖီ။ @bob');
   const taggedPost = await (await fetch(`${API}/posts`, { method: 'POST', headers: { Authorization: `Bearer ${tokens.alice}` }, body: tagged })).json();
-  for (const [theme, lang] of [['light', 'my'], ['dark', 'ar']]) {
+  for (const [theme, lang] of [['light', 'en'], ['dark', 'ar']]) {
     const home = await open('bob', '/profile/1', { theme, lang });
     const tagLink = home.locator('a.post-text-hashtag').first();
     await tagLink.waitFor({ timeout: 10000 }).catch(() => {});

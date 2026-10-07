@@ -1,5 +1,6 @@
 // Day 2 step 4: after posting, your own post is the first card on Home
-// (audit bug #3), in EN/MY/AR (RTL), light/dark, 375px and desktop.
+// (audit bug #3), in EN/AR (RTL), light/dark, 375px and desktop -- and a
+// post written in Burmese (content in any language still works).
 // Throwaway stack from e2e-up.sh (alice = user 1, follows bob).
 const fs = require('fs');
 const path = require('path');
@@ -14,7 +15,7 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
 
 const CASES = [
   { lang: 'en', theme: 'light', width: 375, text: 'Day 2 check: my own post shows up first' },
-  { lang: 'my', theme: 'dark', width: 390, text: 'ကိုယ့်ပို့စ်ကို ပထမဆုံး မြင်ရပါပြီ' },
+  { lang: 'en', theme: 'dark', width: 390, text: 'ကိုယ့်ပို့စ်ကို ပထမဆုံး မြင်ရပါပြီ' },
   { lang: 'ar', theme: 'dark', width: 430, text: 'منشوري الجديد يظهر أولاً في الصفحة الرئيسية' },
   { lang: 'en', theme: 'dark', width: 1280, text: 'Desktop check with a very long word: ' + 'x'.repeat(120) }
 ];

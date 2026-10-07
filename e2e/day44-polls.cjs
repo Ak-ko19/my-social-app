@@ -1,8 +1,8 @@
 // Day 44: poll posts (headless Edge, throwaway stack: alice(1), bob(2)).
 // Alice builds a poll in the composer (3 options, 3 days) -- an empty or
 // repeated option is explained first, and photos and a poll exclude each
-// other. Her new post shows the (empty) results to her. Bob, in Myanmar
-// and dark, sees the options (no counts), votes, and gets the results
+// other. Her new post shows the (empty) results to her. Bob, in dark
+// mode at 375px, sees the options (no counts), votes, and gets the results
 // with his vote ticked. Arabic (RTL): the bars fill from the right. An
 // ended poll shows "Final results" to everyone. axe on the poll in both
 // states; no sideways scroll at 375px.
@@ -78,22 +78,22 @@ const tokens = { alice: fs.readFileSync(path.join(SP, 'alice.token'), 'utf8').tr
     await photos.getByRole('button', { name: 'Add a poll' }).isDisabled() && (await photos.getByText("A poll can't have photos").count()) === 1);
   await photos.context().close();
 
-  // 2. Bob, Myanmar + dark, 375px: options first, then his vote.
-  const bob = await open('bob', `/posts/${postId}`, { theme: 'dark', lang: 'my', width: 375 });
+  // 2. Bob, dark, 375px: options first, then his vote.
+  const bob = await open('bob', `/posts/${postId}`, { theme: 'dark', width: 375 });
   const poll = bob.locator('.poll');
   await poll.waitFor({ timeout: 10000 }).catch(() => {});
-  check('my/dark: before voting, the options and no counts',
+  check('dark: before voting, the options and no counts',
     JSON.stringify(await poll.getByRole('button').allInnerTexts()) === '["Tea","Coffee","Neither"]' && (await poll.getByText('%').count()) === 0);
-  await axe(bob, 'my/dark, before voting');
+  await axe(bob, 'dark, before voting');
   await poll.getByRole('button', { name: 'Coffee' }).click();
   await poll.locator('.poll-result').first().waitFor({ timeout: 8000 }).catch(() => {});
   const mine = poll.locator('.poll-result.is-mine');
-  check('my/dark: his vote shows the results, Coffee 100% and ticked',
-    (await mine.innerText()).includes('Coffee') && (await mine.innerText()).includes('100%') && (await mine.getByLabel('သင့်မဲ').count()) === 1);
-  check('my/dark: the footer is in Myanmar', (await poll.locator('.poll-footer').innerText()).startsWith('မဲ 1 မဲ ·'), await poll.locator('.poll-footer').innerText());
-  check('my/dark: no sideways scroll at 375px', await noSideScroll(bob));
-  await axe(bob, 'my/dark, results');
-  await bob.screenshot({ path: path.join(SP, 'day44-poll-my-dark-375.png') });
+  check('dark: his vote shows the results, Coffee 100% and ticked',
+    (await mine.innerText()).includes('Coffee') && (await mine.innerText()).includes('100%') && (await mine.getByLabel('Your vote').count()) === 1);
+  check('dark: the footer counts 1 vote', (await poll.locator('.poll-footer').innerText()).startsWith('1 vote ·'), await poll.locator('.poll-footer').innerText());
+  check('dark: no sideways scroll at 375px', await noSideScroll(bob));
+  await axe(bob, 'dark, results');
+  await bob.screenshot({ path: path.join(SP, 'day44-poll-dark-375.png') });
   // Reloading keeps it, and the vote counted once.
   await bob.reload({ waitUntil: 'networkidle' });
   await bob.locator('.poll-result.is-mine').waitFor({ timeout: 8000 }).catch(() => {});

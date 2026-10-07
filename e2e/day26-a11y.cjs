@@ -1,5 +1,5 @@
 // Day 26: accessibility audit with axe-core (WCAG 2.1 A + AA rules) on every
-// page, light and dark, in English -- and the main pages in Myanmar and
+// page, light and dark, in English -- and the main pages in
 // Arabic (RTL). FAILs on any "serious" or "critical" violation; "moderate"
 // and "minor" ones are listed too. Throwaway stack (e2e-up.sh); seeds a
 // group and a page like a3-visual.
@@ -88,7 +88,7 @@ function record(result, label) {
     await audit(AUTHED, { authed: true, theme, lang: 'en' });
     await audit(PUBLIC, { authed: false, theme, lang: 'en' });
   }
-  for (const lang of ['my', 'ar']) {
+  for (const lang of ['ar']) {
     await audit(LANG_PAGES.filter((r) => !PUBLIC.includes(r)), { authed: true, theme: 'dark', lang });
     await audit(LANG_PAGES.filter((r) => PUBLIC.includes(r)), { authed: false, theme: 'light', lang });
   }

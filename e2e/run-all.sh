@@ -3,7 +3,7 @@
 # one after another. Prints one line per suite and exits non-zero if any
 # suite failed. Full output of each suite: out-<suite>.txt.
 #
-#   bash run-all.sh            # feature suites + visual matrix in EN/MY/AR
+#   bash run-all.sh            # feature suites + visual matrix in EN/AR
 #   bash run-all.sh --audit    # also C1 (demo seed) and the C4 audit checks
 #                              # (npm audit and the deployed keep-alive ping
 #                              #  need an internet connection)
@@ -92,7 +92,7 @@ for s in $PUSH_SUITES; do
   report "$s" $? "out-$s.txt"
 done
 
-for lang in en my ar; do
+for lang in en ar; do
   wanted a3 || continue
   fresh_stack
   A3_LANG=$lang node a3-visual.cjs > "out-a3-$lang.txt" 2>&1

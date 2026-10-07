@@ -21,9 +21,8 @@ describe('serverErrorText / serverText', () => {
 
   it('shows the server message, translated when a translation exists', async () => {
     expect(serverErrorText(err('Post not found'), 'common.somethingWentWrong')).toBe('Post not found');
-    await setLanguage('my');
-    expect(serverErrorText(err('Post not found'), 'common.somethingWentWrong')).toBe('ပို့စ် မတွေ့ပါ');
     await setLanguage('ar');
+    expect(serverErrorText(err('Post not found'), 'common.somethingWentWrong')).toBe('المنشور غير موجود');
     expect(serverErrorText(err({ message: 'This account is suspended' }), 'common.somethingWentWrong')).toBe('هذا الحساب موقوف مؤقتًا');
     expect(serverText('Please wait a moment and try again.')).toBe('يرجى الانتظار قليلًا ثم المحاولة مجددًا.');
   });
@@ -34,7 +33,7 @@ describe('serverErrorText / serverText', () => {
   });
 
   it('passes an unknown message through untranslated rather than hiding it', async () => {
-    await setLanguage('my');
+    await setLanguage('ar');
     expect(serverErrorText(err('Some brand new server message'), 'common.somethingWentWrong')).toBe('Some brand new server message');
   });
 });

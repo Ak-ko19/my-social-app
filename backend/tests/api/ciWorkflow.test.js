@@ -54,7 +54,7 @@ describe('CI browser jobs', () => {
     expect(JSON.parse(read('frontend/package.json')).scripts.test).toBe('vitest run');
   });
 
-  it('the full run has no subset and gets the Myanmar/Arabic fonts', () => {
+  it('the full run has no subset and gets the Noto (Arabic) fonts', () => {
     const full = workflow.jobs['browser-full'];
     expect(full.env.E2E_ONLY).toBeUndefined();
     expect(full.env.E2E_FONTS).toBe('1');

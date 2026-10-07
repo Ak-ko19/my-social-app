@@ -11,7 +11,7 @@ import './LandingScreen.css';
 // C3: /welcome -- a public explainer page for people who aren't users yet,
 // deliberately outside the phone-width app shell (PhoneShell) and full
 // width. Logged-out visitors to "/" are sent here. Text is bilingual like
-// the rest of the app; the header has a quick English/Myanmar switch.
+// the rest of the app; the header has a quick English/Arabic switch.
 const FEATURES = [
   { key: 'feed', icon: Newspaper },
   { key: 'stories', icon: Sparkles },
@@ -30,8 +30,8 @@ function LandingScreen() {
       <header className="landing-nav">
         <Logo />
         <span className="landing-nav-spacer" />
-        {/* A select (not one button per language) so the header still fits a
-            phone with three or more languages (B16). */}
+        {/* A select (not one button per language) keeps the header small on a
+            phone, and fits any languages added later (B16). */}
         <label className="landing-lang">
           <Globe size={15} aria-hidden="true" />
           <span className="landing-visually-hidden">{t('landing.footerLanguage')}</span>

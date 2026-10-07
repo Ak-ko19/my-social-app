@@ -25,7 +25,7 @@ import { installGlobalErrorReporting } from './utils/errorReporter'
 // Day 10: browser errors go to the admin error log (production builds).
 installGlobalErrorReporting()
 
-// Wait for the saved language's strings (a separate chunk for Myanmar/Arabic)
+// Wait for the saved language's strings (a separate chunk for Arabic)
 // so the first paint is already in the right language.
 i18nReady.finally(() => createRoot(document.getElementById('root')).render(
   <StrictMode>

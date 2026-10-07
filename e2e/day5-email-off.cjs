@@ -1,7 +1,7 @@
 // Day 5 step 3: with no email provider (GET /config -> emailEnabled false)
 // the app is honest instead of promising emails that never arrive: the
 // verify banner is hidden and forgot-password explains reset is
-// unavailable. With email on, both still work. EN/MY/AR (RTL), light/dark,
+// unavailable. With email on, both still work. EN/AR (RTL), light/dark,
 // 375-430px. Throwaway stack from e2e-up.sh (alice = user 1).
 const fs = require('fs');
 const path = require('path');
@@ -37,7 +37,7 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   const noHScroll = (page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
 
   // Email OFF: forgot password explains itself, in every language.
-  for (const [lang, theme, width] of [['en', 'light', 375], ['my', 'dark', 390], ['ar', 'dark', 430]]) {
+  for (const [lang, theme, width] of [['en', 'light', 375], ['en', 'dark', 390], ['ar', 'dark', 430]]) {
     const label = `off ${lang}/${theme}/${width}px`;
     const page = await newPage({ lang, theme, width, emailOff: true });
     await page.goto(`${WEB}/forgot-password`, { waitUntil: 'networkidle' });

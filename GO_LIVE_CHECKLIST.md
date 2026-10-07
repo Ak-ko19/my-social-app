@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 050, check the environment variables,
+database, run migrations 015 → 051, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -98,11 +98,13 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 050 on production
+## 3. Run migrations 015 → 051 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
-they run.
+they run. (051 narrows the app-language column that 033 adds to English
+and Arabic; nothing on production has a language yet, so it changes no
+rows there.)
 
 - [ ] Confirm the database is at 014 (this should print one row,
   `verification_token`):
@@ -137,7 +139,7 @@ they run.
            041_add_message_forwarded 042_add_group_photo 043_add_profile_links \
            044_add_cover_photo 045_add_pinned_post 046_add_suggestion_dismissals \
            047_add_post_search_index 048_add_hashtag_search_index 049_add_search_history \
-           050_add_polls; do
+           050_add_polls 051_drop_myanmar_ui_language; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
@@ -194,8 +196,8 @@ Do this in a normal browser window, then again on a phone.
   - [ ] React to a post and comment on it. The other account gets a
     notification (use a second browser or a phone).
   - [ ] Send a DM and a voice message between the two accounts.
-  - [ ] Switch the language to Myanmar and to Arabic (right-to-left), and
-    try light and dark mode.
+  - [ ] Switch the language to Arabic (right-to-left) and back to
+    English (the only two), and try light and dark mode.
   - [ ] Forgot password: with no Brevo key it says reset by email isn't
     available. With a key, the email arrives.
 - [ ] **Photos are deleted with their post (Day 4):**

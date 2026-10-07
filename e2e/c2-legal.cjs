@@ -50,17 +50,18 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await me.waitForURL(`${WEB}/terms`);
   check('Settings > Terms row opens the page', true);
 
-  // Myanmar version.
-  const myCtx = await browser.newContext({ viewport: { width: 375, height: 844 } });
-  await myCtx.addInitScript(() => { localStorage.setItem('lang', 'my'); localStorage.setItem('theme', 'dark'); });
-  const mp = watch(await myCtx.newPage());
-  await mp.goto(`${WEB}/privacy`, { waitUntil: 'networkidle' });
-  await mp.getByRole('heading', { name: 'ကိုယ်ရေးလုံခြုံမှု မူဝါဒ' }).waitFor();
-  check('Myanmar Privacy Policy renders', (await mp.locator('.legal-section').count()) === 11);
-  const updated = await mp.locator('.legal-updated').innerText();
-  check('date is in Burmese even though Chromium has no Burmese ICU data', updated.includes(PRIVACY_DATE.my), updated);
-  check('375px dark Myanmar: no horizontal scroll', !(await mp.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)));
-  await mp.screenshot({ path: path.join(SP, 'c2-privacy-my-dark-375.png') });
+  // Arabic version (RTL).
+  const arCtx = await browser.newContext({ viewport: { width: 375, height: 844 } });
+  await arCtx.addInitScript(() => { localStorage.setItem('lang', 'ar'); localStorage.setItem('theme', 'dark'); });
+  const ap = watch(await arCtx.newPage());
+  await ap.goto(`${WEB}/privacy`, { waitUntil: 'networkidle' });
+  await ap.getByRole('heading', { name: 'سياسة الخصوصية' }).waitFor();
+  check('Arabic Privacy Policy renders, right to left', (await ap.locator('.legal-section').count()) === 11 && (await ap.getAttribute('html', 'dir')) === 'rtl');
+  const updated = await ap.locator('.legal-updated').innerText();
+  check('date is in Arabic', updated.includes(PRIVACY_DATE.ar), updated);
+  check('it says emails and push notifications use the saved language', (await ap.locator('.legal-body').innerText()).includes('وتصلك رسائلنا الإلكترونية وإشعاراتنا الفورية بها'));
+  check('375px dark Arabic: no horizontal scroll', !(await ap.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)));
+  await ap.screenshot({ path: path.join(SP, 'c2-privacy-ar-dark-375.png') });
 
   await browser.close();
   console.log(results.join('\n'));

@@ -4,7 +4,7 @@
 // script is replaced by a fake widget served from Cloudflare's own URL (so
 // the CSP's script-src/frame-src are exercised), and the backend verifies
 // tokens with the local stub (turnstile-stub.cjs: "human-ok" passes).
-// EN/MY/AR (RTL), light/dark, 375-430px.
+// EN/AR (RTL), light/dark, 375-430px.
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('./node_modules/playwright-core');
@@ -18,7 +18,6 @@ const errors = [];
 const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  -- ' + extra : ''}`);
 const NEEDED = {
   en: 'Please complete the security check.',
-  my: 'လုံခြုံရေး စစ်ဆေးမှုကို အရင် ပြီးအောင်လုပ်ပါ။',
   ar: 'يرجى إكمال التحقق الأمني أولًا.'
 };
 
@@ -73,7 +72,7 @@ window.turnstile = (() => {
 
   // 1. Signup: the widget shows (right key and theme), the form refuses to
   // go without it, and goes through once it is ticked.
-  for (const [lang, theme, width] of [['en', 'light', 375], ['my', 'dark', 390], ['ar', 'dark', 430]]) {
+  for (const [lang, theme, width] of [['en', 'light', 375], ['en', 'dark', 390], ['ar', 'dark', 430]]) {
     const label = `${lang}/${theme}/${width}px`;
     const name = `ts${lang}${Date.now() % 100000}`;
     const page = await newPage({ lang, theme, width });

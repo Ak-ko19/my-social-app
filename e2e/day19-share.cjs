@@ -89,7 +89,7 @@ const asCrawler = (id, ua) => crawl(`/posts/${id}`, ua);
   // Day 24: fonts are self-hosted -- they load from this site (under the
   // strict CSP of this production build), and nothing goes to Google.
   const fontCtx = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  await fontCtx.addInitScript(() => localStorage.setItem('lang', 'my'));
+  await fontCtx.addInitScript(() => localStorage.setItem('lang', 'ar'));
   const fontPage = await fontCtx.newPage();
   const external = [];
   fontPage.on('request', (r) => { if (/fonts\.(googleapis|gstatic)\.com/.test(r.url())) external.push(r.url()); });
@@ -99,11 +99,12 @@ const asCrawler = (id, ua) => crawl(`/posts/${id}`, ua);
     await document.fonts.ready;
     return {
       manrope: document.fonts.check('700 16px Manrope'),
-      myanmar: document.fonts.check('400 16px "Noto Sans Myanmar"', 'မြန်မာ'),
+      arabic: document.fonts.check('400 16px "Noto Sans Arabic"', 'العربية'),
       loaded: [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/"/g, ''))
     };
   });
-  check('fonts: Manrope and Noto Sans Myanmar load from this site', fonts.manrope && fonts.myanmar && fonts.loaded.includes('Noto Sans Myanmar'), JSON.stringify(fonts));
+  check('fonts: Manrope and Noto Sans Arabic load from this site', fonts.manrope && fonts.arabic && fonts.loaded.includes('Noto Sans Arabic'), JSON.stringify(fonts));
+  check('fonts: no Myanmar web font any more', !fonts.loaded.some((f) => /myanmar/i.test(f)), JSON.stringify(fonts.loaded));
   check('fonts: no request to Google Fonts', external.length === 0, external.join(' '));
   await fontCtx.close();
   await browser.close();

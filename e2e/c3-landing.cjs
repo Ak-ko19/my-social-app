@@ -30,12 +30,13 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   check('secondary CTA opens Login', true);
 
   await p.goto(`${WEB}/welcome`, { waitUntil: 'networkidle' });
-  await p.locator('.landing-lang-select').selectOption('my');
-  await p.getByRole('link', { name: 'အခမဲ့ အကောင့်ဖွင့်ရန်' }).first().waitFor();
-  check('language switch on the landing page', (await p.getAttribute('html', 'lang')) === 'my');
+  const langOptions = await p.locator('.landing-lang-select option').evaluateAll((os) => os.map((o) => o.value));
+  check('landing language switch offers en and ar only', langOptions.join(',') === 'en,ar', langOptions.join(','));
   await p.locator('.landing-lang-select').selectOption('ar');
   await p.getByRole('link', { name: 'أنشئ حسابك المجاني' }).first().waitFor();
-  check('Arabic from the landing page switches to RTL', (await p.getAttribute('html', 'dir')) === 'rtl');
+  check('Arabic from the landing page switches to RTL', (await p.getAttribute('html', 'lang')) === 'ar' && (await p.getAttribute('html', 'dir')) === 'rtl');
+  const pageText = await p.locator('body').innerText();
+  check('landing copy no longer offers Myanmar', !/ميانمار|الميانمارية|البورمية/.test(pageText));
   await p.locator('.landing-lang-select').selectOption('en');
   await p.getByRole('link', { name: 'Create your free account' }).first().waitFor();
 
@@ -51,7 +52,7 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   check('logged-in visitor sees "Open the app"', (await lp.getByRole('link', { name: 'Open the app' }).count()) === 1 && (await lp.getByRole('link', { name: 'Create your free account' }).count()) === 0);
 
   // Layout: phone / tablet / desktop, light + dark, both languages.
-  for (const lang of ['en', 'my', 'ar']) {
+  for (const lang of ['en', 'ar']) {
     for (const theme of ['light', 'dark']) {
       for (const width of [375, 768, 1280]) {
         const c = await browser.newContext({ viewport: { width, height: 900 } });

@@ -940,10 +940,10 @@ built and how to re-verify it.
 
 ### B16 — Arabic (RTL) ✅
 - **Languages:** `LANGUAGES` in `src/i18n/index.js` carries each
-  language's `dir`, and `<html dir>` follows it. Add a language =
-  `locales/xx.json` + one `LANGUAGES` row (+ `serverMessages.js`
-  table). `npm run check:i18n` then tells you exactly what's missing,
-  including plural forms.
+  language's `dir`, and `<html dir>` follows it. The languages are
+  fixed at English + Arabic by owner decision (2026-10-07):
+  `npm run check:i18n` fails on any other locale file, and tells you
+  exactly what's missing in Arabic, including plural forms.
 - **Writing CSS:** use logical properties (`margin-inline-start`,
   `inset-inline-end`, `text-align: start`), never left/right. Anything
   that must flip visually in RTL goes in the RTL block in
@@ -964,7 +964,7 @@ built and how to re-verify it.
 ### C2 — Terms & Privacy (draft) ✅
 - `screens/LegalScreen.jsx` renders `legal.terms` / `legal.privacy` from
   the locale files at `/terms` and `/privacy` (public).
-- To edit the text, change both `en.json` and `my.json`. Bump
+- To edit the text, change both `en.json` and `ar.json`. Bump
   `LAST_UPDATED` in LegalScreen.
 - Linked from Settings and Signup.
 
@@ -977,27 +977,41 @@ built and how to re-verify it.
 - Edit `scripts/seed-demo.js` (USERS / POSTS / COMMENTS arrays) to
   change the demo.
 
-### B15 — Myanmar / English (i18n) ✅
+### B15 — English / Arabic (i18n) ✅
+- **UI languages: English and Arabic only** (owner decision 2026-10-07;
+  Myanmar was a UI language until then and was removed). Every new
+  feature ships fully translated in both, with correct RTL in Arabic.
+  People can still post, comment, message and search in ANY language --
+  only the app's own text is limited to EN/AR.
 - **Setup:** `src/i18n/index.js` (i18next init, `LANGUAGES`,
-  `dateLocale()`), `LanguageRoot.jsx` (remount on switch), and
-  `locales/en.json` and `my.json`.
+  `formatDate()`), `LanguageRoot.jsx` (remount on switch), and
+  `locales/en.json` and `ar.json` (Arabic loads only when chosen).
 - **Adding UI text:**
   - Use `const { t } = useTranslation()` then `t('area.key')`, and add
     the key to BOTH json files.
   - Sentences with a name or link inside use
     `<Trans i18nKey=… components={{ b: <strong/> }} />`.
-  - Counts use i18next plurals (`key_one` / `key_other`).
+  - Counts use i18next plurals: English `key_one` / `key_other`, Arabic
+    all six forms (`_zero _one _two _few _many _other`).
   - Outside components, use `i18n.t(...)`.
+  - RTL: use logical CSS properties (`margin-inline-start`, `inset-inline-end`,
+    `text-align: start`); global.css mirrors the few icons that point
+    somewhere.
 - **API errors:** `serverErrorText(err, 'fallback.key')` (in
-  `utils/serverError.js`). New user-facing server messages can be given a
-  Burmese version in `i18n/serverMessages.js`.
+  `utils/serverError.js`). Every user-facing server message needs an
+  Arabic version in `i18n/serverMessages.js` -- `check:i18n` scans the
+  backend and fails on a missing one.
+- **Emails and push notifications** use the account's language
+  (`users.language`): `backend/config/emailText.js` and `pushText.js`.
 - **Dates:** always `formatDate(value, 'datetime'|'date'|'long'|'time')`
-  from `src/i18n`, never `toLocaleString` directly. Chromium has no
-  Burmese locale data, and `formatDate` handles that.
-- **Check:** `npm run check:i18n` (also in CI): key parity plus keys that
-  are used but missing.
+  from `src/i18n`, never `toLocaleString` directly (Arabic uses Western
+  digits, like the rest of the UI).
+- **Check:** `npm run check:i18n` (also in CI): exactly en + ar, key
+  parity, every Arabic plural form, no Arabic string left in English,
+  server messages translated, and no key used but missing.
 - **UI:** Settings → Language (`screens/LanguageScreen.jsx`). The choice
-  is kept in localStorage `lang`.
+  is kept in localStorage `lang` and on the account (Day 16). A device or
+  account that still says `my` opens in English.
 
 ---
 

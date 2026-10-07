@@ -2,7 +2,7 @@
 // (run-all.sh starts this suite's stack with BOT_CHECKS_IN_TESTS=1).
 // Real people using the real forms never notice it -- even when they submit
 // faster than the minimum fill time -- while a bot posting straight to the
-// API, or filling in the hidden honeypot, is refused. EN/MY/AR (RTL),
+// API, or filling in the hidden honeypot, is refused. EN/AR (RTL),
 // light/dark, 375-430px.
 const fs = require('fs');
 const path = require('path');
@@ -16,7 +16,7 @@ const results = [];
 const errors = [];
 const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  -- ' + extra : ''}`);
 const RELOAD = 'Please reload the page and try again.';
-const RELOAD_T = { en: RELOAD, my: 'စာမျက်နှာကို ပြန်ဖွင့်ပြီး ထပ်စမ်းကြည့်ပါ။', ar: 'يرجى إعادة تحميل الصفحة والمحاولة مجددًا.' };
+const RELOAD_T = { en: RELOAD, ar: 'يرجى إعادة تحميل الصفحة والمحاولة مجددًا.' };
 
 (async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true });
@@ -41,7 +41,7 @@ const RELOAD_T = { en: RELOAD, my: 'စာမျက်နှာကို ပြ�
 
   // 1. Signup at bot speed from a real person's browser: the form waits out
   // the minimum itself and succeeds; then that person logs in.
-  for (const [lang, theme, width] of [['en', 'light', 375], ['my', 'dark', 390], ['ar', 'dark', 430]]) {
+  for (const [lang, theme, width] of [['en', 'light', 375], ['en', 'dark', 390], ['ar', 'dark', 430]]) {
     const label = `${lang}/${theme}/${width}px`;
     const t = locale(lang).auth;
     const name = `fast${lang}${Date.now() % 100000}`;
@@ -85,7 +85,7 @@ const RELOAD_T = { en: RELOAD, my: 'စာမျက်နှာကို ပြ�
 
   // 2. A bot filling in every input, honeypot included, is refused -- with
   // a message the person (if it was one) can understand, in their language.
-  for (const lang of ['en', 'my', 'ar']) {
+  for (const lang of ['en', 'ar']) {
     const page = await newPage({ lang });
     await page.goto(`${WEB}/signup`, { waitUntil: 'networkidle' });
     await fillSignup(page, `bot${lang}${Date.now() % 100000}`);

@@ -6,6 +6,11 @@
 - Database: PostgreSQL
 - OS: Windows, Editor: VS Code
 - Location: C:\MyProjects\Mysocialapp (backend/ and frontend/ subfolders)
+- UI languages: English and Arabic ONLY (EN/AR, with full RTL in Arabic).
+  Owner decision 2026-10-07: Myanmar was removed as a UI language. Every
+  new feature ships fully translated in both, with correct RTL in Arabic
+  (`npm run check:i18n` enforces it). User content (posts, comments,
+  messages, search) stays open to ANY language, Burmese included.
 
 ## Project Goal
 Building a Facebook-style, large-scale social media platform. Plan: build a

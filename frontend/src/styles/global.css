@@ -45,3 +45,9 @@ body {
 :lang(ar) body {
   line-height: 1.6;
 }
+
+/* Arabic letters join up; letter-spacing (tight headings, spaced-out
+   labels) pulls them apart, so Arabic text keeps the font's own spacing. */
+:lang(ar) :is(body, h1, h2, .landing-title, .section-heading, .ui-section-label) {
+  letter-spacing: normal;
+}

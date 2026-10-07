@@ -1,7 +1,9 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 45 — Drafts + scheduled posts
-**Step:** 1 — PLAN (not started)
+**Day:** Owner decision (2026-10-07) — UI languages EN + AR only (before Day 45)
+**Step:** done -- committed and pushed to dev (see Progress Log 2026-10-07)
+**Parked:** Day 45 drafts work is in `git stash` ("Day 45 WIP: drafts").
+Restore it after this step; its migration 051 becomes 052.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -47,7 +49,13 @@
   keeps the first download under 225 kB gz.
 - Privacy Policy (legal.privacy in the locales) is written from the
   code: when a feature changes what is collected, shared or kept,
-  update it (EN/MY/AR) and its date in LegalScreen.jsx.
+  update it (EN/AR) and its date in LegalScreen.jsx.
+- UI languages = EN + AR only (2026-10-07, MONTH_PLAN rule 14). A new
+  user-facing server message needs an Arabic line in
+  frontend/src/i18n/serverMessages.js -- check:i18n scans the backend
+  (res.status().send, { error }, XxxError(status, '...')) and fails
+  otherwise; developer-only texts follow its DEV_ONLY rules. New emails:
+  config/emailText.js (en + ar).
 - Cloudinary: a new upload folder must be added to
   scripts/cloudinary-orphans.js APP_FOLDERS (a test checks), and any new
   column holding a file URL to its referencedKeys (else the scan deletes
@@ -81,14 +89,35 @@
   to the poll's author (and voters, like X).
 - Polls (Day 44): a new post listing must add pollColumnSql(viewer)
   next to mediaColumnSql (polls.test lists every listing).
-- Myanmar text (Day 43): new free-text fields people write go through
+- Burmese CONTENT (Day 43; kept after the 2026-10-07 EN/AR-only UI
+  decision -- content stays any-language): new free-text fields go through
   utils/myanmarText toUnicode (check limits on the text as typed, or
   the converted text when the column is varchar), and get a row in
   scripts/convert-zawgyi.js COLUMNS (a test lists them). Hashtag /
   mention regexes are [\p{L}\p{M}\p{N}_] with the u flag on both sides.
 
 ## Plan
-(none yet)
+Owner: Myanmar is removed as a UI language; EN + AR (RTL) only. User
+CONTENT in any language stays fully supported (post/comment/DM/search).
+- Backend: config/languages ['en','ar']; migration 051: users.language
+  'my' -> 'en', CHECK (en, ar). Push text: drop MY. Emails (verify,
+  reset) were English-only -> EN/AR by the account's language.
+- Frontend: LANGUAGES en/ar; drop my.json, MY loader, browser 'my'
+  detection and the hand-made Burmese date formatting; serverMessages
+  MY table; Noto Sans Myanmar package + :lang(my) CSS. A device with
+  a saved 'my' starts in English and saves 'en'.
+- Keep: Burmese content support (Zawgyi normalising on the server,
+  \p{L} hashtags/mentions, Burmese search) -- that's content, not UI.
+  Burmese text then renders with the system font.
+- Audit: check:i18n parity; AR values still equal to English; hard-
+  coded UI text in JSX; server messages without AR; physical CSS
+  (left/right) breaking RTL; A3 matrix + b16-rtl in AR.
+- Tests: backend language/push/email; frontend unit tests; e2e suites
+  that pick Myanmar switch to Arabic (or drop the MY part).
+- Docs: MONTH_PLAN (EN/AR, Day 43 removed, bad-word list EN/AR, new
+  standing rule), CLAUDE.md, WIP notes, README/guide, ROADMAP notes.
 
 ## Progress
-(none yet)
+- Backend, frontend, tests, e2e suites, docs: done. Verified: backend
+  717/717, Vitest 141/141, check:i18n, lint, bundle, rehearsal 015-051,
+  all 52 browser suites + A3 EN/AR + a11y green.

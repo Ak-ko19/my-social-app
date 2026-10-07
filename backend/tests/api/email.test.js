@@ -105,6 +105,37 @@ describe('email delivery', () => {
       const body = JSON.parse(fetchMock.mock.calls[0][1].body);
       expect(body.to).toEqual([{ email: creds.email }]);
       expect(body.textContent).toMatch(/\/verify-email\/[a-f0-9]{64}/);
+      expect(body.subject).toBe('Verify your MySocialApp email');
+    });
+
+    // Owner decision 2026-10-07: account emails come in the app language
+    // (English or Arabic); never chosen, or anything else, = English.
+    it('sends verification and reset emails in the account language', async () => {
+      useBrevo();
+      const sent = () => fetchMock.mock.calls.map(([, init]) => JSON.parse(init.body));
+      const ar = uniqueUser();
+      expect((await request(app).post('/signup').send({ ...ar, language: 'ar' })).status).toBe(201);
+      expect((await request(app).post('/forgot-password').send({ email: ar.email })).status).toBe(200);
+      const [verify, reset] = sent();
+      expect(verify.subject).toBe('تأكيد بريدك الإلكتروني في MySocialApp');
+      expect(verify.textContent).toMatch(/^أكّد بريدك الإلكتروني: http\S+\/verify-email\/[a-f0-9]{64}\n\nتنتهي صلاحية هذا الرابط خلال 24 ساعة/);
+      expect(reset.subject).toBe('إعادة تعيين كلمة مرور MySocialApp');
+      expect(reset.textContent).toMatch(/^رابط إعادة التعيين: http\S+\/reset-password\/[a-f0-9]{64}\n\n/);
+
+      // Resend uses the language saved on the account now, not at signup.
+      fetchMock.mockClear();
+      const login = await request(app).post('/login').send({ email: ar.email, password: ar.password });
+      const auth = { Authorization: `Bearer ${login.body.token}` };
+      await request(app).put('/profile/language').set(auth).send({ language: 'en' });
+      expect((await request(app).post('/resend-verification').set(auth)).status).toBe(200);
+      expect(sent()[0].subject).toBe('Verify your MySocialApp email');
+
+      fetchMock.mockClear();
+      const none = uniqueUser();
+      await request(app).post('/signup').send({ ...none, language: 'my' });
+      await request(app).post('/forgot-password').send({ email: none.email });
+      expect(sent().map((m) => m.subject)).toEqual(['Verify your MySocialApp email', 'Reset your MySocialApp password']);
+      expect(sent()[1].textContent).toMatch(/^Reset link: http\S+\/reset-password\/[a-f0-9]{64}\n\nThis link expires in 1 hour\./);
     });
   });
 

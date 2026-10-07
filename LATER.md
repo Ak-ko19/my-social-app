@@ -188,6 +188,8 @@ without them. Newest items at the bottom.
     notification appears.
 
 ## 8. Convert old Zawgyi Myanmar text on production (Day 43)
+- **Still applies** after the 2026-10-07 decision (UI is English and
+  Arabic only): this fixes text people WROTE, which can be in any language.
 - **What it does:** Myanmar text written with a Zawgyi font before Day 43
   is converted to Unicode, so everyone can read it and search finds it;
   Burmese/Arabic #tags in old posts start working. New text is already

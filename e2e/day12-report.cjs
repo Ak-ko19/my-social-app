@@ -1,7 +1,7 @@
 // Day 12 step 1: reporting comments and messages, and what the moderator
 // sees. Throwaway stack (e2e-up.sh): alice(1) is made admin via SQL, bob(2)
 // owns post 1; carol is created here and is rude in a comment and a DM.
-// EN/MY/AR (RTL), light/dark, 375-430px.
+// EN/AR (RTL), light/dark, 375-430px.
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -53,8 +53,9 @@ const call = async (method, url, token, body) => {
   };
   const noHScroll = (page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
 
-  // 1. Bob reports carol's comment and her message, in three languages.
-  for (const [lang, theme, width] of [['en', 'light', 375], ['my', 'dark', 390], ['ar', 'dark', 430]]) {
+  // 1. Bob reports carol's comment and her message (English light); the
+  // dialogs are also checked in English dark and Arabic (RTL).
+  for (const [lang, theme, width] of [['en', 'light', 375], ['en', 'dark', 390], ['ar', 'dark', 430]]) {
     const L = locale(lang);
     const label = `${lang}/${theme}/${width}px`;
     const page = await newPage(bobToken, 2, 'bob', { lang, theme, width });
@@ -69,7 +70,7 @@ const call = async (method, url, token, body) => {
     const dialog = page.getByRole('dialog');
     await dialog.waitFor({ timeout: 5000 }).catch(() => {});
     check(`${label}: dialog says "${title}"`, (await dialog.getByText(title, { exact: true }).count()) >= 1);
-    if (lang === 'en') {
+    if (lang === 'en' && theme === 'light') { // submitted once; the other passes cancel
       await dialog.getByLabel(L.report.reasons.harassment).check();
       await dialog.getByRole('button', { name: L.report.submit }).click();
       await dialog.getByText(L.report.submitted).first().waitFor({ timeout: 5000 }).catch(() => {});
@@ -92,7 +93,7 @@ const call = async (method, url, token, body) => {
     await dialog.waitFor({ timeout: 5000 }).catch(() => {});
     check(`${label}: dialog says "${fill(L.report.title, { label: L.report.thisMessage })}"`,
       (await dialog.getByText(fill(L.report.title, { label: L.report.thisMessage }), { exact: true }).count()) >= 1);
-    if (lang === 'en') {
+    if (lang === 'en' && theme === 'light') { // submitted once; the other passes cancel
       await dialog.getByLabel(L.report.reasons.spam).check();
       // Typed key by key (not fill): a focus bug once let only one letter through.
       await page.locator('.report-dialog-details').pressSequentially('threatening me');

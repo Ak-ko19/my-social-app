@@ -67,15 +67,16 @@ const send = (token, text) => fetch(`${API}/conversations/1/messages`, {
   await feed.screenshot({ path: path.join(SP, 'day19-feed-en.png') });
   await feed.context().close();
 
-  // 2. A message with a link: clickable, with a card in the bubble (Myanmar title).
-  const chat = await newPage(aliceToken, 1, 'alice', { lang: 'my', theme: 'dark' });
+  // 2. A message with a link: clickable, with a card in the bubble -- the
+  // page's Burmese title intact (content in any language works).
+  const chat = await newPage(aliceToken, 1, 'alice', { lang: 'en', theme: 'dark' });
   await chat.goto(`${WEB}/messages/1`, { waitUntil: 'networkidle' });
   const bubbleCard = chat.locator('.messages-bubble a.post-card-link-preview');
   await bubbleCard.waitFor({ timeout: 10000 }).catch(() => {});
-  check('message: preview card inside the bubble, Myanmar title intact', /မြန်မာ သတင်း ခေါင်းစဉ်/.test(await bubbleCard.innerText().catch(() => '')));
+  check('message: preview card inside the bubble, Burmese title intact', /မြန်မာ သတင်း ခေါင်းစဉ်/.test(await bubbleCard.innerText().catch(() => '')));
   check('message: the URL is a link', (await chat.locator(`.messages-bubble a.post-text-link[href="${STUB}/myanmar"]`).count()) === 1);
   check('message: no horizontal scroll', await noHScroll(chat));
-  await chat.screenshot({ path: path.join(SP, 'day19-chat-my-dark.png') });
+  await chat.screenshot({ path: path.join(SP, 'day19-chat-en-dark.png') });
   await chat.context().close();
 
   // 3. Arabic, right-to-left, 430px: the card and the URL read correctly.

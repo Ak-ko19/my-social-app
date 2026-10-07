@@ -72,11 +72,6 @@
   letter-spacing: -0.02em;
 }
 
-:lang(my) .landing-title {
-  line-height: 1.5;
-  letter-spacing: 0;
-}
-
 .landing-lead {
   margin: 0;
   font-size: 1.0625rem;

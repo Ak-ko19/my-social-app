@@ -7,6 +7,27 @@ Status legend: ⬜ NOT CHECKED · 🟡 PARTIAL · ✅ VERIFIED
 Gmail App Password — that's the next thing to close out before starting
 Section A.
 
+**Owner decision 2026-10-07 — UI languages are English and Arabic only.**
+Myanmar was removed as a UI language everywhere (switcher, translations,
+font, browser detection, push text; accounts and devices that had it fall
+back to English — migration 051). Choices Claude made under the autonomy
+rules, for the owner to overrule if wanted:
+- **User content stays any-language** (as instructed), so the Day 43
+  server code that turns old Zawgyi Burmese into Unicode, any-script
+  #hashtags/@mentions and Burmese search are **kept** — they handle what
+  people write, not the app's own text. Day 43 is out of MONTH_PLAN as a
+  step; LATER.md #8 (convert old production text) still applies.
+- Burmese text now shows in the device's own font (Noto Sans Myanmar web
+  font removed, as instructed).
+- MONTH_PLAN's dated Progress Log entries keep "EN/MY/AR": they record
+  what was tested then. Everything forward-looking says EN/AR.
+- Account emails (verify, reset) were English-only; they now follow the
+  account's language (EN/AR), and the Privacy Policy says so.
+- The landing page's "Made for Myanmar" copy and Myanmar sample posts
+  were rewritten as EN/AR / neutral.
+- The PWA manifest and the page's meta description stay English (static
+  files read by installers and search engines, not per-user).
+
 This file supersedes the ad-hoc "Phase 1 / Phase 2 / ..." numbering used
 earlier in chat — those are preserved below as history under their own
 heading. Going forward, work is tracked as Section A / B / C items below.
@@ -1452,13 +1473,13 @@ running app in one pass, with a written pass/fail report per item.
 
 - C2: have a lawyer (or at least a careful read) review the draft
   Terms (`/terms`) and Privacy Policy (`/privacy`) text in
-  `frontend/src/i18n/locales/en.json` and `my.json` (`legal.*`), add a
+  `frontend/src/i18n/locales/en.json` and `ar.json` (`legal.*`), add a
   real contact email, then drop the "Draft" note (`legal.draftNote` in
   `LegalScreen.jsx`).
 - B16: have a native Arabic speaker review the Arabic translations
-  (`frontend/src/i18n/locales/ar.json`) before launch.
-- (Optional, B15) Have a native Myanmar speaker skim
-  `frontend/src/i18n/locales/my.json` for wording before public launch.
+  (`frontend/src/i18n/locales/ar.json`, `i18n/serverMessages.js`, and the
+  emails/push text in `backend/config/emailText.js` and `pushText.js`)
+  before launch. Arabic is now one of only two UI languages.
 
 - Email via Brevo API — needs a Brevo account + API key; Render blocks
   outbound SMTP on its free tier, so Gmail SMTP (Phase 2) only works for

@@ -17,7 +17,7 @@ require('child_process').execSync(require('./pg.cjs').PSQL + ' -h localhost -p 5
 const SP = __dirname;
 const APP = 'http://localhost:5173';
 const aliceToken = fs.readFileSync(path.join(SP, 'alice.token'), 'utf8').trim();
-// B15: A3_LANG=my runs the whole matrix in Burmese.
+// B16: A3_LANG=ar runs the whole matrix in Arabic (RTL).
 const LANG = process.env.A3_LANG || 'en';
 const OUT = path.join(SP, LANG === 'en' ? 'a3-shots' : `a3-shots-${LANG}`);
 fs.mkdirSync(OUT, { recursive: true });
@@ -80,7 +80,7 @@ let checks = 0;
             await page.getByRole('searchbox').fill('bob');
             // exact: once "bob" is a recent search, its remove button's label
             // contains the word "search" too (substring match otherwise).
-            await page.getByRole('button', { name: { my: 'ရှာဖွေရန်', ar: 'بحث' }[LANG] || /^search$/i, exact: true }).click();
+            await page.getByRole('button', { name: { ar: 'بحث' }[LANG] || /^search$/i, exact: true }).click();
             await page.waitForTimeout(800);
           }
           const tag = `${LANG} ${theme} ${width}px ${route}`;

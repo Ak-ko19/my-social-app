@@ -1,7 +1,7 @@
 // Day 27: what a first visit downloads -- the built index.html's entry
 // script, every chunk it preloads, and its stylesheets -- must stay within
 // a budget (gzipped, as it goes over the wire). Everything else (each
-// screen, the Myanmar/Arabic translations, the live-chat client) loads
+// screen, the Arabic translations, the live-chat client) loads
 // on demand and must stay out of that first download.
 // Run after `npm run build` (CI does). Usage: node scripts/check-bundle.cjs
 const fs = require('fs');
@@ -24,7 +24,7 @@ let total = 0;
 for (const file of files) {
   const code = fs.readFileSync(path.join(dist, file));
   total += zlib.gzipSync(code, { level: 9 }).length;
-  if (/^assets\/(my|ar)-/.test(file)) problems.push(`${file}: a translation is in the first download (it should load when picked).`);
+  if (/^assets\/ar-/.test(file)) problems.push(`${file}: a translation is in the first download (it should load when picked).`);
   if (code.includes('/socket.io')) problems.push(`${file}: the live-chat client is in the first download (it loads after login, see SocketProvider).`);
 }
 const kb = total / 1024;

@@ -13,12 +13,12 @@
    Google Fonts -- no request to Google per visitor, a stricter CSP, and the
    app looks right offline. Each face is split by unicode-range, so a
    browser only downloads the scripts it actually shows (Latin for
-   Manrope; Myanmar/Arabic only when that text is on screen). */
+   Manrope; Arabic only when that text is on screen). English and Arabic
+   are the UI languages (owner decision 2026-10-07); text people write in
+   other scripts, e.g. Burmese, uses the device's own fonts. */
 @import '@fontsource/manrope/500.css';
 @import '@fontsource/manrope/700.css';
 @import '@fontsource/manrope/800.css';
-@import '@fontsource/noto-sans-myanmar/400.css';
-@import '@fontsource/noto-sans-myanmar/700.css';
 @import '@fontsource/noto-sans-arabic/400.css';
 @import '@fontsource/noto-sans-arabic/700.css';
 
@@ -94,11 +94,11 @@
   --space-8: 40px;
 
   /* Font -- Manrope; no Inter/Roboto/Arial anywhere in the fallback
-     chain, per spec. B15: Manrope has no Myanmar glyphs, so Burmese text
-     falls through to Noto Sans Myanmar (Google Fonts serves it with a
-     unicode-range, so it only downloads when Myanmar text is on screen).
-     B16: same for Noto Sans Arabic and Arabic text. */
-  --font-sans: 'Manrope', 'Noto Sans Myanmar', 'Noto Sans Arabic', system-ui, -apple-system, sans-serif;
+     chain, per spec. B16: Manrope has no Arabic glyphs, so Arabic text
+     falls through to Noto Sans Arabic (split by unicode-range, so it only
+     downloads when Arabic text is on screen). Other scripts fall through
+     to the system font. */
+  --font-sans: 'Manrope', 'Noto Sans Arabic', system-ui, -apple-system, sans-serif;
 
   /* Shadow */
   --shadow-card: 0 2px 8px rgba(20, 21, 26, 0.06);
@@ -131,8 +131,3 @@
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
-/* B15: Burmese stacks vowel signs above and below the line; a little more
-   leading keeps them from touching (and from clipping in tight rows). */
-:lang(my) body {
-  line-height: 1.6;
-}

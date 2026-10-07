@@ -1,7 +1,7 @@
 // Day 20: "only me" posts. Throwaway stack: alice(1) follows bob(2).
 // Bob writes an "only me" post in the composer; alice (a follower) must not
 // see it anywhere; bob changes it to public from the post menu and then she
-// can. EN, MY, AR (RTL).
+// can. EN, AR (RTL).
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('./node_modules/playwright-core');
@@ -72,8 +72,8 @@ const get = (url, token) => fetch(API + url, { headers: token ? { Authorization:
   await bob.context().close();
   await alice.context().close();
 
-  // 4. Myanmar and Arabic (RTL): the composer option, translated, fits.
-  for (const [lang, theme, width] of [['my', 'dark', 375], ['ar', 'dark', 430]]) {
+  // 4. Arabic (RTL), and English at 375px dark: the composer option, translated, fits.
+  for (const [lang, theme, width] of [['en', 'dark', 375], ['ar', 'dark', 430]]) {
     const L = locale(lang);
     const page = await newPage(bobToken, 2, 'bob', { lang, theme, width });
     await page.goto(`${WEB}/create-post`, { waitUntil: 'networkidle' });

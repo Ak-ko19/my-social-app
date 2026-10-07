@@ -7,7 +7,8 @@ import { LANGUAGES } from '../i18n';
 import { useAuth } from '../hooks/useAuth';
 import { chooseLanguage } from '../utils/languageChoice';
 
-// B15: /settings/language -- English / Myanmar / Arabic. Day 16: saved on
+// B15: /settings/language -- English / Arabic (the only UI languages since
+// 2026-10-07; Myanmar was removed). Day 16: saved on
 // this device AND on the account, so it follows you to every device.
 function LanguageScreen() {
   const navigate = useNavigate();

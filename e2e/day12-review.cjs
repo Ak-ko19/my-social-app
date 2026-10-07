@@ -1,7 +1,7 @@
 // Day 12 step 2: the admin report review -- removing a reported comment and
 // message, and suspending an account for a while. Throwaway stack: alice(1)
 // is made admin via SQL, bob(2) reports; erin and dave misbehave.
-// EN/MY/AR (RTL), light/dark, 375-430px.
+// EN/AR (RTL), light/dark, 375-430px.
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -108,9 +108,9 @@ const signup = async (name) => {
   check('reviewed: no horizontal scroll at 375px', await noHScroll(admin));
   await admin.screenshot({ path: path.join(SP, 'day12-review-reviewed-en.png'), fullPage: true });
 
-  // 4. Dave can't log in meanwhile -- and is told until when (Myanmar UI).
-  const M = locale('my');
-  const daveLogin = await newPage(null, 0, 'dave', { lang: 'my', theme: 'dark', width: 390 });
+  // 4. Dave can't log in meanwhile -- and is told until when (Arabic UI).
+  const M = locale('ar');
+  const daveLogin = await newPage(null, 0, 'dave', { lang: 'ar', theme: 'dark', width: 390 });
   await daveLogin.goto(`${WEB}/login`, { waitUntil: 'networkidle' });
   await daveLogin.locator('input[type=email]').fill('dave@example.com');
   await daveLogin.locator('input[type=password]').fill('a-fine-password-123');
@@ -118,8 +118,8 @@ const signup = async (name) => {
   await daveLogin.locator('.form-error').waitFor({ timeout: 8000 }).catch(() => {});
   const msg = await daveLogin.locator('.form-error').innerText().catch(() => '');
   const [before, after] = M.auth.suspendedUntil.split('{{date}}');
-  check('my: suspended login says until when, in Myanmar', msg.startsWith(before) && msg.endsWith(after) && msg.length > before.length + after.length, msg);
-  await daveLogin.screenshot({ path: path.join(SP, 'day12-review-login-my.png') });
+  check('ar: suspended login says until when, in Arabic', msg.startsWith(before) && msg.endsWith(after) && msg.length > before.length + after.length, msg);
+  await daveLogin.screenshot({ path: path.join(SP, 'day12-review-login-ar.png') });
 
   // Lift it: dave gets in again.
   await admin.getByRole('button', { name: fill(L.admin.liftSuspension, { name: 'dave' }) }).first().click();

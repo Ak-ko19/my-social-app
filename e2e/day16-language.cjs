@@ -37,7 +37,7 @@ const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysoci
   const htmlLang = (page) => page.evaluate(() => [document.documentElement.lang, document.documentElement.dir]);
   const noHScroll = (page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
   const EN = locale('en');
-  const MY = locale('my');
+  const AR = locale('ar');
 
   // 1. Alice has never chosen. Logging in must not write this device's
   // default to her account (that would later override a real choice).
@@ -46,64 +46,68 @@ const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysoci
   await logIn(laptop, 'alice@example.com');
   check('a device default is never saved to the account', sql('SELECT language IS NULL FROM users WHERE id = 1') === 't');
 
-  // 2. She switches to Myanmar in Settings -> saved on the account.
+  // 2. She switches to Arabic in Settings -> saved on the account.
   await laptop.goto(`${WEB}/settings/language`, { waitUntil: 'networkidle' });
-  await laptop.locator('label.language-option', { hasText: 'မြန်မာ' }).click();
-  await laptop.getByRole('heading', { name: MY.language.title }).waitFor({ timeout: 5000 }).catch(() => {});
-  check('the app switches to Myanmar at once', (await htmlLang(laptop))[0] === 'my');
+  await laptop.locator('label.language-option').first().waitFor();
+  const offered = await laptop.locator('label.language-option').allInnerTexts();
+  check('the switcher offers English and Arabic only', offered.map((o) => o.trim()).join('|') === 'English|العربية', offered.join('|'));
+  await laptop.locator('label.language-option', { hasText: 'العربية' }).click();
+  await laptop.getByRole('heading', { name: AR.language.title }).waitFor({ timeout: 5000 }).catch(() => {});
+  check('the app switches to Arabic at once, right-to-left', JSON.stringify(await htmlLang(laptop)) === '["ar","rtl"]');
   await laptop.waitForTimeout(500);
-  check('...and the account now says Myanmar', sql('SELECT language FROM users WHERE id = 1') === 'my');
-  check('the hint says it follows you to every device', (await laptop.getByText(MY.language.hint).count()) === 1);
-  check('settings/language: no horizontal scroll (MY)', await noHScroll(laptop));
-  await laptop.screenshot({ path: path.join(SP, 'day16-language-my.png') });
+  check('...and the account now says Arabic', sql('SELECT language FROM users WHERE id = 1') === 'ar');
+  check('the hint says it follows you to every device', (await laptop.getByText(AR.language.hint).count()) === 1);
+  check('settings/language: no horizontal scroll (AR)', await noHScroll(laptop));
+  await laptop.screenshot({ path: path.join(SP, 'day16-language-ar.png') });
 
-  // 3. A new phone: English login page, then the app comes up in Myanmar.
+  // 3. A new phone: English login page, then the app comes up in Arabic.
   const phone = await device({ width: 375 });
   await phone.goto(`${WEB}/login`, { waitUntil: 'networkidle' });
   check('a new device starts in its own language (English)', (await htmlLang(phone))[0] === 'en' && (await phone.getByRole('heading', { name: EN.auth.welcomeBack }).count()) === 1);
   await logIn(phone, 'alice@example.com');
-  check('after login the new device is in Myanmar', (await htmlLang(phone))[0] === 'my', JSON.stringify(await htmlLang(phone)));
-  check('...and remembers it on reload', await phone.reload({ waitUntil: 'networkidle' }).then(() => htmlLang(phone)).then(([l]) => l === 'my'));
+  check('after login the new device is in Arabic, RTL', JSON.stringify(await htmlLang(phone)) === '["ar","rtl"]', JSON.stringify(await htmlLang(phone)));
+  check('...and remembers it on reload', await phone.reload({ waitUntil: 'networkidle' }).then(() => htmlLang(phone)).then(([l]) => l === 'ar'));
 
-  // 4. Arabic chosen on the phone -> the laptop's next login turns RTL.
+  // 4. English chosen again on the phone -> the next new device logs into
+  // English, left-to-right.
   await phone.goto(`${WEB}/settings/language`, { waitUntil: 'networkidle' });
-  await phone.locator('label.language-option', { hasText: 'العربية' }).click();
+  await phone.locator('label.language-option', { hasText: 'English' }).click();
   await phone.waitForTimeout(500);
-  check('the phone switches to Arabic, right-to-left', JSON.stringify(await htmlLang(phone)) === '["ar","rtl"]');
-  check('settings/language: no horizontal scroll (AR)', await noHScroll(phone));
+  check('the phone switches back to English, left-to-right', JSON.stringify(await htmlLang(phone)) === '["en","ltr"]');
+  check('...and the account says English', sql('SELECT language FROM users WHERE id = 1') === 'en');
   const tablet = await device({ width: 430 });
   await logIn(tablet, 'alice@example.com');
-  check('a third device logs straight into Arabic, RTL', JSON.stringify(await htmlLang(tablet)) === '["ar","rtl"]');
+  check('a third device logs straight into English', JSON.stringify(await htmlLang(tablet)) === '["en","ltr"]');
 
   // 5. Picked on the landing page while logged out: that fresh choice wins
   // at the next login on that device, and becomes the account's.
   const kiosk = await device();
   await kiosk.goto(`${WEB}/welcome`, { waitUntil: 'networkidle' });
-  await kiosk.locator('.landing-lang-select').selectOption('en');
-  await kiosk.waitForFunction(() => document.documentElement.lang === 'en');
+  await kiosk.locator('.landing-lang-select').selectOption('ar');
+  await kiosk.waitForFunction(() => document.documentElement.lang === 'ar');
   await logIn(kiosk, 'alice@example.com');
-  check('a logged-out pick wins at login (English, not the account\'s Arabic)', (await htmlLang(kiosk))[0] === 'en');
+  check('a logged-out pick wins at login (Arabic, not the account\'s English)', (await htmlLang(kiosk))[0] === 'ar');
   await kiosk.waitForTimeout(500);
-  check('...and is saved to the account', sql('SELECT language FROM users WHERE id = 1') === 'en');
+  check('...and is saved to the account', sql('SELECT language FROM users WHERE id = 1') === 'ar');
 
-  // 6. Signing up after picking Myanmar keeps Myanmar on the new account.
+  // 6. Signing up after picking Arabic keeps Arabic on the new account.
   const fresh = await device();
   await fresh.goto(`${WEB}/welcome`, { waitUntil: 'networkidle' });
-  await fresh.locator('.landing-lang-select').selectOption('my');
+  await fresh.locator('.landing-lang-select').selectOption('ar');
   // The choice is saved once its translations have downloaded (the page
   // switches): a full page load before that would drop it.
-  await fresh.waitForFunction(() => document.documentElement.lang === 'my');
+  await fresh.waitForFunction(() => document.documentElement.lang === 'ar');
   await fresh.goto(`${WEB}/signup`, { waitUntil: 'networkidle' });
   const inputs = fresh.locator('form input:not([name=website])');
-  await inputs.nth(0).fill('mya');
-  await inputs.nth(1).fill('mya@example.com');
+  await inputs.nth(0).fill('layla');
+  await inputs.nth(1).fill('layla@example.com');
   await inputs.nth(2).fill(PASSWORD);
   await fresh.locator('form button[type=submit]').click();
-  await fresh.getByText(MY.auth.signupSuccess).waitFor({ timeout: 10000 }).catch(() => {});
-  check('a Myanmar signup saves Myanmar on the account', sql("SELECT language FROM users WHERE username = 'mya'") === 'my');
+  await fresh.getByText(AR.auth.signupSuccess).waitFor({ timeout: 10000 }).catch(() => {});
+  check('an Arabic signup saves Arabic on the account', sql("SELECT language FROM users WHERE username = 'layla'") === 'ar');
   const other = await device();
-  await logIn(other, 'mya@example.com');
-  check('...so her first login elsewhere is in Myanmar', (await htmlLang(other))[0] === 'my');
+  await logIn(other, 'layla@example.com');
+  check('...so her first login elsewhere is in Arabic', JSON.stringify(await htmlLang(other)) === '["ar","rtl"]');
 
   // Bob was never touched.
   check('other accounts are unaffected', sql('SELECT language IS NULL FROM users WHERE id = 2') === 't');

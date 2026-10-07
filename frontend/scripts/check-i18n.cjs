@@ -1,11 +1,21 @@
 // `npm run check:i18n` (also runs in CI). B15, extended for B16 (Arabic).
-//  1. Every locale file (en, my, ar, ...) has exactly the keys en.json has.
-//     i18next plural suffixes (_zero/_one/_two/_few/_many/_other) count as
-//     one key for this comparison.
+// Owner decision 2026-10-07: the UI languages are English and Arabic ONLY,
+// and every feature ships fully translated in both.
+//  0. The locale files are exactly en.json and ar.json (matching LANGUAGES
+//     in src/i18n/index.js).
+//  1. ar.json has exactly the keys en.json has. i18next plural suffixes
+//     (_zero/_one/_two/_few/_many/_other) count as one key for this
+//     comparison.
 //  2. Every plural key has every form its language's plural rules need
-//     (Intl.PluralRules): English one/other, Myanmar other, Arabic all six.
+//     (Intl.PluralRules): English one/other, Arabic all six.
 //     A missing form would silently fall back to English text.
-//  3. Every literal key the code uses -- t('a.b'), i18n.t('a.b'),
+//  3. No Arabic string is just the English one copied over (except the
+//     few that are only placeholders/addresses: SAME_OK).
+//  4. Every message the backend can send a person (res.status(...).send,
+//     { error } results, thrown XxxError(status, '...')) has an Arabic
+//     translation in i18n/serverMessages.js, unless DEV_ONLY says it is
+//     developer-facing.
+//  5. Every literal key the code uses -- t('a.b'), i18n.t('a.b'),
 //     i18nKey="a.b", serverErrorText(err, 'a.b') -- exists in en.json.
 //     Template keys like t(`menu.categories.${key}.title`) are checked by
 //     their static prefix.
@@ -26,6 +36,7 @@ const enBase = bases.en;
 const pluralBases = new Set([...keys.en].filter((k) => PLURAL.test(k)).map(base));
 
 const problems = [];
+if (langs.join(',') !== 'ar,en') problems.push(`locales must be exactly en.json and ar.json (found: ${langs.join(', ')})`);
 for (const lang of langs) {
   if (lang === 'en') continue;
   for (const k of enBase) if (!bases[lang].has(k)) problems.push(`missing in ${lang}.json: ${k}`);
@@ -40,21 +51,75 @@ for (const lang of langs) {
   }
 }
 
-// Server-message translations (i18n/serverMessages.js): every language's
-// table must cover the same English messages as the others.
+// 3. Arabic strings that are only placeholders, numbers or an address may
+// equal the English ones; any other copy is an untranslated string.
+const SAME_OK = new Set(['follow.buttonFor', 'poll.percent', 'editProfile.linkPlaceholder']);
 {
-  const code = fs.readFileSync(path.join(SRC, 'i18n', 'serverMessages.js'), 'utf8');
-  const tables = {};
-  for (const m of code.matchAll(/^const ([A-Z]{2}) = \{\n([\s\S]*?)\n\};/gm)) {
-    tables[m[1]] = new Set([...m[2].matchAll(/^ {2}'((?:[^'\\]|\\.)+)':/gm)].map((x) => x[1]));
-  }
-  const names = Object.keys(tables);
-  if (names.length < 2) problems.push('serverMessages.js: expected a table per translated language');
-  for (const a of names) {
-    for (const b of names) {
-      for (const msg of tables[a]) if (!tables[b].has(msg)) problems.push(`serverMessages.js: ${b} is missing "${msg}"`);
+  const pairs = (o, p = '') =>
+    Object.entries(o).flatMap(([k, v]) => (v && typeof v === 'object' ? pairs(v, `${p}${k}.`) : [[`${p}${k}`, v]]));
+  const read = (l) => JSON.parse(fs.readFileSync(path.join(LOCALES, `${l}.json`), 'utf8'));
+  const ar = new Map(pairs(read('ar')));
+  for (const [k, v] of pairs(read('en'))) {
+    if (ar.get(k) === v && /[A-Za-z]{2}/.test(v.replace(/\{\{[^}]*\}\}/g, '')) && !SAME_OK.has(k)) {
+      problems.push(`ar.json: "${k}" is still the English text`);
     }
   }
+}
+
+// 4. Server messages (i18n/serverMessages.js) against what the backend sends.
+// DEV_ONLY: messages the UI never lets a person trigger -- API field names
+// (lowercase start or a camelCase field), lists built at run time, internal
+// routes and the link-preview fetcher's own reasons.
+const DEV_ONLY_FILES = new Set(['internalRoutes.js', 'clientErrorRoutes.js', 'linkPreviewService.js', 'pushText.js', 'emailText.js']);
+const DEV_ONLY = new Set([
+  'Send true/false for any of: ${notificationService.CATEGORIES.join(\', \')}',
+  'Sort must be recent or top',
+  'Invalid cursor',
+  'An audio file is required (field name "audio")',
+  'An image file is required (field name "image")',
+  'A valid http(s) url is required',
+  'Poll length must be one of: ${DURATION_HOURS.join(\', \')} hours'
+]);
+const isDevOnly = (msg) => DEV_ONLY.has(msg) || /^[a-z]/.test(msg) || /\b[a-z]+[A-Z]\w*/.test(msg) || /\.join\(/.test(msg);
+{
+  const code = fs.readFileSync(path.join(SRC, 'i18n', 'serverMessages.js'), 'utf8');
+  const table = code.match(/^const AR = \{\n([\s\S]*?)\n\};/m);
+  const translated = new Set(
+    table ? [...table[1].matchAll(/^ {2}(['"])((?:(?!\1)[^\\]|\\.)+)\1:/gm)].map((m) => m[2].replace(/\\(['"])/g, '$1')) : []
+  );
+  if (!table) problems.push('serverMessages.js: no AR table');
+  const FAILED = / failed\. Please try again later\.$/; // the generic translation covers these
+  const BACKEND = path.join(__dirname, '..', '..', 'backend');
+  const SENT = [
+    /\.status\(\d{3}\)\s*\.(?:send|json)\(\s*(?:\{\s*(?:error|message):\s*)?(['`])((?:(?!\1)[^\\]|\\.)*)\1/g,
+    /new (?!Error\()[A-Z]\w*Error\(\s*(?:\d{3},\s*)?(['`])((?:(?!\1)[^\\]|\\.)*)\1/g,
+    /\b(?:message|error):\s*(['`])((?:(?!\1)[^\\]|\\.)*)\1/g,
+    /sendServerError\([^,]+,[^,]+,\s*(')((?:[^'\\]|\\.)*)'/g
+  ];
+  let scanned = 0;
+  (function walk(dir) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        if (!['node_modules', 'tests', 'scripts', 'migrations'].includes(e.name) && !e.name.startsWith('.')) walk(p);
+      } else if (e.name.endsWith('.js') && !DEV_ONLY_FILES.has(e.name)) {
+        const src = fs.readFileSync(p, 'utf8');
+        // ${NAME} of a number constant in the same file reads as its value.
+        const resolve = (msg) => msg.replace(/\$\{(\w+)\}/g, (whole, name) => src.match(new RegExp(`const ${name} = (\\d+);`))?.[1] ?? whole);
+        for (const re of SENT) {
+          for (const m of src.matchAll(re)) {
+            const raw = m[2].replace(/\\(['"])/g, '$1');
+            if (!raw || isDevOnly(raw)) continue;
+            const msg = resolve(raw);
+            scanned += 1;
+            if (msg.includes('${')) problems.push(`backend ${e.name}: "${raw}" -- add the constant's value or a DEV_ONLY entry`);
+            else if (!translated.has(msg) && !FAILED.test(msg)) problems.push(`serverMessages.js: no Arabic for "${msg}" (backend ${e.name})`);
+          }
+        }
+      }
+    }
+  })(BACKEND);
+  if (scanned < 100) problems.push(`backend scan found only ${scanned} messages -- is ../backend missing?`);
 }
 
 const files = [];

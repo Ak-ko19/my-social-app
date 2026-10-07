@@ -23,7 +23,7 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   // Switch from Settings.
   await p.goto(`${WEB}/settings/language`, { waitUntil: 'networkidle' });
   const options = await p.locator('.language-option').allInnerTexts();
-  check('Language screen offers EN / MY / AR', options.map((o) => o.trim()).join('|') === 'English|မြန်မာ|العربية', options.join('|'));
+  check('Language screen offers EN / AR only', options.map((o) => o.trim()).join('|') === 'English|العربية', options.join('|'));
   await p.getByText('العربية').click();
   await p.getByRole('heading', { name: 'اللغة' }).waitFor();
   const html = await p.evaluate(() => ({ dir: document.documentElement.dir, lang: document.documentElement.lang }));

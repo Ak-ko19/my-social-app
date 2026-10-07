@@ -70,7 +70,7 @@ const SETTINGS_SECTIONS = [
       { key: 'notification-settings', icon: BellRing, to: '/settings/notifications' },
       { key: 'blocked-users', icon: UserX, to: '/settings/blocked-users' },
       { key: 'follow-requests', icon: Users, to: '/settings/follow-requests' },
-      // B15: English / Myanmar.
+      // B15/B16: English / Arabic.
       { key: 'language', icon: Globe, to: '/settings/language' },
       // Real, not "coming soon" -- wired to the real ThemeProvider/
       // ThemeToggle already built for this app, same as Personal

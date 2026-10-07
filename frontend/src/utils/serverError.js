@@ -2,7 +2,7 @@ import i18n from '../i18n';
 import { translateServerText } from '../i18n/serverMessages';
 
 // B15: the text to show for a failed API call -- the server's own message
-// (translated when a Myanmar version is known), or the screen's fallback
+// (translated when an Arabic version is known), or the screen's fallback
 // (an i18n key) when the server sent nothing usable.
 export function serverErrorText(err, fallbackKey, options) {
   const data = err?.response?.data;

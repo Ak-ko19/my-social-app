@@ -8,7 +8,7 @@ describe('clearLocalSession', () => {
     localStorage.setItem('userId', '7');
     localStorage.setItem('username', 'dave');
     localStorage.setItem('emailVerified', 'true');
-    localStorage.setItem('lang', 'my'); // not part of the session
+    localStorage.setItem('lang', 'ar'); // not part of the session
     const { result } = renderHook(() => useAuth());
     expect(result.current.token).toBe('tok');
     const href = window.location.href;
@@ -17,7 +17,7 @@ describe('clearLocalSession', () => {
 
     expect(result.current.token).toBeNull();
     for (const key of ['token', 'userId', 'username', 'emailVerified']) expect(localStorage.getItem(key)).toBeNull();
-    expect(localStorage.getItem('lang')).toBe('my');
+    expect(localStorage.getItem('lang')).toBe('ar');
     expect(window.location.href).toBe(href);
   });
 });
