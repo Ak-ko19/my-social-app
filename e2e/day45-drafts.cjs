@@ -5,7 +5,8 @@
 // with its photos and posts as it is. A group draft whose author was
 // removed from the group comes back with the reason. Arabic (RTL) + dark
 // at 375px, English dark on desktop; axe on the Drafts screen and the
-// composer; deleting asks first.
+// composer; deleting asks first. And a poll that ends: the server tells
+// its author and voters.
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -168,6 +169,23 @@ async function until(test, ms = 45000) {
   await desk.locator('.draft-card', { hasText: 'Trail report' }).waitFor({ state: 'detached', timeout: 8000 }).catch(() => {});
   check('...then it is gone', sql(`SELECT COUNT(*) FROM post_drafts WHERE id = ${groupDraft.id}`) === '0');
   await desk.context().close();
+
+  // 8. Step 4: a poll ends -- the server's ticker tells its author and
+  // the voter (bob, here in Arabic).
+  const pollForm = new FormData();
+  pollForm.append('content', 'Sunrise or sunset hike?');
+  pollForm.append('poll', JSON.stringify({ options: ['Sunrise', 'Sunset'] }));
+  const pollPost = await (await fetch(`${API}/posts`, { method: 'POST', headers: { Authorization: `Bearer ${tokens.alice}` }, body: pollForm })).json();
+  await fetch(`${API}/posts/${pollPost.id}/poll/vote`, {
+    method: 'POST', headers: { ...bobJson }, body: JSON.stringify({ optionId: pollPost.poll.options[1].id })
+  });
+  sql(`UPDATE polls SET closes_at = now() - interval '1 second' WHERE post_id = ${pollPost.id}`);
+  check('poll ended -> author and voter told by the server within ~30 s',
+    await until(() => sql(`SELECT string_agg(type, ',' ORDER BY user_id) FROM notifications WHERE post_id = ${pollPost.id}`) === 'poll_ended_own,poll_ended'));
+  const bobAr = await open('bob', '/notifications', { lang: 'ar', theme: 'dark', width: 375 });
+  await bobAr.locator('.card-row').first().waitFor({ timeout: 10000 }).catch(() => {});
+  check('ar: bob reads "انتهى استطلاع alice. اطّلع على النتائج."', (await bobAr.locator('.card-row').first().innerText()).includes('انتهى استطلاع alice. اطّلع على النتائج.'));
+  await bobAr.context().close();
 
   // Bob never sees alice's drafts.
   const bobDrafts = await (await fetch(`${API}/drafts`, { headers: { Authorization: `Bearer ${tokens.bob}` } })).json();

@@ -511,7 +511,9 @@
       "commentLike": "<b>{{name}}</b> liked your comment",
       "other": "<b>{{name}}</b> interacted with you",
       "scheduledPost": "Your scheduled post was published",
-      "scheduledFailed": "Your scheduled post couldn't be published. It's back in your drafts."
+      "scheduledFailed": "Your scheduled post couldn't be published. It's back in your drafts.",
+      "pollEnded": "<b>{{name}}</b>'s poll has ended. See the results.",
+      "pollEndedOwn": "Your poll has ended. See the results."
     }
   },
   "saved": {

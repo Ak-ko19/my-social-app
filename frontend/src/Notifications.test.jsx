@@ -39,3 +39,30 @@ describe('Notifications: scheduled posts', () => {
     expect(screen.getByText('تعذّر نشر منشورك المجدول. أُعيد إلى مسوداتك.')).toBeInTheDocument();
   });
 });
+
+// Day 45: a poll ended -- yours, or one you voted in.
+describe('Notifications: polls ended', () => {
+  beforeEach(() => {
+    api.get.mockResolvedValue({
+      data: {
+        notifications: [
+          { ...me, id: 3, type: 'poll_ended_own', post_id: 8, comment_id: null, post_content: 'Tea or coffee?' },
+          { ...me, id: 4, actor_id: 2, actor_username: 'bob', type: 'poll_ended', post_id: 9, comment_id: null, post_content: 'Best trail?' }
+        ]
+      }
+    });
+  });
+
+  it('in English', async () => {
+    show();
+    expect(await screen.findByText('Your poll has ended. See the results.')).toBeInTheDocument();
+    expect(screen.getByText('bob', { selector: 'strong' }).parentElement).toHaveTextContent("bob's poll has ended. See the results.");
+  });
+
+  it('in Arabic', async () => {
+    await setLanguage('ar');
+    show();
+    expect(await screen.findByText('انتهى استطلاعك. اطّلع على النتائج.')).toBeInTheDocument();
+    expect(screen.getByText('bob', { selector: 'strong' }).parentElement).toHaveTextContent('انتهى استطلاع bob. اطّلع على النتائج.');
+  });
+});

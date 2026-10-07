@@ -1,19 +1,16 @@
-// Day 45 step 2: publishes scheduled posts when their time comes. Runs every
-// 30 s inside the server (and once at start-up, so posts that fell due while
-// the free-tier server slept go up when it wakes), and from the daily
-// cleanup. Several server instances (or a tick overlapping the cleanup)
-// are safe: each due draft is taken with FOR UPDATE SKIP LOCKED, published
-// and removed in one transaction -- so it can only go up once.
+// Day 45 step 2: publishes scheduled posts when their time comes -- from
+// the server's 30 s ticker (services/ticker.js) and the daily cleanup.
+// Several server instances (or a tick overlapping the cleanup) are safe:
+// each due draft is taken with FOR UPDATE SKIP LOCKED, published and
+// removed in one transaction -- so it can only go up once.
 const db = require('../db');
-const logger = require('../utils/logger');
 const draftService = require('./draftService');
 const postCreation = require('./postCreationService');
-
-const { PostInputError } = postCreation;
 const notificationService = require('./notificationService');
 const { banState } = require('./moderationService');
 
-const TICK_MS = 30 * 1000;
+const { PostInputError } = postCreation;
+
 // Per run, so one run stays short; the rest go on the next tick.
 const MAX_PER_RUN = 25;
 
@@ -86,33 +83,4 @@ async function countDue() {
   return (await db.query(`SELECT COUNT(*)::int AS n FROM post_drafts WHERE ${DUE_SQL}`)).rows[0].n;
 }
 
-// The server's ticker. One run at a time; a failed run is logged and the
-// next tick tries again.
-let timer = null;
-let running = false;
-async function tick() {
-  if (running) return;
-  running = true;
-  try {
-    const { published, failed } = await publishDue();
-    if (published || failed) logger.info('scheduled posts', { published, failed });
-  } catch (err) {
-    logger.error('publishing scheduled posts failed', { err });
-  } finally {
-    running = false;
-  }
-}
-
-function start({ intervalMs = TICK_MS } = {}) {
-  if (timer) return;
-  tick();
-  timer = setInterval(tick, intervalMs);
-  timer.unref(); // never keeps the process alive on its own
-}
-
-function stop() {
-  clearInterval(timer);
-  timer = null;
-}
-
-module.exports = { publishDue, publishNext, countDue, start, stop, tick, MAX_PER_RUN, TICK_MS };
+module.exports = { publishDue, publishNext, countDue, MAX_PER_RUN };

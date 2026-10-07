@@ -22,6 +22,8 @@ function notificationKey(n) {
   // Day 45: about your own scheduled post.
   if (n.type === 'scheduled_post') return 'scheduledPost';
   if (n.type === 'scheduled_failed') return 'scheduledFailed';
+  if (n.type === 'poll_ended') return 'pollEnded';
+  if (n.type === 'poll_ended_own') return 'pollEndedOwn';
   return 'other';
 }
 

@@ -9,6 +9,7 @@ const db = require('../db');
 const { deleteMedia } = require('./mediaCleanupService');
 const { liftExpiredSuspensions } = require('./moderationService');
 const scheduledPostService = require('./scheduledPostService');
+const pollEndService = require('./pollEndService');
 
 const STORY_GRACE = '1 hour'; // past expires_at (stories already vanish from reads at expiry)
 const NOTIFICATION_RETENTION = '90 days';
@@ -77,6 +78,7 @@ async function run({ dryRun = false } = {}) {
       suspensionsLifted: await countWhere('users', SUSPENSIONS_OVER),
       linkPreviews: await countWhere('link_previews', PREVIEWS_OLD),
       scheduledPostsDue: await scheduledPostService.countDue(),
+      endedPollsWaiting: await pollEndService.countWaiting(),
       durationMs: Date.now() - started
     };
   }
@@ -86,11 +88,13 @@ async function run({ dryRun = false } = {}) {
   const errorGroups = await deleteInBatches('error_groups', ERRORS_STALE, ROW_BATCH);
   const suspensionsLifted = await liftExpiredSuspensions();
   const linkPreviews = await deleteInBatches('link_previews', PREVIEWS_OLD, ROW_BATCH);
-  // Day 45: a backstop for the server's own 30 s ticker.
+  // Day 45: a backstop for the server's own 30 s ticker (services/ticker).
   const scheduledPosts = await scheduledPostService.publishDue();
+  const endedPolls = await pollEndService.notifyEnded();
   return {
     dryRun: false, stories, storyMedia, notifications, sessions, errorGroups, suspensionsLifted, linkPreviews,
     scheduledPostsPublished: scheduledPosts.published, scheduledPostsFailed: scheduledPosts.failed,
+    endedPollsNotified: endedPolls.polls,
     durationMs: Date.now() - started
   };
 }

@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 45 — Drafts + scheduled posts
-**Step:** 3 — UI: done (committed). Next: step 4, poll-ended notification.
+**Step:** 4 — poll-ended notification: done (committed). Next: close Day 45 (full browser run, Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -150,6 +150,20 @@ Facebook's Drafts / Scheduled lists.
 - Tests: validation, due vs not due, failure paths, concurrency (two
   runs -> one post), cleanup, notifications + push text.
 
+### Step 4 plan (poll ended)
+- Migration 053: polls.ended_notified (polls already closed -> true, so
+  a deploy doesn't notify old polls); partial index for the queue.
+- services/pollEndService: an ended, un-notified poll FOR UPDATE SKIP
+  LOCKED, mark it, notify in one transaction: the author
+  (poll_ended_own, actor = self) and every voter who can still see the
+  post (poll_ended, actor = author) -- getVisiblePost's rules as SQL
+  (author active, not only_me, no block, group/page/private/followers).
+  Pushes after commit. Like X (voters + author).
+- services/ticker: one 30 s ticker for scheduled posts AND ended polls
+  (start-up too); cleanup runs both.
+- UI + push texts EN/AR; tests incl. visibility filters, once only,
+  concurrency, old polls not notified.
+
 ## Progress
 - Step 1 (drafts API) done: migration 052, postCreationService (POST /posts
   and publishing share it), /drafts CRUD + publish, orphan scan, export,
@@ -177,3 +191,9 @@ Facebook's Drafts / Scheduled lists.
   translated buttons. Verified: Vitest 159, backend 746, day45-drafts
   27/27, A3 EN+AR 234 each, a11y 95 page checks, guard, b2/a2/day44.
   Known: the date-time picker's own format follows the browser locale.
+- Step 4 (poll ended) done: migration 053 (old ended polls count as
+  notified), pollEndService (SKIP LOCKED, author poll_ended_own + voters
+  who can still see it, poll_ended), one services/ticker for both jobs,
+  cleanup backstop, push + UI EN/AR. Verified: backend 756/756
+  (pollEnd 10, 9 mutations incl. every visibility rule), Vitest 161,
+  rehearsal 015-053, day45-drafts 29/29 (live: both told by the ticker).

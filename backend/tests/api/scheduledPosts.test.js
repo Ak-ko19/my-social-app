@@ -10,6 +10,7 @@ describe('scheduled posts (Day 45)', () => {
   beforeEach(reset);
 
   const scheduler = require('../../services/scheduledPostService');
+  const ticker = require('../../services/ticker');
   const postCreation = require('../../services/postCreationService');
   const auth = (user) => ({ Authorization: `Bearer ${user.token}` });
   const png = Buffer.from('89504e470d0a1a0a', 'hex');
@@ -188,18 +189,18 @@ describe('scheduled posts (Day 45)', () => {
       const spy = jest.spyOn(postCreation, 'insertPost').mockRejectedValueOnce(new Error('boom'));
       const logged = jest.spyOn(console, 'error').mockImplementation(() => {});
       try {
-        await scheduler.tick(); // logged, not thrown
+        await ticker.tick(); // logged, not thrown
         expect(logged).toHaveBeenCalled();
       } finally {
         spy.mockRestore();
         logged.mockRestore();
       }
-      // A tick while one is running does nothing: one pass = one connection
-      // for the post + one finding nothing more.
+      // A tick while one is running does nothing: one pass = a connection
+      // for the post, one finding no more posts, one finding no ended poll.
       const connect = jest.spyOn(require('../../db'), 'connect');
       try {
-        await Promise.all([scheduler.tick(), scheduler.tick()]);
-        expect(connect).toHaveBeenCalledTimes(2);
+        await Promise.all([ticker.tick(), ticker.tick()]);
+        expect(connect).toHaveBeenCalledTimes(3);
       } finally {
         connect.mockRestore();
       }

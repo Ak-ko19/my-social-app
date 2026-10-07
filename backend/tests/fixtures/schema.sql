@@ -473,8 +473,11 @@ CREATE INDEX idx_search_history_user_recent ON search_history (user_id, searched
 -- is the question; one anonymous vote per person per poll.
 CREATE TABLE polls (
   post_id INTEGER PRIMARY KEY REFERENCES posts(id) ON DELETE CASCADE,
-  closes_at TIMESTAMPTZ NOT NULL
+  closes_at TIMESTAMPTZ NOT NULL,
+  -- Added by migration 053_add_poll_ended_notified (Day 45).
+  ended_notified BOOLEAN NOT NULL DEFAULT false
 );
+CREATE INDEX idx_polls_end_queue ON polls (closes_at) WHERE NOT ended_notified;
 CREATE TABLE poll_options (
   id SERIAL PRIMARY KEY,
   post_id INTEGER NOT NULL REFERENCES polls(post_id) ON DELETE CASCADE,
