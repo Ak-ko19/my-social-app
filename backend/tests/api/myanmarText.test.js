@@ -319,6 +319,13 @@ describe('Zawgyi is stored as Unicode (Day 43)', () => {
       expect((await save(UNICODE)).status).toBe(204);
       const history = (await request(app).get('/search/history').set(auth(a))).body;
       expect(history.map((s) => s.query)).toEqual([UNICODE, 'hello']);
+      // The column holds 100 characters: a search that only grows past that
+      // when converted is refused cleanly (it used to be a database error).
+      const grows = `${GROWS.repeat(12)}xxxx`; // 100 typed, 124 converted
+      expect(grows.length).toBe(100);
+      const res = await save(grows);
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('A search can be at most 100 characters');
     });
   });
 });

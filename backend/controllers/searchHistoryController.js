@@ -11,19 +11,20 @@ const MAX_QUERY_LENGTH = 100;
 // POST /search/history { query } -- saves a search the person ran.
 async function saveSearch(req, res) {
   try {
-    const query = typeof req.body?.query === 'string' ? req.body.query.trim() : '';
+    // Day 43: kept as Unicode, so typing it in Zawgyi or Unicode is one
+    // entry, readable in the list. The column holds 100 characters, so the
+    // limit applies to the converted text (conversion can lengthen it).
+    const query = typeof req.body?.query === 'string' ? toUnicode(req.body.query.trim()) : '';
     if (!query) {
       return res.status(400).send('Search query is required');
     }
     if (query.length > MAX_QUERY_LENGTH) {
       return res.status(400).send(`A search can be at most ${MAX_QUERY_LENGTH} characters`);
     }
-    // Day 43: kept as Unicode, so typing it in Zawgyi or Unicode is one
-    // entry, readable in the list.
     await db.query(
       `INSERT INTO search_history (user_id, query) VALUES ($1, $2)
        ON CONFLICT (user_id, LOWER(query)) DO UPDATE SET query = EXCLUDED.query, searched_at = now()`,
-      [req.userId, toUnicode(query)]
+      [req.userId, query]
     );
     // Keep the newest HISTORY_LIMIT. Ties (same instant) keep the newer row.
     await db.query(

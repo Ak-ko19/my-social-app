@@ -139,3 +139,13 @@ LATER.md + GO_LIVE_CHECKLIST note (owner runs it on production).
   4 backend tests (8/8 mutations), links.test +1, mention test 3 (both
   regexes mutation-checked); day43-zawgyi 26. backend 698/698, Vitest
   122/122.
+- Step 4 done: scripts/convert-zawgyi.js (npm run convert:zawgyi; dry
+  run by default, --apply). Every converted column but usernames; only
+  rows still holding what was read are written (no edited_at bump);
+  values too long for varchar(100) once converted are listed, not
+  written; deleted messages skipped; duplicate recent searches merged
+  (newer time kept); posts whose tags differ re-indexed. Real CLI run on
+  the e2e DB: dry run = apply, re-run finds nothing. convertZawgyi.test
+  4 (10/10 mutations). GO_LIVE_CHECKLIST step 5 + LATER.md #8.
+  Found + fixed: a search that only passes 100 chars once converted was
+  a DB error (500) -> 400.

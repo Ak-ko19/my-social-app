@@ -276,6 +276,17 @@ Do this in a normal browser window, then again on a phone.
   ```
   Read the list. If it looks right, run the same command again with
   `-- --delete` at the end.
+- [ ] **Convert old Zawgyi Myanmar text to Unicode (Day 43).** New text is
+  converted as it's written; this fixes what was written before, and
+  indexes Burmese/Arabic #tags in old posts. Dry run first:
+  ```bash
+  cd /c/MyProjects/Mysocialapp/backend
+  DATABASE_URL="$PROD_DB" npm run convert:zawgyi
+  ```
+  It lists, per kind of text, how many rows are in Zawgyi. If that looks
+  right, run it again with `-- --apply` at the end. Running it twice is
+  harmless (the second run finds nothing). Text you can't read in the app
+  afterwards → restore from the backup taken in step 1.
 - [ ] **GitHub Actions now runs on `master`:**
   - CI runs on the merge.
   - **Keep-alive** starts its 10-minute schedule within the hour.

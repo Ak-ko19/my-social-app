@@ -186,3 +186,16 @@ without them. Newest items at the bottom.
   - `https://<backend>/push/config` shows your public key.
   - In the app, switch push on and ask a friend to like your post: a
     notification appears.
+
+## 8. Convert old Zawgyi Myanmar text on production (Day 43)
+- **What it does:** Myanmar text written with a Zawgyi font before Day 43
+  is converted to Unicode, so everyone can read it and search finds it;
+  Burmese/Arabic #tags in old posts start working. New text is already
+  converted as it's written.
+- **Needs:** this version deployed first (GO LIVE, item 2) and a fresh
+  backup (GO_LIVE_CHECKLIST.md step 1).
+- **Owner steps:** GO_LIVE_CHECKLIST.md step 5, "Convert old Zawgyi
+  Myanmar text": `npm run convert:zawgyi` (dry run), then again with
+  `-- --apply`.
+- **Check it worked:** run the dry run again: it says "Nothing to
+  convert."
