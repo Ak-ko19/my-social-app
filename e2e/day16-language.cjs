@@ -80,6 +80,7 @@ const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysoci
   const kiosk = await device();
   await kiosk.goto(`${WEB}/welcome`, { waitUntil: 'networkidle' });
   await kiosk.locator('.landing-lang-select').selectOption('en');
+  await kiosk.waitForFunction(() => document.documentElement.lang === 'en');
   await logIn(kiosk, 'alice@example.com');
   check('a logged-out pick wins at login (English, not the account\'s Arabic)', (await htmlLang(kiosk))[0] === 'en');
   await kiosk.waitForTimeout(500);
@@ -89,6 +90,9 @@ const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysoci
   const fresh = await device();
   await fresh.goto(`${WEB}/welcome`, { waitUntil: 'networkidle' });
   await fresh.locator('.landing-lang-select').selectOption('my');
+  // The choice is saved once its translations have downloaded (the page
+  // switches): a full page load before that would drop it.
+  await fresh.waitForFunction(() => document.documentElement.lang === 'my');
   await fresh.goto(`${WEB}/signup`, { waitUntil: 'networkidle' });
   const inputs = fresh.locator('form input:not([name=website])');
   await inputs.nth(0).fill('mya');

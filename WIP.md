@@ -1,6 +1,6 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 43 — Myanmar text support
+**Day:** 44 — Polls
 **Step:** 1 — PLAN (not started)
 
 ## Carry-over notes
@@ -67,85 +67,22 @@
   comment_count). FB/IG show "N comments" up front -- an app-wide change
   for a later polish day.
 
-- FOR DAY 43 (Myanmar text): backend/services/hashtagService.js uses
-  /#(\w+)/g -- ASCII only, so Burmese hashtags (#ရန်ကုန်) are never
-  recognised; the frontend link renderer likely has the same rule. Fix
-  with Unicode letters/marks (\p{L}\p{M}\p{N}_, u flag) on both sides.
-
 - Edit/Write tools can DECODE \uXXXX escapes in code you write (Day 43:
   a regex /[က-႟]/ landed as literal Burmese). After writing
   such code, check with `grep -n ... | od -c`; to fix, build the
   backslash with String.fromCharCode(92) in a script.
 - Full browser run timing: day27-perf and the A3 matrix each need most
   of a 10-minute tool call. Run day27-perf alone, and A3 one language
-  at a time (`A3_LANG=xx node a3-visual.cjs` on a fresh e2e-up.sh).
+  at a time (`A3_LANG=xx timeout 500 node a3-visual.cjs` on a fresh
+  e2e-up.sh -- one language takes ~5 min).
+- Myanmar text (Day 43): new free-text fields people write go through
+  utils/myanmarText toUnicode (check limits on the text as typed, or
+  the converted text when the column is varchar), and get a row in
+  scripts/convert-zawgyi.js COLUMNS (a test lists them). Hashtag /
+  mention regexes are [\p{L}\p{M}\p{N}_] with the u flag on both sides.
 
 ## Plan
-Library: Google's myanmar-tools (Apache-2.0, offline) PINNED 1.1.3 --
-1.2.0 on npm is broken (index.js requires a missing build_node/).
-Measured on its own paired corpora: every Zawgyi line >= 0.992, every
-Unicode line <= 0.001; conversion matches 152/154 lines. Converting
-Unicode by mistake corrupts it (မင်္ဂလာပါ -> မင်ျဂလာပါ), so convert
-ONLY when P(Zawgyi) >= 0.95, per line (a pasted Zawgyi paragraph inside
-Unicode text); short/ambiguous text (က = 0.48) is left as is.
-Convert on WRITE (server): storage, search, hashtags, mentions and
-notifications all see Unicode whatever font the writer has. Not
-usernames (identifiers: rewriting one silently breaks finding/mentioning).
-Step 1: utils/myanmarText.js toUnicode(); posts (create/edit), comments
-(create/edit), messages (sanitizeContent: text, caption, edit; HTTP +
-socket), bio, group-chat names, community + page name/description.
-Hashtags/mentions read the converted text. Unit tests on the corpora +
-API tests per path; UI shows the server's text (check optimistic paths).
-Step 2: search: q converted for users/posts/hashtags/communities/pages
-and saved history.
-Step 3: Burmese hashtags (carry-over above): Unicode-aware tag regex on
-backend + frontend linkifier; hashtag page/route accepts them.
-Step 4: backfill script for existing rows (dry-run default, --apply),
-LATER.md + GO_LIVE_CHECKLIST note (owner runs it on production).
+(none yet)
 
 ## Progress
-- Step 1 done: utils/myanmarText.js toUnicode (per line; ambiguous
-  lines follow the whole text, scored lazily; text > 10,000 left alone
-  so work stays bounded). Posts, comments, messages (send/caption/edit,
-  HTTP + socket), bio, group-chat/community/page names + descriptions,
-  report details. New limits (none before), counted on the text AS
-  TYPED, then converted (conversion can lengthen it): post 10,000,
-  comment 5,000, bio 500 (generous: existing bios must still save).
-  UI: maxLength on every one of those fields; screens now show the
-  server's text after saving (comment edit, REST message edit + quotes,
-  bio, page form). MY/AR for the new 400s. myanmarText.test 13 (26/26
-  mutations), useComments.test 2 (1/1), day43-zawgyi 18. backend
-  689/689, Vitest 118/118.
-- Step 2 done: Zawgyi search queries converted -- posts, hashtags,
-  groups/pages directories, saved recent searches (Zawgyi and Unicode
-  are one entry). People: usernames are never converted, so the query
-  matches as typed OR converted (filter, exact, prefix). 5 tests, 7/7
-  mutations; day43-zawgyi 20; perf 38/38; backend 694/694.
-  Noted, not fixed (pre-existing): /search/users and /search/posts 500
-  on an array q (?q=a&q=b) -- .trim() on a non-string.
-- Step 3 PLAN (Burmese hashtags + mentions): tags/mentions were ASCII
-  \w only (both sides), so #ရန်ကုန် / #مرحبا / @ကိုကို never linked or
-  indexed. Class [\p{L}\p{M}\p{N}_] with the u flag (Burmese needs its
-  vowel signs and stacking marks = \p{M}); Burmese ။ ၊ (\p{P}) end a tag
-  like a space. All-digit rule with \p{N} (#၁၂၃ is not a tag). Tags
-  NFC-normalized (parse, hashtag page, hashtag search). Backend:
-  hashtagService, mentionService, hashtagController, searchHashtags.
-  Frontend: renderTextWithLinks split regex, mention autocomplete
-  trigger. Existing posts' Burmese tags get indexed by step 4's script.
-- Step 3 done: Burmese/Arabic hashtags and @mentions, both sides
-  (hashtagService, mentionService, renderTextWithLinks, mention
-  autocomplete). Tags NFC + lower case (normalizeTag) at parse, tag page
-  (also converts a Zawgyi-typed tag) and tag search; #၁၂၃ not a tag.
-  4 backend tests (8/8 mutations), links.test +1, mention test 3 (both
-  regexes mutation-checked); day43-zawgyi 26. backend 698/698, Vitest
-  122/122.
-- Step 4 done: scripts/convert-zawgyi.js (npm run convert:zawgyi; dry
-  run by default, --apply). Every converted column but usernames; only
-  rows still holding what was read are written (no edited_at bump);
-  values too long for varchar(100) once converted are listed, not
-  written; deleted messages skipped; duplicate recent searches merged
-  (newer time kept); posts whose tags differ re-indexed. Real CLI run on
-  the e2e DB: dry run = apply, re-run finds nothing. convertZawgyi.test
-  4 (10/10 mutations). GO_LIVE_CHECKLIST step 5 + LATER.md #8.
-  Found + fixed: a search that only passes 100 chars once converted was
-  a DB error (500) -> 400.
+(none yet)

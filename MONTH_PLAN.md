@@ -208,7 +208,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 42 — Better search
 - [x] PostgreSQL full-text search with ranking; search history; filters (people/posts/hashtags). *(Ranked search, hashtag search with tabs, recent searches — see Progress Log.)*
 ### Day 43 — Myanmar text support
-- [ ] Detect Zawgyi text and convert to Unicode (local library, no API) in posts, comments, messages, search.
+- [x] Detect Zawgyi text and convert to Unicode (local library, no API) in posts, comments, messages, search. *(Plus Burmese/Arabic hashtags and mentions, and a backfill script — see Progress Log.)*
 ### Day 44 — Polls
 - [ ] Poll posts with options, vote once, results bar.
 ### Day 45 — Drafts + scheduled posts
@@ -1370,3 +1370,66 @@ Build every feature the way a senior engineer at a top social media company woul
   - Full browser run: all 50 suites (new: day42-search) + A3 EN/MY/AR
     (228 page checks each) green. Run in batches: one MY run lost its
     Chromium tab to low memory and passed on rerun.
+
+### 2026-10-07 — Day 43: Myanmar text support
+- **Library:** Google's `myanmar-tools` (offline, Apache-2.0), pinned to
+  1.1.3. 1.2.0 on npm is published without its build and can't load.
+  - Measured on its own paired corpora: every Zawgyi line scores ≥ 0.992,
+    every Unicode line ≤ 0.001.
+  - Converting Unicode by mistake corrupts it, so a line is only
+    converted at ≥ 0.95. Ambiguous short lines follow the whole text.
+- **Convert on write (`6177e1d`):** posts, comments, messages (send,
+  caption, edit; HTTP and socket), bio, group-chat / group / page names
+  and descriptions, report details.
+  - Storage, search, hashtags, mentions and notifications all see
+    Unicode, whatever font the writer has.
+  - Not usernames: they are how people find and mention you.
+  - New length limits where there were none (a multipart post could be
+    1 MB): post 10,000, comment 5,000, bio 500. Bio is generous so
+    existing bios still save. Limits count the text as typed, since
+    conversion can lengthen it.
+  - The fields got matching `maxLength`, with MY/AR for the new errors.
+  - Found and fixed: four screens kept the locally typed text after a
+    save (comment edit, REST message edit and its quotes, bio, page
+    form). They now show the server's text.
+- **Search (`d36c44a`):** Zawgyi queries for posts, hashtags, groups and
+  pages are converted, and recent searches are kept in Unicode.
+  - People search matches a name as typed OR converted, because
+    usernames aren't converted.
+- **Burmese hashtags and @mentions (`632c5ee`):** both sides were ASCII
+  `\w` only, so `#ရန်ကုန်`, `#مرحبا` and `@ကိုကို` never worked.
+  - Now letters, marks and digits of any script. Burmese `။ ၊` end a
+    tag, and `#၁၂၃` is not one.
+  - Tags are NFC-normalized, so the same word with marks in another
+    order is one tag.
+- **Backfill (`5d38560`):** `npm run convert:zawgyi` is a dry run;
+  `-- --apply` converts.
+  - Only rows still holding the text that was read are written. No
+    edit time is set.
+  - Values too long for their column once converted are listed, not
+    written. Duplicate recent searches are merged. Posts with stale
+    tags are re-indexed.
+  - Run for real on the e2e database: dry run, apply, then a re-run
+    that finds nothing.
+  - Found and fixed: a search that only passes 100 characters once
+    converted was a database error (500); it's now a 400.
+- **Better approach than the plan:** the plan said "posts, comments,
+  messages, search". All free text people write is converted, since
+  leaving bios or group names in Zawgyi would keep them unreadable.
+  Hashtags and mentions were added because Burmese ones didn't work at
+  all.
+- **Found at close:** `day16-language` was flaky (2 of 5 runs). The test
+  reloaded the page right after picking Myanmar, before the translations
+  had downloaded and the choice was saved. In the app the next screen is
+  an in-app link, so the choice is kept. The test now waits for the
+  switch.
+- **Performance:** converting costs ~0.3 ms per line of real Zawgyi,
+  and Unicode text is ~free. Text longer than 10,000 characters is
+  never converted. People search ORs two trigram matches; perf 38/38.
+- **Tests at close:**
+  - backend 702/702; Vitest 122/122; 54 mutations caught across the
+    new tests.
+  - Full browser run: all 51 suites (new: day43-zawgyi) + A3 EN/MY/AR
+    (228 page checks each) green.
+- **LATER.md:** #8, run `convert:zawgyi` on production after the next
+  GO LIVE (GO_LIVE_CHECKLIST step 5).
