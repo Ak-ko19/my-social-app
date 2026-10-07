@@ -1,5 +1,6 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
+const { toUnicode } = require('../utils/myanmarText');
 
 // Day 42: recent searches (like Facebook/Instagram), private to their owner.
 // One entry per query whatever its case: searching it again moves it to the
@@ -17,10 +18,12 @@ async function saveSearch(req, res) {
     if (query.length > MAX_QUERY_LENGTH) {
       return res.status(400).send(`A search can be at most ${MAX_QUERY_LENGTH} characters`);
     }
+    // Day 43: kept as Unicode, so typing it in Zawgyi or Unicode is one
+    // entry, readable in the list.
     await db.query(
       `INSERT INTO search_history (user_id, query) VALUES ($1, $2)
        ON CONFLICT (user_id, LOWER(query)) DO UPDATE SET query = EXCLUDED.query, searched_at = now()`,
-      [req.userId, query]
+      [req.userId, toUnicode(query)]
     );
     // Keep the newest HISTORY_LIMIT. Ties (same instant) keep the newer row.
     await db.query(

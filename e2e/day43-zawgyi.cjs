@@ -1,9 +1,10 @@
-// Day 43 step 1: Zawgyi Myanmar text is stored and shown as Unicode
+// Day 43 steps 1-2: Zawgyi Myanmar text is stored and shown as Unicode
 // (headless Edge, throwaway stack: alice(1), bob(2), conversation 1).
 // Alice types Zawgyi into the post composer, a comment, a comment edit, a
 // chat message, a message edit and her bio; every screen then shows the
 // Unicode text (rendered with Noto Sans Myanmar), and bob sees the same.
-// Text fields stop at the server's limits. Myanmar + dark, Arabic (RTL).
+// Text fields stop at the server's limits; a Zawgyi search finds it and is
+// remembered in Unicode. Myanmar + dark, Arabic (RTL).
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('./node_modules/playwright-core');
@@ -116,7 +117,23 @@ const U_HELLO = 'မင်္ဂလာပါ';
     await p.context().close();
   }
 
-  // 6. Over the limit (e.g. an old app version): the server refuses.
+  // 6. Search (step 2): a Zawgyi query finds the post, and the recent
+  // search is kept in Unicode.
+  const finder = await open('bob', '/search');
+  await finder.getByRole('searchbox', { name: 'Search people, posts or hashtags' }).fill(Z_YANGON);
+  await finder.getByRole('button', { name: 'Search', exact: true }).click();
+  await finder.locator('#search-panel').waitFor();
+  await finder.waitForFunction(() => !document.querySelector('#search-panel [role="status"]'));
+  await finder.waitForTimeout(200);
+  const found = await finder.locator('.search-post-link').allInnerTexts();
+  check('a Zawgyi search finds the post (shown in Unicode)', found.length === 1 && found[0].includes(U_YANGON), JSON.stringify(found));
+  await finder.goto(`${WEB}/search`, { waitUntil: 'networkidle' });
+  await finder.locator('.recent-searches-query').first().waitFor({ timeout: 10000 }).catch(() => {});
+  const recent = await finder.locator('.recent-searches-query').allInnerTexts();
+  check('the recent search shows in Unicode', JSON.stringify(recent) === JSON.stringify([U_YANGON]), JSON.stringify(recent));
+  await finder.context().close();
+
+  // 7. Over the limit (e.g. an old app version): the server refuses.
   const over = await fetch(`${API}/posts`, {
     method: 'POST', headers: { Authorization: `Bearer ${tokens.alice}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ content: 'x'.repeat(10001) })

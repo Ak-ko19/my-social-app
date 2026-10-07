@@ -116,3 +116,10 @@ LATER.md + GO_LIVE_CHECKLIST note (owner runs it on production).
   bio, page form). MY/AR for the new 400s. myanmarText.test 13 (26/26
   mutations), useComments.test 2 (1/1), day43-zawgyi 18. backend
   689/689, Vitest 118/118.
+- Step 2 done: Zawgyi search queries converted -- posts, hashtags,
+  groups/pages directories, saved recent searches (Zawgyi and Unicode
+  are one entry). People: usernames are never converted, so the query
+  matches as typed OR converted (filter, exact, prefix). 5 tests, 7/7
+  mutations; day43-zawgyi 20; perf 38/38; backend 694/694.
+  Noted, not fixed (pre-existing): /search/users and /search/posts 500
+  on an array q (?q=a&q=b) -- .trim() on a non-string.

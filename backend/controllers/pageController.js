@@ -98,7 +98,8 @@ async function createPage(req, res) {
 // GET /pages?q= -> { owned, following, discover }; discover is most-followed first.
 async function listPages(req, res) {
   try {
-    const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    // Day 43: names are stored as Unicode, so a Zawgyi query is converted.
+    const q = typeof req.query.q === 'string' ? toUnicode(req.query.q.trim()) : '';
     const result = await db.query(
       `SELECT ${PAGE_COLUMNS}
        FROM pages p JOIN users u ON u.id = p.owner_id

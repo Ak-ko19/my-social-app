@@ -214,4 +214,62 @@ describe('Zawgyi is stored as Unicode (Day 43)', () => {
     expect(r.status).toBe(201);
     expect((await pool.query('SELECT details FROM reports WHERE reporter_id = $1', [a.id])).rows[0].details).toBe(UNICODE);
   });
+
+  describe('search queries', () => {
+    const search = (user, type, q) => request(app).get(`/search/${type}`).query({ q }).set(auth(user));
+
+    it('posts: a Zawgyi query finds the (Unicode) post, as does a Unicode one', async () => {
+      const a = await registerAndLogin(app);
+      const post = (await request(app).post('/posts').set(auth(a)).field('content', `${ZAWGYI} today`)).body;
+      for (const q of [ZAWGYI, UNICODE, 'ေမာင္ေမာင္']) {
+        const res = await search(a, 'posts', q);
+        expect(res.status).toBe(200);
+        expect(res.body.posts.map((p) => p.id)).toEqual([post.id]);
+      }
+    });
+
+    it('people: names are kept as typed, so a query matches either way', async () => {
+      // One name typed in Unicode, one in Zawgyi (usernames are never converted).
+      const unicodeName = await registerAndLogin(app, { username: 'မောင်မောင်' });
+      const longer = await registerAndLogin(app, { username: 'မောင်မောင်ကြီး' });
+      const zawgyiName = await registerAndLogin(app, { username: 'ေမာင္ေမာင္ေလး' });
+      // Contains the name but doesn't start with it (and is shorter than `longer`).
+      const contains = await registerAndLogin(app, { username: 'ကိုမောင်မောင်' });
+      const me = await registerAndLogin(app);
+      const ids = async (q) => (await search(me, 'users', q)).body.map((u) => u.id);
+      // Zawgyi query: the Unicode names (converted) and the Zawgyi one (as
+      // typed); the exact name, then names starting with it, then the rest.
+      expect(await ids('ေမာင္ေမာင္')).toEqual([unicodeName.id, zawgyiName.id, longer.id, contains.id]);
+      // Unicode query: the Unicode names only.
+      expect(await ids('မောင်မောင်')).toEqual([unicodeName.id, longer.id, contains.id]);
+      expect(await ids('plainname_nobody')).toEqual([]);
+    });
+
+    it('hashtags: a Zawgyi query is converted', async () => {
+      const a = await registerAndLogin(app);
+      await request(app).post('/posts').set(auth(a)).field('content', 'hello #yangon');
+      expect((await search(a, 'hashtags', '#yangon')).body.map((t) => t.tag)).toEqual(['yangon']);
+      expect((await search(a, 'hashtags', ZAWGYI)).status).toBe(200);
+    });
+
+    it('groups and pages: a Zawgyi query finds a Unicode name', async () => {
+      const a = await registerAndLogin(app);
+      const community = (await request(app).post('/communities').set(auth(a)).send({ name: `${UNICODE} club` })).body;
+      const page = (await request(app).post('/pages').set(auth(a)).send({ name: `${UNICODE} shop` })).body;
+      const groups = (await request(app).get('/communities').query({ q: ZAWGYI }).set(auth(a))).body;
+      expect([...groups.mine, ...groups.discover].map((c) => c.id)).toEqual([community.id]);
+      const pages = (await request(app).get('/pages').query({ q: ZAWGYI }).set(auth(a))).body;
+      expect([...pages.owned, ...pages.following, ...pages.discover].map((p) => p.id)).toEqual([page.id]);
+    });
+
+    it('recent searches are kept in Unicode: Zawgyi and Unicode are one entry', async () => {
+      const a = await registerAndLogin(app);
+      const save = (query) => request(app).post('/search/history').set(auth(a)).send({ query });
+      expect((await save(ZAWGYI)).status).toBe(204);
+      expect((await save('hello')).status).toBe(204);
+      expect((await save(UNICODE)).status).toBe(204);
+      const history = (await request(app).get('/search/history').set(auth(a))).body;
+      expect(history.map((s) => s.query)).toEqual([UNICODE, 'hello']);
+    });
+  });
 });

@@ -3,6 +3,7 @@ const { pageColumnSql } = require('../services/reactionService');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const { escapeLike } = require('../utils/escapeLike');
+const { toUnicode } = require('../utils/myanmarText');
 
 // Day 42: post search ranks only the newest SEARCH_CANDIDATES matches, so
 // a common word reads a bounded number of rows (the planner walks posts
@@ -13,12 +14,15 @@ const SEARCH_CANDIDATES = 500;
 // People whose username contains the query. Ranked like the big apps: the
 // exact name first, then names starting with it, then people you follow,
 // then shorter (closer) names. At most 20.
+// Day 43: usernames are kept as typed (never converted), so a Zawgyi
+// query matches a name either as typed or converted to Unicode.
 async function searchUsers(req, res) {
   try {
     const q = (req.query.q || '').trim();
     if (!q) {
       return res.status(400).send('Search query is required');
     }
+    const unicode = toUnicode(q);
     const viewerId = req.userId ?? null;
     const result = await db.query(
       `SELECT users.id, users.username, users.bio, users.avatar_url,
@@ -27,19 +31,19 @@ async function searchUsers(req, res) {
            WHERE follows.follower_id = $2 AND follows.following_id = users.id AND follows.status = 'accepted'
          ) AS is_following
        FROM users
-       WHERE users.username ILIKE '%' || $1 || '%'
+       WHERE (users.username ILIKE '%' || $1 || '%' OR users.username ILIKE '%' || $4 || '%')
          AND NOT users.is_deactivated
          AND ($2::int IS NULL OR NOT EXISTS (
            SELECT 1 FROM blocks
            WHERE (blocks.blocker_id = $2 AND blocks.blocked_id = users.id)
               OR (blocks.blocker_id = users.id AND blocks.blocked_id = $2)
          ))
-       ORDER BY LOWER(users.username) = LOWER($3) DESC,
-         users.username ILIKE $1 || '%' DESC,
+       ORDER BY LOWER(users.username) IN (LOWER($3), LOWER($5)) DESC,
+         (users.username ILIKE $1 || '%' OR users.username ILIKE $4 || '%') DESC,
          is_following DESC,
          LENGTH(users.username), users.username
        LIMIT 20`,
-      [escapeLike(q), viewerId, q]
+      [escapeLike(q), viewerId, q, escapeLike(unicode), unicode]
     );
     res.status(200).json(result.rows);
   } catch (err) {
@@ -58,7 +62,8 @@ async function searchUsers(req, res) {
 // viral post doesn't drown everything) x freshness (1 / (1 + age/30 days)).
 async function searchPosts(req, res) {
   try {
-    const q = (req.query.q || '').trim();
+    // Day 43: posts are stored as Unicode, so a Zawgyi query is converted.
+    const q = toUnicode((req.query.q || '').trim());
     if (!q) {
       return res.status(400).send('Search query is required');
     }
@@ -122,7 +127,7 @@ const TAG_COUNT_CAP = 500;
 // with no public posts is left out.
 async function searchHashtags(req, res) {
   try {
-    const q = (req.query.q || '').trim().replace(/^#+/, '').toLowerCase();
+    const q = toUnicode((req.query.q || '').trim()).replace(/^#+/, '').toLowerCase();
     if (!q) {
       return res.status(400).send('Search query is required');
     }
