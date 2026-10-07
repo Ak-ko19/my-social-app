@@ -1,9 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** Owner decision (2026-10-07) — UI languages EN + AR only (before Day 45)
-**Step:** done -- committed and pushed to dev (see Progress Log 2026-10-07)
-**Parked:** Day 45 drafts work is in `git stash` ("Day 45 WIP: drafts").
-Restore it after this step; its migration 051 becomes 052.
+**Day:** 45 — Drafts + scheduled posts
+**Step:** 1 — drafts API: done (committed). Next: step 2, scheduling.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -97,27 +95,46 @@ Restore it after this step; its migration 051 becomes 052.
   mention regexes are [\p{L}\p{M}\p{N}_] with the u flag on both sides.
 
 ## Plan
-Owner: Myanmar is removed as a UI language; EN + AR (RTL) only. User
-CONTENT in any language stays fully supported (post/comment/DM/search).
-- Backend: config/languages ['en','ar']; migration 051: users.language
-  'my' -> 'en', CHECK (en, ar). Push text: drop MY. Emails (verify,
-  reset) were English-only -> EN/AR by the account's language.
-- Frontend: LANGUAGES en/ar; drop my.json, MY loader, browser 'my'
-  detection and the hand-made Burmese date formatting; serverMessages
-  MY table; Noto Sans Myanmar package + :lang(my) CSS. A device with
-  a saved 'my' starts in English and saves 'en'.
-- Keep: Burmese content support (Zawgyi normalising on the server,
-  \p{L} hashtags/mentions, Burmese search) -- that's content, not UI.
-  Burmese text then renders with the system font.
-- Audit: check:i18n parity; AR values still equal to English; hard-
-  coded UI text in JSX; server messages without AR; physical CSS
-  (left/right) breaking RTL; A3 matrix + b16-rtl in AR.
-- Tests: backend language/push/email; frontend unit tests; e2e suites
-  that pick Myanmar switch to Arabic (or drop the MY part).
-- Docs: MONTH_PLAN (EN/AR, Day 43 removed, bad-word list EN/AR, new
-  standing rule), CLAUDE.md, WIP notes, README/guide, ROADMAP notes.
+Better approach than "runs via the existing cron job" (daily -- can't
+hit 3:15 pm): drafts AND scheduled posts live in their own table and
+become real posts only when published, so no post listing needs a
+"not yet published" filter (no leak risk across 9+ queries). Like
+Facebook's Drafts / Scheduled lists.
+- Data (migration 052; 051 is the EN/AR language change): post_drafts(id, user_id CASCADE, content,
+  visibility, community_id, page_id, poll jsonb, media_urls text[],
+  scheduled_for timestamptz NULL, last_error, created_at, updated_at).
+  Up to 50 drafts per person.
+- Create a post through ONE service (extract createPost's core:
+  validation, insert post+media+poll, hashtags, mentions) used by POST
+  /posts and by publishing, so a published draft gets the same checks
+  AT PUBLISH TIME (still in the group? still owns the page? account
+  active?).
+- Step 1 drafts API: POST /drafts (form like POST /posts: content,
+  visibility, communityId/pageId, poll, images), GET /drafts, GET/PUT/
+  DELETE /drafts/:id (PUT keeps chosen photos, adds new ones, deletes
+  removed ones), POST /drafts/:id/publish (publish now). Owner only
+  (404 otherwise). A draft needs text, a photo or a poll. Photos go to
+  the 'posts' folder: the orphan scan must count draft media as used;
+  deleting a draft / account deletes its photos; export lists drafts.
+- Step 2 scheduling: scheduled_for 5 min .. 30 days ahead. Publisher
+  (services/scheduler): due drafts FOR UPDATE SKIP LOCKED, publish via
+  the service, delete the draft (keep its photos, now the post's), in
+  one transaction. Runs every 30 s in the server (and at start-up;
+  off under NODE_ENV=test unless started) + from the daily cleanup.
+  Can't publish -> back to drafts with last_error + a notification.
+  Notification "your scheduled post was published".
+- Step 3 UI: composer "Save draft" / "Schedule" (date-time picker,
+  local time, shown back in local time); Drafts screen with Drafts /
+  Scheduled tabs: open in composer (?draftId=), publish now, delete,
+  reschedule; EN/AR (RTL); browser suite.
+- Step 4: "poll ended" notification (Day 44 carry-over) via the same
+  ticker: polls closed since the last run, once (polls.ended_notified).
 
 ## Progress
-- Backend, frontend, tests, e2e suites, docs: done. Verified: backend
-  717/717, Vitest 141/141, check:i18n, lint, bundle, rehearsal 015-051,
-  all 52 browser suites + A3 EN/AR + a11y green.
+- Step 1 (drafts API) done: migration 052, postCreationService (POST /posts
+  and publishing share it), /drafts CRUD + publish, orphan scan, export,
+  account/group/page deletion media, Privacy Policy (EN/AR), Arabic
+  server messages. Review fixes: group/page id 0 was skipped as "none"
+  (now 403), keepMedia duplicates, check:i18n resolves imported
+  constants. Verified: backend 733/733 (drafts 16), rehearsal 015-052,
+  8 post-creation browser suites + c2-legal, Vitest 141.

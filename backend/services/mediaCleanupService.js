@@ -89,8 +89,19 @@ function postMediaUrls(where, params) {
 }
 
 const mediaOfPost = (postId) => postMediaUrls('posts.id = $1', [postId]);
-const mediaOfCommunity = (communityId) => postMediaUrls('posts.community_id = $1', [communityId]);
-const mediaOfPage = (pageId) => postMediaUrls('posts.page_id = $1', [pageId]);
+// Day 45: the photos of drafts and scheduled posts (migration 052).
+const draftMediaUrls = (where, params) =>
+  urlsOf(`SELECT unnest(media_urls) AS url FROM post_drafts WHERE ${where}`, params);
+
+// A group's or page's posts and (Day 45) the drafts for it, which go too.
+const mediaOfCommunity = async (communityId) => [
+  ...(await postMediaUrls('posts.community_id = $1', [communityId])),
+  ...(await draftMediaUrls('community_id = $1', [communityId]))
+];
+const mediaOfPage = async (pageId) => [
+  ...(await postMediaUrls('posts.page_id = $1', [pageId])),
+  ...(await draftMediaUrls('page_id = $1', [pageId]))
+];
 
 const mediaOfStory = (storyId) => urlsOf('SELECT media_url AS url FROM stories WHERE id = $1', [storyId]);
 // Every photo/voice note in the chat, and (Day 34) the group's own photo.
@@ -103,16 +114,18 @@ const mediaOfConversation = (conversationId) =>
 
 // Everything that goes when the account is deleted (FK cascades): the
 // avatar, every post they wrote (incl. as their pages and in groups), their
-// stories and the media they sent in messages. Groups they created survive
-// (created_by is SET NULL), so other members' posts there are untouched.
+// stories, the media they sent in messages and (Day 45) their drafts.
+// Groups they created survive (created_by is SET NULL), so other members'
+// posts there are untouched.
 async function mediaOfUser(userId) {
-  const [avatar, posts, stories, messages] = await Promise.all([
+  const [avatar, posts, stories, messages, drafts] = await Promise.all([
     urlsOf('SELECT avatar_url AS url FROM users WHERE id = $1 UNION ALL SELECT cover_url FROM users WHERE id = $1', [userId]),
     postMediaUrls('posts.user_id = $1', [userId]),
     urlsOf('SELECT media_url AS url FROM stories WHERE user_id = $1', [userId]),
-    urlsOf('SELECT media_url AS url FROM messages WHERE sender_id = $1 AND media_url IS NOT NULL', [userId])
+    urlsOf('SELECT media_url AS url FROM messages WHERE sender_id = $1 AND media_url IS NOT NULL', [userId]),
+    draftMediaUrls('user_id = $1', [userId])
   ]);
-  return [...avatar, ...posts, ...stories, ...messages];
+  return [...avatar, ...posts, ...stories, ...messages, ...drafts];
 }
 
 module.exports = {

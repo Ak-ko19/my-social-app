@@ -193,6 +193,11 @@ const AR = {
   'A group can have at most 50 members': 'يمكن أن تضم المجموعة 50 عضوًا كحد أقصى',
   'Loading the link preview failed.': 'تعذّر تحميل معاينة الرابط.',
   'Loading the share card failed.': 'تعذّر تحميل بطاقة المشاركة.',
+  // Day 45: drafts and scheduled posts
+  'Draft not found': 'المسودة غير موجودة',
+  'Invalid draft ID': 'معرّف المسودة غير صالح',
+  'A draft needs text, a photo or a poll': 'تحتاج المسودة إلى نص أو صورة أو استطلاع',
+  'You can keep up to 50 drafts': 'يمكنك الاحتفاظ بـ 50 مسودة كحد أقصى',
   // admin screens
   'Accounts cannot be removed here; ban or suspend the user instead': 'لا يمكن حذف الحسابات من هنا؛ احظر المستخدم أو أوقفه مؤقتًا بدلًا من ذلك',
   'That user is not banned': 'هذا المستخدم غير محظور',

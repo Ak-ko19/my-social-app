@@ -78,6 +78,7 @@ async function referencedKeys(db, cloud) {
     UNION SELECT media_url FROM stories
     UNION SELECT media_url FROM messages WHERE media_url IS NOT NULL AND deleted_at IS NULL
     UNION SELECT avatar_url FROM conversations WHERE avatar_url IS NOT NULL
+    UNION SELECT unnest(media_urls) FROM post_drafts
   `);
   const keys = new Set();
   for (const { url } of result.rows) {

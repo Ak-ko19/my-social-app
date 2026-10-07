@@ -30,7 +30,7 @@ async function buildExport(userId) {
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
     legacyMessages, notifications, reports, sessions, pushDevices, messageReactions, hiddenSuggestions, searches,
-    pollOptions, pollVotes
+    pollOptions, pollVotes, drafts
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -105,7 +105,10 @@ async function buildExport(userId) {
           WHERE p.user_id = $1 ORDER BY o.post_id, o.position`, [userId]),
     rows(`SELECT v.post_id, o.label AS option, v.created_at AS voted_at
           FROM poll_votes v JOIN poll_options o ON o.id = v.option_id
-          WHERE v.user_id = $1 ORDER BY v.created_at`, [userId])
+          WHERE v.user_id = $1 ORDER BY v.created_at`, [userId]),
+    // Day 45: drafts and scheduled posts.
+    rows(`SELECT content, visibility, community_id, page_id, poll, media_urls AS media, scheduled_for, created_at, updated_at
+          FROM post_drafts WHERE user_id = $1 ORDER BY created_at`, [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -167,6 +170,7 @@ async function buildExport(userId) {
     hidden_suggestions: hiddenSuggestions,
     recent_searches: searches,
     poll_votes: pollVotes,
+    drafts_and_scheduled_posts: drafts,
     older_direct_messages: legacyMessages,
     notifications,
     reports_you_made: reports,

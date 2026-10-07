@@ -78,7 +78,8 @@ const DEV_ONLY = new Set([
   'An audio file is required (field name "audio")',
   'An image file is required (field name "image")',
   'A valid http(s) url is required',
-  'Poll length must be one of: ${DURATION_HOURS.join(\', \')} hours'
+  'Poll length must be one of: ${DURATION_HOURS.join(\', \')} hours',
+  'Invalid ${name}' // postCreationService: "Invalid communityId" / "Invalid pageId"
 ]);
 const isDevOnly = (msg) => DEV_ONLY.has(msg) || /^[a-z]/.test(msg) || /\b[a-z]+[A-Z]\w*/.test(msg) || /\.join\(/.test(msg);
 {
@@ -96,29 +97,40 @@ const isDevOnly = (msg) => DEV_ONLY.has(msg) || /^[a-z]/.test(msg) || /\b[a-z]+[
     /\b(?:message|error):\s*(['`])((?:(?!\1)[^\\]|\\.)*)\1/g,
     /sendServerError\([^,]+,[^,]+,\s*(')((?:[^'\\]|\\.)*)'/g
   ];
-  let scanned = 0;
+  const sources = [];
   (function walk(dir) {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       const p = path.join(dir, e.name);
       if (e.isDirectory()) {
         if (!['node_modules', 'tests', 'scripts', 'migrations'].includes(e.name) && !e.name.startsWith('.')) walk(p);
-      } else if (e.name.endsWith('.js') && !DEV_ONLY_FILES.has(e.name)) {
-        const src = fs.readFileSync(p, 'utf8');
-        // ${NAME} of a number constant in the same file reads as its value.
-        const resolve = (msg) => msg.replace(/\$\{(\w+)\}/g, (whole, name) => src.match(new RegExp(`const ${name} = (\\d+);`))?.[1] ?? whole);
-        for (const re of SENT) {
-          for (const m of src.matchAll(re)) {
-            const raw = m[2].replace(/\\(['"])/g, '$1');
-            if (!raw || isDevOnly(raw)) continue;
-            const msg = resolve(raw);
-            scanned += 1;
-            if (msg.includes('${')) problems.push(`backend ${e.name}: "${raw}" -- add the constant's value or a DEV_ONLY entry`);
-            else if (!translated.has(msg) && !FAILED.test(msg)) problems.push(`serverMessages.js: no Arabic for "${msg}" (backend ${e.name})`);
-          }
-        }
+      } else if (e.name.endsWith('.js')) {
+        sources.push({ name: e.name, src: fs.readFileSync(p, 'utf8') });
       }
     }
   })(BACKEND);
+  // `const NAME = 123;` -- a number constant, in this file or (when it is
+  // imported) defined once with that value anywhere in the backend.
+  const NUMBER_CONST = /\bconst ([A-Z][A-Z0-9_]*) = (\d+);/g;
+  const shared = new Map();
+  for (const { src } of sources) {
+    for (const [, name, value] of src.matchAll(NUMBER_CONST)) shared.set(name, shared.has(name) && shared.get(name) !== value ? null : value);
+  }
+  let scanned = 0;
+  for (const { name: file, src } of sources) {
+    if (DEV_ONLY_FILES.has(file)) continue;
+    const local = new Map([...src.matchAll(NUMBER_CONST)].map(([, name, value]) => [name, value]));
+    const resolve = (msg) => msg.replace(/\$\{(\w+)\}/g, (whole, name) => local.get(name) ?? shared.get(name) ?? whole);
+    for (const re of SENT) {
+      for (const m of src.matchAll(re)) {
+        const raw = m[2].replace(/\\(['"])/g, '$1');
+        if (!raw || isDevOnly(raw)) continue;
+        const msg = resolve(raw);
+        scanned += 1;
+        if (msg.includes('${')) problems.push(`backend ${file}: "${raw}" -- add the constant's value or a DEV_ONLY entry`);
+        else if (!translated.has(msg) && !FAILED.test(msg)) problems.push(`serverMessages.js: no Arabic for "${msg}" (backend ${file})`);
+      }
+    }
+  }
   if (scanned < 100) problems.push(`backend scan found only ${scanned} messages -- is ../backend missing?`);
 }
 

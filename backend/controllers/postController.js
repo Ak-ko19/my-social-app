@@ -1,122 +1,28 @@
 const db = require('../db');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 
-// B5: keep in sync with migration 020's CHECK constraint.
-// Day 20: 'only_me' -- seen by its author only.
-const POST_VISIBILITIES = ['public', 'followers', 'only_me'];
-// Day 43: posts had no length limit (a multipart field could be 1 MB).
-const MAX_POST_LENGTH = 10000;
 const { sendServerError } = require('../utils/sendError');
 const { mediaOfPost, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
 const { getVisiblePost } = require('../services/postVisibilityService');
 const hashtagService = require('../services/hashtagService');
-const mentionService = require('../services/mentionService');
 const { toUnicode } = require('../utils/myanmarText');
 const pollService = require('../services/pollService');
+const postCreation = require('../services/postCreationService');
+
+const { POST_VISIBILITIES, MAX_POST_LENGTH } = postCreation;
 
 async function createPost(req, res) {
   try {
-    const typed = req.body.content;
-    if (typeof typed !== 'string' || typed.trim() === '') {
-      return res.status(400).send('Post content cannot be empty');
-    }
-    // The limit counts the text as typed (like the composer's maxLength).
-    if (typed.length > MAX_POST_LENGTH) {
-      return res.status(400).send(`Post must be ${MAX_POST_LENGTH} characters or fewer`);
-    }
-    // Day 43: Zawgyi Myanmar text is stored as Unicode (utils/myanmarText).
-    const content = toUnicode(typed);
-    // B5: audience -- 'public' unless the client asks for 'followers'.
-    const visibility = req.body.visibility || 'public';
-    if (!POST_VISIBILITIES.includes(visibility)) {
-      return res.status(400).send(`visibility must be one of: ${POST_VISIBILITIES.join(', ')}`);
-    }
-    // Day 44: an optional poll; the post's text is its question.
-    let poll;
-    try {
-      poll = pollService.parsePollInput(req.body.poll);
-    } catch (err) {
-      if (err instanceof pollService.PollError) return res.status(err.status).send(err.message);
-      throw err;
-    }
-    // Day 20: "only me" is for your own profile; a group post is for the
-    // group.
-    if (visibility === 'only_me' && req.body.communityId !== undefined && req.body.communityId !== '') {
-      return res.status(400).send("Group and page posts don't have their own audience");
-    }
-    // B13: posting inside a community requires being a (non-pending)
-    // member. (Images were already uploaded by the middleware at this point;
-    // it deletes them again when the request is refused.)
-    let communityId = null;
-    if (req.body.communityId !== undefined && req.body.communityId !== '') {
-      communityId = Number(req.body.communityId);
-      if (!Number.isInteger(communityId)) {
-        return res.status(400).send('Invalid communityId');
-      }
-      const membership = await db.query(
-        "SELECT 1 FROM community_members WHERE community_id = $1 AND user_id = $2 AND status = 'member'",
-        [communityId, req.userId]
-      );
-      if (membership.rows.length === 0) {
-        return res.status(403).send('Join this group to post in it');
-      }
-    }
-    // B14: posting as a page -- only its owner can, it's always public,
-    // and a post can't be both in a group and on a page.
-    let pageId = null;
-    if (req.body.pageId !== undefined && req.body.pageId !== '') {
-      pageId = Number(req.body.pageId);
-      if (!Number.isInteger(pageId)) {
-        return res.status(400).send('Invalid pageId');
-      }
-      if (communityId) {
-        return res.status(400).send('A post can be in a group or on a page, not both');
-      }
-      const owned = await db.query('SELECT 1 FROM pages WHERE id = $1 AND owner_id = $2', [pageId, req.userId]);
-      if (owned.rows.length === 0) {
-        return res.status(403).send('Only the page owner can post as this page');
-      }
-    }
+    // Day 45: the checks and the insert live in postCreationService, shared
+    // with publishing a draft or scheduled post.
+    const fields = postCreation.readPostFields(req.body);
     // B2: every uploaded image, in the order sent (see uploadManyToCloudinary).
+    // (A refused request's images are deleted again by the middleware.)
     const imageUrls = (req.cloudinaryResults || []).map((r) => r.secure_url);
-    // Like X: a poll post has no photos. (The upload middleware deletes
-    // the uploaded ones again.)
-    if (poll && imageUrls.length > 0) {
-      return res.status(400).send("A poll can't have photos");
-    }
-    // One statement inserts the post AND its post_media rows (and poll), so
-    // a post can never exist with only some of them. posts.image_url
-    // mirrors the first image for older readers (see migration 017).
-    const result = await db.query(
-      `WITH new_post AS (
-         INSERT INTO posts (user_id, content, image_url, visibility, community_id, page_id) VALUES ($1, $2, $3, $5, $6, $7) RETURNING *
-       ), new_media AS (
-         INSERT INTO post_media (post_id, url, position)
-         SELECT new_post.id, m.url, (m.ord - 1)::smallint
-         FROM new_post, unnest($4::text[]) WITH ORDINALITY AS m(url, ord)
-       ), new_poll AS (
-         INSERT INTO polls (post_id, closes_at)
-         SELECT new_post.id, now() + make_interval(hours => $8::int) FROM new_post WHERE $8::int IS NOT NULL
-         RETURNING post_id
-       ), new_options AS (
-         INSERT INTO poll_options (post_id, position, label)
-         SELECT new_poll.post_id, (o.ord - 1)::smallint, o.label
-         FROM new_poll, unnest($9::text[]) WITH ORDINALITY AS o(label, ord)
-       )
-       SELECT * FROM new_post`,
-      [req.userId, content, imageUrls[0] || null, imageUrls, pageId ? 'public' : visibility, communityId, pageId,
-        poll ? poll.durationHours : null, poll ? poll.labels : []]
-    );
-    const post = {
-      ...result.rows[0],
-      media: imageUrls.map((url) => ({ url })),
-      poll: poll ? await pollService.getPoll(result.rows[0].id, req.userId) : null
-    };
-    await hashtagService.syncPostHashtags(post.id, content);
-    await mentionService.notifyMentions({ content, authorId: req.userId, postId: post.id });
-    res.status(201).json(post);
+    res.status(201).json(await postCreation.createPost(req.userId, fields, imageUrls));
   } catch (err) {
+    if (err instanceof postCreation.PostInputError) return res.status(err.status).send(err.message);
     sendServerError(res, err, 'Create post failed. Please try again later.');
   }
 }

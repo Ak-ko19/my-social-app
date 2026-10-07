@@ -10,7 +10,9 @@ const { resetDb, closeDb } = require('./testDb');
 
 function setupTestApp() {
   jest.mock('../../db', () => ({
-    query: (...args) => require('./testDb').pool.query(...args)
+    query: (...args) => require('./testDb').pool.query(...args),
+    // Day 45: a client of its own, for a transaction (db is a pg Pool).
+    connect: () => require('./testDb').pool.connect()
   }));
 
   // Never talk to the real Cloudinary account from tests: uploads resolve

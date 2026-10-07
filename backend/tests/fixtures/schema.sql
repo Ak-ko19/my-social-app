@@ -491,3 +491,25 @@ CREATE TABLE poll_votes (
 );
 CREATE INDEX idx_poll_votes_user ON poll_votes (user_id);
 CREATE INDEX idx_poll_votes_option ON poll_votes (option_id);
+
+-- Added by migration 052_add_post_drafts (Day 45): drafts and scheduled
+-- posts, private to their author until published.
+CREATE TABLE post_drafts (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL DEFAULT '',
+  visibility VARCHAR(10) NOT NULL DEFAULT 'public'
+    CONSTRAINT chk_post_drafts_visibility CHECK (visibility IN ('public', 'followers', 'only_me')),
+  community_id INTEGER REFERENCES communities(id) ON DELETE CASCADE,
+  page_id INTEGER REFERENCES pages(id) ON DELETE CASCADE,
+  poll JSONB,
+  media_urls TEXT[] NOT NULL DEFAULT '{}',
+  scheduled_for TIMESTAMPTZ,
+  last_error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_post_drafts_user ON post_drafts (user_id, updated_at DESC);
+CREATE INDEX idx_post_drafts_due ON post_drafts (scheduled_for) WHERE scheduled_for IS NOT NULL;
+CREATE INDEX idx_post_drafts_community ON post_drafts (community_id) WHERE community_id IS NOT NULL;
+CREATE INDEX idx_post_drafts_page ON post_drafts (page_id) WHERE page_id IS NOT NULL;
