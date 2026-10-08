@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 46 — Saved collections
-**Step:** 2 — collections UI: done (committed). Next: close Day 46 (full browser run, Progress Log).
+**Day:** 47 — Privacy controls
+**Step:** 1 — PLAN (not started)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -91,6 +91,8 @@
   text, required/min/max bubbles): use translated buttons and our own
   checks (Day 45: CreatePost, EditProfile).
 - New ways to create a post go through services/postCreationService.
+- Saved-post listings use services/savedPostsService (one visibility
+  query). Arabic: a collection is "قائمة"; "مجموعة" means a group.
 - Polls (Day 44): a new post listing must add pollColumnSql(viewer)
   next to mediaColumnSql (polls.test lists every listing).
 - Burmese CONTENT (Day 43; kept after the 2026-10-07 EN/AR-only UI
@@ -101,41 +103,7 @@
   mention regexes are [\p{L}\p{M}\p{N}_] with the u flag on both sides.
 
 ## Plan
-Like Instagram's Saved collections: Saved = all saved posts; collections
-are named groups of them. A post can be in several. Saving into a
-collection also saves it; unsaving removes it from every collection;
-deleting a collection keeps the posts saved.
-- Data (migration 054): bookmark_collections(id, user_id CASCADE, name
-  varchar(50), created_at, updated_at; unique per person ignoring case),
-  bookmark_collection_items(collection_id CASCADE, bookmark_id ->
-  bookmarks CASCADE, added_at, PK both; index bookmark_id). Max 30
-  collections per person.
-- Step 1 API: GET /collections (name, count, cover = newest visible
-  post's first photo), POST /collections {name}, PATCH/DELETE
-  /collections/:id, GET /collections/:id/posts (paged; the same
-  visibility rules as GET /bookmarks: one shared query), GET
-  /posts/:id/collections (ids it's in), PUT /posts/:id/collections
-  {collectionIds} (saves the post if needed; only your own
-  collections; the post must be visible). Owner only: 404 otherwise.
-  Export + Privacy Policy (EN/AR); Arabic server messages.
-- Step 2 UI: /saved shows a collections row (+ New) above All;
-  /saved/collections/:id (rename, delete with confirm, empty state);
-  "Save to collection" sheet from the post's Save button: checkboxes +
-  create new inline. EN/AR, RTL, dark, a11y, browser suite
-  day46-collections.
+(none yet)
 
 ## Progress
-- Step 1 (API) done: migration 054, savedPostsService (one visibility
-  query for /bookmarks and collections), collectionService + routes,
-  export, Privacy Policy EN/AR (2026-10-08), Arabic messages (collection
-  = قائمة in Arabic: مجموعة already means a group here),
-  convert-zawgyi COLUMNS (+ post_drafts.content missed on Day 45).
-  Verified: backend 765/765 (collections 9, 6 mutations), rehearsal
-  015-054, c2-legal. Perf suite not extended: ~200 seeded bookmarks,
-  far under its 4 MB table threshold.
-- Step 2 (UI) done: Save to collection sheet from the post menu (lazy
-  loaded; create inline; saving into one saves the post); collections
-  row on Saved (+ New collection dialog); /saved/collections/:id with
-  rename / delete (confirm) / empty and not-found states. EN/AR,
-  RTL (sheet padding, bdi names). Verified: Vitest 170, bundle 218.5
-  kB, day46-collections 21/21, 8 menu suites, a11y 97, A3 EN+AR 240.
+(none yet)

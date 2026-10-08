@@ -215,7 +215,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 45 — Drafts + scheduled posts
 - [x] Save drafts; schedule a post. *(A 30 s server ticker instead of the daily cron, which couldn't hit a set time; plus the "poll ended" notification Day 44 left out — see Progress Log.)*
 ### Day 46 — Saved collections
-- [ ] Organize bookmarks into named collections.
+- [x] Organize bookmarks into named collections. *(Instagram-style: "Save to collection" from any post, collections on Saved — see Progress Log.)*
 ### Day 47 — Privacy controls
 - [ ] Mute user, restrict user, close friends list, who can message/comment on me.
 ### Day 48 — Activity log
@@ -1607,3 +1607,49 @@ Build every feature the way a senior engineer at a top social media company woul
   - day34-group-photo had a race in one check (it read the page before
     her own update arrived). It now waits (`1ba1610`; that commit's
     message also announced these docs, which follow here).
+
+### 2026-10-08 — Day 46: Saved collections
+- **Model:** Instagram's. "Saved" is every saved post; collections are
+  named groups of them, and a post can be in several. Saving into a
+  collection also saves the post. Unsaving takes it out of every
+  collection; deleting a collection keeps its posts saved. A collection
+  item points at the bookmark (migration 054), so the database
+  enforces all of that through cascades.
+- **API (`b424bf0`):**
+  - /collections: list (count and cover from the posts you can still
+    see), create, rename and delete; paged /collections/:id/posts.
+  - /posts/:id/collections: get the ids, or set them (one transaction;
+    saves first). Names up to 50 characters, unique per person whatever
+    the case; 30 collections at most. Anyone else's collection answers
+    404.
+  - GET /bookmarks and a collection's posts now share one query
+    (services/savedPostsService), so both apply the same visibility
+    rules (blocks, private accounts, groups left, "only me",
+    deactivated authors).
+  - Also: the data download, the Privacy Policy (EN/AR, dated
+    2026-10-08), Arabic server messages, and convert-zawgyi COLUMNS
+    (plus post_drafts.content, which Day 45 missed).
+- **UI (`a2a2e56`):**
+  - "Save to collection" in every post's ⋯ menu: a sheet with
+    checkboxes and "New collection" right there. It is loaded only when
+    first opened, to keep the feed's first download small.
+  - Saved shows a collections row (cover, name, count, "New
+    collection") above all saved posts.
+  - /saved/collections/:id has rename, delete (asks first), and empty
+    and "doesn't exist" states.
+- **Arabic:** a collection is "قائمة" (list), because "مجموعة" already
+  means a group in this app. In RTL, an English collection name sits
+  next to its checkbox (`<bdi>`, sized to its text) instead of drifting
+  to the far edge. The sheet got side padding, which ActionSheet's
+  full-width rows never needed.
+- **Not added:** the perf suite. It seeds ~200 bookmarks, far under its
+  4 MB table threshold, and the collection queries use the same filters
+  plus primary-key lookups. Adding them would cost ~22 s on a suite
+  near its 10-minute limit.
+- **Tests at close:**
+  - backend 765/765 (collections 9, with 6 mutation checks on
+    ownership, visibility and counts); Vitest 170/170; check:i18n 1059
+    keys; bundle 218.5 kB; rehearsal 015 → 054.
+  - Full browser run: all 54 suites (new: day46-collections) + the 5
+    special-stack suites + perf 38/38 + A3 EN/AR (240 each, a seeded
+    collection added) + a11y (97 page checks).
