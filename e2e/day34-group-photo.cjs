@@ -80,6 +80,9 @@ const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysoci
   await alice.getByRole('button', { name: 'Remove photo' }).click();
   await bob.locator('.group-photo-block .messages-group-avatar').waitFor({ timeout: 8000 }).catch(() => {});
   check('removing it shows the glyph again, live on bob\'s screen', (await bob.locator('.group-photo-block .messages-group-avatar').count()) === 1);
+  // Her own screen updates when her request returns -- wait for it (Day 45:
+  // reading it at once was a race seen in a full run).
+  await alice.getByText('Add photo').waitFor({ timeout: 8000 }).catch(() => {});
   check('...and alice is offered Add photo again', (await alice.getByText('Add photo').count()) === 1);
 
   // 5. Dark and Arabic, with a photo.
