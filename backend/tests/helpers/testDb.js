@@ -42,7 +42,7 @@ const pool = new Pool({ connectionString: TEST_DATABASE_URL });
 const TABLES = [
   'messages_dm_legacy', 'reports', 'notification_preferences', 'notifications', 'bookmarks', 'blocks', 'follows',
   'likes', 'comment_likes', 'comments', 'message_reactions', 'conversation_participants', 'messages', 'conversations',
-  'post_drafts', 'poll_votes', 'poll_options', 'polls', 'post_hashtags', 'hashtags', 'post_media', 'community_members', 'communities', 'story_views', 'stories', 'posts', 'sessions', 'error_groups', 'link_previews', 'push_subscriptions', 'suggestion_dismissals', 'search_history', 'users'
+  'bookmark_collection_items', 'bookmark_collections', 'post_drafts', 'poll_votes', 'poll_options', 'polls', 'post_hashtags', 'hashtags', 'post_media', 'community_members', 'communities', 'story_views', 'stories', 'posts', 'sessions', 'error_groups', 'link_previews', 'push_subscriptions', 'suggestion_dismissals', 'search_history', 'users'
 ];
 
 async function resetDb() {

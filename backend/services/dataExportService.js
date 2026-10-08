@@ -30,7 +30,7 @@ async function buildExport(userId) {
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
     legacyMessages, notifications, reports, sessions, pushDevices, messageReactions, hiddenSuggestions, searches,
-    pollOptions, pollVotes, drafts
+    pollOptions, pollVotes, drafts, collections
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -108,7 +108,14 @@ async function buildExport(userId) {
           WHERE v.user_id = $1 ORDER BY v.created_at`, [userId]),
     // Day 45: drafts and scheduled posts.
     rows(`SELECT content, visibility, community_id, page_id, poll, media_urls AS media, scheduled_for, created_at, updated_at
-          FROM post_drafts WHERE user_id = $1 ORDER BY created_at`, [userId])
+          FROM post_drafts WHERE user_id = $1 ORDER BY created_at`, [userId]),
+    // Day 46: saved collections and which saved posts are in each.
+    rows(`SELECT c.name, c.created_at,
+            COALESCE(array_agg(b.post_id ORDER BY i.added_at) FILTER (WHERE b.post_id IS NOT NULL), '{}') AS post_ids
+          FROM bookmark_collections c
+          LEFT JOIN bookmark_collection_items i ON i.collection_id = c.id
+          LEFT JOIN bookmarks b ON b.id = i.bookmark_id
+          WHERE c.user_id = $1 GROUP BY c.id ORDER BY c.created_at`, [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -145,6 +152,7 @@ async function buildExport(userId) {
     reactions,
     comment_likes: commentLikes,
     saved_posts: bookmarks,
+    saved_collections: collections,
     stories: stories.map((s) => ({
       ...s,
       views: viewsByStory[s.id]?.[0].views || 0

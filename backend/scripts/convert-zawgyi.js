@@ -46,6 +46,10 @@ const COLUMNS = [
   { table: 'pages', column: 'description' },
   { table: 'reports', column: 'details' },
   { table: 'search_history', column: 'query', maxLength: 100 },
+  // Day 45-46: converted on the way in since they were added; listed so
+  // every converted column is here.
+  { table: 'post_drafts', column: 'content' },
+  { table: 'bookmark_collections', column: 'name', maxLength: 50 },
 ];
 
 function parseArgs(argv) {

@@ -1,9 +1,8 @@
 const db = require('../db');
-const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
-const { pollColumnSql } = require('../services/pollService');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
-const { getVisiblePost, communityVisibleSql } = require('../services/postVisibilityService');
+const { getVisiblePost } = require('../services/postVisibilityService');
+const { listSaved } = require('../services/savedPostsService');
 
 async function bookmarkPost(req, res) {
   try {
@@ -51,44 +50,9 @@ async function unbookmarkPost(req, res) {
 async function getBookmarks(req, res) {
   try {
     const { page, limit, offset } = getPagination(req, { defaultLimit: 10, maxLimit: 50 });
-
-    // Same "fetch one extra row" no-COUNT(*) trick as getPosts/getFeed, plus
-    // the same block-filtering as getFeed -- a saved post from someone you
-    // later blocked (or who blocked you) shouldn't keep showing up here.
-    const result = await db.query(`
-      SELECT posts.id, posts.content, posts.visibility, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url,
-        bookmarks.created_at AS bookmarked_at,
-        (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
-        EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
-        ${reactionColumnsSql('$1')},
-        ${mediaColumnSql()},
-        ${pollColumnSql('$1')},
-        ${pageColumnSql()},
-        true AS bookmarked_by_me
-      FROM bookmarks
-      JOIN posts ON posts.id = bookmarks.post_id
-      JOIN users ON users.id = posts.user_id
-      WHERE bookmarks.user_id = $1
-        -- B13: a saved community post shows only while you can still see it.
-        AND ${communityVisibleSql('$1')}
-        AND NOT EXISTS (
-          SELECT 1 FROM blocks
-          WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
-             OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
-        )
-        AND (
-          ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
-          OR users.id = $1
-          OR (posts.visibility <> 'only_me' AND EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted'))
-        )
-        AND NOT users.is_deactivated
-      ORDER BY bookmarks.created_at DESC
-      LIMIT $2 OFFSET $3
-    `, [req.userId, limit + 1, offset]);
-
-    const hasMore = result.rows.length > limit;
-    const posts = hasMore ? result.rows.slice(0, limit) : result.rows;
-
+    // Day 46: the query (and its visibility rules) is shared with a
+    // collection's posts -- services/savedPostsService.
+    const { posts, hasMore } = await listSaved(req.userId, { limit, offset });
     res.json({ page, posts, hasMore });
   } catch (err) {
     sendServerError(res, err, 'Fetch bookmarks failed. Please try again later.');

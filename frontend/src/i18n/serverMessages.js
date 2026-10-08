@@ -209,6 +209,12 @@ const AR = {
   "You can't react to a deleted message": 'لا يمكنك التفاعل مع رسالة محذوفة',
   "You can't ban yourself": 'لا يمكنك حظر نفسك',
   "Admins can't be banned here -- remove their admin role first": 'لا يمكن حظر المشرفين من هنا — أزل دور المشرف عنهم أولًا',
+  // Day 46: saved collections
+  'A collection needs a name': 'تحتاج القائمة إلى اسم',
+  'Collection names can be up to 50 characters': 'يمكن أن يصل اسم القائمة إلى 50 حرفًا',
+  'Collection not found': 'القائمة غير موجودة',
+  'You can have up to 30 collections': 'يمكنك إنشاء 30 قائمة كحد أقصى',
+  'You already have a collection with that name': 'لديك بالفعل قائمة بهذا الاسم',
   // admin screens
   'Accounts cannot be removed here; ban or suspend the user instead': 'لا يمكن حذف الحسابات من هنا؛ احظر المستخدم أو أوقفه مؤقتًا بدلًا من ذلك',
   'That user is not banned': 'هذا المستخدم غير محظور',

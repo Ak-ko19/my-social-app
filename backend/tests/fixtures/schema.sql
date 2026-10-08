@@ -516,3 +516,21 @@ CREATE INDEX idx_post_drafts_user ON post_drafts (user_id, updated_at DESC);
 CREATE INDEX idx_post_drafts_due ON post_drafts (scheduled_for) WHERE scheduled_for IS NOT NULL;
 CREATE INDEX idx_post_drafts_community ON post_drafts (community_id) WHERE community_id IS NOT NULL;
 CREATE INDEX idx_post_drafts_page ON post_drafts (page_id) WHERE page_id IS NOT NULL;
+
+-- Added by migration 054_add_bookmark_collections (Day 46): saved posts in
+-- named collections.
+CREATE TABLE bookmark_collections (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(50) NOT NULL CONSTRAINT chk_bookmark_collections_name CHECK (btrim(name) <> ''),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX idx_bookmark_collections_user_name ON bookmark_collections (user_id, lower(name));
+CREATE TABLE bookmark_collection_items (
+  collection_id INTEGER NOT NULL REFERENCES bookmark_collections(id) ON DELETE CASCADE,
+  bookmark_id INTEGER NOT NULL REFERENCES bookmarks(id) ON DELETE CASCADE,
+  added_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (collection_id, bookmark_id)
+);
+CREATE INDEX idx_bookmark_collection_items_bookmark ON bookmark_collection_items (bookmark_id);

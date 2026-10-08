@@ -151,7 +151,8 @@ describe('convert-zawgyi script', () => {
   it('covers every column the app converts, and checks its options', async () => {
     expect(COLUMNS.map((c) => `${c.table}.${c.column}`)).toEqual([
       'posts.content', 'comments.content', 'messages.content', 'users.bio', 'conversations.name', 'communities.name',
-      'communities.description', 'pages.name', 'pages.description', 'reports.details', 'search_history.query'
+      'communities.description', 'pages.name', 'pages.description', 'reports.details', 'search_history.query',
+      'post_drafts.content', 'bookmark_collections.name'
     ]);
     expect(parseArgs(['--apply'])).toEqual({ apply: true });
     expect(await convert(['--delete'])).toBe(2);
