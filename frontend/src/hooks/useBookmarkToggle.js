@@ -44,5 +44,8 @@ export function useBookmarkToggle(postId, initialBookmarked, token) {
       });
   }, [bookmarked, postId, token]);
 
-  return { bookmarked, pending, error, toggle };
+  // Day 46: saving into a collection saves the post too.
+  const markSaved = useCallback(() => setBookmarked(true), []);
+
+  return { bookmarked, pending, error, toggle, markSaved };
 }

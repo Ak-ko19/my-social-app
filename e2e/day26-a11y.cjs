@@ -25,7 +25,9 @@ const AUTHED = [
   // Day 42: search results (tabs, people, hashtags, posts).
   '/search?q=welcome', '/search?q=bob&type=people',
   // Day 45: drafts and scheduled posts.
-  '/drafts', '/drafts?tab=scheduled'
+  '/drafts', '/drafts?tab=scheduled',
+  // Day 46: a saved collection.
+  '/saved/collections/1'
 ];
 const PUBLIC = ['/welcome', '/login', '/signup', '/forgot-password', '/reset-password/sometoken', '/terms', '/privacy'];
 const LANG_PAGES = ['/', '/messages/1', '/profile/2', '/settings', '/login', '/welcome', '/drafts'];
@@ -56,6 +58,11 @@ function record(result, label) {
   const auth = { Authorization: `Bearer ${aliceToken}` };
   if ((await fetch(`${API}/communities/1`, { headers: auth })).status === 404) {
     await fetch(`${API}/communities`, { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Yangon Hikers', description: 'Weekend trails', privacy: 'public' }) });
+  }
+  // Day 46: a saved collection (id 1) holding post 1.
+  if ((await (await fetch(`${API}/collections`, { headers: auth })).json()).length === 0) {
+    const made = await (await fetch(`${API}/collections`, { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Recipes' }) })).json();
+    await fetch(`${API}/posts/1/collections`, { method: 'PUT', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ collectionIds: [made.id] }) });
   }
   if ((await fetch(`${API}/pages/1`, { headers: auth })).status === 404) {
     await fetch(`${API}/pages`, { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Mingalar Tea House', category: 'business', description: 'Tea leaf salad' }) });

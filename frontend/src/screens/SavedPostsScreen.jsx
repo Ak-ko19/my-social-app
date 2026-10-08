@@ -7,6 +7,7 @@ import FeedSkeleton from '../components/feed/FeedSkeleton';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import { useAuth } from '../hooks/useAuth';
 import { useSavedPosts } from '../hooks/useSavedPosts';
+import CollectionsRow from '../components/saved/CollectionsRow';
 import '../components/feed/Feed.css';
 import './SavedPostsScreen.css';
 
@@ -24,6 +25,10 @@ function SavedPostsScreen() {
         <IconButton icon={ChevronLeft} aria-label={t('common.back')} onClick={() => navigate(-1)} />
         <h1 className="saved-posts-header-title">{t('saved.title')}</h1>
       </header>
+
+      {/* Day 46: collections first, then every saved post. */}
+      <CollectionsRow token={token} />
+      <h2 className="saved-posts-section">{t('collections.allSaved')}</h2>
 
       {state === 'loading' && <FeedSkeleton />}
       {state === 'error' && <FeedErrorState message={error} onRetry={reload} />}

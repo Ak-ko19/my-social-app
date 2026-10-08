@@ -213,6 +213,8 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
           onEdit={startEditing}
           canModerate={canModerate}
           onTogglePin={onTogglePin ? () => onTogglePin(post) : undefined}
+          saved={bookmark.bookmarked}
+          onSaved={bookmark.markSaved}
         />
       </header>
       {visibilityError && (

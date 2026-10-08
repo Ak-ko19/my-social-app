@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 46 — Saved collections
-**Step:** 1 — collections API: done (committed). Next: step 2, UI.
+**Step:** 2 — collections UI: done (committed). Next: close Day 46 (full browser run, Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -133,3 +133,9 @@ deleting a collection keeps the posts saved.
   Verified: backend 765/765 (collections 9, 6 mutations), rehearsal
   015-054, c2-legal. Perf suite not extended: ~200 seeded bookmarks,
   far under its 4 MB table threshold.
+- Step 2 (UI) done: Save to collection sheet from the post menu (lazy
+  loaded; create inline; saving into one saves the post); collections
+  row on Saved (+ New collection dialog); /saved/collections/:id with
+  rename / delete (confirm) / empty and not-found states. EN/AR,
+  RTL (sheet padding, bdi names). Verified: Vitest 170, bundle 218.5
+  kB, day46-collections 21/21, 8 menu suites, a11y 97, A3 EN+AR 240.

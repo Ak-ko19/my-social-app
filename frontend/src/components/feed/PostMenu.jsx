@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { Flag, Globe, Lock, MoreHorizontal, Pencil, Pin, PinOff, Trash2, UserX, Users } from 'lucide-react';
+import { lazy, Suspense, useState } from 'react';
+import { BookmarkPlus, Flag, Globe, Lock, MoreHorizontal, Pencil, Pin, PinOff, Trash2, UserX, Users } from 'lucide-react';
 import { IconButton, ActionSheet, ConfirmDialog } from '../ui';
 import ReportDialog from './ReportDialog';
+// Day 46: loaded when first opened -- every feed card has this menu.
+const SaveToCollectionSheet = lazy(() => import('./SaveToCollectionSheet'));
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from '../../utils/serverError';
 import { useAuth } from '../../hooks/useAuth';
@@ -22,7 +24,8 @@ const AUDIENCE_ITEMS = [
   { value: 'only_me', label: 'postMenu.makeOnlyMe', icon: Lock }
 ];
 
-function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, onDeleted, onEdit, onTogglePin, canModerate = false }) {
+// saved / onSaved (Day 46): the post's Save state, for "Save to collection".
+function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, onDeleted, onEdit, onTogglePin, canModerate = false, saved = false, onSaved }) {
   const { t } = useTranslation();
   const { token, userId } = useAuth();
   const isOwner = post.user_id === userId;
@@ -30,6 +33,7 @@ function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, 
   const [confirmBlockOpen, setConfirmBlockOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState(null); // { type: 'post'|'user', label }
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [error, setError] = useState('');
 
   const handleBlock = async () => {
@@ -121,7 +125,14 @@ function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, 
       onSelect: () => setConfirmDeleteOpen(true)
     });
   }
-  const items = isOwner ? ownerMenu : otherMenu;
+  // Day 46: anyone logged in can put a post in their saved collections.
+  const collectionItem = {
+    key: 'save-collection',
+    label: t('collections.menuItem'),
+    icon: BookmarkPlus,
+    onSelect: () => setCollectionsOpen(true)
+  };
+  const items = [...(token ? [collectionItem] : []), ...(isOwner ? ownerMenu : otherMenu)];
 
   return (
     <>
@@ -153,6 +164,11 @@ function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, 
         danger
         error={error}
       />
+      {collectionsOpen && (
+        <Suspense fallback={null}>
+          <SaveToCollectionSheet open={collectionsOpen} onClose={() => setCollectionsOpen(false)} post={post} saved={saved} onSaved={onSaved} />
+        </Suspense>
+      )}
       {reportTarget && (
         <ReportDialog
           open={Boolean(reportTarget)}

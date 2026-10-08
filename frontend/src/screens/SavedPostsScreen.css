@@ -19,3 +19,14 @@
   color: var(--color-text-muted);
   font-size: 14px;
 }
+
+/* Day 46: "All saved posts", under the collections row. */
+.saved-posts-section {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-text);
+  text-align: start;
+}

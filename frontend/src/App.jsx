@@ -24,6 +24,7 @@ const BlockedUsersScreen = lazy(() => import('./screens/BlockedUsersScreen'));
 const SessionsScreen = lazy(() => import('./screens/SessionsScreen'));
 const SavedPostsScreen = lazy(() => import('./screens/SavedPostsScreen'));
 const DraftsScreen = lazy(() => import('./screens/DraftsScreen'));
+const CollectionScreen = lazy(() => import('./screens/CollectionScreen'));
 const PostDetailScreen = lazy(() => import('./screens/PostDetailScreen'));
 const HashtagFeedScreen = lazy(() => import('./screens/HashtagFeedScreen'));
 const ProfileScreen = lazy(() => import('./screens/ProfileScreen'));
@@ -166,6 +167,8 @@ function App() {
         <Route path="/create-post" element={authOnly(<PhoneShell><CreatePost /></PhoneShell>)} />
         {/* Day 45: drafts and scheduled posts. */}
         <Route path="/drafts" element={authOnly(<PhoneShell><DraftsScreen /></PhoneShell>)} />
+        {/* Day 46: one saved collection. */}
+        <Route path="/saved/collections/:id" element={authOnly(<PhoneShell><CollectionScreen /></PhoneShell>)} />
         <Route path="/edit-profile" element={authOnly(<PhoneShell><EditProfile /></PhoneShell>)} />
         <Route path="/forgot-password" element={<PhoneShell hideTabBar><ForgotPassword /></PhoneShell>} />
         <Route path="/reset-password/:token" element={<PhoneShell hideTabBar><ResetPassword /></PhoneShell>} />

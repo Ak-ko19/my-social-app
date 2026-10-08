@@ -1,0 +1,85 @@
+/* Day 46: "Save to collection" sheet. Tokens only; logical properties. */
+
+.save-collection-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  text-align: start;
+}
+
+/* The sheet panel has no side padding of its own (ActionSheet's rows are
+   full width); this form needs some. */
+.ui-modal-panel-sheet.save-collection-sheet {
+  padding-inline: var(--space-4);
+}
+
+.save-collection-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.save-collection-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 40vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  border: none;
+}
+
+.save-collection-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.save-collection-option:hover,
+.save-collection-option:focus-within {
+  background: var(--color-subtle-bg);
+}
+
+.save-collection-option input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent);
+}
+
+.save-collection-name {
+  /* Sized to its text, so it sits next to the checkbox in either
+     direction (a stretched box would push English to the left in RTL). */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.save-collection-tick {
+  margin-inline-start: auto;
+  color: var(--color-accent-text);
+}
+
+.save-collection-new {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.save-collection-new .form-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.save-collection-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.save-collection-actions .btn {
+  flex: 1;
+}

@@ -1,31 +1,43 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchBookmarks } from '../services/bookmarkService';
+import { fetchCollectionPosts } from '../services/collectionService';
 import i18n from '../i18n';
 
 const PAGE_LIMIT = 10;
 
 // Paginated saved-posts list -- same shape as useFeed (initial load +
 // incremental loadMore, request-id guard against stale responses), just
-// backed by GET /bookmarks instead of GET /feed.
-export function useSavedPosts(token) {
+// backed by GET /bookmarks instead of GET /feed -- or (Day 46) by one
+// collection's posts, when collectionId is given (then `collection` holds
+// its name, and `notFound` is set when it isn't yours or is gone).
+export function useSavedPosts(token, collectionId = null) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(false);
+  const [collection, setCollection] = useState(null);
+  const [notFound, setNotFound] = useState(false);
 
   const pageRef = useRef(1);
   const requestIdRef = useRef(0);
   const loadingMoreRef = useRef(false);
+  const fetchPage = useCallback(
+    (page) => (collectionId
+      ? fetchCollectionPosts(collectionId, token, { page, limit: PAGE_LIMIT })
+      : fetchBookmarks(token, { page, limit: PAGE_LIMIT })),
+    [collectionId, token]
+  );
 
   const fetchInitial = useCallback(() => {
     if (!token) return;
     const requestId = ++requestIdRef.current;
 
-    fetchBookmarks(token, { page: 1, limit: PAGE_LIMIT })
+    fetchPage(1)
       .then((data) => {
         if (requestId !== requestIdRef.current) return;
         pageRef.current = 1;
+        if (data.collection) setCollection(data.collection);
         setPosts(data.posts);
         setHasMore(Boolean(data.hasMore));
         setError(null);
@@ -34,10 +46,11 @@ export function useSavedPosts(token) {
       .catch((err) => {
         if (requestId !== requestIdRef.current) return;
         console.error(err);
-        setError(i18n.t('errors.loadSaved'));
+        if (collectionId && err.response?.status === 404) setNotFound(true);
+        setError(i18n.t(collectionId ? 'collections.loadFailed' : 'errors.loadSaved'));
         setLoading(false);
       });
-  }, [token]);
+  }, [token, collectionId, fetchPage]);
 
   useEffect(() => {
     fetchInitial();
@@ -58,7 +71,7 @@ export function useSavedPosts(token) {
     Promise.resolve()
       .then(() => {
         setLoadingMore(true);
-        return fetchBookmarks(token, { page: nextPage, limit: PAGE_LIMIT });
+        return fetchPage(nextPage);
       })
       .then((data) => {
         if (requestId !== requestIdRef.current) return;
@@ -78,7 +91,7 @@ export function useSavedPosts(token) {
         loadingMoreRef.current = false;
         if (requestId === requestIdRef.current) setLoadingMore(false);
       });
-  }, [token, hasMore]);
+  }, [token, hasMore, fetchPage]);
 
   // A post unsaved from within the list (the bookmark button toggled off
   // while viewing Saved Posts) should disappear immediately, same as
@@ -91,5 +104,5 @@ export function useSavedPosts(token) {
     setPosts((current) => current.map((post) => (post.id === postId ? { ...post, ...updatedFields } : post)));
   }, []);
 
-  return { posts, loading, loadingMore, error, hasMore, reload, loadMore, removePost, updatePostContent };
+  return { posts, loading, loadingMore, error, hasMore, reload, loadMore, removePost, updatePostContent, collection, setCollection, notFound };
 }

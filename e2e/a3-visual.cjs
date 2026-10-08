@@ -28,7 +28,7 @@ const AUTHED = [
   '/create-post', '/edit-profile', '/notifications', '/messages', '/messages/1', '/search', '/explore', '/profile/1', '/messages/new-group', '/settings/notifications', '/admin',
   '/groups', '/groups/new', '/groups/1', '/groups/1/manage',
   '/pages', '/pages/new', '/pages/1', '/pages/1/edit', '/settings/language',
-  '/settings/sessions', '/drafts'
+  '/settings/sessions', '/drafts', '/saved/collections/1'
 ];
 const PUBLIC = ['/login', '/signup', '/forgot-password', '/reset-password/sometoken', '/terms', '/privacy', '/welcome'];
 const WIDTHS = [375, 390, 430];
@@ -44,6 +44,11 @@ let checks = 0;
     await fetch('http://localhost:3000/communities', { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Yangon Hikers', description: 'Weekend trails', privacy: 'public' }) });
     const f = new FormData(); f.append('content', 'First group hike'); f.append('communityId', '1');
     await fetch('http://localhost:3000/posts', { method: 'POST', headers: auth, body: f });
+  }
+  // Day 46: a saved collection (id 1) holding post 1.
+  if ((await (await fetch(`http://localhost:3000/collections`, { headers: auth })).json()).length === 0) {
+    const made = await (await fetch(`http://localhost:3000/collections`, { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Recipes' }) })).json();
+    await fetch(`http://localhost:3000/posts/1/collections`, { method: 'PUT', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ collectionIds: [made.id] }) });
   }
   // B14: a page (id 1) owned by alice, with one post.
   if ((await fetch('http://localhost:3000/pages/1', { headers: auth })).status === 404) {

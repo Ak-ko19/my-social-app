@@ -1,0 +1,114 @@
+/* Day 46: the collections row on Saved. Tokens only; logical properties,
+   so in Arabic the row starts on the right. */
+
+.collections-row {
+  padding: 0 var(--space-4) var(--space-3);
+  text-align: start;
+}
+
+.collections-heading {
+  margin: 0 0 var(--space-2);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.collections-status {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.collections-retry {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.collections-list {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0 0 var(--space-1);
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+
+.collections-list > li {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.collection-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 112px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.collection-card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+.collection-cover {
+  width: 112px;
+  height: 112px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background: var(--color-subtle-bg);
+}
+
+.collection-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.collection-card-new .collection-cover-empty {
+  border: 2px dashed var(--color-border);
+  background: none;
+  color: var(--color-accent-text);
+}
+
+.collection-card-skeleton {
+  width: 112px;
+  height: 150px;
+  border-radius: var(--radius-md);
+  background: var(--color-subtle-bg);
+}
+
+.collection-name {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.collection-count {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.collections-form-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.collections-form-actions .btn {
+  flex: 1;
+}
