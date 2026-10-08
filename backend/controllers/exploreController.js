@@ -119,7 +119,7 @@ async function getPopularPosts(req, res) {
       `WITH scored AS (
          SELECT posts.id,
            (SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id) AS reactions,
-           (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id) AS comment_total
+           (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id AND NOT comments.awaiting_approval) AS comment_total
          FROM posts
          JOIN users ON users.id = posts.user_id
          WHERE posts.community_id IS NULL -- B13: not in global explore

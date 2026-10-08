@@ -11,6 +11,7 @@ const http = require('http');
 const https = require('https');
 const webpush = require('web-push');
 const db = require('../db');
+const { notRestrictedSql } = require('./restrictService');
 const logger = require('../utils/logger');
 const { isProduction } = require('../config/runtime');
 const { isOnline } = require('../sockets/presence');
@@ -199,6 +200,8 @@ function pushNewMessage({ conversationId, senderId }) {
          -- Day 23: chat muted, or message notifications off
          AND (cp.muted_until IS NULL OR cp.muted_until <= now())
          AND ${MESSAGES_ALLOWED('cp.user_id')}
+         -- Day 47: a restricted sender's messages arrive quietly.
+         AND ${notRestrictedSql('cp.user_id', '$2')}
          AND NOT EXISTS (SELECT 1 FROM blocks b
            WHERE (b.blocker_id = cp.user_id AND b.blocked_id = $2) OR (b.blocker_id = $2 AND b.blocked_id = cp.user_id))`,
       [conversationId, senderId]

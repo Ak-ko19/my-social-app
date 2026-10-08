@@ -217,6 +217,7 @@ const AR = {
   'You already have a collection with that name': 'لديك بالفعل قائمة بهذا الاسم',
   // Day 47: privacy controls
   "You can't mute yourself": 'لا يمكنك كتم نفسك',
+  "You can't restrict yourself": 'لا يمكنك تقييد نفسك',
   // admin screens
   'Accounts cannot be removed here; ban or suspend the user instead': 'لا يمكن حذف الحسابات من هنا؛ احظر المستخدم أو أوقفه مؤقتًا بدلًا من ذلك',
   'That user is not banned': 'هذا المستخدم غير محظور',

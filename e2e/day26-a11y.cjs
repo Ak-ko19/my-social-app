@@ -29,7 +29,7 @@ const AUTHED = [
   // Day 46: a saved collection.
   '/saved/collections/1',
   // Day 47: privacy controls.
-  '/settings/muted'
+  '/settings/muted', '/settings/restricted'
 ];
 const PUBLIC = ['/welcome', '/login', '/signup', '/forgot-password', '/reset-password/sometoken', '/terms', '/privacy'];
 const LANG_PAGES = ['/', '/messages/1', '/profile/2', '/settings', '/login', '/welcome', '/drafts'];

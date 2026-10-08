@@ -3,6 +3,7 @@
 // forget to. Missing preferences row = everything on.
 const db = require('../db');
 const { pushNotification } = require('./pushService');
+const { notRestrictedSql } = require('./restrictService');
 
 // Notification type -> the setting (column) that controls it. Column names
 // come only from this map, never from input, so interpolating them into
@@ -46,6 +47,8 @@ async function notify({ userId, actorId, type, postId = null, commentId = null }
     `INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id)
      SELECT $1, $2, $3, $4, $5
      WHERE ${allowedSql(category, '$1::int')}
+       -- Day 47: nobody you restricted can notify you.
+       AND ${notRestrictedSql('$1::int', '$2::int')}
      RETURNING id`,
     [userId, actorId, type, postId, commentId]
   );

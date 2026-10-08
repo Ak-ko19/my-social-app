@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { fetchComments, createComment, updateComment, likeComment, unlikeComment } from '../services/postService';
+import { fetchComments, createComment, updateComment, likeComment, unlikeComment, deleteComment, approveComment } from '../services/postService';
 import { serverErrorText } from '../utils/serverError';
 
 let tempIdSeq = 0;
@@ -33,6 +33,9 @@ export function useComments(postId, token, currentUser) {
   // (replies are one level deep; see the backend's createComment).
   const [replyingTo, setReplyingTo] = useState(null);
   const [likeError, setLikeError] = useState(null);
+  // Day 47: deleting (yours, or any on your post) and approving a
+  // restricted person's comment.
+  const [actionError, setActionError] = useState(null);
   const likePendingRef = useRef(new Set());
 
   const load = () => {
@@ -195,8 +198,32 @@ export function useComments(postId, token, currentUser) {
       .finally(() => likePendingRef.current.delete(commentId));
   };
 
+  // The comment and (a top-level one's) replies go -- the server cascades.
+  const removeComment = (commentId) => {
+    setActionError(null);
+    return deleteComment(commentId, token)
+      .then(() => setComments((current) => current.filter((c) => c.id !== commentId && c.parent_comment_id !== commentId)))
+      .catch((err) => {
+        console.error(err);
+        setActionError(serverErrorText(err, 'comments.deleteFailed'));
+      });
+  };
+
+  const approve = (commentId) => {
+    setActionError(null);
+    return approveComment(commentId, token)
+      .then(() => setComments((current) => current.map((c) => (c.id === commentId ? { ...c, awaiting_approval: false } : c))))
+      .catch((err) => {
+        console.error(err);
+        setActionError(serverErrorText(err, 'comments.approveFailed'));
+      });
+  };
+
   return {
     visible,
+    removeComment,
+    approve,
+    actionError,
     comments,
     replyingTo,
     startReply,

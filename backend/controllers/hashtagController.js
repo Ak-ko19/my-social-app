@@ -74,7 +74,7 @@ const TOP_SQL = `
   JOIN users ON users.id = posts.user_id
   ORDER BY ${popularityScoreSql(
     '(SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id)',
-    '(SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id)',
+    '(SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id AND NOT comments.awaiting_approval)',
     'posts.created_at'
   )} DESC, posts.id DESC
   LIMIT $3 OFFSET $4`;

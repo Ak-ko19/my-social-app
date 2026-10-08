@@ -6,6 +6,7 @@ const db = require('../db');
 const { getVisiblePost } = require('./postVisibilityService');
 const { pushNotification } = require('./pushService');
 const { allowedSql } = require('./notificationService');
+const { notRestrictedSql } = require('./restrictService');
 
 // Day 43: names in any script (see hashtagService's HASHTAG_REGEX).
 const MENTION_REGEX = /@([\p{L}\p{M}\p{N}_]+)/gu;
@@ -42,6 +43,8 @@ async function notifyMentions({ content, authorId, postId, commentId = null, exc
        AND id != ALL($3::int[])
        -- B11: respect the recipient's notification settings.
        AND ${allowedSql('mentions', 'users.id')}
+       -- Day 47: not someone who restricted the author.
+       AND ${notRestrictedSql('users.id', '$2')}
        AND NOT EXISTS (
          SELECT 1 FROM blocks
          WHERE (blocker_id = $2 AND blocked_id = users.id)

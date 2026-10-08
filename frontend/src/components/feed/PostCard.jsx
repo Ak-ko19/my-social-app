@@ -304,7 +304,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
       </div>
 
       <AnimatePresence initial={false}>
-        {comments.visible && <CommentSection key="comments" postId={post.id} comments={comments} />}
+        {comments.visible && <CommentSection key="comments" postId={post.id} postOwnerId={post.user_id} comments={comments} />}
       </AnimatePresence>
     </article>
   );

@@ -9,6 +9,7 @@ import { renderTextWithLinks } from '../../utils/renderTextWithLinks';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import MentionAutocomplete from './MentionAutocomplete';
 import ReportDialog from './ReportDialog';
+import { ConfirmDialog } from '../ui';
 import { MAX_COMMENT_LENGTH } from '../../utils/textLimits';
 import { useMentionAutocomplete, applyMentionSelection } from '../../hooks/useMentionAutocomplete';
 import { DURATION_NORMAL, EASE_STANDARD } from '../../utils/motionTokens';
@@ -29,7 +30,9 @@ function buildThreads(list) {
   return topLevel.map((c) => ({ comment: c, replies: replies.get(c.id) || [] }));
 }
 
-function CommentItem({ c, comments, currentUserId, onReply, onReport }) {
+// postOwnerId (Day 47): the post's owner may delete any comment on it, and
+// approve a restricted person's comment waiting for them.
+function CommentItem({ c, comments, currentUserId, postOwnerId, onReply, onReport, onDelete }) {
   const { t } = useTranslation();
   const { editingCommentId, editText, setEditText, startEdit, cancelEdit, saveEdit, toggleCommentLike } = comments;
 
@@ -63,6 +66,15 @@ function CommentItem({ c, comments, currentUserId, onReply, onReport }) {
         <Username>{c.username}</Username>: <bdi>{renderTextWithLinks(c.content)}</bdi>
         {c.pending && <span className="feed-comment-status"> {t('comments.pending')}</span>}
       </p>
+      {/* Day 47: shown to the post's owner only (the server tells no one else). */}
+      {c.awaiting_approval && (
+        <p className="comment-held">
+          {t('comments.held', { name: c.username })}{' '}
+          <button type="button" className="comment-action comment-approve" onClick={() => comments.approve(c.id)}>
+            {t('comments.approve')}
+          </button>
+        </p>
+      )}
       {/* A not-yet-confirmed comment has no real id to like/reply/edit
           against, so its actions appear once it's reconciled. */}
       {!c.pending && (
@@ -86,6 +98,12 @@ function CommentItem({ c, comments, currentUserId, onReply, onReport }) {
               {t('common.edit')}
             </button>
           )}
+          {/* Day 47: your comment, or any on your own post. */}
+          {currentUserId && (c.user_id === currentUserId || postOwnerId === currentUserId) && (
+            <button type="button" className="comment-action" onClick={() => onDelete(c)} aria-label={t('comments.deleteAria', { name: c.username })}>
+              {t('common.delete')}
+            </button>
+          )}
           {/* Day 12: someone else's comment can be reported. */}
           {currentUserId && c.user_id !== currentUserId && (
             <button type="button" className="comment-action" onClick={() => onReport(c)} aria-label={t('comments.reportAria', { name: c.username })}>
@@ -106,7 +124,7 @@ function CommentItem({ c, comments, currentUserId, onReply, onReport }) {
 // This card lives inside a virtualized row measured by ResizeObserver --
 // animating height would make that observer fire continuously for the
 // whole animation, reflowing every row below on every frame.
-function CommentSection({ postId, comments }) {
+function CommentSection({ postId, postOwnerId, comments }) {
   const { t } = useTranslation();
   const { userId: currentUserId } = useAuth();
   const reduceMotion = useReducedMotion();
@@ -128,6 +146,7 @@ function CommentSection({ postId, comments }) {
 
   const threads = buildThreads(list);
   const [reporting, setReporting] = useState(null); // the comment being reported
+  const [deleting, setDeleting] = useState(null); // the comment about to be deleted
 
   const handleReply = (c) => {
     startReply(c);
@@ -152,12 +171,12 @@ function CommentSection({ postId, comments }) {
         <ul className="feed-comment-list">
           {threads.map(({ comment: c, replies }) => (
             <li key={c.id} className={c.pending ? 'feed-comment-pending' : undefined}>
-              <CommentItem c={c} comments={comments} currentUserId={currentUserId} onReply={handleReply} onReport={setReporting} />
+              <CommentItem c={c} comments={comments} currentUserId={currentUserId} onReply={handleReply} onReport={setReporting} postOwnerId={postOwnerId} onDelete={setDeleting} />
               {replies.length > 0 && (
                 <ul className="comment-replies" aria-label={t('comments.repliesTo', { name: c.username })}>
                   {replies.map((r) => (
                     <li key={r.id} className={r.pending ? 'feed-comment-pending' : undefined}>
-                      <CommentItem c={r} comments={comments} currentUserId={currentUserId} onReply={handleReply} onReport={setReporting} />
+                      <CommentItem c={r} comments={comments} currentUserId={currentUserId} onReply={handleReply} onReport={setReporting} postOwnerId={postOwnerId} onDelete={setDeleting} />
                     </li>
                   ))}
                 </ul>
@@ -167,9 +186,9 @@ function CommentSection({ postId, comments }) {
         </ul>
       )}
 
-      {(editError || likeError) && (
+      {(editError || likeError || comments.actionError) && (
         <p className="feed-error-text" role="alert">
-          {editError || likeError}
+          {editError || likeError || comments.actionError}
         </p>
       )}
 
@@ -234,6 +253,18 @@ function CommentSection({ postId, comments }) {
           {submitError}
         </p>
       )}
+      <ConfirmDialog
+        open={Boolean(deleting)}
+        onClose={() => setDeleting(null)}
+        onConfirm={async () => {
+          await comments.removeComment(deleting.id);
+          setDeleting(null);
+        }}
+        title={t('comments.deleteTitle')}
+        description={deleting?.parent_comment_id == null ? t('comments.deleteTextReplies') : t('comments.deleteText')}
+        confirmLabel={t('common.delete')}
+        danger
+      />
       {reporting && (
         <ReportDialog
           open

@@ -10,5 +10,7 @@ router.put('/comments/:id', authMiddleware, commentController.updateComment);
 router.delete('/comments/:id', authMiddleware, commentController.deleteComment);
 router.post('/comments/:id/like', authMiddleware, commentController.likeComment);
 router.delete('/comments/:id/like', authMiddleware, commentController.unlikeComment);
+// Day 47: the post's owner approves a restricted person's comment.
+router.post('/comments/:id/approve', authMiddleware, commentController.approveComment);
 
 module.exports = router;

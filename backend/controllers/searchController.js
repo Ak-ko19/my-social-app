@@ -103,7 +103,7 @@ async function searchPosts(req, res) {
         (ts_rank_cd(to_tsvector('english', posts.content), websearch_to_tsquery('english', $1), 32)
           + CASE WHEN posts.content ILIKE '%' || $2 || '%' THEN 0.5 ELSE 0 END)
         * ln(2 + (SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id)
-               + 2 * (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id))
+               + 2 * (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id AND NOT comments.awaiting_approval))
         / (1 + EXTRACT(EPOCH FROM (now() - posts.created_at)) / 86400 / 30) DESC,
         posts.id DESC
       LIMIT $4 OFFSET $5

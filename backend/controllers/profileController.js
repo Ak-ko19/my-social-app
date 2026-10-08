@@ -65,7 +65,8 @@ async function getProfile(req, res) {
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = users.id AND following_id = $1 AND status = 'accepted') AS follows_you,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = users.id) AS is_blocked_by_me,
         -- Day 47: only ever about the viewer's own choice.
-        $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM user_mutes WHERE muter_id = $1 AND muted_id = users.id) AS is_muted_by_me
+        $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM user_mutes WHERE muter_id = $1 AND muted_id = users.id) AS is_muted_by_me,
+        $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM user_restrictions WHERE restricter_id = $1 AND restricted_id = users.id) AS is_restricted_by_me
       FROM users WHERE ${isUsername ? 'LOWER(username) = LOWER($2)' : 'id = $2::int'}
     `, [viewerId, id]);
 

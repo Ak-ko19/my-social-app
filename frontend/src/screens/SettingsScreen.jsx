@@ -13,6 +13,7 @@ import {
   BellRing,
   UserX,
   VolumeX,
+  ShieldMinus,
   Globe,
   Moon,
   Lock,
@@ -72,6 +73,7 @@ const SETTINGS_SECTIONS = [
       { key: 'blocked-users', icon: UserX, to: '/settings/blocked-users' },
       // Day 47: people whose posts and stories you hid.
       { key: 'muted-accounts', icon: VolumeX, to: '/settings/muted' },
+      { key: 'restricted-accounts', icon: ShieldMinus, to: '/settings/restricted' },
       { key: 'follow-requests', icon: Users, to: '/settings/follow-requests' },
       // B15/B16: English / Arabic.
       { key: 'language', icon: Globe, to: '/settings/language' },

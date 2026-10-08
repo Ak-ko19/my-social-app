@@ -199,6 +199,17 @@ describe('web push (Day 22)', () => {
       expect(sent.map((s) => s.payload.body)).toEqual([`أرسل إليك ${bob.username} رسالة`]);
     });
 
+    // Day 47: a person you restricted can still message you, quietly.
+    it("no push for a restricted person's message (or like)", async () => {
+      await request(app).post(`/users/${bob.id}/restrict`).set(auth(alice));
+      const conv = (await request(app).post('/conversations').set(auth(bob)).send({ userId: alice.id })).body;
+      expect((await request(app).post(`/conversations/${conv.id}/messages`).set(auth(bob)).send({ content: 'hey' })).status).toBe(201);
+      const post = (await request(app).post('/posts').set(auth(alice)).field('content', 'hi')).body;
+      await request(app).post(`/posts/${post.id}/like`).set(auth(bob));
+      await push().whenIdle();
+      expect(sent).toHaveLength(0);
+    });
+
     it('an expired subscription (410) is deleted; other failures keep it', async () => {
       push().deps.send = jest.fn(async () => { throw Object.assign(new Error('gone'), { statusCode: 410 }); });
       const post = (await request(app).post('/posts').set(auth(alice)).field('content', 'hi')).body;

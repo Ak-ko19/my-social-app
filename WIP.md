@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 47 — Privacy controls
-**Step:** 1 — mute a person: done (committed). Next: step 2, restrict.
+**Step:** 2 — restrict: done (committed). Next: step 3, close friends.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -132,3 +132,12 @@ told; EN/AR, RTL, dark, tests, browser suite each).
   in the Blocked/Muted lists sat centred; now next to the avatar.
   Verified: backend 771 (mutes 6, 4 mutations), Vitest 176, rehearsal
   015-055, perf 38/38, day47-privacy, 7 feed suites, a11y 99, A3 246x2.
+- Step 2 (restrict) done: migration 056 (user_restrictions,
+  comments.awaiting_approval); held comments seen by author + post owner
+  only (counts too), approve / owner delete, no notifications (notify,
+  mentions, message pushes). UI: profile Restrict, held note + Approve,
+  comment Delete (was missing from the UI entirely), Settings >
+  Restricted accounts. Caught by the browser suite: postService.authHeaders
+  had been rewritten into calling itself (feed crashed); fixed.
+  Verified: backend 779 (restrict 7, 11 mutations), Vitest 179,
+  rehearsal 015-056, perf, 12 suites, a11y 101, A3 252x2.

@@ -98,3 +98,13 @@ export function denyFollowRequest(followerId, token) {
 export function votePoll(postId, optionId, token) {
   return api.post(`/posts/${postId}/poll/vote`, { optionId }, authHeaders(token)).then((res) => res.data);
 }
+
+// Day 47: delete a comment (yours, or any on your own post), and approve a
+// restricted person's comment on your post.
+export function deleteComment(commentId, token) {
+  return api.delete(`/comments/${commentId}`, authHeaders(token));
+}
+
+export function approveComment(commentId, token) {
+  return api.post(`/comments/${commentId}/approve`, {}, authHeaders(token)).then((res) => res.data);
+}

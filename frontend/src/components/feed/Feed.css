@@ -450,3 +450,20 @@
 .comment-replying-cancel:focus-visible {
   outline: 2px solid var(--color-primary);
 }
+
+/* Day 47: a restricted person's comment, waiting for the post owner's
+   approval (only the owner sees this note). */
+.comment-held {
+  margin: 2px 0 0;
+  padding: 4px var(--space-2);
+  border-inline-start: 3px solid var(--color-accent-3);
+  background: var(--color-subtle-bg);
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+  text-align: start;
+}
+
+.comment-held .comment-approve {
+  color: var(--color-accent-text);
+  font-weight: 700;
+}

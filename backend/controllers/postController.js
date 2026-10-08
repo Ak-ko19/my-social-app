@@ -156,7 +156,11 @@ async function getPost(req, res) {
         users.is_private AS author_is_private,
         users.is_deactivated AS author_is_deactivated,
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
-        (SELECT COUNT(*)::int FROM comments WHERE comments.post_id = posts.id) AS comment_count,
+        -- Day 47: comments waiting for approval count only for the people who
+        -- can see them (their author, the post's owner) -- so the count never
+        -- gives a restriction away.
+        (SELECT COUNT(*)::int FROM comments WHERE comments.post_id = posts.id
+          AND (NOT comments.awaiting_approval OR comments.user_id = $1 OR posts.user_id = $1)) AS comment_count,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},

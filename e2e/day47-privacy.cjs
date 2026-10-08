@@ -4,6 +4,10 @@
 // reload; his profile and post still open, the profile says Unmute;
 // Settings > Muted accounts lists him and unmutes. Arabic (RTL) + dark at
 // 375px with axe. Bob is never told.
+// Step 2, restrict: alice restricts bob from his profile; his comment on
+// her post is seen only by him and her (marked for her), notifies her of
+// nothing; she approves it, deletes another; Arabic held note and
+// Settings > Restricted accounts.
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -103,6 +107,64 @@ const api = (who, method, url, body) => fetch(API + url, {
   await ar.screenshot({ path: path.join(SP, 'day47-muted-ar-dark-375.png') });
   await ar.context().close();
   await api('alice', 'DELETE', '/users/2/mute');
+
+  // ---- Step 2: restrict ----
+  const myForm = new FormData();
+  myForm.append('content', 'Alice asks: best tea in town?');
+  const myPost = await (await fetch(`${API}/posts`, { method: 'POST', headers: { Authorization: `Bearer ${tokens.alice}` }, body: myForm })).json();
+  const myCard = (page) => page.locator('article.post-card', { hasText: 'best tea in town' });
+  const rp = await open('alice', '/profile/2');
+  await rp.getByRole('button', { name: 'More options' }).first().click();
+  await rp.getByRole('menuitem', { name: 'Restrict bob' }).click();
+  await rp.getByRole('status').filter({ hasText: 'approval' }).waitFor({ timeout: 8000 }).catch(() => {});
+  check('"Restrict bob" from his profile, with a note on what it does', (await rp.getByText(/new comments on your posts will wait for your approval/).count()) === 1);
+  await rp.context().close();
+  const before = sql("SELECT COUNT(*) FROM notifications WHERE user_id = 1");
+  const held = await (await api('bob', 'POST', `/posts/${myPost.id}/comments`, { content: 'Mine, obviously' })).json();
+  await api('bob', 'POST', `/posts/${myPost.id}/like`);
+  check("bob's comment and like notify alice of nothing", sql("SELECT COUNT(*) FROM notifications WHERE user_id = 1") === before);
+  const publicComments = async () => (await (await fetch(`${API}/posts/${myPost.id}/comments`)).json()).map((c) => c.content);
+  check('nobody else sees his comment yet', JSON.stringify(await publicComments()) === '[]');
+  const bobSees = await (await api('bob', 'GET', `/posts/${myPost.id}/comments`)).json();
+  check('bob sees it as an ordinary comment', bobSees.length === 1 && bobSees[0].awaiting_approval === false);
+
+  const owner = await open('alice', `/posts/${myPost.id}`);
+  await myCard(owner).getByRole('button', { name: 'Comment', exact: true }).click();
+  await owner.getByText(/Restricted: only bob and you can see this comment/).waitFor({ timeout: 8000 }).catch(() => {});
+  check('alice sees the held comment, marked', (await owner.getByText(/Restricted: only bob and you can see this comment/).count()) === 1);
+  await owner.getByRole('button', { name: 'Approve' }).click();
+  await owner.getByText(/Restricted: only bob/).waitFor({ state: 'detached', timeout: 8000 }).catch(() => {});
+  check('Approve: everyone sees it now', JSON.stringify(await publicComments()) === JSON.stringify(['Mine, obviously']));
+  // A second one, deleted by alice (the post's owner).
+  await api('bob', 'POST', `/posts/${myPost.id}/comments`, { content: 'and another thing' });
+  await owner.reload({ waitUntil: 'networkidle' });
+  await myCard(owner).getByRole('button', { name: 'Comment', exact: true }).click();
+  await owner.getByRole('button', { name: "Delete bob's comment" }).last().waitFor({ timeout: 8000 }).catch(() => {});
+  await owner.getByRole('button', { name: "Delete bob's comment" }).last().click();
+  await owner.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+  await owner.getByText('and another thing').waitFor({ state: 'detached', timeout: 8000 }).catch(() => {});
+  check('the post owner deletes his other comment', sql(`SELECT COUNT(*) FROM comments WHERE post_id = ${myPost.id}`) === '1');
+  await axe(owner, 'en/light, post with comments');
+  await owner.context().close();
+
+  // Arabic, dark: a held comment, and the Restricted list.
+  await api('bob', 'POST', `/posts/${myPost.id}/comments`, { content: 'one more' });
+  const arOwner = await open('alice', `/posts/${myPost.id}`, { lang: 'ar', theme: 'dark', width: 375 });
+  await myCard(arOwner).getByRole('button', { name: AR.feed.comment, exact: true }).click();
+  const heldAr = AR.comments.held.replace('{{name}}', 'bob');
+  await arOwner.getByText(heldAr).waitFor({ timeout: 8000 }).catch(() => {});
+  check('ar: the held note in Arabic, with Approve', (await arOwner.getByText(heldAr).count()) === 1 && (await arOwner.getByRole('button', { name: AR.comments.approve }).count()) === 1);
+  check('ar: no sideways scroll at 375px', await noSideScroll(arOwner));
+  await arOwner.screenshot({ path: path.join(SP, 'day47-held-ar-dark-375.png') });
+  await arOwner.goto(`${WEB}/settings/restricted`, { waitUntil: 'networkidle' });
+  await arOwner.getByRole('button', { name: AR.restricted.unrestrictName.replace('{{name}}', 'bob') }).waitFor({ timeout: 8000 }).catch(() => {});
+  check('ar: Restricted accounts lists bob', (await arOwner.getByRole('heading', { name: AR.restricted.title }).count()) === 1);
+  await axe(arOwner, 'ar/dark, Restricted accounts');
+  await arOwner.getByRole('button', { name: AR.restricted.unrestrictName.replace('{{name}}', 'bob') }).click();
+  await arOwner.waitForTimeout(500);
+  check('unrestrict from the list', sql('SELECT COUNT(*) FROM user_restrictions') === '0');
+  await arOwner.context().close();
+  check("bob is never told about any of it", sql("SELECT string_agg(type, ',') FROM notifications WHERE user_id = 2") === 'follow');
 
   await browser.close();
   console.log(results.join('\n'));

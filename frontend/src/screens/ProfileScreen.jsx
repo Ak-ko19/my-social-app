@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Flag, MoreHorizontal, UserX, Volume2, VolumeX } from 'lucide-react';
+import { ChevronLeft, Flag, MoreHorizontal, ShieldCheck, ShieldMinus, UserX, Volume2, VolumeX } from 'lucide-react';
 import { Avatar, IconButton, ActionSheet, ConfirmDialog } from '../components/ui';
 import ReportDialog from '../components/feed/ReportDialog';
 import ProfileTabs from '../components/profile/ProfileTabs';
@@ -10,6 +10,7 @@ import { fetchMutualFriends, fetchProfile } from '../services/profileService';
 import { fetchFollowCounts, followUser, unfollowUser } from '../services/postService';
 import { blockUser } from '../services/blockService';
 import { muteUser, unmuteUser } from '../services/muteService';
+import { restrictUser, unrestrictUser } from '../services/restrictService';
 import { createConversation } from '../services/messageService';
 import { resolveImageUrl } from '../api';
 import { Trans, useTranslation } from 'react-i18next';
@@ -112,6 +113,21 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
   // Day 47: muted -- their posts and stories stay out of your Home.
   const [muted, setMuted] = useState(Boolean(profile.is_muted_by_me));
   const [muteNote, setMuteNote] = useState('');
+
+  // Day 47: restricted -- their comments on your posts wait for you.
+  const [restricted, setRestricted] = useState(Boolean(profile.is_restricted_by_me));
+  const toggleRestrict = async () => {
+    setMuteNote('');
+    try {
+      if (restricted) await unrestrictUser(profile.id, token);
+      else await restrictUser(profile.id, token);
+      setMuteNote(t(restricted ? 'restricted.unrestrictedNote' : 'restricted.restrictedNote', { name: profile.username }));
+      setRestricted(!restricted);
+    } catch (err) {
+      console.error(err);
+      setMuteNote(serverErrorText(err, 'muted.failed'));
+    }
+  };
 
   const toggleMute = async () => {
     setMuteNote('');
@@ -266,6 +282,9 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
           muted
             ? { key: 'unmute', label: t('muted.unmuteName', { name: profile.username }), icon: Volume2, onSelect: toggleMute }
             : { key: 'mute', label: t('muted.muteName', { name: profile.username }), icon: VolumeX, onSelect: toggleMute },
+          restricted
+            ? { key: 'unrestrict', label: t('restricted.unrestrictName', { name: profile.username }), icon: ShieldCheck, onSelect: toggleRestrict }
+            : { key: 'restrict', label: t('restricted.restrictName', { name: profile.username }), icon: ShieldMinus, onSelect: toggleRestrict },
           { key: 'report', label: t('postMenu.reportUser', { name: profile.username }), icon: Flag, onSelect: () => setReportOpen(true) },
           { key: 'block', label: t('postMenu.block', { name: profile.username }), icon: UserX, danger: true, onSelect: () => setConfirmBlockOpen(true) }
         ]}

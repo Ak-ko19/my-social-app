@@ -92,7 +92,8 @@
       "terms": "Terms & Conditions",
       "privacy-policy": "Privacy Policy",
       "about": "About MySocialApp",
-      "muted-accounts": "Muted accounts"
+      "muted-accounts": "Muted accounts",
+      "restricted-accounts": "Restricted accounts"
     }
   },
   "language": {
@@ -243,7 +244,15 @@
     "replyPlaceholder": "Write a reply...",
     "commentPlaceholder": "Write a comment... (@ to mention someone)",
     "report": "Report",
-    "reportAria": "Report {{name}}'s comment"
+    "reportAria": "Report {{name}}'s comment",
+    "held": "Restricted: only {{name}} and you can see this comment.",
+    "approve": "Approve",
+    "approveFailed": "Couldn't approve the comment. Please try again.",
+    "deleteAria": "Delete {{name}}'s comment",
+    "deleteTitle": "Delete this comment?",
+    "deleteText": "It will be gone for everyone.",
+    "deleteTextReplies": "It will be gone for everyone, with its replies.",
+    "deleteFailed": "Couldn't delete the comment. Please try again."
   },
   "reactions": {
     "like": "Like",
@@ -1115,7 +1124,7 @@
       "sections": [
         {
           "heading": "1. What we collect",
-          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted, muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
+          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted or restricted, muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
         },
         {
           "heading": "2. How we use it",
@@ -1342,5 +1351,18 @@
     "mutedNote": "You won't see {{name}}'s posts and stories in your feed. They aren't told.",
     "unmutedNote": "{{name}}'s posts and stories will show in your feed again.",
     "failed": "That didn't work. Please try again."
+  },
+  "restricted": {
+    "title": "Restricted accounts",
+    "loadFailed": "Couldn't load your restricted accounts.",
+    "empty": "You haven't restricted anyone. Restrict someone from their profile: their new comments on your posts wait for your approval, and they can't notify you.",
+    "explain": "Their new comments on your posts are seen only by them and you until you approve them, and they can't notify you. They aren't told.",
+    "unrestrict": "Unrestrict",
+    "unrestrictName": "Unrestrict {{name}}",
+    "unrestricting": "Unrestricting…",
+    "unrestrictFailed": "Couldn't unrestrict. Please try again.",
+    "restrictName": "Restrict {{name}}",
+    "restrictedNote": "{{name}}'s new comments on your posts will wait for your approval, and they can't notify you. They aren't told.",
+    "unrestrictedNote": "{{name}} is no longer restricted."
   }
 }

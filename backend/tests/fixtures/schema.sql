@@ -188,7 +188,9 @@ CREATE TABLE comments (
   content text NOT NULL,
   created_at timestamp DEFAULT CURRENT_TIMESTAMP,
   -- Added by migration 019_add_comment_replies_likes (B4).
-  parent_comment_id integer REFERENCES comments(id) ON DELETE CASCADE
+  parent_comment_id integer REFERENCES comments(id) ON DELETE CASCADE,
+  -- Added by migration 056_add_user_restrictions (Day 47).
+  awaiting_approval boolean NOT NULL DEFAULT false
 );
 
 -- Added by migration 019_add_comment_replies_likes (B4).
@@ -544,3 +546,13 @@ CREATE TABLE user_mutes (
   CONSTRAINT chk_user_mutes_not_self CHECK (muter_id <> muted_id)
 );
 CREATE INDEX idx_user_mutes_muted ON user_mutes (muted_id);
+
+-- Added by migration 056_add_user_restrictions (Day 47): restricted people.
+CREATE TABLE user_restrictions (
+  restricter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  restricted_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (restricter_id, restricted_id),
+  CONSTRAINT chk_user_restrictions_not_self CHECK (restricter_id <> restricted_id)
+);
+CREATE INDEX idx_user_restrictions_restricted ON user_restrictions (restricted_id);
