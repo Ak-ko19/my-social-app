@@ -14,7 +14,10 @@ async function getNotifications(req, res) {
         actor.id AS actor_id, actor.username AS actor_username, actor.avatar_url AS actor_avatar_url,
         -- Day 20: no snippet of a post that has since become "only me"
         -- (unless it's your own).
-        CASE WHEN posts.visibility <> 'only_me' OR posts.user_id = $1 THEN posts.content END AS post_content
+        CASE WHEN posts.user_id = $1 OR posts.visibility IN ('public', 'followers')
+          -- Day 47: a close-friends post only for people on the list.
+          OR (posts.visibility = 'close_friends' AND EXISTS (SELECT 1 FROM close_friends cf WHERE cf.user_id = posts.user_id AND cf.friend_id = $1))
+          THEN posts.content END AS post_content
       FROM notifications
       JOIN users actor ON notifications.actor_id = actor.id
       LEFT JOIN posts ON notifications.post_id = posts.id

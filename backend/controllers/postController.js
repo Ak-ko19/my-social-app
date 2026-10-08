@@ -4,7 +4,7 @@ const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../servic
 const { sendServerError } = require('../utils/sendError');
 const { mediaOfPost, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
-const { getVisiblePost } = require('../services/postVisibilityService');
+const { getVisiblePost, postAudienceSql } = require('../services/postVisibilityService');
 const hashtagService = require('../services/hashtagService');
 const { toUnicode } = require('../utils/myanmarText');
 const pollService = require('../services/pollService');
@@ -58,11 +58,7 @@ async function getPosts(req, res) {
         WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
            OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
       ))
-      AND (
-        ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
-        OR users.id = $1
-        OR (posts.visibility <> 'only_me' AND EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted'))
-      )
+      AND ${postAudienceSql('$1')}
       AND NOT users.is_deactivated
       ORDER BY posts.created_at DESC
       LIMIT $2 OFFSET $3
@@ -107,9 +103,13 @@ async function getFeed(req, res) {
         -- Your own posts, so a new post is at the top of Home right away
         -- (every audience: you can always see your own).
         (posts.page_id IS NULL AND posts.user_id = $1)
-        OR (posts.page_id IS NULL AND posts.visibility <> 'only_me' AND posts.user_id IN (
+        OR (posts.page_id IS NULL AND posts.visibility IN ('public', 'followers') AND posts.user_id IN (
           SELECT following_id FROM follows WHERE follower_id = $1 AND status = 'accepted'
         ))
+        -- Day 47: close-friends posts of people you follow who listed you.
+        OR (posts.page_id IS NULL AND posts.visibility = 'close_friends' AND posts.user_id IN (
+          SELECT following_id FROM follows WHERE follower_id = $1 AND status = 'accepted'
+        ) AND EXISTS (SELECT 1 FROM close_friends cf WHERE cf.user_id = posts.user_id AND cf.friend_id = $1))
         -- B14: posts from pages you follow.
         OR posts.page_id IN (SELECT page_id FROM page_follows WHERE user_id = $1)
       )

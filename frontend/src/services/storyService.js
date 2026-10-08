@@ -10,9 +10,11 @@ export function fetchStoriesTray(token) {
   return api.get('/stories', authHeaders(token)).then((res) => res.data);
 }
 
-export function createStory(file, token) {
+// Day 47: closeFriends -- for the people on your close friends list only.
+export function createStory(file, token, { closeFriends = false } = {}) {
   const formData = new FormData();
   formData.append('image', file);
+  if (closeFriends) formData.append('closeFriends', 'true');
   return api.post('/stories', formData, authHeaders(token)).then((res) => res.data);
 }
 

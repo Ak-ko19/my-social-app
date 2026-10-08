@@ -21,6 +21,8 @@ const VOTERS_WHO_CAN_SEE = `
     AND v.user_id <> p.user_id
     AND NOT author.is_deactivated
     AND p.visibility <> 'only_me'
+    AND (p.visibility <> 'close_friends' OR EXISTS (
+      SELECT 1 FROM close_friends cf WHERE cf.user_id = p.user_id AND cf.friend_id = v.user_id))
     AND NOT EXISTS (
       SELECT 1 FROM blocks b
       WHERE (b.blocker_id = v.user_id AND b.blocked_id = p.user_id) OR (b.blocker_id = p.user_id AND b.blocked_id = v.user_id)

@@ -1,4 +1,5 @@
 const db = require('../db');
+const { postAudienceSql } = require('../services/postVisibilityService');
 const { notMutedSql } = require('../services/muteService');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
@@ -128,11 +129,7 @@ async function getPopularPosts(req, res) {
            AND NOT users.is_deactivated
            -- Day 47: not from people the viewer muted.
            AND ($1::int IS NULL OR ${notMutedSql('$1', 'posts.user_id', 'posts.page_id')})
-           AND (
-             ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
-             OR users.id = $1
-             OR (posts.visibility <> 'only_me' AND EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted'))
-           )
+           AND ${postAudienceSql('$1')}
        )
        SELECT posts.id, posts.content, posts.visibility, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url,
          $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,

@@ -109,7 +109,7 @@ describe('download your information (Day 28)', () => {
     expect((await request(app).post(`/stories/${story.id}/view`).set(auth(viewer))).status).toBeLessThan(300);
     const { data } = await exportOf(me);
     expect(data.stories).toEqual([expect.objectContaining({ id: story.id, views: 1 })]);
-    expect(Object.keys(data.stories[0]).sort()).toEqual(['created_at', 'expires_at', 'id', 'media_url', 'views']);
+    expect(Object.keys(data.stories[0]).sort()).toEqual(['close_friends', 'created_at', 'expires_at', 'id', 'media_url', 'views']);
   });
 
   it('lists who I blocked and what I reported', async () => {

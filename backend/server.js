@@ -48,6 +48,7 @@ const draftRoutes = require('./routes/draftRoutes');
 const collectionRoutes = require('./routes/collectionRoutes');
 const muteRoutes = require('./routes/muteRoutes');
 const restrictRoutes = require('./routes/restrictRoutes');
+const closeFriendsRoutes = require('./routes/closeFriendsRoutes');
 
 const app = express();
 // Hosts like Render tell the app which port to listen on (validated by
@@ -131,6 +132,7 @@ app.use(bookmarkRoutes);
 app.use(collectionRoutes);
 app.use(muteRoutes);
 app.use(restrictRoutes);
+app.use(closeFriendsRoutes);
 app.use(hashtagRoutes);
 app.use(storyRoutes);
 app.use(userPostsRoutes);

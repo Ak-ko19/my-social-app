@@ -3,7 +3,7 @@
 const db = require('../db');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('./reactionService');
 const { pollColumnSql } = require('./pollService');
-const { communityVisibleSql } = require('./postVisibilityService');
+const { communityVisibleSql, postAudienceSql } = require('./postVisibilityService');
 
 // SQL condition: the saved post (posts/users aliases) is one viewer $1 may
 // see now. A saved post from someone you later blocked (or who blocked
@@ -16,11 +16,7 @@ const STILL_VISIBLE_SQL = `
     WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
        OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
   )
-  AND (
-    ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
-    OR users.id = $1
-    OR (posts.visibility <> 'only_me' AND EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted'))
-  )
+  AND ${postAudienceSql('$1')}
   AND NOT users.is_deactivated`;
 
 // One page of viewer's saved posts, newest saved first -- all of them, or

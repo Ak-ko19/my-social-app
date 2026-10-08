@@ -467,3 +467,8 @@
   color: var(--color-accent-text);
   font-weight: 700;
 }
+
+/* Day 47: a close-friends post's audience star, in Instagram's green. */
+.post-card-audience-close-friends svg {
+  color: var(--color-close-friends-text);
+}

@@ -28,6 +28,10 @@ async function getVisiblePost(postId, viewerId) {
          SELECT 1 FROM follows
          WHERE follows.follower_id = $2 AND follows.following_id = users.id AND follows.status = 'accepted'
        ) AS viewer_is_follower,
+       -- Day 47: the viewer is on the author's close friends list.
+       $2::int IS NOT NULL AND EXISTS(
+         SELECT 1 FROM close_friends cf WHERE cf.user_id = users.id AND cf.friend_id = $2
+       ) AS viewer_is_close_friend,
        c.privacy AS community_privacy,
        $2::int IS NOT NULL AND EXISTS(
          SELECT 1 FROM community_members cm
@@ -50,6 +54,8 @@ async function getVisiblePost(postId, viewerId) {
   // Day 20: an "only me" post is for its author alone.
   if (post.visibility === 'only_me') return null;
   if (viewerId != null && (await blockService.isBlocked(viewerId, post.user_id))) return null;
+  // Day 47: a close-friends post is for the people on the author's list.
+  if (post.visibility === 'close_friends') return post.viewer_is_close_friend ? summary : null;
 
   if (post.community_id) {
     if (post.community_privacy === 'private' && !post.viewer_is_community_member) return null;
@@ -59,6 +65,22 @@ async function getVisiblePost(postId, viewerId) {
   if ((post.is_private || post.visibility === 'followers') && !post.viewer_is_follower) return null;
 
   return summary;
+}
+
+// SQL condition "viewer (a $N, or NULL when logged out) may see this post
+// (alias posts, its author alias users)" by its audience -- every listing
+// uses this one clause (Day 47; it used to be copied into seven queries):
+// public posts of public accounts and pages; your own posts; public and
+// followers-only posts of people you follow; close-friends posts of people
+// whose list you're on. "Only me" is the author's alone. Blocks, groups and
+// deactivated authors are each listing's own conditions.
+function postAudienceSql(viewer) {
+  return `(
+    ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
+    OR users.id = ${viewer}
+    OR (posts.visibility IN ('public', 'followers') AND EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = ${viewer} AND follows.following_id = users.id AND follows.status = 'accepted'))
+    OR (posts.visibility = 'close_friends' AND EXISTS (SELECT 1 FROM close_friends cf WHERE cf.user_id = users.id AND cf.friend_id = ${viewer}))
+  )`;
 }
 
 // SQL condition "this post (alias posts) is either a normal post or a
@@ -75,4 +97,4 @@ function communityVisibleSql(viewerParam) {
   ))`;
 }
 
-module.exports = { getVisiblePost, communityVisibleSql };
+module.exports = { getVisiblePost, communityVisibleSql, postAudienceSql };

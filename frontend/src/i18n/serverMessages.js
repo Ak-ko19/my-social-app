@@ -218,6 +218,8 @@ const AR = {
   // Day 47: privacy controls
   "You can't mute yourself": 'لا يمكنك كتم نفسك',
   "You can't restrict yourself": 'لا يمكنك تقييد نفسك',
+  "You can't add yourself": 'لا يمكنك إضافة نفسك',
+  'You can add people who follow you': 'يمكنك إضافة من يتابعونك فقط',
   // admin screens
   'Accounts cannot be removed here; ban or suspend the user instead': 'لا يمكن حذف الحسابات من هنا؛ احظر المستخدم أو أوقفه مؤقتًا بدلًا من ذلك',
   'That user is not banned': 'هذا المستخدم غير محظور',

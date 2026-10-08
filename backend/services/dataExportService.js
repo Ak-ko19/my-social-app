@@ -30,7 +30,7 @@ async function buildExport(userId) {
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
     legacyMessages, notifications, reports, sessions, pushDevices, messageReactions, hiddenSuggestions, searches,
-    pollOptions, pollVotes, drafts, collections, muted, restricted
+    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -46,7 +46,7 @@ async function buildExport(userId) {
     rows(`SELECT post_id, reaction, created_at FROM likes WHERE user_id = $1 ORDER BY created_at`, [userId]),
     rows(`SELECT comment_id, created_at FROM comment_likes WHERE user_id = $1 ORDER BY created_at`, [userId]),
     rows(`SELECT post_id, created_at FROM bookmarks WHERE user_id = $1 ORDER BY created_at`, [userId]),
-    rows(`SELECT id, media_url, created_at, expires_at FROM stories WHERE user_id = $1 ORDER BY created_at`, [userId]),
+    rows(`SELECT id, media_url, created_at, expires_at, close_friends FROM stories WHERE user_id = $1 ORDER BY created_at`, [userId]),
     // A count, not names: the app never shows a story's owner who viewed it.
     rows(`SELECT sv.story_id, COUNT(*)::int AS views FROM story_views sv
           JOIN stories s ON s.id = sv.story_id
@@ -120,7 +120,9 @@ async function buildExport(userId) {
     rows(`SELECT u.username, m.created_at FROM user_mutes m JOIN users u ON u.id = m.muted_id
           WHERE m.muter_id = $1 ORDER BY m.created_at`, [userId]),
     rows(`SELECT u.username, r.created_at FROM user_restrictions r JOIN users u ON u.id = r.restricted_id
-          WHERE r.restricter_id = $1 ORDER BY r.created_at`, [userId])
+          WHERE r.restricter_id = $1 ORDER BY r.created_at`, [userId]),
+    rows(`SELECT u.username, cf.created_at FROM close_friends cf JOIN users u ON u.id = cf.friend_id
+          WHERE cf.user_id = $1 ORDER BY cf.created_at`, [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -169,7 +171,8 @@ async function buildExport(userId) {
       follow_requests_received: followRows(false, 'pending'),
       blocked_users: blocked,
       muted_users: muted,
-      restricted_users: restricted
+      restricted_users: restricted,
+      close_friends: closeFriends
     },
     groups,
     pages: { owned: pagesOwned, followed: pagesFollowed },

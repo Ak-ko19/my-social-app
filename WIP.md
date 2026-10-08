@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 47 — Privacy controls
-**Step:** 2 — restrict: done (committed). Next: step 3, close friends.
+**Step:** 3 — close friends: done (committed). Next: step 4, who can message / comment.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -141,3 +141,12 @@ told; EN/AR, RTL, dark, tests, browser suite each).
   had been rewritten into calling itself (feed crashed); fixed.
   Verified: backend 779 (restrict 7, 11 mutations), Vitest 179,
   rehearsal 015-056, perf, 12 suites, a11y 101, A3 252x2.
+- Step 3 (close friends) done: migration 057 (list, close_friends
+  audience, varchar(20), stories.close_friends; down = only_me / delete,
+  never wider). postVisibilityService.postAudienceSql replaces 7 copies
+  of the audience clause; getVisiblePost, feed, notification snippets,
+  poll-end voters, stories tray follow it. API /close-friends (+
+  candidates = followers). UI: composer + post menu option, green star,
+  story Share-to sheet + green ring, Settings > Close friends.
+  Verified: backend 787 (closeFriends 7, 8 mutations), Vitest 185,
+  rehearsal 015-057, perf, 9 suites, a11y 103, A3 258x2.

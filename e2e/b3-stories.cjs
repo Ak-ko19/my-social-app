@@ -112,8 +112,11 @@ async function signup(name) {
     page.getByRole('button', { name: 'Add to your story' }).first().click()
   ]);
   await chooser.setFiles(path.join(require('path').resolve(__dirname, '../frontend/public'), 'icon-192.png'));
+  // Day 47: who it's for -- "Your story" (everyone who follows you).
+  await page.getByRole('menuitem', { name: 'Your story' }).click();
   await page.waitForTimeout(800);
   check('add story uploads one "image" part and reloads the tray', uploadBody && /name="image"/.test(uploadBody) && trayRefetched);
+  check('...for everyone (no close-friends flag)', uploadBody && !/name="closeFriends"/.test(uploadBody));
 
   // 375px: viewer fills the screen, no overflow.
   await page.unroute('**/stories');

@@ -1,4 +1,5 @@
 const db = require('../db');
+const { postAudienceSql } = require('../services/postVisibilityService');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const blockService = require('../services/blockService');
@@ -99,11 +100,7 @@ async function getUserPosts(req, res) {
           WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
              OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
         ))
-        AND (
-          ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
-          OR users.id = $1
-          OR (posts.visibility <> 'only_me' AND EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted'))
-        )
+        AND ${postAudienceSql('$1')}
         AND (NOT users.is_deactivated OR users.id = $1)
       ORDER BY posts.created_at DESC
       LIMIT $2 OFFSET $3

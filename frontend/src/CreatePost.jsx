@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import api, { resolveImageUrl } from './api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CalendarClock, ChevronLeft, FileText, Globe, ImagePlus, ListChecks, Lock, Plus, Users, X } from 'lucide-react';
+import { CalendarClock, ChevronLeft, FileText, Globe, ImagePlus, ListChecks, Lock, Plus, Star, Users, X } from 'lucide-react';
 import { IconButton } from './components/ui';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
@@ -362,6 +362,11 @@ function CreatePost() {
           <label className={visibility === 'followers' ? 'audience-option is-selected' : 'audience-option'}>
             <input type="radio" name="visibility" value="followers" checked={visibility === 'followers'} onChange={() => setVisibility('followers')} />
             <Users size={15} aria-hidden="true" /> {t('compose.followers')}
+          </label>
+          {/* Day 47: only the people on your close friends list. */}
+          <label className={visibility === 'close_friends' ? 'audience-option is-selected' : 'audience-option'}>
+            <input type="radio" name="visibility" value="close_friends" checked={visibility === 'close_friends'} onChange={() => setVisibility('close_friends')} />
+            <Star size={15} aria-hidden="true" /> {t('compose.closeFriends')}
           </label>
           {/* Day 20: a private note on your own profile. */}
           <label className={visibility === 'only_me' ? 'audience-option is-selected' : 'audience-option'}>

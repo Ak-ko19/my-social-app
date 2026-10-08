@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { BookmarkPlus, Flag, Globe, Lock, MoreHorizontal, Pencil, Pin, PinOff, Trash2, UserX, Users, VolumeX } from 'lucide-react';
+import { BookmarkPlus, Flag, Globe, Lock, MoreHorizontal, Pencil, Pin, PinOff, Star, Trash2, UserX, Users, VolumeX } from 'lucide-react';
 import { IconButton, ActionSheet, ConfirmDialog } from '../ui';
 import ReportDialog from './ReportDialog';
 // Day 46: loaded when first opened -- every feed card has this menu.
@@ -22,6 +22,8 @@ import { deletePost } from '../../services/postService';
 const AUDIENCE_ITEMS = [
   { value: 'public', label: 'postMenu.makePublic', icon: Globe },
   { value: 'followers', label: 'postMenu.makeFollowersOnly', icon: Users },
+  // Day 47.
+  { value: 'close_friends', label: 'postMenu.makeCloseFriends', icon: Star },
   { value: 'only_me', label: 'postMenu.makeOnlyMe', icon: Lock }
 ];
 

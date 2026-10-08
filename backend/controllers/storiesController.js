@@ -27,6 +27,10 @@ const VISIBLE_TO_VIEWER_SQL = `
         WHERE (b.blocker_id = $1 AND b.blocked_id = u.id)
            OR (b.blocker_id = u.id AND b.blocked_id = $1)
       )
+      -- Day 47: a close-friends story is for the people on the list.
+      AND (NOT s.close_friends OR EXISTS (
+        SELECT 1 FROM close_friends cf WHERE cf.user_id = u.id AND cf.friend_id = $1
+      ))
     )
   )`;
 
@@ -36,9 +40,11 @@ async function createStory(req, res) {
     if (!req.cloudinaryResult) {
       return res.status(400).send('A story needs an image');
     }
+    // Day 47: closeFriends=true (a form field) -- for your close friends only.
+    const closeFriends = req.body?.closeFriends === 'true' || req.body?.closeFriends === true;
     const result = await db.query(
-      'INSERT INTO stories (user_id, media_url) VALUES ($1, $2) RETURNING id, user_id, media_url, created_at, expires_at',
-      [req.userId, req.cloudinaryResult.secure_url]
+      'INSERT INTO stories (user_id, media_url, close_friends) VALUES ($1, $2, $3) RETURNING id, user_id, media_url, created_at, expires_at, close_friends',
+      [req.userId, req.cloudinaryResult.secure_url, closeFriends]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -53,7 +59,7 @@ async function createStory(req, res) {
 async function getStoriesTray(req, res) {
   try {
     const result = await db.query(
-      `SELECT s.id, s.user_id, s.media_url, s.created_at, s.expires_at,
+      `SELECT s.id, s.user_id, s.media_url, s.created_at, s.expires_at, s.close_friends,
               u.username, u.avatar_url,
               EXISTS (SELECT 1 FROM story_views v WHERE v.story_id = s.id AND v.viewer_id = $1) AS seen
        FROM stories s
@@ -81,6 +87,7 @@ async function getStoriesTray(req, res) {
         media_url: row.media_url,
         created_at: row.created_at,
         expires_at: row.expires_at,
+        close_friends: row.close_friends,
         seen: row.seen
       });
     }

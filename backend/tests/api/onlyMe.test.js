@@ -124,6 +124,6 @@ describe('"only me" posts (Day 20)', () => {
   it('unknown audiences are still refused', async () => {
     const res = await newPost(author, 'x', 'friends');
     expect(res.status).toBe(400);
-    expect(res.text).toBe('visibility must be one of: public, followers, only_me');
+    expect(res.text).toBe('visibility must be one of: public, followers, close_friends, only_me');
   });
 });

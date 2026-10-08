@@ -8,6 +8,10 @@
 // her post is seen only by him and her (marked for her), notifies her of
 // nothing; she approves it, deletes another; Arabic held note and
 // Settings > Restricted accounts.
+// Step 3, close friends: alice adds bob (a follower) in Settings, posts
+// for close friends from the composer (green star); bob sees it, logged
+// out doesn't; a close-friends story rings green in bob's tray (Arabic);
+// sharing a story to Close friends sends the flag; off the list, gone.
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -165,6 +169,66 @@ const api = (who, method, url, body) => fetch(API + url, {
   check('unrestrict from the list', sql('SELECT COUNT(*) FROM user_restrictions') === '0');
   await arOwner.context().close();
   check("bob is never told about any of it", sql("SELECT string_agg(type, ',') FROM notifications WHERE user_id = 2") === 'follow');
+
+  // ---- Step 3: close friends ----
+  await api('bob', 'POST', '/users/1/follow');
+  const cf = await open('alice', '/settings');
+  await cf.getByRole('button', { name: /Close friends/ }).click();
+  await cf.waitForURL(`${WEB}/settings/close-friends`, { timeout: 8000 }).catch(() => {});
+  await cf.getByRole('button', { name: 'Add bob to close friends' }).waitFor({ timeout: 8000 }).catch(() => {});
+  check('Settings > Close friends offers bob (he follows alice)', (await cf.getByRole('button', { name: 'Add bob to close friends' }).count()) === 1);
+  await cf.getByRole('button', { name: 'Add bob to close friends' }).click();
+  await cf.getByRole('heading', { name: 'On your list (1)' }).waitFor({ timeout: 8000 }).catch(() => {});
+  check('...added: "On your list (1)"', sql('SELECT friend_id FROM close_friends WHERE user_id = 1') === '2');
+  await axe(cf, 'en/light, Close friends');
+
+  // A close-friends post from the composer.
+  await cf.goto(`${WEB}/create-post`, { waitUntil: 'networkidle' });
+  await cf.getByRole('textbox', { name: 'Post' }).fill('Only for my close friends');
+  await cf.getByRole('radio', { name: 'Close friends' }).check();
+  await cf.getByRole('button', { name: 'Post', exact: true }).click();
+  await cf.waitForURL(`${WEB}/`, { timeout: 10000 }).catch(() => {});
+  const cfPostId = sql("SELECT id FROM posts WHERE content = 'Only for my close friends'");
+  check('the composer posts it for close friends', sql(`SELECT visibility FROM posts WHERE id = ${cfPostId || 0}`) === 'close_friends');
+  const cfCard = (page) => page.locator('article.post-card', { hasText: 'Only for my close friends' });
+  await cfCard(cf).waitFor({ timeout: 8000 }).catch(() => {});
+  check('its card shows the green close-friends star', (await cfCard(cf).locator('.post-card-audience-close-friends').count()) === 1);
+  await cf.context().close();
+
+  const bobHome = await open('bob', '/');
+  await cfCard(bobHome).waitFor({ timeout: 8000 }).catch(() => {});
+  check("bob (on the list) sees it on his Home", (await cfCard(bobHome).count()) === 1);
+  await bobHome.context().close();
+  check('logged out, it is not found', (await fetch(`${API}/posts/${cfPostId}`)).status === 404);
+
+  // A close-friends story: bob's tray shows alice's ring in green.
+  sql("INSERT INTO stories (user_id, media_url, close_friends) VALUES (1, 'http://localhost:5173/icon-192.png', true)");
+  const bobStories = await open('bob', '/', { lang: 'ar', theme: 'dark', width: 375 });
+  await bobStories.locator('.stories-item').nth(1).waitFor({ timeout: 8000 }).catch(() => {});
+  const ring = await bobStories.locator('.stories-item').nth(1).locator('[style*="--color-close-friends"]').count();
+  check("ar: alice's close-friends story has the green ring in bob's tray", ring === 1);
+  check('ar: the close-friends post shows in Arabic with its star', (await cfCard(bobStories).locator('.post-card-audience-close-friends').count()) === 1
+    && (await cfCard(bobStories).locator('.post-card-audience-close-friends').getAttribute('title')) === AR.feed.audienceCloseFriends);
+  await bobStories.screenshot({ path: path.join(SP, 'day47-closefriends-ar-dark-375.png') });
+  await bobStories.context().close();
+
+  // Sharing a story to close friends sends the flag.
+  const sharer = await open('alice', '/');
+  let storyForm = '';
+  await sharer.route('**/stories', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    storyForm = route.request().postDataBuffer().toString('latin1');
+    return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 999 }) });
+  });
+  await sharer.locator('.stories-row input[type=file]').setInputFiles(path.join(SP, '..', 'frontend', 'public', 'icon-192.png'));
+  await sharer.getByRole('menuitem', { name: 'Close friends' }).click();
+  await sharer.waitForTimeout(800);
+  check('"Share to > Close friends" sends closeFriends=true', /name="closeFriends"\r\n\r\ntrue/.test(storyForm));
+  await sharer.context().close();
+
+  // Off the list: the post is gone for bob.
+  await api('alice', 'DELETE', '/close-friends/2');
+  check('removed from the list: bob gets 404', (await api('bob', 'GET', `/posts/${cfPostId}`)).status === 404);
 
   await browser.close();
   console.log(results.join('\n'));

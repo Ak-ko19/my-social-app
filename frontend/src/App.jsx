@@ -23,6 +23,7 @@ const SettingsScreen = lazy(() => import('./screens/SettingsScreen'));
 const BlockedUsersScreen = lazy(() => import('./screens/BlockedUsersScreen'));
 const MutedUsersScreen = lazy(() => import('./screens/MutedUsersScreen'));
 const RestrictedUsersScreen = lazy(() => import('./screens/RestrictedUsersScreen'));
+const CloseFriendsScreen = lazy(() => import('./screens/CloseFriendsScreen'));
 const SessionsScreen = lazy(() => import('./screens/SessionsScreen'));
 const SavedPostsScreen = lazy(() => import('./screens/SavedPostsScreen'));
 const DraftsScreen = lazy(() => import('./screens/DraftsScreen'));
@@ -172,6 +173,7 @@ function App() {
         {/* Day 47: muted accounts. */}
         <Route path="/settings/muted" element={authOnly(<PhoneShell><MutedUsersScreen /></PhoneShell>)} />
         <Route path="/settings/restricted" element={authOnly(<PhoneShell><RestrictedUsersScreen /></PhoneShell>)} />
+        <Route path="/settings/close-friends" element={authOnly(<PhoneShell><CloseFriendsScreen /></PhoneShell>)} />
         {/* Day 46: one saved collection. */}
         <Route path="/saved/collections/:id" element={authOnly(<PhoneShell><CollectionScreen /></PhoneShell>)} />
         <Route path="/edit-profile" element={authOnly(<PhoneShell><EditProfile /></PhoneShell>)} />

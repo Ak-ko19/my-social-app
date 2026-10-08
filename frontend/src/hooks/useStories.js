@@ -30,11 +30,11 @@ export function useStories(token) {
   }, [reload]);
 
   const addStory = useCallback(
-    (file) => {
+    (file, options) => {
       if (!file) return;
       setUploading(true);
       setError(null);
-      createStory(file, token)
+      createStory(file, token, options)
         .then(() => reload())
         .catch((err) => {
           console.error(err);

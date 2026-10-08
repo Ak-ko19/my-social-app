@@ -93,7 +93,8 @@
       "privacy-policy": "Privacy Policy",
       "about": "About MySocialApp",
       "muted-accounts": "Muted accounts",
-      "restricted-accounts": "Restricted accounts"
+      "restricted-accounts": "Restricted accounts",
+      "close-friends": "Close friends"
     }
   },
   "language": {
@@ -181,7 +182,8 @@
     "photo": "Photo",
     "video": "Video",
     "live": "Live",
-    "audienceOnlyMe": "Only me"
+    "audienceOnlyMe": "Only me",
+    "audienceCloseFriends": "Close friends"
   },
   "postMenu": {
     "blockFailed": "Failed to block user",
@@ -203,7 +205,8 @@
     "deleteDescription": "This cannot be undone.",
     "makeOnlyMe": "Make visible to only me",
     "pin": "Pin to profile",
-    "unpin": "Unpin from profile"
+    "unpin": "Unpin from profile",
+    "makeCloseFriends": "Make visible to close friends only"
   },
   "report": {
     "thisPost": "this post",
@@ -298,7 +301,10 @@
     "next": "Next story",
     "deleteTitle": "Delete this story?",
     "deleteDescription": "It will be removed for everyone right away.",
-    "postFailed": "Could not post your story. Please try again."
+    "postFailed": "Could not post your story. Please try again.",
+    "shareTo": "Share to",
+    "shareYourStory": "Your story",
+    "shareCloseFriends": "Close friends"
   },
   "compose": {
     "tooMany": "You can attach up to {{max}} images.",
@@ -335,7 +341,8 @@
     "pollPlaceholder": "Ask a question…",
     "pollOptionsEmpty": "Fill in every option, or remove the empty ones.",
     "pollOptionsSame": "Each option must be different.",
-    "choosePhotos": "Choose photos"
+    "choosePhotos": "Choose photos",
+    "closeFriends": "Close friends"
   },
   "poll": {
     "label": "Poll",
@@ -1124,7 +1131,7 @@
       "sections": [
         {
           "heading": "1. What we collect",
-          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted or restricted, muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
+          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted or restricted, your close friends list, muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
         },
         {
           "heading": "2. How we use it",
@@ -1364,5 +1371,23 @@
     "restrictName": "Restrict {{name}}",
     "restrictedNote": "{{name}}'s new comments on your posts will wait for your approval, and they can't notify you. They aren't told.",
     "unrestrictedNote": "{{name}} is no longer restricted."
+  },
+  "closeFriends": {
+    "title": "Close friends",
+    "explain": "Only the people on this list see what you share to Close friends. Only you see the list, and nobody is told when you add or remove them.",
+    "loadFailed": "Couldn't load your close friends.",
+    "failed": "That didn't work. Please try again.",
+    "onList_one": "On your list ({{count}})",
+    "onList_other": "On your list ({{count}})",
+    "empty": "Nobody yet. Add people who follow you below.",
+    "remove": "Remove",
+    "removeName": "Remove {{name}} from close friends",
+    "addHeading": "Add people who follow you",
+    "searchLabel": "Search your followers",
+    "searchPlaceholder": "Search your followers",
+    "noMatch": "No followers match that name.",
+    "noFollowers": "Everyone who follows you is on your list already — or nobody follows you yet.",
+    "add": "Add",
+    "addName": "Add {{name}} to close friends"
   }
 }

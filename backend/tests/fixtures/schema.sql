@@ -57,9 +57,10 @@ CREATE TABLE posts (
   created_at timestamp DEFAULT CURRENT_TIMESTAMP,
   image_url text,
   -- Added by migration 020_add_post_visibility (B5).
-  visibility varchar(10) DEFAULT 'public' NOT NULL
+  -- varchar(20) and 'close_friends' since migration 057 (Day 47).
+  visibility varchar(20) DEFAULT 'public' NOT NULL
     -- 'only_me' added by migration 035_add_only_me_visibility (Day 20).
-    CONSTRAINT chk_posts_visibility CHECK (visibility IN ('public', 'followers', 'only_me'))
+    CONSTRAINT chk_posts_visibility CHECK (visibility IN ('public', 'followers', 'close_friends', 'only_me'))
 );
 
 -- Added by migration 026_add_communities (B13).
@@ -207,7 +208,9 @@ CREATE TABLE stories (
   user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   media_url text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
-  expires_at timestamptz NOT NULL DEFAULT (now() + INTERVAL '24 hours')
+  expires_at timestamptz NOT NULL DEFAULT (now() + INTERVAL '24 hours'),
+  -- Added by migration 057_add_close_friends (Day 47).
+  close_friends boolean NOT NULL DEFAULT false
 );
 
 CREATE TABLE story_views (
@@ -503,8 +506,8 @@ CREATE TABLE post_drafts (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   content TEXT NOT NULL DEFAULT '',
-  visibility VARCHAR(10) NOT NULL DEFAULT 'public'
-    CONSTRAINT chk_post_drafts_visibility CHECK (visibility IN ('public', 'followers', 'only_me')),
+  visibility VARCHAR(20) NOT NULL DEFAULT 'public'
+    CONSTRAINT chk_post_drafts_visibility CHECK (visibility IN ('public', 'followers', 'close_friends', 'only_me')),
   community_id INTEGER REFERENCES communities(id) ON DELETE CASCADE,
   page_id INTEGER REFERENCES pages(id) ON DELETE CASCADE,
   poll JSONB,
@@ -556,3 +559,13 @@ CREATE TABLE user_restrictions (
   CONSTRAINT chk_user_restrictions_not_self CHECK (restricter_id <> restricted_id)
 );
 CREATE INDEX idx_user_restrictions_restricted ON user_restrictions (restricted_id);
+
+-- Added by migration 057_add_close_friends (Day 47): close friends lists.
+CREATE TABLE close_friends (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  friend_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, friend_id),
+  CONSTRAINT chk_close_friends_not_self CHECK (user_id <> friend_id)
+);
+CREATE INDEX idx_close_friends_friend ON close_friends (friend_id);

@@ -10,8 +10,9 @@ const hashtagService = require('./hashtagService');
 const mentionService = require('./mentionService');
 
 // B5: keep in sync with migration 020's CHECK constraint.
-// Day 20: 'only_me' -- seen by its author only.
-const POST_VISIBILITIES = ['public', 'followers', 'only_me'];
+// Day 20: 'only_me' -- seen by its author only. Day 47: 'close_friends' --
+// its author and the people on their close friends list.
+const POST_VISIBILITIES = ['public', 'followers', 'close_friends', 'only_me'];
 // Day 43: posts had no length limit (a multipart field could be 1 MB).
 const MAX_POST_LENGTH = 10000;
 
@@ -57,7 +58,7 @@ function readPostFields(body, { allowEmpty = false } = {}) {
   const communityId = optionalId(body.communityId, 'communityId');
   // Day 20: "only me" is for your own profile; a group post is for the
   // group.
-  if (visibility === 'only_me' && communityId !== null) {
+  if ((visibility === 'only_me' || visibility === 'close_friends') && communityId !== null) {
     throw new PostInputError(400, "Group and page posts don't have their own audience");
   }
   const pageId = optionalId(body.pageId, 'pageId');

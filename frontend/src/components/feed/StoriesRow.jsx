@@ -1,6 +1,6 @@
-import { useRef } from 'react';
-import { Plus } from 'lucide-react';
-import { Avatar } from '../ui';
+import { useRef, useState } from 'react';
+import { Globe, Plus, Star } from 'lucide-react';
+import { ActionSheet, Avatar } from '../ui';
 import { useTranslation } from 'react-i18next';
 import { resolveImageUrl } from '../../api';
 import './StoriesRow.css';
@@ -12,7 +12,13 @@ const initialsOf = (name) => (name || '?').slice(0, 2).toUpperCase();
 // - "Your story": opens your own stories if you have any; the "+" badge
 //   (or the whole item, when you have none) opens the image picker.
 // - Everyone else: accent ring while something is unseen, grey once all
-//   of their stories have been seen.
+//   of their stories have been seen. Day 47: green while their newest
+//   unseen (or newest) story is for close friends, like Instagram.
+const CLOSE_FRIENDS_RING = 'var(--color-close-friends)';
+const ringFor = (group) => {
+  if (group.stories.some((s) => s.close_friends && !s.seen)) return CLOSE_FRIENDS_RING;
+  return group.all_seen ? 'var(--color-border)' : true;
+};
 function StoriesRow({ tray = [], currentUser, uploading, error, onAddStory, onOpenGroup, className }) {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
@@ -21,11 +27,17 @@ function StoriesRow({ tray = [], currentUser, uploading, error, onAddStory, onOp
   const ownGroup = ownGroupIndex === -1 ? null : tray[ownGroupIndex];
 
   const pickImage = () => fileInputRef.current?.click();
+  // Day 47: after picking a photo, who it's for.
+  const [picked, setPicked] = useState(null);
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
-    if (file) onAddStory(file);
+    if (file) setPicked(file);
+  };
+  const share = (closeFriends) => {
+    onAddStory(picked, { closeFriends });
+    setPicked(null);
   };
 
   return (
@@ -52,7 +64,7 @@ function StoriesRow({ tray = [], currentUser, uploading, error, onAddStory, onOp
             initials={own.initials}
             bg={own.bg}
             color={own.color}
-            ring={ownGroup ? (ownGroup.all_seen ? 'var(--color-border)' : true) : false}
+            ring={ownGroup ? ringFor(ownGroup) : false}
             alt=""
           />
         </button>
@@ -81,7 +93,7 @@ function StoriesRow({ tray = [], currentUser, uploading, error, onAddStory, onOp
                 size={56}
                 src={resolveImageUrl(group.avatar_url)}
                 initials={initialsOf(group.username)}
-                ring={group.all_seen ? 'var(--color-border)' : true}
+                ring={ringFor(group)}
                 alt=""
               />
             </button>
@@ -89,6 +101,16 @@ function StoriesRow({ tray = [], currentUser, uploading, error, onAddStory, onOp
           </div>
         )
       )}
+
+      <ActionSheet
+        open={Boolean(picked)}
+        onClose={() => setPicked(null)}
+        title={t('stories.shareTo')}
+        items={[
+          { key: 'everyone', label: t('stories.shareYourStory'), icon: Globe, onSelect: () => share(false) },
+          { key: 'close-friends', label: t('stories.shareCloseFriends'), icon: Star, onSelect: () => share(true) }
+        ]}
+      />
 
       {error && (
         <p className="stories-error" role="alert">
