@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 45 — Drafts + scheduled posts
-**Step:** 4 — poll-ended notification: done (committed). Next: close Day 45 (full browser run, Progress Log).
+**Day:** 46 — Saved collections
+**Step:** 1 — PLAN (not started)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -81,10 +81,16 @@
   of a 10-minute tool call. Run day27-perf alone, and A3 one language
   at a time (`A3_LANG=xx timeout 500 node a3-visual.cjs` on a fresh
   e2e-up.sh -- one language takes ~5 min).
-- FOR DAY 45: scheduled posts need a scheduler more frequent than the
-  daily cleanup cron. When it exists, also send a "poll ended"
-  notification (Day 44 left it out: daily would be up to a day late)
-  to the poll's author (and voters, like X).
+- Time-based work (Day 45): add a job to services/ticker.js JOBS (30 s +
+  start-up; take rows FOR UPDATE SKIP LOCKED so several instances are
+  safe) and to cleanupService.run as the backstop.
+- Notifications about your own content (no other actor):
+  notificationService.notifySystem / SYSTEM_TYPES, pushText (en+ar), and
+  a key in Notifications.jsx notificationKey + notifications.types.
+- Native browser controls speak the BROWSER's language (file picker
+  text, required/min/max bubbles): use translated buttons and our own
+  checks (Day 45: CreatePost, EditProfile).
+- New ways to create a post go through services/postCreationService.
 - Polls (Day 44): a new post listing must add pollColumnSql(viewer)
   next to mediaColumnSql (polls.test lists every listing).
 - Burmese CONTENT (Day 43; kept after the 2026-10-07 EN/AR-only UI
@@ -95,105 +101,7 @@
   mention regexes are [\p{L}\p{M}\p{N}_] with the u flag on both sides.
 
 ## Plan
-Better approach than "runs via the existing cron job" (daily -- can't
-hit 3:15 pm): drafts AND scheduled posts live in their own table and
-become real posts only when published, so no post listing needs a
-"not yet published" filter (no leak risk across 9+ queries). Like
-Facebook's Drafts / Scheduled lists.
-- Data (migration 052; 051 is the EN/AR language change): post_drafts(id, user_id CASCADE, content,
-  visibility, community_id, page_id, poll jsonb, media_urls text[],
-  scheduled_for timestamptz NULL, last_error, created_at, updated_at).
-  Up to 50 drafts per person.
-- Create a post through ONE service (extract createPost's core:
-  validation, insert post+media+poll, hashtags, mentions) used by POST
-  /posts and by publishing, so a published draft gets the same checks
-  AT PUBLISH TIME (still in the group? still owns the page? account
-  active?).
-- Step 1 drafts API: POST /drafts (form like POST /posts: content,
-  visibility, communityId/pageId, poll, images), GET /drafts, GET/PUT/
-  DELETE /drafts/:id (PUT keeps chosen photos, adds new ones, deletes
-  removed ones), POST /drafts/:id/publish (publish now). Owner only
-  (404 otherwise). A draft needs text, a photo or a poll. Photos go to
-  the 'posts' folder: the orphan scan must count draft media as used;
-  deleting a draft / account deletes its photos; export lists drafts.
-- Step 2 scheduling: scheduled_for 5 min .. 30 days ahead. Publisher
-  (services/scheduler): due drafts FOR UPDATE SKIP LOCKED, publish via
-  the service, delete the draft (keep its photos, now the post's), in
-  one transaction. Runs every 30 s in the server (and at start-up;
-  off under NODE_ENV=test unless started) + from the daily cleanup.
-  Can't publish -> back to drafts with last_error + a notification.
-  Notification "your scheduled post was published".
-- Step 3 UI: composer "Save draft" / "Schedule" (date-time picker,
-  local time, shown back in local time); Drafts screen with Drafts /
-  Scheduled tabs: open in composer (?draftId=), publish now, delete,
-  reschedule; EN/AR (RTL); browser suite.
-- Step 4: "poll ended" notification (Day 44 carry-over) via the same
-  ticker: polls closed since the last run, once (polls.ended_notified).
-
-### Step 2 plan (scheduling)
-- API: POST/PUT /drafts take scheduledFor (ISO; '' = not scheduled; PUT
-  without it keeps the current time). PUT /drafts/:id/schedule
-  { scheduledFor | null } to reschedule/unschedule from the list. 5 min
-  .. 30 days ahead. A scheduled draft must be publishable NOW (same
-  checks as publishing) so mistakes show at once, not at 3:15 pm.
-- Publisher (services/scheduledPostService): due rows FOR UPDATE SKIP
-  LOCKED, one per transaction, up to 25 per run, via the same
-  publishRow as POST /drafts/:id/publish. Banned / suspended /
-  deactivated author or a failed check -> back to drafts (scheduled_for
-  NULL, last_error) + notification. An unexpected error -> rollback,
-  log, stop this run (retried next tick).
-- Runs: every 30 s in the server + once at start (off under
-  NODE_ENV=test), and from the daily cleanup (dry run counts due ones).
-- Notifications: system types scheduled_post / scheduled_failed, about
-  your own content (actor = you), always on; push EN/AR; Notifications
-  screen texts EN/AR.
-- Tests: validation, due vs not due, failure paths, concurrency (two
-  runs -> one post), cleanup, notifications + push text.
-
-### Step 4 plan (poll ended)
-- Migration 053: polls.ended_notified (polls already closed -> true, so
-  a deploy doesn't notify old polls); partial index for the queue.
-- services/pollEndService: an ended, un-notified poll FOR UPDATE SKIP
-  LOCKED, mark it, notify in one transaction: the author
-  (poll_ended_own, actor = self) and every voter who can still see the
-  post (poll_ended, actor = author) -- getVisiblePost's rules as SQL
-  (author active, not only_me, no block, group/page/private/followers).
-  Pushes after commit. Like X (voters + author).
-- services/ticker: one 30 s ticker for scheduled posts AND ended polls
-  (start-up too); cleanup runs both.
-- UI + push texts EN/AR; tests incl. visibility filters, once only,
-  concurrency, old polls not notified.
+(none yet)
 
 ## Progress
-- Step 1 (drafts API) done: migration 052, postCreationService (POST /posts
-  and publishing share it), /drafts CRUD + publish, orphan scan, export,
-  account/group/page deletion media, Privacy Policy (EN/AR), Arabic
-  server messages. Review fixes: group/page id 0 was skipped as "none"
-  (now 403), keepMedia duplicates, check:i18n resolves imported
-  constants. Verified: backend 733/733 (drafts 16), rehearsal 015-052,
-  8 post-creation browser suites + c2-legal, Vitest 141.
-- Step 2 (scheduling) done: scheduledFor on POST/PUT /drafts + PUT
-  /drafts/:id/schedule (5 min..30 days, must be publishable now);
-  scheduledPostService (SKIP LOCKED, one per transaction, 25 per run,
-  30 s ticker + start-up + daily cleanup); bad account / failed check
-  -> back to drafts with last_error; system notifications
-  scheduled_post / scheduled_failed (push + UI, EN/AR). check:i18n now
-  reads double-quoted messages: 7 older ones got Arabic. Verified:
-  backend 745/745 (scheduledPosts 12, 4 mutations), Vitest 143, live
-  stack: published 28 s after due.
-- Step 3 (UI) done: composer Save draft / Schedule for later (local
-  time + zone hint; range checked in the app language, no native
-  min/max/required bubbles) / open a draft (?draftId) with its photos;
-  /drafts screen (Drafts / Scheduled tabs, post now, edit, change time,
-  move to drafts, delete with confirm, failure reason translated); Menu
-  row; push for a failed one opens /drafts. Native file pickers on
-  CreatePost and EditProfile showed browser-language text: now
-  translated buttons. Verified: Vitest 159, backend 746, day45-drafts
-  27/27, A3 EN+AR 234 each, a11y 95 page checks, guard, b2/a2/day44.
-  Known: the date-time picker's own format follows the browser locale.
-- Step 4 (poll ended) done: migration 053 (old ended polls count as
-  notified), pollEndService (SKIP LOCKED, author poll_ended_own + voters
-  who can still see it, poll_ended), one services/ticker for both jobs,
-  cleanup backstop, push + UI EN/AR. Verified: backend 756/756
-  (pollEnd 10, 9 mutations incl. every visibility rule), Vitest 161,
-  rehearsal 015-053, day45-drafts 29/29 (live: both told by the ticker).
+(none yet)

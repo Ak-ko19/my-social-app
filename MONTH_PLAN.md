@@ -211,9 +211,9 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 43 — (removed from the plan, owner decision 2026-10-07)
 *Myanmar is no longer a UI language, so this Myanmar-specific step is out of the plan. What it already shipped for user content stays, because people may still write in any language (standing rule 14): any-script hashtags and @mentions, and the server turning old-style Zawgyi Burmese into Unicode. See the 2026-10-07 Progress Log entry.*
 ### Day 44 — Polls
-- [x] Poll posts with options, vote once, results bar. *(See Progress Log; the "poll ended" notification waits for Day 45's scheduler.)*
+- [x] Poll posts with options, vote once, results bar. *(See Progress Log; the "poll ended" notification was added on Day 45.)*
 ### Day 45 — Drafts + scheduled posts
-- [ ] Save drafts; schedule a post (runs via the existing cron job).
+- [x] Save drafts; schedule a post. *(A 30 s server ticker instead of the daily cron, which couldn't hit a set time; plus the "poll ended" notification Day 44 left out — see Progress Log.)*
 ### Day 46 — Saved collections
 - [ ] Organize bookmarks into named collections.
 ### Day 47 — Privacy controls
@@ -1538,3 +1538,72 @@ Build every feature the way a senior engineer at a top social media company woul
     Myanmar pass was the only dark/390px one, it became an English one.
 - **Parked:** Day 45 (drafts) was mid-step in `git stash`. It resumes
   next, and its migration becomes 052.
+
+### 2026-10-08 — Day 45: Drafts + scheduled posts
+- **Better approach than the plan's** "runs via the existing cron job":
+  that job is daily (a GitHub Action), so a post set for 3:15 pm could go
+  up a day late. A 30 s ticker runs inside the server instead
+  (services/ticker.js), plus once at start-up, which catches posts that
+  fell due while the free-tier server slept. The keep-alive ping keeps
+  it awake. The daily cleanup runs the same jobs as a backstop.
+- **Data:** drafts and scheduled posts live in their own table
+  (migration 052, post_drafts) and become real posts only when
+  published. No post listing needed a "not published yet" filter, so
+  there is no risk of one leaking through any of the 9+ post queries.
+- **Step 1, drafts API (`e342375`):**
+  - POST /posts and publishing a draft share one service
+    (postCreationService), so a draft is checked as a post at the moment
+    it goes up (still in the group? still the page owner?).
+  - /drafts: create, list, get, edit (keepMedia keeps the chosen photos
+    in order, adds new ones and deletes the rest), delete, publish (one
+    transaction with a row lock: never twice). Up to 50 per person.
+  - Draft photos are used media for the orphan scan, and are deleted
+    with the draft, the account, the group or the page.
+  - Drafts are in the data download and the Privacy Policy (EN/AR).
+  - Review fix: a group or page id of 0 was taken as "none" and then
+    hit the foreign key. It is now refused (403).
+- **Step 2, scheduling (`5e7bee1`):**
+  - scheduledFor runs from 5 min to 30 days ahead, and a scheduled post
+    must be publishable now, so mistakes show at once.
+  - The publisher takes one row per transaction with FOR UPDATE SKIP
+    LOCKED, 25 per run.
+  - If it can't go up (left the group; banned, suspended or deactivated
+    account), it goes back to the drafts with the reason. An unexpected
+    error leaves it due, to be tried again.
+  - System notifications about your own post: scheduled_post and
+    scheduled_failed (push and in the app, EN/AR).
+  - check:i18n now also reads double-quoted server messages: 7 older
+    ones had no Arabic and now do.
+- **Step 3, UI (`99510bf`):**
+  - Composer: "Save draft" and "Schedule for later" (your own time
+    zone, shown with the picker); opening a draft brings its photos,
+    group or page, poll and time.
+  - /drafts: Drafts and Scheduled tabs (post now, edit, change time,
+    move back to drafts, delete with a confirm, the failure reason) and
+    a Menu row.
+  - Also found: the composer's and Edit Profile's native file pickers
+    showed "Choose Files / No file chosen" in the browser's language.
+    Both are now translated buttons. The date picker's native
+    min/max/required checks were dropped for the same reason: the range
+    is explained in the app's language instead.
+- **Step 4, "poll ended" (`686756f`):**
+  - Migration 053: polls that had already ended count as notified, so a
+    deploy sends no burst about old polls.
+  - The author is told (poll_ended_own), and so is every voter who can
+    still see the post (poll_ended). The getVisiblePost rules are
+    written as one SQL insert, and each rule is pinned by a mutation
+    test.
+- **Not done / known:** the native date-time picker shows the date in
+  the browser's own format (a page can't change it). Notification rows
+  still aren't links (the app never had that; a later polish day).
+- **Tests at close:**
+  - backend 756/756 (drafts 16, scheduledPosts 12, pollEnd 10; mutation
+    checks on locks, account checks, visibility rules); Vitest 161/161;
+    check:i18n 1032 keys; bundle 217.8 kB; rehearsal 015 → 053.
+  - Full browser run: all 53 suites (new: day45-drafts, including the
+    live ticker publishing and poll-ended notifications) + the 5
+    special-stack suites + perf 38/38 + A3 EN/AR (234 each, /drafts
+    added) + a11y (95 page checks, /drafts in EN and AR).
+  - day34-group-photo had a race in one check (it read the page before
+    her own update arrived). It now waits (`1ba1610`; that commit's
+    message also announced these docs, which follow here).
