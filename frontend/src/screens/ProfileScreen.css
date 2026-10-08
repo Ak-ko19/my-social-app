@@ -99,6 +99,13 @@
   color: var(--color-accent-3);
 }
 
+/* Day 47: "You won't see X's posts..." after muting. */
+.profile-screen-note {
+  margin: var(--space-3) 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
 /* Day 36: links and joined date under the bio. */
 .profile-details {
   display: flex;

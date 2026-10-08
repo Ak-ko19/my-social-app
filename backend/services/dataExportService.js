@@ -30,7 +30,7 @@ async function buildExport(userId) {
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
     legacyMessages, notifications, reports, sessions, pushDevices, messageReactions, hiddenSuggestions, searches,
-    pollOptions, pollVotes, drafts, collections
+    pollOptions, pollVotes, drafts, collections, muted
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -115,7 +115,10 @@ async function buildExport(userId) {
           FROM bookmark_collections c
           LEFT JOIN bookmark_collection_items i ON i.collection_id = c.id
           LEFT JOIN bookmarks b ON b.id = i.bookmark_id
-          WHERE c.user_id = $1 GROUP BY c.id ORDER BY c.created_at`, [userId])
+          WHERE c.user_id = $1 GROUP BY c.id ORDER BY c.created_at`, [userId]),
+    // Day 47: people you muted.
+    rows(`SELECT u.username, m.created_at FROM user_mutes m JOIN users u ON u.id = m.muted_id
+          WHERE m.muter_id = $1 ORDER BY m.created_at`, [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -162,7 +165,8 @@ async function buildExport(userId) {
       followers: followRows(false, 'accepted'),
       follow_requests_sent: followRows(true, 'pending'),
       follow_requests_received: followRows(false, 'pending'),
-      blocked_users: blocked
+      blocked_users: blocked,
+      muted_users: muted
     },
     groups,
     pages: { owned: pagesOwned, followed: pagesFollowed },

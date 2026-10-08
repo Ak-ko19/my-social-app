@@ -215,6 +215,8 @@ const AR = {
   'Collection not found': 'القائمة غير موجودة',
   'You can have up to 30 collections': 'يمكنك إنشاء 30 قائمة كحد أقصى',
   'You already have a collection with that name': 'لديك بالفعل قائمة بهذا الاسم',
+  // Day 47: privacy controls
+  "You can't mute yourself": 'لا يمكنك كتم نفسك',
   // admin screens
   'Accounts cannot be removed here; ban or suspend the user instead': 'لا يمكن حذف الحسابات من هنا؛ احظر المستخدم أو أوقفه مؤقتًا بدلًا من ذلك',
   'That user is not banned': 'هذا المستخدم غير محظور',

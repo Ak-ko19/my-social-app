@@ -1,4 +1,5 @@
 const db = require('../db');
+const { notMutedSql } = require('../services/muteService');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
@@ -125,6 +126,8 @@ async function getPopularPosts(req, res) {
          AND posts.created_at > now() - ${EXPLORE_WINDOW}
            AND ${NOT_BLOCKED_SQL}
            AND NOT users.is_deactivated
+           -- Day 47: not from people the viewer muted.
+           AND ($1::int IS NULL OR ${notMutedSql('$1', 'posts.user_id', 'posts.page_id')})
            AND (
              ((NOT users.is_private OR posts.page_id IS NOT NULL) AND posts.visibility = 'public')
              OR users.id = $1

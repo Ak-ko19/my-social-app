@@ -209,6 +209,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
           visibility={visibility}
           onChangeVisibility={changeVisibility}
           onBlocked={onRemovePostsByUser}
+          onMuted={onRemovePostsByUser}
           onDeleted={onRemovePost}
           onEdit={startEditing}
           canModerate={canModerate}

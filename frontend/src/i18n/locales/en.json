@@ -91,7 +91,8 @@
       "help-support": "Help & Support",
       "terms": "Terms & Conditions",
       "privacy-policy": "Privacy Policy",
-      "about": "About MySocialApp"
+      "about": "About MySocialApp",
+      "muted-accounts": "Muted accounts"
     }
   },
   "language": {
@@ -1114,7 +1115,7 @@
       "sections": [
         {
           "heading": "1. What we collect",
-          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
+          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted, muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active."
         },
         {
           "heading": "2. How we use it",
@@ -1327,5 +1328,19 @@
     "deleteTitle": "Delete \"{{name}}\"?",
     "deleteText": "The collection goes, but its posts stay in your saved posts.",
     "deleteFailed": "Couldn't delete it. Please try again."
+  },
+  "muted": {
+    "title": "Muted accounts",
+    "loadFailed": "Couldn't load your muted accounts.",
+    "empty": "You haven't muted anyone. Mute someone from their profile or a post's ⋯ menu to stop seeing their posts and stories in your feed.",
+    "explain": "Their posts and stories don't show in your Home, stories or Explore. They aren't told.",
+    "unmute": "Unmute",
+    "unmuteName": "Unmute {{name}}",
+    "unmuting": "Unmuting…",
+    "unmuteFailed": "Couldn't unmute. Please try again.",
+    "muteName": "Mute {{name}}",
+    "mutedNote": "You won't see {{name}}'s posts and stories in your feed. They aren't told.",
+    "unmutedNote": "{{name}}'s posts and stories will show in your feed again.",
+    "failed": "That didn't work. Please try again."
   }
 }

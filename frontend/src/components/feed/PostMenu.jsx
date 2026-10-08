@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { BookmarkPlus, Flag, Globe, Lock, MoreHorizontal, Pencil, Pin, PinOff, Trash2, UserX, Users } from 'lucide-react';
+import { BookmarkPlus, Flag, Globe, Lock, MoreHorizontal, Pencil, Pin, PinOff, Trash2, UserX, Users, VolumeX } from 'lucide-react';
 import { IconButton, ActionSheet, ConfirmDialog } from '../ui';
 import ReportDialog from './ReportDialog';
 // Day 46: loaded when first opened -- every feed card has this menu.
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { serverErrorText } from '../../utils/serverError';
 import { useAuth } from '../../hooks/useAuth';
 import { blockUser } from '../../services/blockService';
+import { muteUser } from '../../services/muteService';
 import { deletePost } from '../../services/postService';
 
 // The post card's "..." menu. Report (Feature 2) and the post owner's
@@ -25,7 +26,8 @@ const AUDIENCE_ITEMS = [
 ];
 
 // saved / onSaved (Day 46): the post's Save state, for "Save to collection".
-function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, onDeleted, onEdit, onTogglePin, canModerate = false, saved = false, onSaved }) {
+// onMuted (Day 47): the author was muted -- Home drops their posts.
+function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, onDeleted, onEdit, onTogglePin, canModerate = false, saved = false, onSaved, onMuted }) {
   const { t } = useTranslation();
   const { token, userId } = useAuth();
   const isOwner = post.user_id === userId;
@@ -34,6 +36,7 @@ function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState(null); // { type: 'post'|'user', label }
   const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const [muteError, setMuteError] = useState('');
   const [error, setError] = useState('');
 
   const handleBlock = async () => {
@@ -95,7 +98,24 @@ function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, 
   // B13/B14: the Public/Followers audience doesn't apply to group or page posts.
   // Group and page posts have no audience of their own: no audience items.
   const ownerMenu = post.community_id || post.page ? ownerItems.filter((i) => !i.key.startsWith('visibility')) : ownerItems;
+  const handleMute = async () => {
+    setMuteError('');
+    try {
+      await muteUser(post.user_id, token);
+      onMuted?.(post.user_id);
+    } catch (err) {
+      console.error(err);
+      setMuteError(serverErrorText(err, 'muted.failed'));
+    }
+  };
+
   const otherMenu = [
+        {
+          key: 'mute',
+          label: t('muted.muteName', { name: post.username }),
+          icon: VolumeX,
+          onSelect: handleMute
+        },
         {
           key: 'report-post',
           label: t('postMenu.report'),
@@ -137,6 +157,7 @@ function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, 
   return (
     <>
       <IconButton icon={MoreHorizontal} aria-label={t('postMenu.moreOptions')} onClick={() => setSheetOpen(true)} />
+      {muteError && <p className="feed-error-text post-menu-error" role="alert">{muteError}</p>}
       <ActionSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={t('postMenu.title')} items={items} />
       <ConfirmDialog
         open={confirmBlockOpen}

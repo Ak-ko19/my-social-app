@@ -36,6 +36,10 @@
 .blocked-users-name {
   flex: 1 1 auto;
   min-width: 0;
+  /* Next to the avatar in either direction (#root centres text); the name
+     keeps its own letters' direction without flipping the row. */
+  text-align: start;
+  unicode-bidi: isolate;
   font-size: 14px;
   font-weight: 700;
   color: var(--color-text);

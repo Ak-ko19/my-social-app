@@ -46,6 +46,7 @@ const shareRoutes = require('./routes/shareRoutes');
 const pushRoutes = require('./routes/pushRoutes');
 const draftRoutes = require('./routes/draftRoutes');
 const collectionRoutes = require('./routes/collectionRoutes');
+const muteRoutes = require('./routes/muteRoutes');
 
 const app = express();
 // Hosts like Render tell the app which port to listen on (validated by
@@ -127,6 +128,7 @@ app.use(blockRoutes);
 app.use(reportRoutes);
 app.use(bookmarkRoutes);
 app.use(collectionRoutes);
+app.use(muteRoutes);
 app.use(hashtagRoutes);
 app.use(storyRoutes);
 app.use(userPostsRoutes);

@@ -1,4 +1,5 @@
 const db = require('../db');
+const { notMutedSql } = require('../services/muteService');
 const { sendServerError } = require('../utils/sendError');
 const { mediaOfStory, deleteMedia } = require('../services/mediaCleanupService');
 
@@ -58,6 +59,8 @@ async function getStoriesTray(req, res) {
        FROM stories s
        JOIN users u ON u.id = s.user_id
        WHERE ${VISIBLE_TO_VIEWER_SQL}
+         -- Day 47: not people you muted (opening one directly still works).
+         AND ${notMutedSql('$1', 'u.id')}
        ORDER BY s.user_id, s.created_at ASC`,
       [req.userId]
     );

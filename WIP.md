@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 47 — Privacy controls
-**Step:** 1 — PLAN (not started)
+**Step:** 1 — mute a person: done (committed). Next: step 2, restrict.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -103,7 +103,32 @@
   mention regexes are [\p{L}\p{M}\p{N}_] with the u flag on both sides.
 
 ## Plan
-(none yet)
+Four steps, one feature each (all private: the other person is never
+told; EN/AR, RTL, dark, tests, browser suite each).
+1. Mute a person (FB "snooze", IG "mute"): migration 055 user_mutes
+   (muter, muted, created_at; PK; CHECK not self). Their posts and
+   stories leave Home (/feed), the stories tray and Explore's popular
+   posts; profile, search, links, groups, comments and notifications
+   are unchanged. POST/DELETE /users/:id/mute, GET /muted-users,
+   profile is_muted_by_me. UI: "Mute <name>" in their posts' menu (the
+   post leaves the feed at once) and on their profile; Settings ->
+   Muted accounts (unmute). Export + Privacy Policy.
+2. Restrict (IG): their new comments on your posts are seen only by
+   them and you (labelled; you can approve or delete); they can't
+   notify you (comments, likes, mentions, messages). Settings list.
+3. Close friends: a list (Settings) + "Close friends" audience for
+   posts (visibility 'close_friends' everywhere getVisiblePost / feed
+   / listings decide) and stories.
+4. Who can message me (everyone / people I follow / no one new) and who
+   can comment on my posts (everyone / followers / people I follow):
+   Settings -> Privacy, enforced in the API (messages incl. socket,
+   comments), explained in the UI.
 
 ## Progress
-(none yet)
+- Step 1 (mute) done: migration 055, muteService.notMutedSql on /feed,
+  stories tray, explore popular (page posts exempt); mute API + list;
+  profile is_muted_by_me; UI: post menu Mute, profile Mute/Unmute with a
+  note, Settings > Muted accounts. Export + Privacy Policy. Also: names
+  in the Blocked/Muted lists sat centred; now next to the avatar.
+  Verified: backend 771 (mutes 6, 4 mutations), Vitest 176, rehearsal
+  015-055, perf 38/38, day47-privacy, 7 feed suites, a11y 99, A3 246x2.

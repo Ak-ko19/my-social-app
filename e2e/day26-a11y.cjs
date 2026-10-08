@@ -27,7 +27,9 @@ const AUTHED = [
   // Day 45: drafts and scheduled posts.
   '/drafts', '/drafts?tab=scheduled',
   // Day 46: a saved collection.
-  '/saved/collections/1'
+  '/saved/collections/1',
+  // Day 47: privacy controls.
+  '/settings/muted'
 ];
 const PUBLIC = ['/welcome', '/login', '/signup', '/forgot-password', '/reset-password/sometoken', '/terms', '/privacy'];
 const LANG_PAGES = ['/', '/messages/1', '/profile/2', '/settings', '/login', '/welcome', '/drafts'];

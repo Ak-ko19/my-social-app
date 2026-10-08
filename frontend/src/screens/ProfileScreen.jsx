@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Flag, MoreHorizontal, UserX } from 'lucide-react';
+import { ChevronLeft, Flag, MoreHorizontal, UserX, Volume2, VolumeX } from 'lucide-react';
 import { Avatar, IconButton, ActionSheet, ConfirmDialog } from '../components/ui';
 import ReportDialog from '../components/feed/ReportDialog';
 import ProfileTabs from '../components/profile/ProfileTabs';
@@ -9,6 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import { fetchMutualFriends, fetchProfile } from '../services/profileService';
 import { fetchFollowCounts, followUser, unfollowUser } from '../services/postService';
 import { blockUser } from '../services/blockService';
+import { muteUser, unmuteUser } from '../services/muteService';
 import { createConversation } from '../services/messageService';
 import { resolveImageUrl } from '../api';
 import { Trans, useTranslation } from 'react-i18next';
@@ -108,6 +109,22 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
   const [reportOpen, setReportOpen] = useState(false);
   const [blockError, setBlockError] = useState('');
   const [blocked, setBlocked] = useState(false);
+  // Day 47: muted -- their posts and stories stay out of your Home.
+  const [muted, setMuted] = useState(Boolean(profile.is_muted_by_me));
+  const [muteNote, setMuteNote] = useState('');
+
+  const toggleMute = async () => {
+    setMuteNote('');
+    try {
+      if (muted) await unmuteUser(profile.id, token);
+      else await muteUser(profile.id, token);
+      setMuteNote(t(muted ? 'muted.unmutedNote' : 'muted.mutedNote', { name: profile.username }));
+      setMuted(!muted);
+    } catch (err) {
+      console.error(err);
+      setMuteNote(serverErrorText(err, 'muted.failed'));
+    }
+  };
 
   const handleFollowClick = () => {
     setFollowPending(true);
@@ -236,6 +253,7 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
             {followError}
           </p>
         )}
+        {muteNote && <p className="profile-screen-note" role="status">{muteNote}</p>}
       </div>
 
       <ProfileTabs userId={profile.id} username={profile.username} isOwn={isOwnProfile} token={token} />
@@ -245,6 +263,9 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
         onClose={() => setSheetOpen(false)}
         title={t('profile.options')}
         items={[
+          muted
+            ? { key: 'unmute', label: t('muted.unmuteName', { name: profile.username }), icon: Volume2, onSelect: toggleMute }
+            : { key: 'mute', label: t('muted.muteName', { name: profile.username }), icon: VolumeX, onSelect: toggleMute },
           { key: 'report', label: t('postMenu.reportUser', { name: profile.username }), icon: Flag, onSelect: () => setReportOpen(true) },
           { key: 'block', label: t('postMenu.block', { name: profile.username }), icon: UserX, danger: true, onSelect: () => setConfirmBlockOpen(true) }
         ]}

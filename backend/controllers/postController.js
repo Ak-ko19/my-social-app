@@ -9,6 +9,7 @@ const hashtagService = require('../services/hashtagService');
 const { toUnicode } = require('../utils/myanmarText');
 const pollService = require('../services/pollService');
 const postCreation = require('../services/postCreationService');
+const { notMutedSql } = require('../services/muteService');
 
 const { POST_VISIBILITIES, MAX_POST_LENGTH } = postCreation;
 
@@ -118,6 +119,8 @@ async function getFeed(req, res) {
            OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
       )
       AND NOT users.is_deactivated
+      -- Day 47: not from people you muted (your own posts are never muted).
+      AND ${notMutedSql('$1', 'posts.user_id', 'posts.page_id')}
       -- id breaks created_at ties (e.g. rows from one transaction) so pages
       -- never overlap or skip a post.
       ORDER BY posts.created_at DESC, posts.id DESC
