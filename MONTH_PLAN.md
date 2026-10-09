@@ -219,7 +219,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 47 — Privacy controls
 - [x] Mute user, restrict user, close friends list, who can message/comment on me. *(Four steps, Instagram-style — see Progress Log.)*
 ### Day 48 — Activity log
-- [ ] Your likes, comments, searches; delete items.
+- [x] Your likes, comments, searches; delete items. *(Settings > Your activity, Facebook-style — see Progress Log.)*
 ### Day 49 — Content filtering
 - [ ] Local bad-word list (EN/AR) with hide-or-warn option; spam detection (repeated links, flood posting).
 ### Day 50–52 — Groups (basic)
@@ -1708,3 +1708,27 @@ of them.
   - Full browser run: all 55 suites (new: day47-privacy, 48 checks) +
     the 5 special-stack suites + perf 38/38 + A3 EN/AR (264 each) +
     a11y (105 page checks).
+
+### 2026-10-09 — Day 48: Activity log
+Facebook's Activity log, two steps. Only you can see it.
+- **API (`b155595`, migration 059):** GET /activity/likes (reactions on
+  posts and likes on comments, one list newest first, each branch
+  limited before merging) and GET /activity/comments, paged. Only posts
+  you can still see (the saved-posts visibility rule). The user indexes
+  on likes / comment_likes / comments became (user_id, created_at DESC).
+- **UI (`cc6384b`):** Settings > Your activity (/activity), tabs Likes /
+  Comments / Searches with arrow keys. Each row links to the post and
+  can be removed with the existing endpoints: remove reaction, unlike a
+  comment, delete a comment (asks first), remove a search or clear all
+  (asks first). Load more, empty states, EN/AR, RTL.
+- **Process note:** the API commit went in the same batch as the perf
+  run that should have gated it; perf was re-run alone straight after
+  (40/40). Rule kept in WIP: never batch a commit with its checks.
+- **Tests at close:**
+  - backend 795/795 (activity 5, 5 mutation checks caught); Vitest
+    193/193; check:i18n 1158 keys; bundle 221.2 kB; rehearsal 015 → 059.
+  - Full browser run: all 50 regular suites (new: day48-activity, 12 checks) +
+    the 5 special-stack suites + perf 40/40 (/activity/likes 44 ms,
+    /activity/comments 177 ms) + A3 EN/AR (270 each) + a11y (111 page
+    checks). The first full run was stopped by the machine running low
+    on memory; it was re-run in batches of five suites, all green.

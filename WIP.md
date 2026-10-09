@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 48 — Activity log
-**Step:** 2 — activity UI: done (committed). Next: close Day 48 (full browser run, tick, Progress Log).
+**Day:** 49 — Content filtering
+**Step:** 1 — hidden words API: not started.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -111,35 +111,32 @@
   scripts/convert-zawgyi.js COLUMNS (a test lists them). Hashtag /
   mention regexes are [\p{L}\p{M}\p{N}_] with the u flag on both sides.
 
+- Full browser run: run it in batches of about five suites
+  (`E2E_ONLY="a b c d e" bash run-all.sh`), not all at once. The
+  machine ran low on memory during a one-shot run on Day 48.
+
 ## Plan
-Facebook's Activity log: your likes, comments and searches, each one
-removable. Private to you.
-- Step 1 API: GET /activity/likes (reactions on posts + comment likes,
-  one list newest first, { kind, reaction, created_at, post snippet,
-  author, comment snippet }) and GET /activity/comments (your comments
-  + their post), paged; only posts you can still see
-  (savedPostsService.STILL_VISIBLE_SQL). Removing uses the existing
-  endpoints (DELETE /posts/:id/like, /comments/:id/like, /comments/:id,
-  /search/history[/:id]). Migration 059: likes / comment_likes /
-  comments (user_id, created_at DESC) indexes. Perf suite gets the two
-  endpoints.
-- Step 2 UI: Settings > Your activity (/activity): tabs Likes /
-  Comments / Searches, rows linking to the post, Remove (comment delete
-  asks first), Clear all searches (asks), load more, empty states.
-  EN/AR, RTL, dark, a11y, browser suite day48-activity.
+Instagram's "Hidden words" (a viewer's own filter, never a ban on what
+people may write -- standing rule 14) plus server-side spam checks.
+- Step 1 Hidden words API: migration 060 (users.hidden_words_mode
+  'off' | 'warn' | 'hide', default 'warn'; user_hidden_words (user_id,
+  word) cascade, max 100 words, 1-40 chars). GET /settings/hidden-words,
+  PUT /settings/hidden-words/mode, POST + DELETE /settings/hidden-words.
+  Data export includes them.
+- Step 2 Hidden words UI: the built-in EN/AR list ships as a lazy chunk
+  (no first-download cost; bundle is at 221/225 kB). One matcher
+  (utils/hiddenWords.js: NFKC, lower case, Arabic diacritics / tatweel /
+  alef / yeh / teh-marbuta folded, leet digits, stretched letters,
+  whole-word matching with \p{L}). Applied in PostCard and comments:
+  warn = covered with "Show anyway"; hide = left out. Never your own
+  posts/comments. Settings > Hidden words screen (mode + your words).
+  Matching on the client (decision): one matcher instead of a filter in
+  every listing query, and it is a viewer preference, not security.
+- Step 3 Spam checks (services/spamService.js, posts + comments, DB
+  counts so they survive restarts): flood (posting too fast), the same
+  text again within 10 min, the same link in too many posts/comments in
+  an hour. 429 with an EN/AR message. Off under NODE_ENV=test unless
+  SPAM_CHECKS_IN_TESTS=1 (as bot checks).
 
 ## Progress
-- Step 1 (API) done: migration 059 (likes / comment_likes / comments
-  user indexes now (user_id, created_at DESC)), GET /activity/likes
-  (reactions + comment likes merged, each branch limited first) and
-  /activity/comments, only posts you can still see. Verified: backend
-  795 (activity 5, 5 mutations), rehearsal 015-059, perf 40/40 with the
-  two new endpoints. (Note: perf was launched in parallel with the commit, failed to
-  start, and the commit went first; re-run alone right after: 40/40,
-  /activity/likes 81 ms, /activity/comments 160 ms.)
-- Step 2 (UI) done: Settings > Your activity (/activity), tabs Likes /
-  Comments / Searches (?tab=), remove reaction / unlike comment, delete
-  comment and clear searches ask first, load more, empty states, EN/AR.
-  Verified: Vitest 193 (activity 5), lint, check:i18n 1158 keys, build +
-  bundle 221.2/225 kB, browser day48-activity, day30-guard, day26-a11y
-  (111 page checks), A3 ar and en 270/270 each.
+- (none yet)
