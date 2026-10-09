@@ -95,7 +95,8 @@
       "muted-accounts": "Muted accounts",
       "restricted-accounts": "Restricted accounts",
       "close-friends": "Close friends",
-      "interactions": "Messages and comments"
+      "interactions": "Messages and comments",
+      "activity": "Your activity"
     }
   },
   "language": {
@@ -1412,5 +1413,37 @@
       "following": "People you follow"
     },
     "commentHint": "You can always comment on your own posts. Posts in groups and on pages follow the group or page."
+  },
+  "activity": {
+    "title": "Your activity",
+    "tabs": "Your activity",
+    "tab": {
+      "likes": "Likes",
+      "comments": "Comments",
+      "searches": "Searches"
+    },
+    "private": "Only you can see your activity.",
+    "loadFailed": "Couldn't load your activity.",
+    "removeFailed": "That didn't work. Please try again.",
+    "empty": {
+      "likes": "Nothing here yet. Posts and comments you react to show up here.",
+      "comments": "Nothing here yet. Your comments show up here.",
+      "searches": "No recent searches."
+    },
+    "reacted": "You reacted {{reaction}} to {{name}}'s post",
+    "likedComment": "You liked {{name}}'s comment",
+    "commented": "You commented on {{name}}'s post",
+    "replied": "You replied on {{name}}'s post",
+    "unreact": "Remove reaction",
+    "unreactLabel": "Remove your reaction to {{name}}'s post",
+    "unlike": "Unlike",
+    "unlikeCommentLabel": "Unlike {{name}}'s comment",
+    "deleteCommentLabel": "Delete your comment on {{name}}'s post",
+    "remove": "Remove",
+    "removeSearch": "Remove the search \"{{query}}\"",
+    "clearSearches": "Clear all searches",
+    "clearTitle": "Clear all recent searches?",
+    "clearText": "Your recent searches will be gone. Your posts and comments aren't affected.",
+    "clear": "Clear"
   }
 }

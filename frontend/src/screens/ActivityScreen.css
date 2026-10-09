@@ -1,0 +1,118 @@
+/* Day 48: the activity log. Tokens only; logical properties. */
+
+.activity-tablist {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.activity-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 0 var(--space-1);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.activity-tab.is-active {
+  color: var(--color-accent-text);
+  border-bottom-color: var(--color-accent);
+}
+
+.activity-tab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.activity-panel {
+  text-align: start;
+}
+
+.activity-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.activity-icon {
+  flex: 0 0 auto;
+  width: 24px;
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.activity-emoji {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.activity-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activity-title {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.activity-title:hover,
+.activity-title:focus-visible {
+  text-decoration: underline;
+}
+
+.activity-quote,
+.activity-post {
+  margin: 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.activity-quote {
+  color: var(--color-text);
+}
+
+.activity-post {
+  padding-inline-start: var(--space-2);
+  border-inline-start: 2px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.activity-time {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.activity-clear {
+  margin-bottom: var(--space-2);
+}

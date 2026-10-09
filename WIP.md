@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 48 — Activity log
-**Step:** 1 — activity API: done (committed). Next: step 2, UI.
+**Step:** 2 — activity UI: done (committed). Next: close Day 48 (full browser run, tick, Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -99,6 +99,7 @@
   restricted people never notify (notify(), mentions, pushes).
 - Direct-message rules live in messageService.assertNotBlocked (every
   send) + interactionService; a new send path must call it.
+- Never put a commit in the same batch as the checks it depends on.
 - Browser runs: ONE run-all/A3 at a time -- two in parallel fail with
   "run-all.sh: No such file" (seen twice on Day 47).
 - Polls (Day 44): a new post listing must add pollColumnSql(viewer)
@@ -133,4 +134,12 @@ removable. Private to you.
   (reactions + comment likes merged, each branch limited first) and
   /activity/comments, only posts you can still see. Verified: backend
   795 (activity 5, 5 mutations), rehearsal 015-059, perf 40/40 with the
-  two new endpoints.
+  two new endpoints. (Note: perf was launched in parallel with the commit, failed to
+  start, and the commit went first; re-run alone right after: 40/40,
+  /activity/likes 81 ms, /activity/comments 160 ms.)
+- Step 2 (UI) done: Settings > Your activity (/activity), tabs Likes /
+  Comments / Searches (?tab=), remove reaction / unlike comment, delete
+  comment and clear searches ask first, load more, empty states, EN/AR.
+  Verified: Vitest 193 (activity 5), lint, check:i18n 1158 keys, build +
+  bundle 221.2/225 kB, browser day48-activity, day30-guard, day26-a11y
+  (111 page checks), A3 ar and en 270/270 each.

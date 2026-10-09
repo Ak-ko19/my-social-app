@@ -16,6 +16,7 @@ import {
   ShieldMinus,
   Star,
   MessagesSquare,
+  History,
   Globe,
   Moon,
   Lock,
@@ -66,6 +67,8 @@ const SETTINGS_SECTIONS = [
       { key: 'security', icon: ShieldCheck, to: '/settings/account' },
       // Day 8: devices signed in to this account.
       { key: 'sessions', icon: MonitorSmartphone, to: '/settings/sessions' },
+      // Day 48: your likes, comments and searches.
+      { key: 'activity', icon: History, to: '/activity' },
       // badgeCount isn't set here -- it's static config, but the
       // notifications count is live data, so it's injected at render
       // time below (the one row key this component special-cases).
