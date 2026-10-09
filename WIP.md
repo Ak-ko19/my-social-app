@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 47 — Privacy controls
-**Step:** 3 — close friends: done (committed). Next: step 4, who can message / comment.
+**Step:** 4 — who can message / comment: done (committed). Next: close Day 47 (full browser run, Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -148,5 +148,14 @@ told; EN/AR, RTL, dark, tests, browser suite each).
   poll-end voters, stories tray follow it. API /close-friends (+
   candidates = followers). UI: composer + post menu option, green star,
   story Share-to sheet + green ring, Settings > Close friends.
-  Verified: backend 787 (closeFriends 7, 8 mutations), Vitest 185,
+  Verified: backend 786 (closeFriends 7, 8 mutations), Vitest 185,
   rehearsal 015-057, perf, 9 suites, a11y 103, A3 258x2.
+- Step 4 (who can message / comment) done: migration 058
+  (users.message_permission, comment_permission); interactionService;
+  enforced on chat creation + every direct send (assertNotBlocked) and
+  comment create (not group/page posts); an ongoing chat goes on.
+  PUT /profile/interactions, can_message on profiles. UI: Settings >
+  Messages and comments; profile Message button off with the reason
+  (its errors were silently swallowed before). Verified: backend 790
+  (interactions 4, 7 mutations), Vitest 188, rehearsal 015-058, perf,
+  day47-privacy 48 checks, 8 suites, a11y 105, A3 264x2.

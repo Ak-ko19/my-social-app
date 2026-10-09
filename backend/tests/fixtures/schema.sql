@@ -46,7 +46,12 @@ CREATE TABLE users (
   banned_until timestamptz,
   -- Added by migration 033_add_user_language (Day 16): NULL = never chosen.
   -- Migration 051: English and Arabic only (Myanmar dropped 2026-10-07).
-  language varchar(5) CONSTRAINT chk_users_language CHECK (language IN ('en', 'ar'))
+  language varchar(5) CONSTRAINT chk_users_language CHECK (language IN ('en', 'ar')),
+  -- Added by migration 058_add_interaction_permissions (Day 47).
+  message_permission varchar(10) NOT NULL DEFAULT 'everyone'
+    CONSTRAINT chk_users_message_permission CHECK (message_permission IN ('everyone', 'following', 'nobody')),
+  comment_permission varchar(10) NOT NULL DEFAULT 'everyone'
+    CONSTRAINT chk_users_comment_permission CHECK (comment_permission IN ('everyone', 'followers', 'following'))
 );
 CREATE INDEX idx_users_banned_until ON users (banned_until) WHERE banned_until IS NOT NULL;
 

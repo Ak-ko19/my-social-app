@@ -15,6 +15,7 @@ import {
   VolumeX,
   ShieldMinus,
   Star,
+  MessagesSquare,
   Globe,
   Moon,
   Lock,
@@ -89,6 +90,8 @@ const SETTINGS_SECTIONS = [
     id: 'social',
     rows: [
       { key: 'privacy-settings', icon: Lock, toggle: true, ToggleComponent: PrivacyToggle },
+      // Day 47: who can message you / comment on your posts.
+      { key: 'interactions', icon: MessagesSquare, to: '/settings/interactions' },
       { key: 'content-visibility', icon: Eye },
       { key: 'followers-following', icon: Users },
       { key: 'content-preferences', icon: SlidersHorizontal }

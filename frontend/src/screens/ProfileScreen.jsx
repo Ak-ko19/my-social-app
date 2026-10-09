@@ -175,10 +175,18 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
     return () => { cancelled = true; };
   }, [profile.id, token, isOwnProfile]);
 
+  // Day 47: they may not accept messages from you (can_message); a refusal
+  // or failure is shown, no longer only logged.
+  const [messageError, setMessageError] = useState('');
+  const messagesClosed = Boolean(token) && !isOwnProfile && profile.can_message === false;
   const handleMessage = () => {
+    setMessageError('');
     createConversation(profile.id, token)
       .then((conversation) => navigate(`/messages/${conversation.id}`))
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error(err);
+        setMessageError(serverErrorText(err, 'profile.messageFailed'));
+      });
   };
 
   const handleBlock = async () => {
@@ -258,7 +266,13 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
               >
                 {followLabel}
               </button>
-              <button type="button" className="profile-screen-btn profile-screen-btn-secondary" onClick={handleMessage}>
+              <button
+                type="button"
+                className="profile-screen-btn profile-screen-btn-secondary"
+                onClick={handleMessage}
+                disabled={messagesClosed}
+                aria-describedby={messagesClosed ? 'profile-messages-closed' : undefined}
+              >
                 {t('common.message')}
               </button>
             </>
@@ -269,6 +283,10 @@ function ProfileScreenBody({ profile, counts, token, viewerId, navigate }) {
             {followError}
           </p>
         )}
+        {messagesClosed && (
+          <p id="profile-messages-closed" className="profile-screen-note">{t('profile.messagesClosed', { name: profile.username })}</p>
+        )}
+        {messageError && <p className="profile-screen-error" role="alert">{messageError}</p>}
         {muteNote && <p className="profile-screen-note" role="status">{muteNote}</p>}
       </div>
 

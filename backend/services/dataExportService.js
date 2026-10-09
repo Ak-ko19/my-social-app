@@ -20,7 +20,7 @@ async function rows(sql, params) {
 
 async function buildExport(userId) {
   const [profile] = await rows(
-    `SELECT id, username, email, bio, links, avatar_url, cover_url, pinned_post_id, is_private, language, email_verified, created_at
+    `SELECT id, username, email, bio, links, avatar_url, cover_url, pinned_post_id, is_private, language, message_permission, comment_permission, email_verified, created_at
      FROM users WHERE id = $1`,
     [userId]
   );
@@ -146,6 +146,9 @@ async function buildExport(userId) {
     settings: {
       private_account: profile.is_private,
       language: profile.language,
+      // Day 47.
+      who_can_message_you: profile.message_permission,
+      who_can_comment_on_your_posts: profile.comment_permission,
       notifications: prefs
     },
     posts: posts.map((p) => ({

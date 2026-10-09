@@ -1,0 +1,46 @@
+/* Day 47: Messages and comments settings -- the Language screen's option
+   style (visible radios: a choice of three, each one line). */
+
+.interactions-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  border: none;
+  text-align: start;
+}
+
+.interactions-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.interactions-option input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.interactions-option.is-selected {
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.interactions-status {
+  min-height: 1.4em;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: start;
+}

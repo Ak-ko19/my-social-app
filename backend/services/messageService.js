@@ -6,6 +6,7 @@
 // for both at once.
 const sanitizeHtml = require('sanitize-html');
 const db = require('../db');
+const interactionService = require('./interactionService');
 const { pushNewMessage } = require('./pushService');
 const { isRateLimited } = require('./rateLimiter');
 const blockService = require('./blockService');
@@ -117,6 +118,10 @@ async function assertNotBlocked(conversationId, senderId) {
   const otherUserId = await getOtherParticipantId(conversationId, senderId);
   if (otherUserId && (await blockService.isBlocked(senderId, otherUserId))) {
     throw new BlockedError();
+  }
+  // Day 47: and the other person's "who can message me" setting.
+  if (otherUserId && !(await interactionService.canMessage(senderId, otherUserId))) {
+    throw new BlockedError("This person isn't accepting messages from you");
   }
 }
 

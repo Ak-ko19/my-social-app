@@ -12,6 +12,9 @@
 // for close friends from the composer (green star); bob sees it, logged
 // out doesn't; a close-friends story rings green in bob's tray (Arabic);
 // sharing a story to Close friends sends the flag; off the list, gone.
+// Step 4, who can message / comment: alice picks "No one new" and "Your
+// followers" in Settings; carol (new) sees Message off with the reason and
+// can't comment; bob (follower) can. Arabic settings screen.
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -229,6 +232,52 @@ const api = (who, method, url, body) => fetch(API + url, {
   // Off the list: the post is gone for bob.
   await api('alice', 'DELETE', '/close-friends/2');
   check('removed from the list: bob gets 404', (await api('bob', 'GET', `/posts/${cfPostId}`)).status === 404);
+
+  // ---- Step 4: who can message / comment ----
+  // carol: a new account that has never talked to alice.
+  await fetch(`${API}/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'carol47', email: 'carol47@example.com', password: 'a-fine-password-123' }) });
+  tokens.carol = (await (await fetch(`${API}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'carol47@example.com', password: 'a-fine-password-123' }) })).json()).token;
+  const carolId = Number(sql("SELECT id FROM users WHERE username = 'carol47'"));
+
+  const settings = await open('alice', '/settings');
+  await settings.getByRole('button', { name: /Messages and comments/ }).click();
+  await settings.waitForURL(`${WEB}/settings/interactions`, { timeout: 8000 }).catch(() => {});
+  await settings.getByRole('radio', { name: 'No one new' }).waitFor({ timeout: 8000 }).catch(() => {});
+  await settings.getByRole('radio', { name: 'No one new' }).check();
+  await settings.getByText('Saved.').waitFor({ timeout: 8000 }).catch(() => {});
+  await settings.getByRole('radio', { name: 'Your followers' }).check();
+  await settings.waitForTimeout(600);
+  check('Settings > Messages and comments saves both', sql('SELECT message_permission || \',\' || comment_permission FROM users WHERE id = 1') === 'nobody,followers');
+  await axe(settings, 'en/light, Messages and comments');
+  await settings.context().close();
+
+  // carol: the Message button says why it's off; the API agrees.
+  const carolCtx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await carolCtx.addInitScript(([t, id]) => {
+    localStorage.setItem('token', t); localStorage.setItem('userId', String(id)); localStorage.setItem('username', 'carol47'); localStorage.setItem('emailVerified', 'true');
+  }, [tokens.carol, carolId]);
+  const carol = await carolCtx.newPage();
+  carol.on('pageerror', (e) => errors.push(`carol: ${e.message}`));
+  await carol.goto(`${WEB}/profile/1`, { waitUntil: 'networkidle' });
+  await carol.getByText("alice isn't accepting messages from you.").waitFor({ timeout: 8000 }).catch(() => {});
+  check('carol: Message is off, and says why', await carol.getByRole('button', { name: 'Message', exact: true }).isDisabled()
+    && (await carol.getByText("alice isn't accepting messages from you.").count()) === 1);
+  await carolCtx.close();
+  const carolChat = await (await api('carol', 'POST', '/conversations', { userId: 1 })).text();
+  check("carol can't start a chat with alice", carolChat === "This person isn't accepting messages from you");
+  check("carol can't comment (not a follower)", (await api('carol', 'POST', `/posts/${myPost.id}/comments`, { content: 'hi' })).status === 403);
+  check('bob (a follower) still can', (await api('bob', 'POST', `/posts/${myPost.id}/comments`, { content: 'hi again' })).status === 201);
+
+  // Arabic, dark, 375px: the settings screen.
+  const arSettings = await open('alice', '/settings/interactions', { lang: 'ar', theme: 'dark', width: 375 });
+  await arSettings.getByRole('radio', { name: AR.interactions.message.nobody }).waitFor({ timeout: 8000 }).catch(() => {});
+  check('ar: the settings in Arabic, right to left', (await arSettings.getByRole('radio', { name: AR.interactions.message.nobody }).isChecked())
+    && (await arSettings.evaluate(() => document.documentElement.dir)) === 'rtl');
+  check('ar: no sideways scroll at 375px', await noSideScroll(arSettings));
+  await axe(arSettings, 'ar/dark, Messages and comments');
+  await arSettings.screenshot({ path: path.join(SP, 'day47-interactions-ar-dark-375.png') });
+  await arSettings.context().close();
+  await api('alice', 'PUT', '/profile/interactions', { messagePermission: 'everyone', commentPermission: 'everyone' });
 
   await browser.close();
   console.log(results.join('\n'));

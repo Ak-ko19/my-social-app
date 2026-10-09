@@ -220,6 +220,8 @@ const AR = {
   "You can't restrict yourself": 'لا يمكنك تقييد نفسك',
   "You can't add yourself": 'لا يمكنك إضافة نفسك',
   'You can add people who follow you': 'يمكنك إضافة من يتابعونك فقط',
+  "This person isn't accepting messages from you": 'لا يقبل هذا الشخص الرسائل منك',
+  'This person limits who can comment on their posts': 'يحدّ هذا الشخص من يمكنه التعليق على منشوراته',
   // admin screens
   'Accounts cannot be removed here; ban or suspend the user instead': 'لا يمكن حذف الحسابات من هنا؛ احظر المستخدم أو أوقفه مؤقتًا بدلًا من ذلك',
   'That user is not banned': 'هذا المستخدم غير محظور',

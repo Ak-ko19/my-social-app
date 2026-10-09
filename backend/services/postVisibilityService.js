@@ -46,7 +46,7 @@ async function getVisiblePost(postId, viewerId) {
   if (result.rows.length === 0) return null;
 
   const post = result.rows[0];
-  const summary = { id: post.id, user_id: post.user_id, community_id: post.community_id };
+  const summary = { id: post.id, user_id: post.user_id, community_id: post.community_id, page_id: post.page_id };
   const isAuthor = viewerId != null && viewerId === post.user_id;
   if (isAuthor) return summary;
 

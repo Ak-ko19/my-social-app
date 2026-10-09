@@ -1,4 +1,5 @@
 const db = require('../db');
+const interactionService = require('../services/interactionService');
 const { APP_LANGUAGES, isAppLanguage } = require('../config/languages');
 const { sendServerError } = require('../utils/sendError');
 const { deleteMedia } = require('../services/mediaCleanupService');
@@ -16,7 +17,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function getMyProfile(req, res) {
   try {
-    const result = await db.query('SELECT id, username, email, bio, links, avatar_url, cover_url, is_private, email_verified, is_admin, language, created_at FROM users WHERE id = $1', [req.userId]);
+    const result = await db.query('SELECT id, username, email, bio, links, avatar_url, cover_url, is_private, email_verified, is_admin, language, message_permission, comment_permission, created_at FROM users WHERE id = $1', [req.userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).send('User not found');
@@ -96,6 +97,9 @@ async function getProfile(req, res) {
     if (viewerId && (await blockService.isBlocked(viewerId, profile.id))) {
       return res.status(404).send('User not found');
     }
+    // Day 47: whether the viewer may message them (their setting), so the
+    // Message button can say so instead of failing.
+    profile.can_message = Boolean(viewerId) && viewerId !== profile.id && (await interactionService.canMessage(viewerId, profile.id));
 
     res.status(200).json(profile);
   } catch (err) {
@@ -234,6 +238,31 @@ async function updatePrivacy(req, res) {
 
 // Day 16: PUT /profile/language { language } -- the app language for this
 // account, applied on every device it logs in on.
+// Day 47: PUT /profile/interactions { messagePermission?, commentPermission? }
+// -- who can message you / comment on your posts. Either or both.
+async function updateInteractions(req, res) {
+  try {
+    const { messagePermission, commentPermission } = req.body || {};
+    if (messagePermission === undefined && commentPermission === undefined) {
+      return res.status(400).send('Nothing to update');
+    }
+    if (messagePermission !== undefined && !interactionService.MESSAGE_PERMISSIONS.includes(messagePermission)) {
+      return res.status(400).send(`messagePermission must be one of: ${interactionService.MESSAGE_PERMISSIONS.join(', ')}`);
+    }
+    if (commentPermission !== undefined && !interactionService.COMMENT_PERMISSIONS.includes(commentPermission)) {
+      return res.status(400).send(`commentPermission must be one of: ${interactionService.COMMENT_PERMISSIONS.join(', ')}`);
+    }
+    const result = await db.query(
+      `UPDATE users SET message_permission = COALESCE($1, message_permission), comment_permission = COALESCE($2, comment_permission)
+       WHERE id = $3 RETURNING message_permission, comment_permission`,
+      [messagePermission ?? null, commentPermission ?? null, req.userId]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    sendServerError(res, err, 'Saving your settings failed. Please try again later.');
+  }
+}
+
 async function updateLanguage(req, res) {
   try {
     const language = req.body?.language;
@@ -248,4 +277,4 @@ async function updateLanguage(req, res) {
   }
 }
 
-module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, exportMyData, setCover, removeCover, pinPost, unpinPost };
+module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, exportMyData, setCover, removeCover, pinPost, unpinPost, updateInteractions };

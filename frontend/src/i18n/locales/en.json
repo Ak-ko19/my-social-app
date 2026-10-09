@@ -94,7 +94,8 @@
       "about": "About MySocialApp",
       "muted-accounts": "Muted accounts",
       "restricted-accounts": "Restricted accounts",
-      "close-friends": "Close friends"
+      "close-friends": "Close friends",
+      "interactions": "Messages and comments"
     }
   },
   "language": {
@@ -429,7 +430,9 @@
     "followers_one": "<b>{{count}}</b> follower",
     "followers_other": "<b>{{count}}</b> followers",
     "mutualFriends_one": "{{count}} mutual friend: {{names}}",
-    "mutualFriends_other": "{{count}} mutual friends: {{names}}"
+    "mutualFriends_other": "{{count}} mutual friends: {{names}}",
+    "messagesClosed": "{{name}} isn't accepting messages from you.",
+    "messageFailed": "Couldn't open the chat. Please try again."
   },
   "editProfile": {
     "title": "Edit Profile",
@@ -1389,5 +1392,25 @@
     "noFollowers": "Everyone who follows you is on your list already — or nobody follows you yet.",
     "add": "Add",
     "addName": "Add {{name}} to close friends"
+  },
+  "interactions": {
+    "title": "Messages and comments",
+    "loadFailed": "Couldn't load your settings.",
+    "saveFailed": "Couldn't save that. Please try again.",
+    "saved": "Saved.",
+    "messageLegend": "Who can message you",
+    "message": {
+      "everyone": "Everyone",
+      "following": "People you follow",
+      "nobody": "No one new"
+    },
+    "messageHint": "Chats where the other person and you have already talked keep going, and group chats aren't affected.",
+    "commentLegend": "Who can comment on your posts",
+    "comment": {
+      "everyone": "Everyone who can see the post",
+      "followers": "Your followers",
+      "following": "People you follow"
+    },
+    "commentHint": "You can always comment on your own posts. Posts in groups and on pages follow the group or page."
   }
 }

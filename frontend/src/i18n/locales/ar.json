@@ -110,7 +110,8 @@
       "about": "حول MySocialApp",
       "muted-accounts": "الحسابات المكتومة",
       "restricted-accounts": "الحسابات المقيّدة",
-      "close-friends": "الأصدقاء المقرّبون"
+      "close-friends": "الأصدقاء المقرّبون",
+      "interactions": "الرسائل والتعليقات"
     }
   },
   "language": {
@@ -489,7 +490,9 @@
     "mutualFriends_two": "صديقان مشتركان: {{names}}",
     "mutualFriends_few": "{{count}} أصدقاء مشتركين: {{names}}",
     "mutualFriends_many": "{{count}} صديقًا مشتركًا: {{names}}",
-    "mutualFriends_other": "{{count}} صديق مشترك: {{names}}"
+    "mutualFriends_other": "{{count}} صديق مشترك: {{names}}",
+    "messagesClosed": "لا يقبل {{name}} الرسائل منك.",
+    "messageFailed": "تعذّر فتح المحادثة. حاول مرة أخرى."
   },
   "editProfile": {
     "title": "تعديل الملف الشخصي",
@@ -1489,5 +1492,25 @@
     "noFollowers": "كل من يتابعك موجود في قائمتك بالفعل، أو لا يتابعك أحد بعد.",
     "add": "إضافة",
     "addName": "إضافة {{name}} إلى الأصدقاء المقرّبين"
+  },
+  "interactions": {
+    "title": "الرسائل والتعليقات",
+    "loadFailed": "تعذّر تحميل إعداداتك.",
+    "saveFailed": "تعذّر الحفظ. حاول مرة أخرى.",
+    "saved": "تم الحفظ.",
+    "messageLegend": "من يمكنه مراسلتك",
+    "message": {
+      "everyone": "الجميع",
+      "following": "من تتابعهم",
+      "nobody": "لا أحد جديد"
+    },
+    "messageHint": "تستمر المحادثات التي تحدّثتما فيها من قبل، ولا تتأثر المحادثات الجماعية.",
+    "commentLegend": "من يمكنه التعليق على منشوراتك",
+    "comment": {
+      "everyone": "كل من يمكنه رؤية المنشور",
+      "followers": "متابعوك",
+      "following": "من تتابعهم"
+    },
+    "commentHint": "يمكنك دائمًا التعليق على منشوراتك. منشورات المجموعات والصفحات تتبع إعدادات المجموعة أو الصفحة."
   }
 }

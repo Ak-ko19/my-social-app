@@ -19,5 +19,7 @@ router.put('/profile/pinned-post', authMiddleware, profileController.pinPost);
 router.delete('/profile/pinned-post', authMiddleware, profileController.unpinPost);
 router.put('/profile/privacy', authMiddleware, profileController.updatePrivacy);
 router.put('/profile/language', authMiddleware, profileController.updateLanguage);
+// Day 47: who can message you / comment on your posts.
+router.put('/profile/interactions', authMiddleware, profileController.updateInteractions);
 
 module.exports = router;

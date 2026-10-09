@@ -1,4 +1,5 @@
 const db = require('../db');
+const interactionService = require('../services/interactionService');
 const { sendServerError } = require('../utils/sendError');
 const logger = require('../utils/logger');
 const { encodeCursor, decodeCursor, getLimit } = require('../utils/cursorPagination');
@@ -164,6 +165,12 @@ async function createConversation(req, res) {
         username: other.rows[0].username,
         avatar_url: other.rows[0].avatar_url
       });
+    }
+
+    // Day 47: a new chat only with someone who accepts messages from you
+    // (an existing one opens either way; sending is checked every time).
+    if (!(await interactionService.canMessage(req.userId, targetUserId))) {
+      return res.status(403).send("This person isn't accepting messages from you");
     }
 
     const created = await db.query(

@@ -6,6 +6,7 @@ const blockService = require('../services/blockService');
 const notificationService = require('../services/notificationService');
 const { toUnicode } = require('../utils/myanmarText');
 const { isRestricted } = require('../services/restrictService');
+const interactionService = require('../services/interactionService');
 
 // Day 43: comments had no length limit; same as a chat message.
 const MAX_COMMENT_LENGTH = 5000;
@@ -33,6 +34,16 @@ async function createComment(req, res) {
     const post = await getVisiblePost(req.params.id, req.userId);
     if (!post) {
       return res.status(404).send('Post not found');
+    }
+    // Day 47: the owner's "who can comment" setting (a group's or page's
+    // post belongs to the group / page).
+    if (!post.community_id && !post.page_id) {
+      try {
+        await interactionService.assertCanComment(req.userId, post.user_id);
+      } catch (err) {
+        if (err instanceof interactionService.InteractionError) return res.status(err.status).send(err.message);
+        throw err;
+      }
     }
     // B4 replies: optional parentCommentId. Replies are one level deep --
     // replying to a reply attaches to that reply's own parent (see
