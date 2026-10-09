@@ -217,7 +217,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 46 — Saved collections
 - [x] Organize bookmarks into named collections. *(Instagram-style: "Save to collection" from any post, collections on Saved — see Progress Log.)*
 ### Day 47 — Privacy controls
-- [ ] Mute user, restrict user, close friends list, who can message/comment on me.
+- [x] Mute user, restrict user, close friends list, who can message/comment on me. *(Four steps, Instagram-style — see Progress Log.)*
 ### Day 48 — Activity log
 - [ ] Your likes, comments, searches; delete items.
 ### Day 49 — Content filtering
@@ -1653,3 +1653,58 @@ Build every feature the way a senior engineer at a top social media company woul
   - Full browser run: all 54 suites (new: day46-collections) + the 5
     special-stack suites + perf 38/38 + A3 EN/AR (240 each, a seeded
     collection added) + a11y (97 page checks).
+
+### 2026-10-09 — Day 47: Privacy controls
+Four steps, one feature each. The other person is never told about any
+of them.
+- **Mute (`a88f9a7`, migration 055):** Facebook's snooze / Instagram's
+  mute.
+  - Their posts and stories leave your Home, stories tray and Explore.
+    Profile, search, links, groups, comments and notifications are
+    unchanged. Their page's posts stay (the page isn't the person).
+  - Where: their posts' menu (the posts leave the feed at once), their
+    profile (with a note), and Settings > Muted accounts.
+  - Found: names in the Blocked list sat centred (the app centres text
+    at the root). Fixed for both lists.
+- **Restrict (`de2268d`, migration 056):** Instagram's Restrict.
+  - Their new comments on your posts are held: seen only by them and
+    you, marked for you, counted only for you two, so the count gives
+    nothing away. You can approve or delete them.
+  - A held comment notifies nobody: not you, not the person it replies
+    to, not @mentions.
+  - No notifications or pushes from them anywhere: one rule in notify(),
+    mentions and message pushes.
+  - The UI had no way to delete a comment at all. Added for the
+    comment's author and the post's owner.
+  - VERIFY caught a bug of mine: a bulk edit had turned
+    postService.authHeaders into a function calling itself, which
+    crashed the feed. Unit tests missed it; the browser suite caught it.
+- **Close friends (`7c18d35`, migration 057):**
+  - A list (people who follow you; searchable candidates). A "Close
+    friends" audience for posts (composer, post menu, green star) and
+    stories ("Share to" after picking the photo, green ring).
+  - postVisibilityService.postAudienceSql now holds the audience rule
+    that was copied into seven listing queries. getVisiblePost, the
+    feed, notification snippets, poll-ended voters and the stories tray
+    apply the same rule.
+  - Rolling back makes close-friends posts "only me" and deletes
+    close-friends stories: never more visible.
+- **Who can message / comment (`3683d09`, migration 058):** Settings >
+  Messages and comments.
+  - Messages: everyone / people I follow / no one new. An ongoing chat
+    goes on and group chats are exempt. Checked when a chat starts and
+    on every direct send (all kinds, HTTP and live).
+  - Comments: everyone / my followers / people I follow; group and page
+    posts exempt.
+  - The profile's Message button is off with the reason (can_message).
+    Its errors used to be swallowed silently.
+- **Arabic:** muted = مكتوم, restricted = مقيّد, close friends = الأصدقاء
+  المقرّبون. New text checked in RTL screenshots (lists, held comment,
+  settings, green ring).
+- **Tests at close:**
+  - backend 790/790 (mutes 6, restrict 7, closeFriends 7, interactions
+    4; 40 mutation checks across the four, all caught); Vitest 188/188;
+    check:i18n 1131 keys; bundle 220.9 kB; rehearsal 015 → 058.
+  - Full browser run: all 55 suites (new: day47-privacy, 48 checks) +
+    the 5 special-stack suites + perf 38/38 + A3 EN/AR (264 each) +
+    a11y (105 page checks).

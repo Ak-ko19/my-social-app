@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 47 — Privacy controls
-**Step:** 4 — who can message / comment: done (committed). Next: close Day 47 (full browser run, Progress Log).
+**Day:** 48 — Activity log
+**Step:** 1 — PLAN (not started)
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -93,6 +93,14 @@
 - New ways to create a post go through services/postCreationService.
 - Saved-post listings use services/savedPostsService (one visibility
   query). Arabic: a collection is "قائمة"; "مجموعة" means a group.
+- Who may see a post: postVisibilityService.getVisiblePost (one post)
+  and postAudienceSql (listings) -- never copy the audience rule. Muted
+  (muteService.notMutedSql) applies to Home/stories/Explore only;
+  restricted people never notify (notify(), mentions, pushes).
+- Direct-message rules live in messageService.assertNotBlocked (every
+  send) + interactionService; a new send path must call it.
+- Browser runs: ONE run-all/A3 at a time -- two in parallel fail with
+  "run-all.sh: No such file" (seen twice on Day 47).
 - Polls (Day 44): a new post listing must add pollColumnSql(viewer)
   next to mediaColumnSql (polls.test lists every listing).
 - Burmese CONTENT (Day 43; kept after the 2026-10-07 EN/AR-only UI
@@ -103,59 +111,7 @@
   mention regexes are [\p{L}\p{M}\p{N}_] with the u flag on both sides.
 
 ## Plan
-Four steps, one feature each (all private: the other person is never
-told; EN/AR, RTL, dark, tests, browser suite each).
-1. Mute a person (FB "snooze", IG "mute"): migration 055 user_mutes
-   (muter, muted, created_at; PK; CHECK not self). Their posts and
-   stories leave Home (/feed), the stories tray and Explore's popular
-   posts; profile, search, links, groups, comments and notifications
-   are unchanged. POST/DELETE /users/:id/mute, GET /muted-users,
-   profile is_muted_by_me. UI: "Mute <name>" in their posts' menu (the
-   post leaves the feed at once) and on their profile; Settings ->
-   Muted accounts (unmute). Export + Privacy Policy.
-2. Restrict (IG): their new comments on your posts are seen only by
-   them and you (labelled; you can approve or delete); they can't
-   notify you (comments, likes, mentions, messages). Settings list.
-3. Close friends: a list (Settings) + "Close friends" audience for
-   posts (visibility 'close_friends' everywhere getVisiblePost / feed
-   / listings decide) and stories.
-4. Who can message me (everyone / people I follow / no one new) and who
-   can comment on my posts (everyone / followers / people I follow):
-   Settings -> Privacy, enforced in the API (messages incl. socket,
-   comments), explained in the UI.
+(none yet)
 
 ## Progress
-- Step 1 (mute) done: migration 055, muteService.notMutedSql on /feed,
-  stories tray, explore popular (page posts exempt); mute API + list;
-  profile is_muted_by_me; UI: post menu Mute, profile Mute/Unmute with a
-  note, Settings > Muted accounts. Export + Privacy Policy. Also: names
-  in the Blocked/Muted lists sat centred; now next to the avatar.
-  Verified: backend 771 (mutes 6, 4 mutations), Vitest 176, rehearsal
-  015-055, perf 38/38, day47-privacy, 7 feed suites, a11y 99, A3 246x2.
-- Step 2 (restrict) done: migration 056 (user_restrictions,
-  comments.awaiting_approval); held comments seen by author + post owner
-  only (counts too), approve / owner delete, no notifications (notify,
-  mentions, message pushes). UI: profile Restrict, held note + Approve,
-  comment Delete (was missing from the UI entirely), Settings >
-  Restricted accounts. Caught by the browser suite: postService.authHeaders
-  had been rewritten into calling itself (feed crashed); fixed.
-  Verified: backend 779 (restrict 7, 11 mutations), Vitest 179,
-  rehearsal 015-056, perf, 12 suites, a11y 101, A3 252x2.
-- Step 3 (close friends) done: migration 057 (list, close_friends
-  audience, varchar(20), stories.close_friends; down = only_me / delete,
-  never wider). postVisibilityService.postAudienceSql replaces 7 copies
-  of the audience clause; getVisiblePost, feed, notification snippets,
-  poll-end voters, stories tray follow it. API /close-friends (+
-  candidates = followers). UI: composer + post menu option, green star,
-  story Share-to sheet + green ring, Settings > Close friends.
-  Verified: backend 786 (closeFriends 7, 8 mutations), Vitest 185,
-  rehearsal 015-057, perf, 9 suites, a11y 103, A3 258x2.
-- Step 4 (who can message / comment) done: migration 058
-  (users.message_permission, comment_permission); interactionService;
-  enforced on chat creation + every direct send (assertNotBlocked) and
-  comment create (not group/page posts); an ongoing chat goes on.
-  PUT /profile/interactions, can_message on profiles. UI: Settings >
-  Messages and comments; profile Message button off with the reason
-  (its errors were silently swallowed before). Verified: backend 790
-  (interactions 4, 7 mutations), Vitest 188, rehearsal 015-058, perf,
-  day47-privacy 48 checks, 8 suites, a11y 105, A3 264x2.
+(none yet)
