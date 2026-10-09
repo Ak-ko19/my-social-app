@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 058, check the environment variables,
+database, run migrations 015 → 059, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -98,7 +98,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 058 on production
+## 3. Run migrations 015 → 059 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -141,7 +141,8 @@ rows there.)
            047_add_post_search_index 048_add_hashtag_search_index 049_add_search_history \
            050_add_polls 051_drop_myanmar_ui_language 052_add_post_drafts \
            053_add_poll_ended_notified 054_add_bookmark_collections 055_add_user_mutes \
-           056_add_user_restrictions 057_add_close_friends 058_add_interaction_permissions; do
+           056_add_user_restrictions 057_add_close_friends 058_add_interaction_permissions \
+           059_add_activity_indexes; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
@@ -154,7 +155,7 @@ rows there.)
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
     "SELECT count(*) FROM pg_indexes WHERE indexname IN ('idx_messages_conversation_id','idx_post_hashtags_hashtag','idx_participants_last_read','idx_story_views_viewer','idx_posts_content_fts','idx_hashtags_tag_trgm','idx_search_history_user_recent','idx_poll_votes_user','idx_post_drafts_due','idx_polls_end_queue','idx_bookmark_collections_user_name')"
   ```
-  - 039, 047 and 048 build indexes, which briefly holds back writes to each
+  - 039, 047, 048 and 059 build indexes, which briefly holds back writes to each
     table while they run: seconds at today's size, another reason for a
     quiet hour.
 

@@ -413,15 +413,16 @@ CREATE INDEX idx_posts_content_fts ON posts USING GIN (to_tsvector('english', co
 CREATE INDEX idx_hashtags_tag_trgm ON hashtags USING GIN (LOWER(tag) gin_trgm_ops);
 -- 015_add_fk_lookup_indexes:
 CREATE INDEX idx_conversation_participants_user_id ON conversation_participants (user_id);
-CREATE INDEX idx_comments_user_id ON comments (user_id);
-CREATE INDEX idx_likes_user_id ON likes (user_id);
+-- (user_id, created_at DESC) since migration 059 (Day 48, activity log).
+CREATE INDEX idx_comments_user_recent ON comments (user_id, created_at DESC);
+CREATE INDEX idx_likes_user_recent ON likes (user_id, created_at DESC);
 CREATE INDEX idx_notifications_actor_id ON notifications (actor_id);
 CREATE INDEX idx_messages_sender_id ON messages (sender_id);
 CREATE INDEX idx_bookmarks_post_id ON bookmarks (post_id);
 -- 018 / 019 / 022 (also missing here until Day 27):
 CREATE INDEX idx_stories_user_expires ON stories (user_id, expires_at);
 CREATE INDEX idx_comments_parent_comment_id ON comments (parent_comment_id);
-CREATE INDEX idx_comment_likes_user_id ON comment_likes (user_id);
+CREATE INDEX idx_comment_likes_user_recent ON comment_likes (user_id, created_at DESC);
 CREATE INDEX idx_messages_reply_to ON messages (reply_to_message_id);
 
 -- Day 27 (migration 039): the indexes still missing after those.

@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 48 — Activity log
-**Step:** 1 — PLAN (not started)
+**Step:** 1 — activity API: done (committed). Next: step 2, UI.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -111,7 +111,26 @@
   mention regexes are [\p{L}\p{M}\p{N}_] with the u flag on both sides.
 
 ## Plan
-(none yet)
+Facebook's Activity log: your likes, comments and searches, each one
+removable. Private to you.
+- Step 1 API: GET /activity/likes (reactions on posts + comment likes,
+  one list newest first, { kind, reaction, created_at, post snippet,
+  author, comment snippet }) and GET /activity/comments (your comments
+  + their post), paged; only posts you can still see
+  (savedPostsService.STILL_VISIBLE_SQL). Removing uses the existing
+  endpoints (DELETE /posts/:id/like, /comments/:id/like, /comments/:id,
+  /search/history[/:id]). Migration 059: likes / comment_likes /
+  comments (user_id, created_at DESC) indexes. Perf suite gets the two
+  endpoints.
+- Step 2 UI: Settings > Your activity (/activity): tabs Likes /
+  Comments / Searches, rows linking to the post, Remove (comment delete
+  asks first), Clear all searches (asks), load more, empty states.
+  EN/AR, RTL, dark, a11y, browser suite day48-activity.
 
 ## Progress
-(none yet)
+- Step 1 (API) done: migration 059 (likes / comment_likes / comments
+  user indexes now (user_id, created_at DESC)), GET /activity/likes
+  (reactions + comment likes merged, each branch limited first) and
+  /activity/comments, only posts you can still see. Verified: backend
+  795 (activity 5, 5 mutations), rehearsal 015-059, perf 40/40 with the
+  two new endpoints.

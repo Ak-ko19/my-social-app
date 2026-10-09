@@ -53,6 +53,8 @@ function seqScans() {
     '/notifications', '/notifications/unread-count', '/conversations', `/conversations/${conv}`,
     `/conversations/${conv}/messages`, '/explore/posts', '/explore/hashtags', '/hashtags/perf/posts', '/hashtags/perf/posts?sort=top', '/hashtags/mingalar/posts',
     '/bookmarks', '/stories', '/blocked-users',
+    // Day 48: the activity log.
+    '/activity/likes', '/activity/comments',
     // Search is a substring match (ILIKE '%q%'): served by the pg_trgm
     // indexes (002). A word that matches nothing is the worst case.
     '/search/posts?q=shwedagon', '/search/posts?q=mohinga', '/search/posts?q=perf', '/search/posts?q=sunset%20shwedagon', '/search/users?q=perf12', '/search/users?q=zawgyi', '/search/hashtags?q=t1', '/search/hashtags?q=perf'
