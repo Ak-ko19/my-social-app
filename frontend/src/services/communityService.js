@@ -19,3 +19,8 @@ export const fetchCommunityMembers = (id, token) => api.get(`/communities/${id}/
 export const setCommunityRole = (id, userId, role, token) => api.put(`/communities/${id}/members/${userId}/role`, { role }, withAuth(token)).then(data);
 export const fetchJoinRequests = (id, token) => api.get(`/communities/${id}/requests`, withAuth(token)).then(data);
 export const approveJoinRequest = (id, userId, token) => api.post(`/communities/${id}/requests/${userId}/approve`, {}, withAuth(token)).then(data);
+// Day 50: Remove and ban.
+export const banCommunityMember = (id, userId, token) => api.post(`/communities/${id}/bans/${userId}`, {}, withAuth(token)).then(data);
+export const unbanCommunityMember = (id, userId, token) => api.delete(`/communities/${id}/bans/${userId}`, withAuth(token)).then(data);
+export const fetchCommunityBans = (id, token, { page = 1, limit = 20 } = {}) =>
+  api.get(`/communities/${id}/bans`, { ...withAuth(token), params: { page, limit } }).then(data);

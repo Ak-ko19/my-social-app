@@ -17,5 +17,9 @@ router.delete('/communities/:id/members/:userId', authMiddleware, c.removeMember
 router.put('/communities/:id/members/:userId/role', authMiddleware, c.setRole);
 router.get('/communities/:id/requests', authMiddleware, c.listRequests);
 router.post('/communities/:id/requests/:userId/approve', authMiddleware, c.approveRequest);
+// Day 50: Remove and ban.
+router.get('/communities/:id/bans', authMiddleware, c.listBans);
+router.post('/communities/:id/bans/:userId', authMiddleware, c.banMember);
+router.delete('/communities/:id/bans/:userId', authMiddleware, c.unbanMember);
 
 module.exports = router;

@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 50–52 — Groups (basic)
-**Step:** 1 — audit what B10/B13 already built against the checkbox: not started.
+**Step:** 1 — ban from a group: done (committed). Next: step 2, delete a group.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -124,8 +124,46 @@
   with words from frontend/src/data/offensiveWords.js gets covered.
 
 ## Plan
-- (next: read MONTH_PLAN Day 50-52, AUDIT_REPORT, and the B10/B13
-  groups code; tick what is already done, plan the gaps)
+Audit (2026-10-10): B13 already has create, public/private, join (instant
+or request), approve/deny, leave, group posts, promote/demote admins,
+remove member, admins delete any post, last-admin hand-over. Missing for
+"group moderation" (as Facebook groups do it), one vertical slice each:
+- Step 1 Ban ("Remove and ban"): migration 061 community_bans
+  (community_id, user_id, banned_by, created_at). Admin bans a member,
+  a pending requester, or anyone; it removes them and they can't join
+  or request again until unbanned. Bans list (paged), unban. Admins
+  can't be banned (demote first); you can't ban yourself. Also: only
+  members may comment on or react to a group's posts (today anyone can
+  on a public group, so a ban would change nothing). UI in Manage group.
+- Step 2 Delete group: DELETE /communities/:id for admins, asks first
+  (a confirm dialog, as Facebook does), its media cleaned up.
+- Step 3 Pagination: members, requests, bans and the groups list are
+  unpaged (Quality bar 5). Page them; Load more in the UI.
+- Step 4 Notifications: "X asked to join <group>" to the admins,
+  "You're now a member of <group>" to the person approved
+  (notifications.community_id, push + Notifications screen text EN/AR,
+  a "groups" setting).
 
 ## Progress
-- (none yet)
+- Step 1 backend built (uncommitted): migration 061 community_bans,
+  POST/DELETE /communities/:id/bans/:userId, GET /communities/:id/bans
+  (paged), join refused when banned, services/communityService.js
+  (isBanned, assertCanInteract: only members comment / react / like
+  comments in a group; taking back is allowed), getVisiblePost returns
+  viewer_is_community_member. communityBans.test.js 6/6, 16 mutations
+  caught, backend 813, rehearsal 015 → 061, serverMessages AR.
+  Left: UI (Manage group: Remove and ban, Banned list; group posts:
+  non-members see "Join to comment and react"), browser suite, commit.
+- Step 1 done. UI: Manage group > Remove asks first, with "Also ban
+  them" (ConfirmDialog got a children slot); Banned list with Unban and
+  Load more; the group page shows why Join failed (errors were
+  swallowed); non-members see group posts and comments read-only (no
+  reaction button, Like/Reply or comment form; "Join the group to
+  comment and react."). Verified: backend 813, Vitest 222, lint,
+  check:i18n 1196, browser day50-group-bans 15/15, b13-groups, b4, b1,
+  day26-a11y (113), day30-guard, A3 ar + en (276 each).
+  Known gap: the single-post page (/posts/:id) of a group post doesn't
+  know membership, so a non-member there still sees the reaction button
+  and gets the server's "Join this group to comment and react".
+  Bundle: 223.9 / 225 kB -- step 2 must make room before adding to the
+  first download.

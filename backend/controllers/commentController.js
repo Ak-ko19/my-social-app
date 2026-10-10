@@ -8,6 +8,7 @@ const { toUnicode } = require('../utils/myanmarText');
 const { isRestricted } = require('../services/restrictService');
 const interactionService = require('../services/interactionService');
 const spamService = require('../services/spamService');
+const communityService = require('../services/communityService');
 
 // Day 43: comments had no length limit; same as a chat message.
 const MAX_COMMENT_LENGTH = 5000;
@@ -35,6 +36,13 @@ async function createComment(req, res) {
     const post = await getVisiblePost(req.params.id, req.userId);
     if (!post) {
       return res.status(404).send('Post not found');
+    }
+    // Day 50: only members comment and react in a group.
+    try {
+      communityService.assertCanInteract(post);
+    } catch (err) {
+      if (err instanceof communityService.GroupRuleError) return res.status(err.status).send(err.message);
+      throw err;
     }
     // Day 47: the owner's "who can comment" setting (a group's or page's
     // post belongs to the group / page).
@@ -247,7 +255,7 @@ async function getLikeableComment(commentId, viewerId) {
   // the post's owner.
   if (comment.awaiting_approval && viewerId !== comment.user_id && viewerId !== post.user_id) return null;
   if (await blockService.isBlocked(viewerId, comment.user_id)) return null;
-  return comment;
+  return { ...comment, post };
 }
 
 async function commentLikeCount(commentId) {
@@ -265,6 +273,13 @@ async function likeComment(req, res) {
     const comment = await getLikeableComment(req.params.id, req.userId);
     if (!comment) {
       return res.status(404).send('Comment not found');
+    }
+    // Day 50: only members comment and react in a group.
+    try {
+      communityService.assertCanInteract(comment.post);
+    } catch (err) {
+      if (err instanceof communityService.GroupRuleError) return res.status(err.status).send(err.message);
+      throw err;
     }
     const inserted = await db.query(
       'INSERT INTO comment_likes (comment_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING comment_id',

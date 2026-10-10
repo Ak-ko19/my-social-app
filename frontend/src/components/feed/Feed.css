@@ -472,3 +472,11 @@
 .post-card-audience-close-friends svg {
   color: var(--color-close-friends-text);
 }
+
+/* Day 50: under a group post's comments, for someone not in the group. */
+.comment-group-locked {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: start;
+}

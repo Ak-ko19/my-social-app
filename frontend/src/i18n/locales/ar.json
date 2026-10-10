@@ -286,7 +286,13 @@
     "deleteTitle": "حذف هذا التعليق؟",
     "deleteText": "سيُحذف لدى الجميع.",
     "deleteTextReplies": "سيُحذف لدى الجميع مع ردوده.",
-    "deleteFailed": "تعذّر حذف التعليق. حاول مرة أخرى."
+    "deleteFailed": "تعذّر حذف التعليق. حاول مرة أخرى.",
+    "likeCountOnly_zero": "لا إعجابات",
+    "likeCountOnly_one": "إعجاب واحد",
+    "likeCountOnly_two": "إعجابان",
+    "likeCountOnly_few": "{{count}} إعجابات",
+    "likeCountOnly_many": "{{count}} إعجابًا",
+    "likeCountOnly_other": "{{count}} إعجاب"
   },
   "reactions": {
     "like": "أعجبني",
@@ -1030,7 +1036,17 @@
     "removeName": "إزالة {{name}}",
     "actionFailed": "فشل هذا الإجراء. يرجى المحاولة مرة أخرى.",
     "manageLoadFailed": "تعذّر تحميل المجموعة",
-    "report": "الإبلاغ عن المجموعة"
+    "report": "الإبلاغ عن المجموعة",
+    "banned": "المحظورون",
+    "noBans": "لا يوجد أحد محظور من هذه المجموعة.",
+    "unban": "إلغاء الحظر",
+    "unbanName": "إلغاء حظر {{name}}",
+    "removeTitle": "إزالة {{name}} من المجموعة؟",
+    "removeText": "سيغادر {{group}} ويمكنه الانضمام مرة أخرى لاحقًا. تبقى منشوراته، ويمكنك حذفها.",
+    "removeBanText": "سيغادر {{group}} ولن يتمكن من الانضمام أو طلب الانضمام مرة أخرى ما لم تلغِ حظره. تبقى منشوراته، ويمكنك حذفها.",
+    "removeAndBan": "إزالة وحظر",
+    "alsoBan": "حظره أيضًا، فلا يمكنه الانضمام أو طلب الانضمام مرة أخرى",
+    "joinToComment": "انضم إلى المجموعة لتعلّق وتتفاعل."
   },
   "pages": {
     "title": "الصفحات",

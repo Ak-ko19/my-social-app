@@ -6,6 +6,7 @@ const { getPagination } = require('../utils/pagination');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 const { pollColumnSql } = require('../services/pollService');
 const { toUnicode } = require('../utils/myanmarText'); // Day 43: Zawgyi -> Unicode
+const { isBanned } = require('../services/communityService');
 
 // B13 Groups ("communities" in the code, to stay distinct from B10 group
 // chats). Rules:
@@ -17,6 +18,9 @@ const { toUnicode } = require('../utils/myanmarText'); // Day 43: Zawgyi -> Unic
 //   members, promote/demote, edit the group, and delete any post in it.
 // - The last admin leaving promotes the longest-standing member; the last
 //   member leaving deletes the group (and its posts).
+// - Day 50: admins can ban someone ("Remove and ban"): it removes them and
+//   they can't join or ask to join again until unbanned. Only members
+//   comment on and react to a group's posts (communityService).
 
 class CommunityError extends Error {
   constructor(status, message) {
@@ -173,6 +177,7 @@ async function joinCommunity(req, res) {
   try {
     const c = await loadCommunity(Number(req.params.id), req.userId);
     if (c.my_status) return res.json(c); // already a member / already requested
+    if (await isBanned(c.id, req.userId)) throw new CommunityError(403, "You can't join this group");
     const status = c.privacy === 'public' ? 'member' : 'pending';
     await db.query(
       "INSERT INTO community_members (community_id, user_id, role, status) VALUES ($1, $2, 'member', $3) ON CONFLICT DO NOTHING",
@@ -275,6 +280,74 @@ async function approveRequest(req, res) {
   }
 }
 
+// POST /communities/:id/bans/:userId -- admins: "Remove and ban". Takes a
+// member out (or turns down their request) and stops them joining or
+// asking again. An admin must be made a member first; nobody bans
+// themselves. Banning twice is harmless.
+async function banMember(req, res) {
+  try {
+    const c = await loadCommunity(Number(req.params.id), req.userId);
+    requireAdmin(c);
+    const targetId = Number(req.params.userId);
+    if (!Number.isInteger(targetId)) throw new CommunityError(400, 'Invalid user ID');
+    if (targetId === req.userId) throw new CommunityError(400, "You can't ban yourself");
+    const target = await db.query(
+      `SELECT u.id, m.role, m.status FROM users u
+       LEFT JOIN community_members m ON m.community_id = $1 AND m.user_id = u.id
+       WHERE u.id = $2`,
+      [c.id, targetId]
+    );
+    if (target.rows.length === 0) throw new CommunityError(404, 'User not found');
+    if (target.rows[0].role === 'admin' && target.rows[0].status === 'member') {
+      throw new CommunityError(400, 'Make this admin a member before banning them');
+    }
+    // One statement: never removed without the ban, or banned while still in.
+    await db.query(
+      `WITH removed AS (DELETE FROM community_members WHERE community_id = $1 AND user_id = $2)
+       INSERT INTO community_bans (community_id, user_id, banned_by) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+      [c.id, targetId, req.userId]
+    );
+    res.status(201).json({ banned: true });
+  } catch (err) {
+    handle(res, err, 'Updating the group failed. Please try again later.');
+  }
+}
+
+// DELETE /communities/:id/bans/:userId -- admins. They may join (or ask) again.
+async function unbanMember(req, res) {
+  try {
+    const c = await loadCommunity(Number(req.params.id), req.userId);
+    requireAdmin(c);
+    const targetId = Number(req.params.userId);
+    if (!Number.isInteger(targetId)) throw new CommunityError(400, 'Invalid user ID');
+    await db.query('DELETE FROM community_bans WHERE community_id = $1 AND user_id = $2', [c.id, targetId]);
+    res.json({ banned: false });
+  } catch (err) {
+    handle(res, err, 'Updating the group failed. Please try again later.');
+  }
+}
+
+// GET /communities/:id/bans -- admins; newest first, paged.
+async function listBans(req, res) {
+  try {
+    const c = await loadCommunity(Number(req.params.id), req.userId);
+    requireAdmin(c);
+    const { page, limit, offset } = getPagination(req, { defaultLimit: 20, maxLimit: 50 });
+    const result = await db.query(
+      `SELECT u.id, u.username, u.avatar_url, b.created_at AS banned_at
+       FROM community_bans b JOIN users u ON u.id = b.user_id
+       WHERE b.community_id = $1
+       ORDER BY b.created_at DESC, u.id DESC
+       LIMIT $2 OFFSET $3`,
+      [c.id, limit + 1, offset]
+    );
+    const hasMore = result.rows.length > limit;
+    res.json({ bans: hasMore ? result.rows.slice(0, limit) : result.rows, page, hasMore });
+  } catch (err) {
+    handle(res, err, 'Loading banned people failed. Please try again later.');
+  }
+}
+
 // GET /communities/:id/posts -- the group's feed (public groups: anyone;
 // private: members). Same per-post shape as the main feed; blocked
 // authors are hidden from the viewer.
@@ -325,5 +398,8 @@ module.exports = {
   setRole,
   listRequests,
   approveRequest,
-  listPosts
+  listPosts,
+  banMember,
+  unbanMember,
+  listBans
 };

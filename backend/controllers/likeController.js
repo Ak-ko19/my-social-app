@@ -1,6 +1,7 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { getVisiblePost } = require('../services/postVisibilityService');
+const communityService = require('../services/communityService');
 const reactionService = require('../services/reactionService');
 const notificationService = require('../services/notificationService');
 
@@ -13,6 +14,13 @@ async function likePost(req, res) {
     const post = await getVisiblePost(req.params.id, req.userId);
     if (!post) {
       return res.status(404).send('Post not found');
+    }
+    // Day 50: only members comment and react in a group.
+    try {
+      communityService.assertCanInteract(post);
+    } catch (err) {
+      if (err instanceof communityService.GroupRuleError) return res.status(err.status).send(err.message);
+      throw err;
     }
     const existingLike = await db.query(
       'SELECT * FROM likes WHERE post_id = $1 AND user_id = $2',
@@ -84,6 +92,13 @@ async function setReaction(req, res) {
     const post = await getVisiblePost(req.params.id, req.userId);
     if (!post) {
       return res.status(404).send('Post not found');
+    }
+    // Day 50: only members comment and react in a group.
+    try {
+      communityService.assertCanInteract(post);
+    } catch (err) {
+      if (err instanceof communityService.GroupRuleError) return res.status(err.status).send(err.message);
+      throw err;
     }
 
     // xmax = 0 only for a freshly inserted row -- distinguishes 'added'

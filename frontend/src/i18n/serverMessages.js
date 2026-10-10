@@ -128,6 +128,11 @@ const AR = {
   'Account deleted': 'تم حذف الحساب',
   'Invalid bio': 'النبذة غير صالحة',
   'Nothing to update': 'لا توجد تغييرات لحفظها',
+  // Day 50: group bans.
+  "You can't join this group": 'لا يمكنك الانضمام إلى هذه المجموعة',
+  'Make this admin a member before banning them': 'اجعل هذا المشرف عضوًا قبل حظره',
+  'Join this group to comment and react': 'انضم إلى هذه المجموعة لتعلّق وتتفاعل',
+  'Loading banned people failed. Please try again later.': 'تعذّر تحميل الأشخاص المحظورين. يرجى المحاولة لاحقًا.',
   // Day 49: spam checks.
   "You're posting too fast. Please wait a few minutes and try again.": 'أنت تنشر بسرعة كبيرة. انتظر بضع دقائق ثم حاول مرة أخرى.',
   "You're commenting too fast. Please wait a few minutes and try again.": 'أنت تعلّق بسرعة كبيرة. انتظر بضع دقائق ثم حاول مرة أخرى.',

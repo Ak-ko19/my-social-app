@@ -9,6 +9,7 @@ import PostCard from '../components/feed/PostCard';
 import PostCardSkeleton from '../components/feed/PostCardSkeleton';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import { fetchCommunity, fetchCommunityPosts, joinCommunity, removeCommunityMember } from '../services/communityService';
+import { serverErrorText } from '../utils/serverError';
 import '../components/feed/Feed.css';
 import './GroupsScreen.css';
 
@@ -28,6 +29,7 @@ function CommunityScreen() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [joinError, setJoinError] = useState(''); // Day 50: e.g. banned
   const [confirmLeave, setConfirmLeave] = useState(false);
 
   const loadGroup = useCallback(
@@ -95,12 +97,16 @@ function CommunityScreen() {
 
   const join = () => {
     setBusy(true);
+    setJoinError('');
     joinCommunity(id, token)
       .then((g) => {
         setGroup(g);
         if (g.can_read) loadPosts(1);
       })
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setJoinError(serverErrorText(err, 'groups.actionFailed'));
+      })
       .finally(() => setBusy(false));
   };
 
@@ -181,6 +187,7 @@ function CommunityScreen() {
               </>
             )}
           </div>
+          {joinError && <p className="form-error" role="alert">{joinError}</p>}
         </div>
 
         {!group.can_read && (
@@ -200,7 +207,7 @@ function CommunityScreen() {
           )}
           {posts &&
             posts.map((p) => (
-              <PostCard key={p.id} post={p} onRemovePost={removePost} onRemovePostsByUser={() => loadPosts(1)} onUpdatePost={() => {}} canModerate={group.is_admin} />
+              <PostCard key={p.id} post={p} onRemovePost={removePost} onRemovePostsByUser={() => loadPosts(1)} onUpdatePost={() => {}} canModerate={group.is_admin} groupLocked={!group.is_member} />
             ))}
           {hasMore && (
             <div className="community-more">

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Globe, Lock } from 'lucide-react';
-import { Avatar, IconButton } from '../components/ui';
+import { Avatar, ConfirmDialog, IconButton } from '../components/ui';
 import { resolveImageUrl } from '../api';
 import { useAuth } from '../hooks/useAuth';
 import FeedErrorState from '../components/feed/FeedErrorState';
@@ -13,14 +13,18 @@ import {
   approveJoinRequest,
   fetchCommunityMembers,
   removeCommunityMember,
-  setCommunityRole
+  setCommunityRole,
+  banCommunityMember,
+  unbanCommunityMember,
+  fetchCommunityBans
 } from '../services/communityService';
 import { serverErrorText } from '../utils/serverError';
 import './GroupsScreen.css';
 
 // B13: /groups/:id/manage -- admins only (the API enforces it; this screen
 // shows "admins only" otherwise). Edit details, handle join requests,
-// manage members and roles.
+// manage members and roles. Day 50: Remove asks first and can also ban
+// (they can't join or ask again); banned people are listed to unban.
 function ManageCommunityScreen() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -33,6 +37,9 @@ function ManageCommunityScreen() {
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [removing, setRemoving] = useState(null); // the member about to be removed
+  const [banToo, setBanToo] = useState(false);
+  const [bans, setBans] = useState({ list: [], page: 1, hasMore: false });
 
   const loadAll = useCallback(async () => {
     try {
@@ -40,9 +47,10 @@ function ManageCommunityScreen() {
       setGroup(g);
       setForm({ name: g.name, description: g.description || '', privacy: g.privacy });
       if (!g.is_admin) return;
-      const [r, m] = await Promise.all([fetchJoinRequests(id, token), fetchCommunityMembers(id, token)]);
+      const [r, m, b] = await Promise.all([fetchJoinRequests(id, token), fetchCommunityMembers(id, token), fetchCommunityBans(id, token)]);
       setRequests(r);
       setMembers(m);
+      setBans({ list: b.bans, page: 1, hasMore: b.hasMore });
       setError('');
     } catch (err) {
       console.error(err);
@@ -59,10 +67,11 @@ function ManageCommunityScreen() {
         setGroup(g);
         setForm({ name: g.name, description: g.description || '', privacy: g.privacy });
         if (!g.is_admin) return;
-        const [r, m] = await Promise.all([fetchJoinRequests(id, token), fetchCommunityMembers(id, token)]);
+        const [r, m, b] = await Promise.all([fetchJoinRequests(id, token), fetchCommunityMembers(id, token), fetchCommunityBans(id, token)]);
         if (!cancelled) {
           setRequests(r);
           setMembers(m);
+          setBans({ list: b.bans, page: 1, hasMore: b.hasMore });
         }
       } catch (err) {
         console.error(err);
@@ -74,10 +83,11 @@ function ManageCommunityScreen() {
     };
   }, [id, token, t]);
 
-  const act = (promise) => {
+  // reload: false -- "Load more" adds a page instead of starting over.
+  const act = (promise, { reload = true } = {}) => {
     setActionError('');
     setSaved(false);
-    return promise.then(loadAll).catch((err) => {
+    return promise.then(() => (reload ? loadAll() : undefined)).catch((err) => {
       console.error(err);
       setActionError(serverErrorText(err, 'groups.actionFailed'));
     });
@@ -102,6 +112,14 @@ function ManageCommunityScreen() {
     act(updateCommunity(id, form, token)).then(() => setSaved(true));
   };
   const initials = (name) => (name || '?').slice(0, 2).toUpperCase();
+  const confirmRemove = async () => {
+    const { id: personId } = removing;
+    await act(banToo ? banCommunityMember(id, personId, token) : removeCommunityMember(id, personId, token));
+    setRemoving(null);
+  };
+  const moreBans = () => act(fetchCommunityBans(id, token, { page: bans.page + 1 }).then((b) => {
+    setBans((prev) => ({ list: [...prev.list, ...b.bans], page: prev.page + 1, hasMore: b.hasMore }));
+  }), { reload: false });
 
   return (
     <div className="screen-enter">
@@ -168,7 +186,7 @@ function ManageCommunityScreen() {
                   <button type="button" className="btn btn-secondary btn-sm" onClick={() => act(setCommunityRole(id, m.id, m.role === 'admin' ? 'member' : 'admin', token))}>
                     {m.role === 'admin' ? t('groups.removeAdmin') : t('groups.makeAdmin')}
                   </button>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => act(removeCommunityMember(id, m.id, token))} aria-label={t('groups.removeName', { name: m.username })}>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setBanToo(false); setRemoving(m); }} aria-label={t('groups.removeName', { name: m.username })}>
                     {t('groups.remove')}
                   </button>
                 </>
@@ -176,7 +194,42 @@ function ManageCommunityScreen() {
             </li>
           ))}
         </ul>
+
+        <h2 className="section-heading">{t('groups.banned')}</h2>
+        {bans.list.length === 0 ? (
+          <p className="screen-status">{t('groups.noBans')}</p>
+        ) : (
+          <ul className="card-list">
+            {bans.list.map((b) => (
+              <li key={b.id} className="card-row group-member-row">
+                <Avatar src={resolveImageUrl(b.avatar_url)} initials={initials(b.username)} size={36} alt="" />
+                <span className="card-row-body">{b.username}</span>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => act(unbanCommunityMember(id, b.id, token))} aria-label={t('groups.unbanName', { name: b.username })}>
+                  {t('groups.unban')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {bans.hasMore && (
+          <button type="button" className="btn btn-secondary btn-block" onClick={moreBans}>{t('common.loadMore')}</button>
+        )}
       </div>
+
+      <ConfirmDialog
+        open={Boolean(removing)}
+        onClose={() => setRemoving(null)}
+        onConfirm={confirmRemove}
+        title={t('groups.removeTitle', { name: removing?.username })}
+        description={t(banToo ? 'groups.removeBanText' : 'groups.removeText', { group: group.name })}
+        confirmLabel={banToo ? t('groups.removeAndBan') : t('groups.remove')}
+        danger
+      >
+        <label className="group-ban-option">
+          <input type="checkbox" checked={banToo} onChange={(e) => setBanToo(e.target.checked)} />
+          <span>{t('groups.alsoBan')}</span>
+        </label>
+      </ConfirmDialog>
     </div>
   );
 }

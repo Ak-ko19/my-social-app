@@ -587,3 +587,13 @@ CREATE TABLE user_hidden_words (
   PRIMARY KEY (user_id, word),
   CONSTRAINT chk_user_hidden_words_length CHECK (char_length(word) BETWEEN 1 AND 40)
 );
+
+-- Added by migration 061_add_community_bans (Day 50): banned from a group.
+CREATE TABLE community_bans (
+  community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  banned_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (community_id, user_id)
+);
+CREATE INDEX idx_community_bans_user ON community_bans (user_id);

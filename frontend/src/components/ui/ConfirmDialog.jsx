@@ -17,7 +17,8 @@ function ConfirmDialog({
   cancelLabel,
   danger = false,
   requireTypedConfirmation, // e.g. a username -- confirm stays disabled until typed exactly
-  error
+  error,
+  children // Day 50: an extra choice under the description (e.g. "Also ban them")
 }) {
   const { t } = useTranslation();
   const [pending, setPending] = useState(false);
@@ -44,6 +45,7 @@ function ConfirmDialog({
     <Modal open={open} onClose={handleClose} title={title} className="ui-confirm-dialog">
       <h2 className="ui-confirm-title">{title}</h2>
       {description && <p className="ui-confirm-description">{description}</p>}
+      {children}
       {requireTypedConfirmation && (
         <input
           type="text"

@@ -144,3 +144,23 @@
 .page-icon {
   color: var(--color-accent-3);
 }
+
+/* Day 50: "Also ban them" in the Remove dialog. */
+.group-ban-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  color: var(--color-text);
+  font-size: 14px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.group-ban-option input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--color-accent);
+}

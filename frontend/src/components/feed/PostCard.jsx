@@ -45,9 +45,11 @@ import './PostCard.css';
 // server event the way a like/bookmark is), so it's omitted from the stats
 // row but the action itself is real: Web Share API where available,
 // clipboard-copy fallback otherwise (see handleShare below).
+// groupLocked (Day 50): a group post seen by someone not in the group --
+// they may read it (and its comments) but not react or comment.
 // standalone (Day 49): the post page -- a post your Hidden words would
 // leave out of a list is covered there instead (you followed a link to it).
-function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTogglePin, canModerate = false, standalone = false }) {
+function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTogglePin, canModerate = false, standalone = false, groupLocked = false }) {
   const { t } = useTranslation();
   const { token, userId, username } = useAuth();
   const like = useLikeToggle(
@@ -307,7 +309,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
       </div>
 
       <div className="post-card-actions">
-        <ReactionButton like={like} />
+        {!groupLocked && <ReactionButton like={like} />}
         <button type="button" className="post-card-action" onClick={comments.toggleVisible}>
           <MessageCircle size={18} aria-hidden="true" />
           <span>{t('feed.comment')}</span>
@@ -329,7 +331,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
       </div>
 
       <AnimatePresence initial={false}>
-        {comments.visible && <CommentSection key="comments" postId={post.id} postOwnerId={post.user_id} comments={comments} />}
+        {comments.visible && <CommentSection key="comments" postId={post.id} postOwnerId={post.user_id} comments={comments} groupLocked={groupLocked} />}
       </AnimatePresence>
     </article>
   );

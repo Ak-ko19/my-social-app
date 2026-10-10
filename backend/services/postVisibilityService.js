@@ -46,7 +46,12 @@ async function getVisiblePost(postId, viewerId) {
   if (result.rows.length === 0) return null;
 
   const post = result.rows[0];
-  const summary = { id: post.id, user_id: post.user_id, community_id: post.community_id, page_id: post.page_id };
+  // Day 50: viewer_is_community_member -- only members comment and react in
+  // a group (communityService.assertCanInteract).
+  const summary = {
+    id: post.id, user_id: post.user_id, community_id: post.community_id, page_id: post.page_id,
+    viewer_is_community_member: post.viewer_is_community_member
+  };
   const isAuthor = viewerId != null && viewerId === post.user_id;
   if (isAuthor) return summary;
 

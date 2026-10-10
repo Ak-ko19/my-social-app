@@ -34,7 +34,8 @@ function buildThreads(list) {
 
 // postOwnerId (Day 47): the post's owner may delete any comment on it, and
 // approve a restricted person's comment waiting for them.
-function CommentItem({ c, comments, currentUserId, postOwnerId, onReply, onReport, onDelete }) {
+// locked (Day 50): read only -- not a member of this post's group.
+function CommentItem({ c, comments, currentUserId, postOwnerId, onReply, onReport, onDelete, locked = false }) {
   const { t } = useTranslation();
   // Day 49: someone else's comment with one of your Hidden words (warn).
   const hiddenWords = useHiddenWords();
@@ -87,19 +88,30 @@ function CommentItem({ c, comments, currentUserId, postOwnerId, onReply, onRepor
       {!c.pending && (
         <div className="comment-actions">
           <span className="comment-time">{formatRelativeTime(c.created_at)}</span>
-          <button
-            type="button"
-            className={clsx('comment-action', c.liked_by_me && 'comment-action-liked')}
-            onClick={() => toggleCommentLike(c.id)}
-            aria-pressed={Boolean(c.liked_by_me)}
-            aria-label={t(c.liked_by_me ? 'comments.unlike' : 'comments.like', { name: c.username }) + (likeCount ? t('comments.likeCount', { count: likeCount }) : '')}
-          >
-            <Heart size={13} aria-hidden="true" fill={c.liked_by_me ? 'currentColor' : 'none'} />
-            {likeCount > 0 && <span aria-hidden="true">{likeCount}</span>}
-          </button>
-          <button type="button" className="comment-action" onClick={() => onReply(c)} aria-label={t('comments.replyTo', { name: c.username })}>
-            {t('common.reply')}
-          </button>
+          {locked ? (
+            likeCount > 0 && (
+              <span className="comment-action" aria-label={t('comments.likeCountOnly', { count: likeCount })}>
+                <Heart size={13} aria-hidden="true" />
+                <span aria-hidden="true">{likeCount}</span>
+              </span>
+            )
+          ) : (
+            <>
+              <button
+                type="button"
+                className={clsx('comment-action', c.liked_by_me && 'comment-action-liked')}
+                onClick={() => toggleCommentLike(c.id)}
+                aria-pressed={Boolean(c.liked_by_me)}
+                aria-label={t(c.liked_by_me ? 'comments.unlike' : 'comments.like', { name: c.username }) + (likeCount ? t('comments.likeCount', { count: likeCount }) : '')}
+              >
+                <Heart size={13} aria-hidden="true" fill={c.liked_by_me ? 'currentColor' : 'none'} />
+                {likeCount > 0 && <span aria-hidden="true">{likeCount}</span>}
+              </button>
+              <button type="button" className="comment-action" onClick={() => onReply(c)} aria-label={t('comments.replyTo', { name: c.username })}>
+                {t('common.reply')}
+              </button>
+            </>
+          )}
           {c.user_id === currentUserId && (
             <button type="button" className="comment-action" onClick={() => startEdit(c)}>
               {t('common.edit')}
@@ -131,7 +143,8 @@ function CommentItem({ c, comments, currentUserId, postOwnerId, onReply, onRepor
 // This card lives inside a virtualized row measured by ResizeObserver --
 // animating height would make that observer fire continuously for the
 // whole animation, reflowing every row below on every frame.
-function CommentSection({ postId, postOwnerId, comments }) {
+// groupLocked (Day 50): not in this post's group -- read only.
+function CommentSection({ postId, postOwnerId, comments, groupLocked = false }) {
   const { t } = useTranslation();
   const { userId: currentUserId } = useAuth();
   const reduceMotion = useReducedMotion();
@@ -184,12 +197,12 @@ function CommentSection({ postId, postOwnerId, comments }) {
         <ul className="feed-comment-list">
           {threads.map(({ comment: c, replies }) => (
             <li key={c.id} className={c.pending ? 'feed-comment-pending' : undefined}>
-              <CommentItem c={c} comments={comments} currentUserId={currentUserId} onReply={handleReply} onReport={setReporting} postOwnerId={postOwnerId} onDelete={setDeleting} />
+              <CommentItem c={c} comments={comments} currentUserId={currentUserId} onReply={handleReply} onReport={setReporting} postOwnerId={postOwnerId} onDelete={setDeleting} locked={groupLocked} />
               {replies.length > 0 && (
                 <ul className="comment-replies" aria-label={t('comments.repliesTo', { name: c.username })}>
                   {replies.map((r) => (
                     <li key={r.id} className={r.pending ? 'feed-comment-pending' : undefined}>
-                      <CommentItem c={r} comments={comments} currentUserId={currentUserId} onReply={handleReply} onReport={setReporting} postOwnerId={postOwnerId} onDelete={setDeleting} />
+                      <CommentItem c={r} comments={comments} currentUserId={currentUserId} onReply={handleReply} onReport={setReporting} postOwnerId={postOwnerId} onDelete={setDeleting} locked={groupLocked} />
                     </li>
                   ))}
                 </ul>
@@ -216,36 +229,40 @@ function CommentSection({ postId, postOwnerId, comments }) {
         </div>
       )}
 
-      <form
-        className="feed-comment-form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          submitComment();
-        }}
-      >
-        <label className="feed-visually-hidden" htmlFor={`comment-input-${postId}`}>
-          {replyingTo ? t('comments.replyTo', { name: replyingTo.username }) : t('comments.writeComment')}
-        </label>
-        <input
-          id={`comment-input-${postId}`}
-          ref={commentInputRef}
-          type="text"
-          maxLength={MAX_COMMENT_LENGTH}
-          value={commentInput}
-          onChange={(e) => {
-            setCommentInput(e.target.value);
-            mention.handleInputChange(e.target.value, e.target.selectionStart);
+      {groupLocked ? (
+        <p className="comment-group-locked">{t('groups.joinToComment')}</p>
+      ) : (
+        <form
+          className="feed-comment-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitComment();
           }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape' && replyingTo) cancelReply();
-          }}
-          placeholder={replyingTo ? t('comments.replyPlaceholder') : t('comments.commentPlaceholder')}
-          disabled={submitPending}
-        />
-        <button type="submit" className="feed-btn" disabled={submitPending}>
-          {submitPending ? t('common.sending') : replyingTo ? t('common.reply') : t('common.send')}
-        </button>
-      </form>
+        >
+          <label className="feed-visually-hidden" htmlFor={`comment-input-${postId}`}>
+            {replyingTo ? t('comments.replyTo', { name: replyingTo.username }) : t('comments.writeComment')}
+          </label>
+          <input
+            id={`comment-input-${postId}`}
+            ref={commentInputRef}
+            type="text"
+            maxLength={MAX_COMMENT_LENGTH}
+            value={commentInput}
+            onChange={(e) => {
+              setCommentInput(e.target.value);
+              mention.handleInputChange(e.target.value, e.target.selectionStart);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' && replyingTo) cancelReply();
+            }}
+            placeholder={replyingTo ? t('comments.replyPlaceholder') : t('comments.commentPlaceholder')}
+            disabled={submitPending}
+          />
+          <button type="submit" className="feed-btn" disabled={submitPending}>
+            {submitPending ? t('common.sending') : replyingTo ? t('common.reply') : t('common.send')}
+          </button>
+        </form>
+      )}
       {mention.active && (
         <MentionAutocomplete
           suggestions={mention.suggestions}
