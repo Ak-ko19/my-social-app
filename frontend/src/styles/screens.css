@@ -116,7 +116,7 @@ textarea.form-input {
 .form-error {
   margin: 0;
   font-size: 13px;
-  color: var(--color-accent-3);
+  color: var(--color-error-text);
 }
 
 .form-success {

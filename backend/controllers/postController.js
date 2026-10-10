@@ -10,6 +10,7 @@ const { toUnicode } = require('../utils/myanmarText');
 const pollService = require('../services/pollService');
 const postCreation = require('../services/postCreationService');
 const { notMutedSql } = require('../services/muteService');
+const spamService = require('../services/spamService');
 
 const { POST_VISIBILITIES, MAX_POST_LENGTH } = postCreation;
 
@@ -21,9 +22,11 @@ async function createPost(req, res) {
     // B2: every uploaded image, in the order sent (see uploadManyToCloudinary).
     // (A refused request's images are deleted again by the middleware.)
     const imageUrls = (req.cloudinaryResults || []).map((r) => r.secure_url);
+    // Day 49: flooding, the same post again, the same link again and again.
+    await spamService.checkPost(req.userId, fields.content);
     res.status(201).json(await postCreation.createPost(req.userId, fields, imageUrls));
   } catch (err) {
-    if (err instanceof postCreation.PostInputError) return res.status(err.status).send(err.message);
+    if (err instanceof postCreation.PostInputError || err instanceof spamService.SpamError) return res.status(err.status).send(err.message);
     sendServerError(res, err, 'Create post failed. Please try again later.');
   }
 }

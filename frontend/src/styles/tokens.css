@@ -44,6 +44,9 @@
      white text on top keep --color-accent in both themes. */
   --color-accent-text: #4f46e5;
   --color-accent-2-text: #0e7490;
+  /* Day 49: error text (.form-error). #e11d48 is 4.4:1 on --color-bg, so
+     a darker red in light mode and a lighter one in dark mode (~6:1 each). */
+  --color-error-text: #be123c;
   /* Not in the original spec list -- IconButton's background was given as
      a literal #F1F2F5. Promoted to a token here instead of hardcoding it
      in ui.css, same reasoning as every other value in this file: one
@@ -128,6 +131,7 @@
   --color-text: #f3f4f6;
   --color-text-muted: #9aa1b0; /* Day 26: was #80899a, 4.4:1 on --color-subtle-bg */
   --color-accent-text: #a5b4fc;
+  --color-error-text: #fb7185;
   --color-accent-2-text: #22d3ee;
   --color-close-friends: #22c55e;
   --color-close-friends-text: #4ade80;

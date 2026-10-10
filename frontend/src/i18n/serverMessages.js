@@ -128,6 +128,12 @@ const AR = {
   'Account deleted': 'تم حذف الحساب',
   'Invalid bio': 'النبذة غير صالحة',
   'Nothing to update': 'لا توجد تغييرات لحفظها',
+  // Day 49: spam checks.
+  "You're posting too fast. Please wait a few minutes and try again.": 'أنت تنشر بسرعة كبيرة. انتظر بضع دقائق ثم حاول مرة أخرى.',
+  "You're commenting too fast. Please wait a few minutes and try again.": 'أنت تعلّق بسرعة كبيرة. انتظر بضع دقائق ثم حاول مرة أخرى.',
+  'You just posted this. Try writing something new.': 'لقد نشرت هذا للتو. جرّب كتابة شيء جديد.',
+  'You already left this comment on this post.': 'سبق أن تركت هذا التعليق على هذا المنشور.',
+  "You've shared this link too many times in the last hour. Please try again later.": 'شاركت هذا الرابط مرات كثيرة خلال الساعة الماضية. يرجى المحاولة لاحقًا.',
   // Day 49: hidden words.
   'Enter a word or phrase': 'أدخل كلمة أو عبارة',
   'A hidden word can be at most 40 characters': 'يمكن أن تتكون الكلمة المخفية من 40 حرفًا على الأكثر',

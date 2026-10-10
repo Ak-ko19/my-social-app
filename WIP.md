@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 49 — Content filtering
-**Step:** 2 — hidden words UI: done (committed). Next: step 3, spam checks.
+**Step:** 3 — spam checks: done (committed). Next: close Day 49 (full browser run, tick, Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -14,7 +14,8 @@
   sources); 500s via sendServerError so they reach the error log.
 - Suites that need the production build go in DIST_SUITES (run-all.sh);
   ones that need the real bot checks in BOT_SUITES; Turnstile-on ones in
-  TURNSTILE_SUITES.
+  TURNSTILE_SUITES; Day 49: ones needing the spam checks in SPAM_SUITES
+  (SPAM_CHECKS_IN_TESTS=1, off for every other suite).
 - Day 11: bot checks (form token, honeypot, login delay) are OFF under
   NODE_ENV=test unless BOT_CHECKS_IN_TESTS=1. Suites that sign users up
   straight through the API only work on the default stack.
@@ -182,3 +183,35 @@ people may write -- standing rule 14) plus server-side spam checks.
   check:i18n 1185 keys, backend 800, browser day49-hidden-words (22),
   day30-guard, day26-a11y (113 page checks), A3 ar + en (276 each),
   a2/b1/b4/b5/day44 (warn is on for everyone by default now).
+- Step 3 plan (spam checks, services/spamService.js):
+  - When: POST /posts and POST /posts/:id/comments (a new post or
+    comment someone sends now). Not a scheduled or draft post being
+    published by the ticker (the person chose that time), not edits.
+  - Rules, counted from the database (they survive restarts and apply
+    across server instances), each a 429 with a reason in EN/AR:
+    - flood: more than 10 posts, or 30 comments, in 10 minutes;
+    - the same text again: a post identical to one of yours in the last
+      10 minutes; a comment identical to yours on the same post in the
+      last 10 minutes ("Thanks!" on many posts is normal);
+    - the same link: a link that's already in 3 of your posts/comments
+      in the last hour (host + path, no www./trailing slash, any case).
+  - Indexes: comments (user_id, created_at DESC) exists (059); posts
+    use idx_posts_user_id (a person's recent posts are few).
+  - Off under NODE_ENV=test unless SPAM_CHECKS_IN_TESTS=1 (as the bot
+    checks); e2e-up passes it; a SPAM_SUITES group in run-all.sh.
+  - UI: the composer and the comment form already show the server's
+    message; check that they do for 429, in EN and AR.
+- Step 3 progress (uncommitted): services/spamService.js, called from
+  postController.createPost and commentController (after the post is
+  found). spam.test.js 7/7, 15 mutations all caught. serverMessages AR.
+  e2e: SPAM_CHECKS_IN_TESTS passed by e2e-up.sh, SPAM_SUITES group in
+  run-all.sh, suite day49-spam. It found a real contrast bug: .form-error
+  (#e11d48) was 4.4:1 on --color-bg; new token --color-error-text
+  (#be123c light / #fb7185 dark). Left: rerun day49-spam (one run hit a
+  dev-server timeout before any check), full backend + Vitest, a11y,
+  A3, then commit.
+- Step 3 done. Verified: backend 807/807 (spam 7, 15 mutations caught),
+  Vitest 214, lint, check:i18n, bundle 223.5 / 225 kB, browser
+  day49-spam 9/9 (one earlier run timed out loading the dev server
+  before any check; re-run clean), day26-a11y (113), day30-guard, A3 ar
+  + en (276 each).

@@ -7,6 +7,7 @@ const notificationService = require('../services/notificationService');
 const { toUnicode } = require('../utils/myanmarText');
 const { isRestricted } = require('../services/restrictService');
 const interactionService = require('../services/interactionService');
+const spamService = require('../services/spamService');
 
 // Day 43: comments had no length limit; same as a chat message.
 const MAX_COMMENT_LENGTH = 5000;
@@ -44,6 +45,14 @@ async function createComment(req, res) {
         if (err instanceof interactionService.InteractionError) return res.status(err.status).send(err.message);
         throw err;
       }
+    }
+    // Day 49: flooding, the same comment again here, the same link again
+    // and again.
+    try {
+      await spamService.checkComment(req.userId, post.id, content);
+    } catch (err) {
+      if (err instanceof spamService.SpamError) return res.status(err.status).send(err.message);
+      throw err;
     }
     // B4 replies: optional parentCommentId. Replies are one level deep --
     // replying to a reply attaches to that reply's own parent (see
