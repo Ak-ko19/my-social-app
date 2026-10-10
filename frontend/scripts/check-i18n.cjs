@@ -13,7 +13,7 @@
 //     few that are only placeholders/addresses: SAME_OK).
 //  4. Every message the backend can send a person (res.status(...).send,
 //     { error } results, thrown XxxError(status, '...')) has an Arabic
-//     translation in i18n/serverMessages.js, unless DEV_ONLY says it is
+//     translation in i18n/serverMessages.ar.js, unless DEV_ONLY says it is
 //     developer-facing.
 //  5. Every literal key the code uses -- t('a.b'), i18n.t('a.b'),
 //     i18nKey="a.b", serverErrorText(err, 'a.b') -- exists in en.json.
@@ -66,7 +66,7 @@ const SAME_OK = new Set(['follow.buttonFor', 'poll.percent', 'editProfile.linkPl
   }
 }
 
-// 4. Server messages (i18n/serverMessages.js) against what the backend sends.
+// 4. Server messages (i18n/serverMessages.ar.js) against what the backend sends.
 // DEV_ONLY: messages the UI never lets a person trigger -- API field names
 // (lowercase start or a camelCase field), lists built at run time, internal
 // routes and the link-preview fetcher's own reasons.
@@ -83,12 +83,12 @@ const DEV_ONLY = new Set([
 ]);
 const isDevOnly = (msg) => DEV_ONLY.has(msg) || /^[a-z]/.test(msg) || /\b[a-z]+[A-Z]\w*/.test(msg) || /\.join\(/.test(msg);
 {
-  const code = fs.readFileSync(path.join(SRC, 'i18n', 'serverMessages.js'), 'utf8');
+  const code = fs.readFileSync(path.join(SRC, 'i18n', 'serverMessages.ar.js'), 'utf8');
   const table = code.match(/^const AR = \{\n([\s\S]*?)\n\};/m);
   const translated = new Set(
     table ? [...table[1].matchAll(/^ {2}(['"])((?:(?!\1)[^\\]|\\.)+)\1:/gm)].map((m) => m[2].replace(/\\(['"])/g, '$1')) : []
   );
-  if (!table) problems.push('serverMessages.js: no AR table');
+  if (!table) problems.push('serverMessages.ar.js: no AR table');
   const FAILED = / failed\. Please try again later\.$/; // the generic translation covers these
   const BACKEND = path.join(__dirname, '..', '..', 'backend');
   const SENT = [
@@ -127,7 +127,7 @@ const isDevOnly = (msg) => DEV_ONLY.has(msg) || /^[a-z]/.test(msg) || /\b[a-z]+[
         const msg = resolve(raw);
         scanned += 1;
         if (msg.includes('${')) problems.push(`backend ${file}: "${raw}" -- add the constant's value or a DEV_ONLY entry`);
-        else if (!translated.has(msg) && !FAILED.test(msg)) problems.push(`serverMessages.js: no Arabic for "${msg}" (backend ${file})`);
+        else if (!translated.has(msg) && !FAILED.test(msg)) problems.push(`serverMessages.ar.js: no Arabic for "${msg}" (backend ${file})`);
       }
     }
   }

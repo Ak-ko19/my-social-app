@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
+import { addServerMessages } from './serverMessages';
 
 // B15: English; B16: Arabic (right-to-left). Owner decision 2026-10-07:
 // these are the ONLY UI languages (Myanmar was removed) -- people can still
@@ -37,14 +38,16 @@ function initialLanguage() {
 // C4 audit: only English (the fallback) is bundled. Arabic is a separate
 // chunk, fetched when chosen -- every visitor used to download every
 // translation file on first load.
+// Day 50: with its server messages (serverMessages.ar.js), also a chunk.
 const LOADERS = {
-  ar: () => import('./locales/ar.json')
+  ar: () => Promise.all([import('./locales/ar.json'), import('./serverMessages.ar.js')])
 };
 
 async function loadLanguage(code) {
   if (!LOADERS[code] || i18n.hasResourceBundle(code, 'translation')) return;
-  const mod = await LOADERS[code]();
-  i18n.addResourceBundle(code, 'translation', mod.default, true, true);
+  const [strings, serverMessages] = await LOADERS[code]();
+  addServerMessages(code, serverMessages.default);
+  i18n.addResourceBundle(code, 'translation', strings.default, true, true);
 }
 
 // Switch language (Settings, landing page): fetch its strings, switch, and

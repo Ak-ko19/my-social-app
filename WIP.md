@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 50–52 — Groups (basic)
-**Step:** 2 — delete a group: done (committed). Next: make room in the first download, then step 3 (pagination).
+**Step:** bundle room: done (committed). Next: step 3, pagination for group lists.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -51,7 +51,7 @@
   update it (EN/AR) and its date in LegalScreen.jsx.
 - UI languages = EN + AR only (2026-10-07, MONTH_PLAN rule 14). A new
   user-facing server message needs an Arabic line in
-  frontend/src/i18n/serverMessages.js -- check:i18n scans the backend
+  frontend/src/i18n/serverMessages.ar.js -- check:i18n scans the backend
   (res.status().send, { error }, XxxError(status, '...')) and fails
   otherwise; developer-only texts follow its DEV_ONLY rules. New emails:
   config/emailText.js (en + ar).
@@ -176,6 +176,9 @@ remove member, admins delete any post, last-admin hand-over. Missing for
   816, Vitest 224, browser day50-group-bans 19/19, b13-groups,
   day24-report-places, day26-a11y, day30-guard, A3 ar + en (276 each).
   Bundle 224.0 / 225 kB.
-- Next (before step 3): the Arabic server-message map (serverMessages.js)
-  is in every first download but only used in Arabic -- load it with the
-  Arabic chunk.
+- Done (before step 3): the Arabic server-message map
+  (serverMessages.ar.js) now loads with the Arabic strings; first download
+  224.0 -> 218.1 kB. check:i18n reads the new file (still catches a
+  missing line); serverMessages.test.js; Vitest 225, backend 816, b15,
+  b16, day16, day19-share (production build), day49-spam (Arabic server
+  message in the UI), A3 ar 276.

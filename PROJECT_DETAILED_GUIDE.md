@@ -999,7 +999,8 @@ built and how to re-verify it.
     somewhere.
 - **API errors:** `serverErrorText(err, 'fallback.key')` (in
   `utils/serverError.js`). Every user-facing server message needs an
-  Arabic version in `i18n/serverMessages.js` -- `check:i18n` scans the
+  Arabic version in `i18n/serverMessages.ar.js` (loaded with the Arabic
+  strings, not in the first download) -- `check:i18n` scans the
   backend and fails on a missing one.
 - **Emails and push notifications** use the account's language
   (`users.language`): `backend/config/emailText.js` and `pushText.js`.
