@@ -221,7 +221,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 48 — Activity log
 - [x] Your likes, comments, searches; delete items. *(Settings > Your activity, Facebook-style — see Progress Log.)*
 ### Day 49 — Content filtering
-- [ ] Local bad-word list (EN/AR) with hide-or-warn option; spam detection (repeated links, flood posting).
+- [x] Local bad-word list (EN/AR) with hide-or-warn option; spam detection (repeated links, flood posting). *(Instagram-style Hidden words + server spam checks — see Progress Log.)*
 ### Day 50–52 — Groups (basic)
 - [ ] Create group, public/private, join/leave/request, group posts, group admins, group moderation.
 ### Day 53–54 — Pages (basic)
@@ -1732,3 +1732,45 @@ Facebook's Activity log, two steps. Only you can see it.
     /activity/comments 177 ms) + A3 EN/AR (270 each) + a11y (111 page
     checks). The first full run was stopped by the machine running low
     on memory; it was re-run in batches of five suites, all green.
+
+### 2026-10-10 — Day 49: Content filtering
+Three steps. The plan said "bad-word list with hide-or-warn"; built as
+Instagram's Hidden words, a filter each person sets for what *they* see,
+so nobody is stopped from writing anything (standing rule 14).
+- **Hidden words API (`ec5c356`, migration 060):** each account has a
+  mode (warn, the default / hide / off) and up to 100 words of its own,
+  in any language. Private, in the data export and the Privacy Policy.
+- **Hidden words UI (`2c05daa`):** Settings > Hidden words.
+  - A built-in English / Arabic list plus your words. One matcher reads
+    a$$, sh1t, stretched letters (fuuuck, شرموووطة), Arabic letter forms,
+    diacritics, tatweel and و / ف / ال prefixes. Whole words and phrases
+    only ("class" never matches "ass"). Scripts written without spaces
+    (CJK, Thai, Burmese) match inside the text.
+  - Warn: someone else's matching post keeps its header; its text, poll,
+    photos and link card are covered with "Show anyway". A comment's
+    text is covered the same way. Hide: they're left out (a post opened
+    from a link is covered instead). Never your own.
+  - Why the client matches: one matcher instead of a filter in every
+    listing query, and it is a viewing preference, not security. The
+    list and matcher load only when the filter is on, outside the first
+    download.
+- **Spam checks (`22c8847`):** a new post or comment is refused (429,
+  with the reason in EN/AR) for flooding (over 10 posts or 30 comments
+  in 10 minutes), the same text again (a post within 10 minutes, a
+  comment on the same post), or the same link in 3 of your posts and
+  comments in the last hour. Counted from the database. Scheduled and
+  draft posts the ticker publishes, and edits, aren't checked. Off in
+  the test suites unless SPAM_CHECKS_IN_TESTS=1 (SPAM_SUITES in
+  run-all.sh).
+- **Found on the way:** form error text (#e11d48) was 4.4:1 on the page
+  background, below WCAG AA. It now has its own token
+  (--color-error-text), about 6:1 in both themes, for all 37 form errors.
+- **Tests at close:**
+  - backend 807/807 (hiddenWords 5, spam 7; 24 mutation checks, all
+    caught); Vitest 214/214; check:i18n 1185 keys; rehearsal 015 → 060.
+  - Bundle 223.5 kB of the 225 kB budget (+2.3 kB this Day). The next
+    feature that adds to the first download must lazy-load or trim.
+  - Full browser run in batches of five: all 51 regular suites (new:
+    day49-hidden-words, 22 checks) + the 6 special-stack suites (new:
+    day49-spam, 9) + perf 40/40 + A3 EN/AR (276 each) + a11y (113 page
+    checks).
