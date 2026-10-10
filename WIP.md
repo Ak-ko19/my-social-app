@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 49 — Content filtering
-**Step:** 1 — hidden words API: not started.
+**Step:** 1 — hidden words API: done (committed). Next: step 2, hidden words UI.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -139,4 +139,12 @@ people may write -- standing rule 14) plus server-side spam checks.
   SPAM_CHECKS_IN_TESTS=1 (as bot checks).
 
 ## Progress
-- (none yet)
+- Step 1 done: migration 060 (users.hidden_words_mode,
+  user_hidden_words), controllers/hiddenWordsController.js, routes
+  /hidden-words (GET, PUT /mode, POST, DELETE /:word), data export,
+  serverMessages AR, schema fixture + testDb, GO_LIVE_CHECKLIST (015 → 060,
+  21 / 17 / 11). hiddenWords.test.js 5/5, 9 mutations all caught.
+  Privacy Policy (EN/AR) now lists the words you hide. Verified: backend
+  800/800, check:i18n, rehearsal 015 → 060 (up, down, rollback), browser
+  c2-legal + day28-export (c2-legal first hit an Edge launch hiccup;
+  re-run alone: 12/12).

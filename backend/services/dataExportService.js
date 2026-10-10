@@ -20,7 +20,7 @@ async function rows(sql, params) {
 
 async function buildExport(userId) {
   const [profile] = await rows(
-    `SELECT id, username, email, bio, links, avatar_url, cover_url, pinned_post_id, is_private, language, message_permission, comment_permission, email_verified, created_at
+    `SELECT id, username, email, bio, links, avatar_url, cover_url, pinned_post_id, is_private, language, message_permission, comment_permission, hidden_words_mode, email_verified, created_at
      FROM users WHERE id = $1`,
     [userId]
   );
@@ -30,7 +30,7 @@ async function buildExport(userId) {
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
     legacyMessages, notifications, reports, sessions, pushDevices, messageReactions, hiddenSuggestions, searches,
-    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends
+    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends, hiddenWords
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -122,7 +122,9 @@ async function buildExport(userId) {
     rows(`SELECT u.username, r.created_at FROM user_restrictions r JOIN users u ON u.id = r.restricted_id
           WHERE r.restricter_id = $1 ORDER BY r.created_at`, [userId]),
     rows(`SELECT u.username, cf.created_at FROM close_friends cf JOIN users u ON u.id = cf.friend_id
-          WHERE cf.user_id = $1 ORDER BY cf.created_at`, [userId])
+          WHERE cf.user_id = $1 ORDER BY cf.created_at`, [userId]),
+    // Day 49: your hidden words.
+    rows('SELECT word, created_at FROM user_hidden_words WHERE user_id = $1 ORDER BY created_at', [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -149,6 +151,8 @@ async function buildExport(userId) {
       // Day 47.
       who_can_message_you: profile.message_permission,
       who_can_comment_on_your_posts: profile.comment_permission,
+      // Day 49.
+      hidden_words: { mode: profile.hidden_words_mode, words: hiddenWords },
       notifications: prefs
     },
     posts: posts.map((p) => ({

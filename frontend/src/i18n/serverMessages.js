@@ -128,6 +128,11 @@ const AR = {
   'Account deleted': 'تم حذف الحساب',
   'Invalid bio': 'النبذة غير صالحة',
   'Nothing to update': 'لا توجد تغييرات لحفظها',
+  // Day 49: hidden words.
+  'Enter a word or phrase': 'أدخل كلمة أو عبارة',
+  'A hidden word can be at most 40 characters': 'يمكن أن تتكون الكلمة المخفية من 40 حرفًا على الأكثر',
+  'You can hide at most 100 words': 'يمكنك إخفاء 100 كلمة على الأكثر',
+  "Couldn't load your hidden words. Please try again later.": 'تعذّر تحميل كلماتك المخفية. يرجى المحاولة لاحقًا.',
   'A search can be at most 100 characters': 'يجب ألا يزيد البحث عن 100 حرف',
   'Search not found': 'عملية البحث غير موجودة',
   'A hashtag is required': 'يرجى إدخال وسم',

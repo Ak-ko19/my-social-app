@@ -51,7 +51,10 @@ CREATE TABLE users (
   message_permission varchar(10) NOT NULL DEFAULT 'everyone'
     CONSTRAINT chk_users_message_permission CHECK (message_permission IN ('everyone', 'following', 'nobody')),
   comment_permission varchar(10) NOT NULL DEFAULT 'everyone'
-    CONSTRAINT chk_users_comment_permission CHECK (comment_permission IN ('everyone', 'followers', 'following'))
+    CONSTRAINT chk_users_comment_permission CHECK (comment_permission IN ('everyone', 'followers', 'following')),
+  -- Added by migration 060_add_hidden_words (Day 49).
+  hidden_words_mode varchar(4) NOT NULL DEFAULT 'warn'
+    CONSTRAINT chk_users_hidden_words_mode CHECK (hidden_words_mode IN ('off', 'warn', 'hide'))
 );
 CREATE INDEX idx_users_banned_until ON users (banned_until) WHERE banned_until IS NOT NULL;
 
@@ -575,3 +578,12 @@ CREATE TABLE close_friends (
   CONSTRAINT chk_close_friends_not_self CHECK (user_id <> friend_id)
 );
 CREATE INDEX idx_close_friends_friend ON close_friends (friend_id);
+
+-- Added by migration 060_add_hidden_words (Day 49): your hidden words.
+CREATE TABLE user_hidden_words (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  word varchar(40) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, word),
+  CONSTRAINT chk_user_hidden_words_length CHECK (char_length(word) BETWEEN 1 AND 40)
+);
