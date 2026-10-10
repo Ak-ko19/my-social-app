@@ -24,3 +24,4 @@ export const banCommunityMember = (id, userId, token) => api.post(`/communities/
 export const unbanCommunityMember = (id, userId, token) => api.delete(`/communities/${id}/bans/${userId}`, withAuth(token)).then(data);
 export const fetchCommunityBans = (id, token, { page = 1, limit = 20 } = {}) =>
   api.get(`/communities/${id}/bans`, { ...withAuth(token), params: { page, limit } }).then(data);
+export const deleteCommunity = (id, token) => api.delete(`/communities/${id}`, withAuth(token)).then(data);

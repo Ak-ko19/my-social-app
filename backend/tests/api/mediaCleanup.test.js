@@ -226,6 +226,19 @@ describe('media cleanup', () => {
       expect(await deleted()).toEqual([['image', idOf(memberPost.media[0].url)]]);
     });
 
+    it('group deleted by an admin (Day 50): every member\'s post images go', async () => {
+      const owner = await registerAndLogin(app);
+      const member = await registerAndLogin(app);
+      const group = (await request(app).post('/communities').set(auth(owner)).send({ name: 'Club' })).body;
+      await request(app).post(`/communities/${group.id}/join`).set(auth(member));
+      const ownerPost = (await postWithImages(owner, 1, { communityId: String(group.id) })).body;
+      const memberPost = (await postWithImages(member, 2, { communityId: String(group.id) })).body;
+      const elsewhere = (await postWithImages(member, 1)).body;
+      expect((await request(app).delete(`/communities/${group.id}`).set(auth(owner))).body).toEqual({ deleted: true });
+      expect(await deleted()).toEqual([...ownerPost.media, ...memberPost.media].map((m) => ['image', idOf(m.url)]).sort());
+      expect(elsewhere.media).toHaveLength(1);
+    });
+
     it('group chat deleted when its last member leaves: its photos go', async () => {
       const owner = await registerAndLogin(app);
       const m1 = await registerAndLogin(app);

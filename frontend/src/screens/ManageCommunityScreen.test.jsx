@@ -82,6 +82,36 @@ describe('Manage group: remove and ban', () => {
     expect(await screen.findByText('Nobody is banned from this group.')).toBeInTheDocument();
   });
 
+  it('Delete group: the name must be typed; then it goes, and so do you', async () => {
+    render(
+      <MemoryRouter initialEntries={['/groups/5/manage']}>
+        <Routes>
+          <Route path="/groups/:id/manage" element={<ManageCommunityScreen />} />
+          <Route path="/groups" element={<p>All groups</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete group' }));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('Delete Hikers?');
+    const confirm = within(dialog).getByRole('button', { name: 'Delete group' });
+    expect(confirm).toBeDisabled();
+    await userEvent.type(within(dialog).getByRole('textbox'), 'Hikers');
+    await userEvent.click(confirm);
+    expect(api.delete).toHaveBeenCalledWith('/communities/5', H);
+    expect(await screen.findByText('All groups')).toBeInTheDocument();
+  });
+
+  it("Delete group: the server's reason stays in the dialog", async () => {
+    api.delete.mockRejectedValueOnce({ response: { status: 403, data: 'Only group admins can do that' } });
+    show();
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete group' }));
+    const dialog = screen.getByRole('dialog');
+    await userEvent.type(within(dialog).getByRole('textbox'), 'Hikers');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Delete group' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Only group admins can do that');
+  });
+
   it('in Arabic', async () => {
     await setLanguage('ar');
     show();

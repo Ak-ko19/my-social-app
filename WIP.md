@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 50–52 — Groups (basic)
-**Step:** 1 — ban from a group: done (committed). Next: step 2, delete a group.
+**Step:** 2 — delete a group: done (committed). Next: make room in the first download, then step 3 (pagination).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -167,3 +167,15 @@ remove member, admins delete any post, last-admin hand-over. Missing for
   and gets the server's "Join this group to comment and react".
   Bundle: 223.9 / 225 kB -- step 2 must make room before adding to the
   first download.
+- Step 2 done: DELETE /communities/:id (any admin; posts, their photos
+  and drafts for it go), Manage group > Danger zone > Delete group (the
+  name typed to confirm, like a page). The group page no longer offers
+  "Try again" for a deleted group (it stores the error kind, not the
+  text). Tests renamed communityModeration.test.js (8) + mediaCleanup
+  (20); 4 mutations, each caught by one of the two. Verified: backend
+  816, Vitest 224, browser day50-group-bans 19/19, b13-groups,
+  day24-report-places, day26-a11y, day30-guard, A3 ar + en (276 each).
+  Bundle 224.0 / 225 kB.
+- Next (before step 3): the Arabic server-message map (serverMessages.js)
+  is in every first download but only used in Arabic -- load it with the
+  Arabic chunk.

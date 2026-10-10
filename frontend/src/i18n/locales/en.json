@@ -958,7 +958,12 @@
     "removeBanText": "They'll leave {{group}} and can't join or ask to join again unless you unban them. Their posts stay; you can delete them.",
     "removeAndBan": "Remove and ban",
     "alsoBan": "Also ban them, so they can't join or ask to join again",
-    "joinToComment": "Join the group to comment and react."
+    "joinToComment": "Join the group to comment and react.",
+    "dangerZone": "Danger zone",
+    "deleteGroup": "Delete group",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteText": "The group, its members list and all of its posts will be permanently deleted for everyone. Type the group name to confirm.",
+    "deleteFailed": "Deleting the group failed. Please try again."
   },
   "pages": {
     "title": "Pages",

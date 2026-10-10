@@ -172,6 +172,21 @@ async function updateCommunity(req, res) {
   }
 }
 
+// DELETE /communities/:id -- admins (Day 50). The group goes for everyone,
+// with its posts and their photos, and drafts written for it.
+async function deleteCommunity(req, res) {
+  try {
+    const c = await loadCommunity(Number(req.params.id), req.userId);
+    requireAdmin(c);
+    const media = await mediaOfCommunity(c.id);
+    await db.query('DELETE FROM communities WHERE id = $1', [c.id]);
+    deleteMedia(media);
+    res.json({ deleted: true });
+  } catch (err) {
+    handle(res, err, 'Deleting the group failed. Please try again later.');
+  }
+}
+
 // POST /communities/:id/join -- instant for public, a request for private.
 async function joinCommunity(req, res) {
   try {
@@ -392,6 +407,7 @@ module.exports = {
   listCommunities,
   getCommunity,
   updateCommunity,
+  deleteCommunity,
   joinCommunity,
   removeMember,
   listMembers,

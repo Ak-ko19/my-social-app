@@ -16,7 +16,8 @@ import {
   setCommunityRole,
   banCommunityMember,
   unbanCommunityMember,
-  fetchCommunityBans
+  fetchCommunityBans,
+  deleteCommunity
 } from '../services/communityService';
 import { serverErrorText } from '../utils/serverError';
 import './GroupsScreen.css';
@@ -40,6 +41,8 @@ function ManageCommunityScreen() {
   const [removing, setRemoving] = useState(null); // the member about to be removed
   const [banToo, setBanToo] = useState(false);
   const [bans, setBans] = useState({ list: [], page: 1, hasMore: false });
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const loadAll = useCallback(async () => {
     try {
@@ -116,6 +119,16 @@ function ManageCommunityScreen() {
     const { id: personId } = removing;
     await act(banToo ? banCommunityMember(id, personId, token) : removeCommunityMember(id, personId, token));
     setRemoving(null);
+  };
+  // Day 50: delete the group (the name typed to confirm, like a page).
+  const removeGroup = () => {
+    setDeleteError('');
+    return deleteCommunity(id, token)
+      .then(() => navigate('/groups', { replace: true }))
+      .catch((err) => {
+        console.error(err);
+        setDeleteError(serverErrorText(err, 'groups.deleteFailed'));
+      });
   };
   const moreBans = () => act(fetchCommunityBans(id, token, { page: bans.page + 1 }).then((b) => {
     setBans((prev) => ({ list: [...prev.list, ...b.bans], page: prev.page + 1, hasMore: b.hasMore }));
@@ -214,7 +227,22 @@ function ManageCommunityScreen() {
         {bans.hasMore && (
           <button type="button" className="btn btn-secondary btn-block" onClick={moreBans}>{t('common.loadMore')}</button>
         )}
+
+        <h2 className="section-heading">{t('groups.dangerZone')}</h2>
+        <button type="button" className="btn btn-danger btn-block" onClick={() => setConfirmDelete(true)}>{t('groups.deleteGroup')}</button>
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={removeGroup}
+        title={t('groups.deleteTitle', { name: group.name })}
+        description={t('groups.deleteText')}
+        confirmLabel={t('groups.deleteGroup')}
+        danger
+        requireTypedConfirmation={group.name}
+        error={deleteError}
+      />
 
       <ConfirmDialog
         open={Boolean(removing)}

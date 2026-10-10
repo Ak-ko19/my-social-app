@@ -10,6 +10,7 @@ router.post('/communities', authMiddleware, c.createCommunity);
 router.get('/communities', authMiddleware, c.listCommunities);
 router.get('/communities/:id', optionalAuth, c.getCommunity);
 router.patch('/communities/:id', authMiddleware, c.updateCommunity);
+router.delete('/communities/:id', authMiddleware, c.deleteCommunity); // Day 50
 router.get('/communities/:id/posts', optionalAuth, c.listPosts);
 router.get('/communities/:id/members', optionalAuth, c.listMembers);
 router.post('/communities/:id/join', authMiddleware, c.joinCommunity);

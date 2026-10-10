@@ -25,6 +25,9 @@ const api = (who, method, url, body) => fetch(API + url, {
 });
 // The refused join itself (a 403 in the console) is expected here.
 const EXPECTED = /status of 403|status code 403|AxiosError/;
+// ...and, once the group is deleted, the 404s for it.
+let groupDeleted = false;
+const GONE = /status of 404/;
 
 (async () => {
   const group = await (await api('alice', 'POST', '/communities', { name: 'Trail Runners', privacy: 'public' })).json();
@@ -43,7 +46,7 @@ const EXPECTED = /status of 403|status code 403|AxiosError/;
     }, [tokens[who], who === 'alice' ? 1 : 2, who, theme, lang]);
     const page = await ctx.newPage();
     page.on('pageerror', (e) => errors.push(`${who}: ${e.message}`));
-    page.on('console', (m) => { if (m.type() === 'error' && !EXPECTED.test(m.text())) errors.push(`${who}: ${m.text()}`); });
+    page.on('console', (m) => { if (m.type() === 'error' && !EXPECTED.test(m.text()) && !(groupDeleted && GONE.test(m.text()))) errors.push(`${who}: ${m.text()}`); });
     await page.goto(WEB + url, { waitUntil: 'networkidle' });
     return page;
   };
@@ -120,6 +123,26 @@ const EXPECTED = /status of 403|status code 403|AxiosError/;
   await axe(ar, 'ar/dark, Remove and ban dialog', '[role=dialog]');
   await ar.screenshot({ path: path.join(SP, 'day50-ban-ar-dark-375.png') });
   await ar.context().close();
+
+  // 6. Delete the group (step 2): the name typed to confirm.
+  const owner = await open('alice', `/groups/${group.id}/manage`);
+  await owner.getByRole('button', { name: 'Delete group' }).click();
+  const del = owner.getByRole('dialog');
+  const confirmBtn = del.getByRole('button', { name: 'Delete group' });
+  check('Delete group asks for the name first', await confirmBtn.isDisabled());
+  await del.getByRole('textbox').fill('Trail Runners');
+  await axe(owner, 'en/light, Delete group dialog', '[role=dialog]');
+  await confirmBtn.click();
+  await owner.waitForURL(`${WEB}/groups`, { timeout: 8000 }).catch(() => {});
+  check('...then it is gone, with its posts, and you are on Groups', owner.url() === `${WEB}/groups`
+    && sql(`SELECT COUNT(*) FROM communities WHERE id = ${group.id}`) === '0' && sql(`SELECT COUNT(*) FROM posts WHERE id = ${post.id}`) === '0');
+  await owner.context().close();
+  groupDeleted = true;
+  const member = await open('bob', `/groups/${group.id}`);
+  await member.getByText('This group no longer exists.').waitFor({ timeout: 8000 }).catch(() => {});
+  check('a member opening it later is told it is gone, with no Try again', (await member.getByText('This group no longer exists.').count()) === 1
+    && (await member.getByRole('button', { name: 'Try again' }).count()) === 0);
+  await member.context().close();
 
   await browser.close();
   console.log(results.join('\n'));

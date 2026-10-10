@@ -23,7 +23,7 @@ function CommunityScreen() {
   const { token, userId } = useAuth();
   const [reportOpen, setReportOpen] = useState(false); // Day 24
   const [group, setGroup] = useState(null);
-  const [groupError, setGroupError] = useState('');
+  const [groupError, setGroupError] = useState(''); // '' | 'gone' | 'failed'
   const [posts, setPosts] = useState(null);
   const [postsError, setPostsError] = useState('');
   const [page, setPage] = useState(1);
@@ -42,7 +42,7 @@ function CommunityScreen() {
         })
         .catch((err) => {
           if (err.response?.status !== 404) console.error(err);
-          setGroupError(err.response?.status === 404 ? t('groups.gone') : t('groups.groupLoadFailed'));
+          setGroupError(err.response?.status === 404 ? 'gone' : 'failed');
           return null;
         }),
     [id, token, t]
@@ -88,7 +88,7 @@ function CommunityScreen() {
       .catch((err) => {
         if (cancelled) return;
         if (err.response?.status !== 404) console.error(err);
-        setGroupError(err.response?.status === 404 ? t('groups.gone') : t('groups.groupLoadFailed'));
+        setGroupError(err.response?.status === 404 ? 'gone' : 'failed');
       });
     return () => {
       cancelled = true;
@@ -130,7 +130,11 @@ function CommunityScreen() {
           <IconButton icon={ChevronLeft} aria-label={t('groups.backToGroups')} onClick={() => navigate('/groups')} />
           <h1 className="screen-header-title">{t('groups.group')}</h1>
         </header>
-        <FeedErrorState message={groupError} onRetry={() => { setGroupError(''); loadGroup(); }} />
+        {/* Day 50: a deleted group won't come back -- no Try again. */}
+        <FeedErrorState
+          message={groupError === 'gone' ? t('groups.gone') : t('groups.groupLoadFailed')}
+          onRetry={groupError === 'gone' ? undefined : () => { setGroupError(''); loadGroup(); }}
+        />
       </div>
     );
   }

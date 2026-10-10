@@ -2,9 +2,9 @@ const request = require('supertest');
 const { setupTestApp } = require('../helpers/setupTestApp');
 const { registerAndLogin } = require('../helpers/auth');
 
-// Day 50 step 1: "Remove and ban" in a group (migration 061), and only
-// members comment on and react to a group's posts.
-describe('group bans (Day 50)', () => {
+// Day 50: group moderation -- "Remove and ban" (migration 061), only
+// members comment on and react to a group's posts, deleting a group.
+describe('group moderation (Day 50)', () => {
   const { app, reset } = setupTestApp();
   beforeEach(reset);
 
@@ -116,5 +116,32 @@ describe('group bans (Day 50)', () => {
   it('a normal post is unaffected', async () => {
     const post = await postIn(admin, '', 'Just me');
     expect((await request(app).post(`/posts/${post.id}/comments`).set(auth(troll)).send({ content: 'nice' })).status).toBe(201);
+  });
+
+  // Day 50 step 2: an admin deletes the group.
+  describe('delete a group', () => {
+    const remove = (user, id) => request(app).delete(`/communities/${id}`).set(auth(user));
+
+    it('an admin deletes it for everyone, with its posts; nobody else can', async () => {
+      const group = (await create(admin, { name: 'Old club' })).body;
+      await join(troll, group.id);
+      const post = await postIn(troll, group.id, 'bye');
+      const stranger = await registerAndLogin(app);
+      expect((await remove(troll, group.id)).status).toBe(403);
+      expect((await remove(stranger, group.id)).status).toBe(403);
+      expect((await request(app).delete(`/communities/${group.id}`)).status).toBe(401);
+      expect((await remove(admin, group.id)).body).toEqual({ deleted: true });
+      expect((await request(app).get(`/communities/${group.id}`).set(auth(admin))).status).toBe(404);
+      expect((await request(app).get(`/posts/${post.id}`).set(auth(troll))).status).toBe(404);
+      expect((await remove(admin, group.id)).status).toBe(404);
+      expect((await remove(admin, 'x')).status).toBe(400);
+    });
+
+    it('any admin may, not only the creator', async () => {
+      const group = (await create(admin, { name: 'Shared' })).body;
+      await join(troll, group.id);
+      await request(app).put(`/communities/${group.id}/members/${troll.id}/role`).set(auth(admin)).send({ role: 'admin' });
+      expect((await remove(troll, group.id)).status).toBe(200);
+    });
   });
 });
