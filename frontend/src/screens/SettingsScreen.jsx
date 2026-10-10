@@ -16,6 +16,7 @@ import {
   ShieldMinus,
   Star,
   MessagesSquare,
+  EyeOff,
   History,
   Globe,
   Moon,
@@ -95,6 +96,8 @@ const SETTINGS_SECTIONS = [
       { key: 'privacy-settings', icon: Lock, toggle: true, ToggleComponent: PrivacyToggle },
       // Day 47: who can message you / comment on your posts.
       { key: 'interactions', icon: MessagesSquare, to: '/settings/interactions' },
+      // Day 49: Hidden words.
+      { key: 'hidden-words', icon: EyeOff, to: '/settings/hidden-words' },
       { key: 'content-visibility', icon: Eye },
       { key: 'followers-following', icon: Users },
       { key: 'content-preferences', icon: SlidersHorizontal }

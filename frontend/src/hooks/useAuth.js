@@ -50,6 +50,11 @@ export function clearLocalSession() {
   localStorage.removeItem('userId');
   localStorage.removeItem('username');
   localStorage.removeItem('emailVerified');
+  // Day 49: the Hidden words kept for a fast first paint are private too
+  // (a shared computer).
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith('hiddenWords:')) localStorage.removeItem(key);
+  }
   notifyAuthChange();
 }
 

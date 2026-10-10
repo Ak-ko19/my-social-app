@@ -1,0 +1,60 @@
+/* Day 49: covers a post's body or a comment's text (Hidden words, warn).
+   Tokens only; logical properties. */
+
+.hidden-cover {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  text-align: start;
+}
+
+.hidden-cover-post {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-subtle-bg);
+}
+
+.hidden-cover-comment {
+  display: inline-flex;
+  font-size: 13px;
+}
+
+.hidden-cover-icon {
+  flex: 0 0 auto;
+}
+
+.hidden-cover-text {
+  flex: 1 1 12em;
+  margin: 0;
+  font-size: inherit;
+}
+
+.hidden-cover-post .hidden-cover-text {
+  font-size: 14px;
+}
+
+.hidden-cover-show {
+  min-height: 32px;
+  padding: 0 var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-accent-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hidden-cover-show:hover {
+  text-decoration: underline;
+}
+
+.hidden-cover-show:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}

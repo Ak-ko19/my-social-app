@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from '../../utils/serverError';
@@ -11,6 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useLikeToggle } from '../../hooks/useLikeToggle';
 import { useBookmarkToggle } from '../../hooks/useBookmarkToggle';
 import { useComments } from '../../hooks/useComments';
+import { useHiddenWords } from '../../hooks/useHiddenWords';
 import { resolveImageUrl } from '../../api';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import { firstLink } from '../../utils/links';
@@ -23,6 +24,7 @@ import PostMenu from './PostMenu';
 import PostText from './PostText';
 import PollView from './PollView';
 import LinkPreviewCard from '../common/LinkPreviewCard';
+import HiddenContentCover from './HiddenContentCover';
 import './PostCard.css';
 
 // Replaces the old Feed.css-based PostCard IN PLACE -- same external
@@ -43,7 +45,9 @@ import './PostCard.css';
 // server event the way a like/bookmark is), so it's omitted from the stats
 // row but the action itself is real: Web Share API where available,
 // clipboard-copy fallback otherwise (see handleShare below).
-function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTogglePin, canModerate = false }) {
+// standalone (Day 49): the post page -- a post your Hidden words would
+// leave out of a list is covered there instead (you followed a link to it).
+function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTogglePin, canModerate = false, standalone = false }) {
   const { t } = useTranslation();
   const { token, userId, username } = useAuth();
   const like = useLikeToggle(
@@ -68,6 +72,13 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
   // B5 audience -- local so an owner's change shows immediately.
   const [visibility, setVisibility] = useState(post.visibility || 'public');
   const [visibilityError, setVisibilityError] = useState('');
+  // Day 49: someone else's post with one of your Hidden words in its text
+  // or poll options -- covered (warn) or left out (hide). Never your own.
+  const hiddenWords = useHiddenWords();
+  const [revealed, setRevealed] = useState(false);
+  const filterText = useMemo(() => [post.content, ...(post.poll?.options || []).map((o) => o.label)].join('\n'), [post.content, post.poll]);
+  const match = useMemo(() => hiddenWords.check(filterText), [hiddenWords, filterText]);
+  const filterVerdict = post.user_id === userId || revealed ? null : match;
 
   // B5 / Day 20: 'public' | 'followers' | 'only_me', picked in PostMenu.
   const changeVisibility = (next) => {
@@ -177,6 +188,9 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
   const [AudienceIcon, audienceKey] = AUDIENCES[visibility] || AUDIENCES.public;
   const audienceLabel = t(audienceKey);
 
+  if (filterVerdict === 'hide' && !standalone) return null;
+  const covered = filterVerdict !== null;
+
   return (
     <article className="post-card">
       {post.is_pinned && (
@@ -255,22 +269,26 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
             </button>
           </div>
         </div>
+      ) : covered ? (
+        <HiddenContentCover kind="post" onShow={() => setRevealed(true)} />
       ) : (
         <PostText content={post.content} className="post-card-body" />
       )}
 
       {/* Day 44: a poll post's options or results, under its question. */}
-      {post.poll && <PollView postId={post.id} poll={post.poll} />}
+      {post.poll && !covered && <PollView postId={post.id} poll={post.poll} />}
 
-      <MediaCarousel
-        media={media}
-        altPrefix={t('feed.imageAlt', { name: page ? page.name : post.username })}
-        className="post-card-media"
-      />
+      {!covered && (
+        <MediaCarousel
+          media={media}
+          altPrefix={t('feed.imageAlt', { name: page ? page.name : post.username })}
+          className="post-card-media"
+        />
+      )}
 
       {/* Day 19: a card for the first link -- only when the post has no
           photos of its own (they'd compete for the same space). */}
-      {!hasMedia && <LinkPreviewCard url={firstLink(post.content)} />}
+      {!hasMedia && !covered && <LinkPreviewCard url={firstLink(post.content)} />}
 
       <div className="post-card-stats">
         <span className="post-card-reaction-summary">

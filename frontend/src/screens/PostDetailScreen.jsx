@@ -65,7 +65,7 @@ function PostDetailScreen() {
       {loading && <p className="post-detail-status">{t('common.loading')}</p>}
       {!loading && error && notFound && <p className="post-detail-status">{error}</p>}
       {!loading && error && !notFound && <FeedErrorState message={error} onRetry={retry} />}
-      {!loading && !error && post && <PostCard post={post} />}
+      {!loading && !error && post && <PostCard post={post} standalone />}
     </div>
   );
 }

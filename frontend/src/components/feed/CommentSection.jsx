@@ -1,13 +1,15 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Heart, X } from 'lucide-react';
 import clsx from 'clsx';
 import { Trans, useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
+import { useHiddenWords } from '../../hooks/useHiddenWords';
 import Username from './Username';
 import { renderTextWithLinks } from '../../utils/renderTextWithLinks';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import MentionAutocomplete from './MentionAutocomplete';
+import HiddenContentCover from './HiddenContentCover';
 import ReportDialog from './ReportDialog';
 import { ConfirmDialog } from '../ui';
 import { MAX_COMMENT_LENGTH } from '../../utils/textLimits';
@@ -34,6 +36,10 @@ function buildThreads(list) {
 // approve a restricted person's comment waiting for them.
 function CommentItem({ c, comments, currentUserId, postOwnerId, onReply, onReport, onDelete }) {
   const { t } = useTranslation();
+  // Day 49: someone else's comment with one of your Hidden words (warn).
+  const hiddenWords = useHiddenWords();
+  const [revealed, setRevealed] = useState(false);
+  const covered = !revealed && c.user_id !== currentUserId && hiddenWords.check(c.content) === 'warn';
   const { editingCommentId, editText, setEditText, startEdit, cancelEdit, saveEdit, toggleCommentLike } = comments;
 
   if (editingCommentId === c.id) {
@@ -63,7 +69,8 @@ function CommentItem({ c, comments, currentUserId, postOwnerId, onReply, onRepor
   return (
     <div className="comment-body">
       <p className="feed-comment-text">
-        <Username>{c.username}</Username>: <bdi>{renderTextWithLinks(c.content)}</bdi>
+        <Username>{c.username}</Username>:{' '}
+        {covered ? <HiddenContentCover kind="comment" onShow={() => setRevealed(true)} /> : <bdi>{renderTextWithLinks(c.content)}</bdi>}
         {c.pending && <span className="feed-comment-status"> {t('comments.pending')}</span>}
       </p>
       {/* Day 47: shown to the post's owner only (the server tells no one else). */}
@@ -144,7 +151,13 @@ function CommentSection({ postId, postOwnerId, comments }) {
     submitComment
   } = comments;
 
-  const threads = buildThreads(list);
+  // Day 49: "hide" leaves out someone else's comment with one of your
+  // Hidden words (and so its replies, which buildThreads drops with it).
+  const hiddenWords = useHiddenWords();
+  const threads = useMemo(
+    () => buildThreads(list.filter((c) => c.user_id === currentUserId || hiddenWords.check(c.content) !== 'hide')),
+    [list, currentUserId, hiddenWords]
+  );
   const [reporting, setReporting] = useState(null); // the comment being reported
   const [deleting, setDeleting] = useState(null); // the comment about to be deleted
 

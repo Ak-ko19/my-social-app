@@ -29,7 +29,7 @@ const AUTHED = [
   // Day 46: a saved collection.
   '/saved/collections/1',
   // Day 47: privacy controls.
-  '/settings/muted', '/settings/restricted', '/settings/close-friends', '/settings/interactions',
+  '/settings/muted', '/settings/restricted', '/settings/close-friends', '/settings/interactions', '/settings/hidden-words',
   // Day 48: the activity log.
   '/activity', '/activity?tab=comments', '/activity?tab=searches'
 ];

@@ -19,6 +19,7 @@ import App from './App.jsx'
 import LanguageRoot from './i18n/LanguageRoot'
 import { ThemeProvider } from './context/ThemeProvider'
 import { SocketProvider } from './context/SocketProvider'
+import { HiddenWordsProvider } from './context/HiddenWordsProvider'
 import ErrorBoundary from './components/common/ErrorBoundary'
 import { installGlobalErrorReporting } from './utils/errorReporter'
 
@@ -31,12 +32,14 @@ i18nReady.finally(() => createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ThemeProvider>
       <SocketProvider>
-        <LanguageRoot>
-          {/* Inside LanguageRoot, so the crash screen is translated and RTL. */}
-          <ErrorBoundary>
-            <App />
-          </ErrorBoundary>
-        </LanguageRoot>
+        <HiddenWordsProvider>
+          <LanguageRoot>
+            {/* Inside LanguageRoot, so the crash screen is translated and RTL. */}
+            <ErrorBoundary>
+              <App />
+            </ErrorBoundary>
+          </LanguageRoot>
+        </HiddenWordsProvider>
       </SocketProvider>
     </ThemeProvider>
   </StrictMode>,

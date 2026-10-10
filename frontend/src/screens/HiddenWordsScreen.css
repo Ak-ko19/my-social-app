@@ -1,0 +1,92 @@
+/* Day 49: Settings > Hidden words. The mode uses the Messages and comments
+   options (InteractionsScreen.css) with a second line; your words are
+   chips. Tokens only; logical properties. */
+
+.hidden-words {
+  text-align: start;
+}
+
+.hidden-words-option {
+  align-items: flex-start;
+}
+
+.hidden-words-option input {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.hidden-words-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hidden-words-option-hint {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.hidden-words-form {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.hidden-words-form .form-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.hidden-words-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hidden-words-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding-inline-start: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.hidden-words-chip bdi {
+  overflow-wrap: anywhere;
+}
+
+.hidden-words-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.hidden-words-remove:hover {
+  color: var(--color-text);
+}
+
+.hidden-words-remove:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.hidden-words-explain {
+  margin-bottom: var(--space-4);
+}

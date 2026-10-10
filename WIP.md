@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 49 — Content filtering
-**Step:** 1 — hidden words API: done (committed). Next: step 2, hidden words UI.
+**Step:** 2 — hidden words UI: done (committed). Next: step 3, spam checks.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -148,3 +148,37 @@ people may write -- standing rule 14) plus server-side spam checks.
   800/800, check:i18n, rehearsal 015 → 060 (up, down, rollback), browser
   c2-legal + day28-export (c2-legal first hit an Edge launch hiccup;
   re-run alone: 12/12).
+- Step 2 plan (UI):
+  - data/offensiveWords.js (EN + AR built-in list), loaded with
+    import() only when the mode isn't off: own chunk, no first-download
+    cost.
+  - utils/hiddenWords.js, the one matcher: NFKC + lower case; Arabic
+    diacritics, tatweel, alef / yeh / teh-marbuta / hamza-carrier forms
+    folded; @/$ between letters and digits inside words read as letters
+    (a$$, sh1t); stretched letters (fuuuck, شرموووطة); Arabic و/ف/ال
+    prefixes; whole words and phrases (never "class" for "ass"); scripts
+    written without spaces (CJK, Thai, Burmese) match inside the text.
+  - context/HiddenWordsProvider: mode + your words for the signed-in
+    person (cached per user in localStorage for the first paint), add /
+    remove / setMode. Default context = off, so nothing changes where
+    there's no provider (tests, signed out).
+  - PostCard: someone else's post whose text or poll options match:
+    warn = header stays, body / poll / photos / link card covered by
+    "may contain words you chose to hide" + Show anyway; hide = not
+    shown in lists (the post page still shows the cover: you followed
+    a link to it). Comments: warn = covered with Show; hide = left out
+    (their replies go with them, as buildThreads already drops orphans).
+    Never your own.
+  - Settings > Hidden words (/settings/hidden-words): Off / Warn / Hide
+    radio group with what each does, your words (add, remove, max 100,
+    40 chars), a note that the built-in list is used too.
+  - Tests: matcher unit tests, PostCard + comments warn/hide, screen;
+    browser suite day49-hidden-words (EN light + AR dark 375, axe).
+- Step 2 done: as planned, plus: the mode changes at once and goes back
+  if saving fails; the matcher is lazy-loaded with the list (first
+  download 223.2 / 225 kB -- budget is tight now, +1.9 kB this step);
+  the comment cover is inline-only (a test fails on DOM-nesting warnings);
+  the cached words are removed on sign-out. Verified: Vitest 214, lint,
+  check:i18n 1185 keys, backend 800, browser day49-hidden-words (22),
+  day30-guard, day26-a11y (113 page checks), A3 ar + en (276 each),
+  a2/b1/b4/b5/day44 (warn is on for everyone by default now).

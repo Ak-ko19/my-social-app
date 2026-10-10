@@ -96,7 +96,8 @@
       "restricted-accounts": "Restricted accounts",
       "close-friends": "Close friends",
       "interactions": "Messages and comments",
-      "activity": "Your activity"
+      "activity": "Your activity",
+      "hidden-words": "Hidden words"
     }
   },
   "language": {
@@ -1445,5 +1446,38 @@
     "clearTitle": "Clear all recent searches?",
     "clearText": "Your recent searches will be gone. Your posts and comments aren't affected.",
     "clear": "Clear"
+  },
+  "hiddenWords": {
+    "title": "Hidden words",
+    "explain": "Choose what happens to posts and comments with offensive words or words you add. It only changes what you see, and nobody is told.",
+    "loadFailed": "Couldn't load your hidden words.",
+    "saveFailed": "Couldn't save. Please try again.",
+    "saved": "Saved.",
+    "modeLegend": "Posts and comments with these words",
+    "mode": {
+      "warn": "Cover them",
+      "hide": "Hide them",
+      "off": "Show them (off)"
+    },
+    "modeHint": {
+      "warn": "You see a notice and can show each one.",
+      "hide": "They're left out of your feed and comments. A post you open from a link is covered instead.",
+      "off": "Everything shows as it is."
+    },
+    "builtIn": "A built-in list of offensive words in English and Arabic is used along with your own words. Your own posts and comments are never hidden from you.",
+    "yours": "Your words",
+    "addLabel": "Add a word or phrase to hide",
+    "addPlaceholder": "A word or phrase, any language",
+    "add": "Add",
+    "added": "Added “{{word}}”.",
+    "removed": "Removed “{{word}}”.",
+    "remove": "Remove “{{word}}”",
+    "count_one": "{{count}} of {{max}} word",
+    "count_other": "{{count}} of {{max}} words",
+    "full": "You've added {{max}} words, the most you can. Remove one to add another.",
+    "empty": "You haven't added any words. Whole words and phrases match, in any language.",
+    "coverPost": "This post may contain words you chose to hide.",
+    "coverComment": "Hidden comment: it may contain words you chose to hide.",
+    "show": "Show anyway"
   }
 }
