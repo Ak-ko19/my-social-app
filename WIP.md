@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 53–54 — Pages (basic)
-**Step:** 3 — page notification: done (committed). Next: close Day 53–54 (full browser run, tick, Progress Log).
+**Day:** 55–56 — Events (basic)
+**Step:** 1 — PLAN (events are new: no earlier B-step built them): not started.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -123,60 +123,13 @@
 
 - Bundle: first download 218.2 / 225 kB (Day 50 moved the Arabic server
   messages out). Watch it; lazy-load anything big.
-- Day 53-54: GET /pages builds owned / following / discover from one
-  top-N query, like groups did before Day 50 -- yours can drop out with
-  enough pages. Split it the same way.
 - Shell gotcha: never put JS template literals (backticks) or $1 inside
   a node -e "..." or heredoc edit -- bash eats them. Use the Edit tool.
 
+
 ## Plan
-Audit (2026-10-11): B14 has create, edit, delete, follow, post as page
-(owner only), page posts in followers' feeds. Missing: page admins.
-- Step 1 Page admins (Facebook's Page roles, simplified to owner +
-  admins): migration 063 page_admins (page_id, user_id, added_by,
-  created_at). The owner adds people by username and removes them; an
-  admin may leave. Admins edit the page, post as it, and edit / delete
-  its posts. Only the owner deletes the page and manages admins.
-  - Page posts keep posts.user_id = the page's OWNER (B14's rule: blocks,
-    visibility and account deletion rest on it) even when an admin
-    writes them; drafts / scheduled posts check the person who made
-    them is still an admin when they go up.
-  - Not addable: yourself, the owner, deactivated accounts, anyone with
-    a block either way. Max 20 admins.
-  - UI: Edit page > Admins (add by username, remove; Leave for an
-    admin); the page and composer treat admins like the owner.
-- Step 2 Pages list: GET /pages builds owned / following / discover
-  from one top-100 query (yours can drop out). Split into queries,
-  "Pages you manage" includes admin pages, paged with Load more.
-- Step 3 Notification "X made you an admin of P" (notifications.page_id,
-  Groups-style category "pages"), push EN/AR, opens the page.
+- (next: read MONTH_PLAN Day 55-56, check nothing exists, plan the data
+  model, API, UI, reminders through the ticker)
 
 ## Progress
-- Step 1 done: migration 063 page_admins,
-  services/pageAdminService.js (managesPage / managesPageSql, MAX 20),
-  GET/POST/DELETE /pages/:id/admins, is_admin on pages, admins edit the
-  page (loadManagedPage) and post as it (checkAudience), page posts
-  inserted as the OWNER, admins edit/delete page posts, export
-  pages.admin_of. pageAdmins.test.js 7, 17 mutations caught, drafts test
-  + Arabic updated for the new message, rehearsal 015 -> 063.
-  UI: page actions and post menu for admins (canManagePage), Edit page
-  > Admins (components/pages/PageAdminsSection: add by username,
-  remove, Leave; Delete page owner-only). Verified: backend 833, Vitest
-  235, lint, check:i18n 1229, bundle 218.4, browser day53-page-admins
-  11/11, b14-pages (owner-only text updated), day24-report-places,
-  day45-drafts, day26-a11y, day30-guard, A3 ar + en (276 each).
-- Step 2 done: GET /pages as three queries (owned = owner or admin,
-  newest first; following = not run by you, latest followed first;
-  discover = the rest, most followed first), 20 each + *HasMore,
-  ?section= for more. Pages screen: Load more per section, no Follow
-  on pages you run. Regression test: your page stays with 120 bigger
-  ones. 8 mutations caught. Verified: backend 836, Vitest 236, bundle
-  218.5, browser day53-page-admins 12/12, b14-pages, day43-zawgyi,
-  day26-a11y, day30-guard, A3 ar + en.
-- Step 3 done: migration 064 (notifications.page_id, cascade;
-  notification_preferences.pages). page_admin to the new admin (once),
-  removed again when they're removed or leave. Push EN/AR opens the
-  page. Notifications: "Open page" (labelled); Settings: Pages switch
-  (b11 now counts 8). 5 mutations caught. Verified: backend 839, Vitest
-  238, check:i18n 1234, rehearsal 015 -> 064, browser day53-page-admins
-  14/14, b11-settings, day22-push, day26-a11y, day30-guard, A3 ar + en.
+- (none yet)

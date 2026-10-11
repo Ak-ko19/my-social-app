@@ -225,7 +225,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 50–52 — Groups (basic)
 - [x] Create group, public/private, join/leave/request, group posts, group admins, group moderation. *(Most built in B13; added ban, delete, paging and group notifications — see Progress Log.)*
 ### Day 53–54 — Pages (basic)
-- [ ] Create page, follow page, post as page, page admins.
+- [x] Create page, follow page, post as page, page admins. *(Create/follow/post as page from B14; page admins, the pages list and the admin notification added — see Progress Log.)*
 ### Day 55–56 — Events (basic)
 - [ ] Create event, going/interested, event page, reminders via notifications.
 ### Day 57 — Storage safety
@@ -1819,4 +1819,41 @@ then the gaps for "group moderation", Facebook-style, one slice each:
     rehearsal 015 → 062.
   - Full browser run in batches of five: all 51 regular suites (new:
     day50-group-bans, 28 checks) + the 6 special-stack suites + perf
+    40/40 + A3 EN/AR (276 each) + a11y (113 page checks).
+
+### 2026-10-11 — Day 53–54: Pages (basic)
+B14 had built creating, editing and deleting pages, following, and
+posting as a page (owner only), with page posts in followers' feeds.
+Verified, then the gaps, one slice each:
+- **Page admins (`1b5e718`, migration 063):** Facebook's Page roles,
+  simplified to an owner and up to 20 admins.
+  - The owner adds admins by username in Edit page > Admins and removes
+    them; an admin can leave.
+  - Admins edit the page, post as it, and edit or delete its posts. Only
+    the owner deletes the page or changes admins.
+  - Not addable: the owner, deactivated accounts, anyone across a block.
+  - Better than "the person who typed it": page posts stay under the
+    OWNER as posts.user_id. B14's blocks, visibility and
+    account-deletion rules all rest on that. If an admin's own account
+    held the post, deleting that account would delete page posts.
+    Drafts and scheduled posts check that their author is still an
+    admin when they go up.
+- **Pages list (`1e90c23`):** like groups on Day 50, the list was split
+  out of one site-wide top 100, so your own page could disappear. It's
+  now three paged queries: pages you run (owner or admin), pages you
+  follow (latest first) and the rest (most followed first). There's no
+  Follow button on pages you run.
+- **Notification (`c3ffc10`, migration 064):** "X made you an admin of
+  P" on screen and by push (EN/AR), opening the page, with a Pages
+  switch in notification settings. It's removed again if they're
+  removed or leave.
+- **Not done:** Facebook shows admins which admin wrote a page post. We
+  don't record that (page posts belong to the page); it can come later
+  with a posts.created_by column.
+- **Tests at close:**
+  - backend 839/839 (pageAdmins 12; 30 mutation checks, all caught);
+    Vitest 238/238; check:i18n 1234 keys; bundle 218.5 kB; rehearsal
+    015 → 064.
+  - Full browser run in batches of five: all 52 regular suites (new:
+    day53-page-admins, 14 checks) + the 6 special-stack suites + perf
     40/40 + A3 EN/AR (276 each) + a11y (113 page checks).
