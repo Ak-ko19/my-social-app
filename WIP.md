@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 55–56 — Events (basic)
-**Step:** 1 — PLAN (events are new: no earlier B-step built them): not started.
+**Step:** 1 — events API: done (committed). Next: step 2, events UI.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -128,8 +128,45 @@
 
 
 ## Plan
-- (next: read MONTH_PLAN Day 55-56, check nothing exists, plan the data
-  model, API, UI, reminders through the ticker)
+Facebook Events, basic. Nothing exists yet. Three slices:
+- Step 1 API (migration 065):
+  - events (id, host_id cascade, name <=100, description <=2000,
+    starts_at, ends_at null and after starts_at, location <=200 free
+    text, audience 'public' | 'followers', cancelled_at,
+    reminder_sent_at, created_at); event_responses (event_id, user_id,
+    'going' | 'interested', created_at).
+  - Indexes: starts_at for upcoming, host_id, responses by user, and a
+    partial index for reminders that are due.
+  - Who sees an event: as posts do. A deactivated host's events are
+    hidden, a block either way hides them, and "followers" means the
+    host's accepted followers (and the host).
+  - POST /events, GET /events/:id (+ going / interested counts, your
+    response, is_host), PATCH (host; a new time re-arms the reminder),
+    POST /events/:id/cancel (host), DELETE (host),
+    PUT/DELETE /events/:id/response, GET /events/:id/guests?status=,
+    GET /events?section=mine|discover (mine = hosting or responded,
+    upcoming first; discover = public upcoming events you can see,
+    soonest first). Everything paged.
+  - Rules: start in the future when created (up to a year ahead), no
+    responding to a cancelled or finished event, spam-like limits via
+    the global limiter.
+- Step 2 UI: Menu > Events (/events: Upcoming / Discover tabs), Create
+  (/events/new: name, start, end, location, details, audience; time
+  zone shown), event page (/events/:id: date, host, place, details,
+  Going / Interested, guests, host: Edit, Cancel, Delete), Edit.
+  EN/AR, RTL, dark, a11y; browser suite.
+- Step 3 reminders and notifications (migration 066:
+  notifications.event_id, notification_preferences.events): the ticker
+  reminds Going / Interested people an hour before ("<event> starts at
+  <time>"; skipped if the server slept past the start). The host
+  cancelling tells them. Push EN/AR, plus an Events settings switch.
 
 ## Progress
-- (none yet)
+- Step 1 done: migration 065 (events, event_responses + indexes),
+  controllers/eventController.js, routes/eventRoutes.js (POST /events,
+  GET /events?section=mine|discover, GET/PATCH/DELETE /events/:id,
+  POST /events/:id/cancel, PUT/DELETE /events/:id/response,
+  GET /events/:id/guests?status=). Visibility like posts (deactivated
+  host, blocks, followers = accepted). Export events.hosted / responses;
+  Privacy Policy EN/AR. events.test.js 11, 20 mutations caught, backend
+  850, rehearsal 015 -> 065, browser day28-export + c2-legal.

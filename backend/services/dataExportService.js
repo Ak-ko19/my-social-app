@@ -30,7 +30,7 @@ async function buildExport(userId) {
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
     legacyMessages, notifications, reports, sessions, pushDevices, messageReactions, hiddenSuggestions, searches,
-    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends, hiddenWords, pagesAdmin
+    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends, hiddenWords, pagesAdmin, eventsHosted, eventResponses
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -127,7 +127,12 @@ async function buildExport(userId) {
     rows('SELECT word, created_at FROM user_hidden_words WHERE user_id = $1 ORDER BY created_at', [userId]),
     // Day 53: pages you're an admin of.
     rows(`SELECT p.id, p.name, pa.created_at AS since FROM page_admins pa JOIN pages p ON p.id = pa.page_id
-          WHERE pa.user_id = $1 ORDER BY pa.created_at`, [userId])
+          WHERE pa.user_id = $1 ORDER BY pa.created_at`, [userId]),
+    // Day 55: events you host, and your answers to events.
+    rows(`SELECT id, name, description, starts_at, ends_at, location, audience, cancelled_at, created_at
+          FROM events WHERE host_id = $1 ORDER BY created_at`, [userId]),
+    rows(`SELECT r.event_id, e.name, r.status, r.created_at FROM event_responses r JOIN events e ON e.id = r.event_id
+          WHERE r.user_id = $1 ORDER BY r.created_at`, [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -186,6 +191,7 @@ async function buildExport(userId) {
     },
     groups,
     pages: { owned: pagesOwned, admin_of: pagesAdmin, followed: pagesFollowed },
+    events: { hosted: eventsHosted, responses: eventResponses },
     conversations: conversations.map((c) => ({
       ...c,
       participants: (peopleByConversation[c.id] || []).map((p) => p.username),
