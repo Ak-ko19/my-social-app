@@ -166,19 +166,25 @@ function fireAndForget(task) {
 }
 
 // After a notification row was created (notificationService / mentions).
-function pushNotification({ userId, actorId, type, postId = null, commentId = null }) {
+function pushNotification({ userId, actorId, type, postId = null, commentId = null, communityId = null }) {
   if (!vapid()) return;
   fireAndForget(async () => {
     const actor = (await db.query('SELECT username FROM users WHERE id = $1', [actorId])).rows[0];
     if (!actor) return;
+    // Day 50: group notifications name the group and open it (a request:
+    // its Manage screen, where requests are handled).
+    const group = communityId ? (await db.query('SELECT name FROM communities WHERE id = $1', [communityId])).rows[0] : null;
+    if (communityId && !group) return;
     const key = type === 'mention' ? (commentId ? 'mention_comment' : 'mention_post') : type;
     // Day 45: a scheduled post that couldn't go up is back in the drafts.
-    const url = postId ? `/posts/${postId}` : type === 'scheduled_failed' ? '/drafts' : '/notifications';
+    const url = postId ? `/posts/${postId}`
+      : communityId ? `/groups/${communityId}${type === 'group_request' ? '/manage' : ''}`
+        : type === 'scheduled_failed' ? '/drafts' : '/notifications';
     await sendToUser(userId, (language) => ({
       title: 'MySocialApp',
-      body: pushText(language, key, { name: actor.username }),
+      body: pushText(language, key, { name: actor.username, group: group?.name }),
       url,
-      tag: postId ? `post-${postId}` : `notify-${type}-${actorId}`
+      tag: postId ? `post-${postId}` : communityId ? `group-${communityId}-${type}` : `notify-${type}-${actorId}`
     }));
   });
 }

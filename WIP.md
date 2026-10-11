@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 50–52 — Groups (basic)
-**Step:** 3 — page the group lists: done (committed). Next: step 4, group notifications.
+**Step:** 4 — group notifications: done (committed). Next: close Day 50–52 (full browser run, tick, Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -207,3 +207,31 @@ remove member, admins delete any post, last-admin hand-over. Missing for
   bundle 218.0 kB, browser day50-group-bans 21/21 (incl. 26 members
   paged), b13-groups, day24-report-places, day45-drafts, day26-a11y,
   day30-guard, A3 ar + en (276 each; one ar start-up hiccup re-run).
+- Step 4 plan (notifications, as Facebook does for groups):
+  - Migration 062: notifications.community_id (cascade with the group),
+    notification_preferences.groups (on by default).
+  - group_request: someone asks to join a private group -> each admin
+    ("X asked to join G", action: Review requests). group_approved: an
+    admin approves -> the person ("You're now a member of G", action:
+    Open group). Category "groups" (Settings > Notifications toggle).
+    Push text EN/AR with the group's name; push opens the group (or its
+    Manage screen for a request).
+  - Once a request is handled (approved, denied, cancelled, banned) its
+    group_request notifications are removed, so admins aren't sent to a
+    request that's gone.
+  - Not notified: the requests let in when a group goes public (bulk).
+- Step 4 done: migration 062 (notifications.community_id, cascade;
+  notification_preferences.groups). group_request to each admin (not
+  plain members, not across a block), group_approved to the person;
+  request notifications cleared when the request is approved, turned
+  down, cancelled, banned, or the group goes public. Push EN/AR names
+  the group (request -> Manage group, approved -> the group).
+  Notifications screen: text + "Review requests" / "Open group"
+  (labelled with the group). Settings > Notifications: Groups switch.
+  12 mutations: all caught except the inserted-row guard against two
+  simultaneous join requests -- it can't be raced in the test DB, so
+  it stays as a defensive guard (sequential double clicks are tested).
+  Verified: backend 825 (+ notificationSettings / dataExport shapes),
+  Vitest 231, check:i18n 1209, bundle 218.2, rehearsal 015 -> 062,
+  browser day50-group-bans 27/27, b11-settings (7 switches now),
+  b13-groups, day22-push, day26-a11y, day30-guard, A3 ar + en (276).

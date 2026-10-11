@@ -7,6 +7,7 @@ const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../servic
 const { pollColumnSql } = require('../services/pollService');
 const { toUnicode } = require('../utils/myanmarText'); // Day 43: Zawgyi -> Unicode
 const { isBanned } = require('../services/communityService');
+const notificationService = require('../services/notificationService');
 
 // B13 Groups ("communities" in the code, to stay distinct from B10 group
 // chats). Rules:
@@ -94,6 +95,28 @@ async function ensureAdminOrDelete(communityId) {
   }
   return { deleted: false };
 }
+
+// Day 50: "X asked to join <group>" to each admin (not one who blocked X,
+// or whom X blocked).
+async function notifyAdminsOfRequest(communityId, requesterId) {
+  const admins = await db.query(
+    `SELECT m.user_id FROM community_members m
+     WHERE m.community_id = $1 AND m.role = 'admin' AND m.status = 'member'
+       AND NOT EXISTS (SELECT 1 FROM blocks b
+         WHERE (b.blocker_id = m.user_id AND b.blocked_id = $2) OR (b.blocker_id = $2 AND b.blocked_id = m.user_id))`,
+    [communityId, requesterId]
+  );
+  for (const { user_id: adminId } of admins.rows) {
+    await notificationService.notify({ userId: adminId, actorId: requesterId, type: 'group_request', communityId });
+  }
+}
+
+// Once a request is handled (approved, turned down, cancelled, banned), the
+// admins' notifications about it go: they'd lead to a request that's gone.
+const clearRequestNotifications = (communityId, requesterId) => db.query(
+  "DELETE FROM notifications WHERE community_id = $1 AND actor_id = $2 AND type = 'group_request'",
+  [communityId, requesterId]
+);
 
 // POST /communities { name, description?, privacy? }
 async function createCommunity(req, res) {
@@ -185,6 +208,7 @@ async function updateCommunity(req, res) {
     // Going public lets everyone read -- and any pending requests in.
     if (fields.privacy === 'public') {
       await db.query("UPDATE community_members SET status = 'member' WHERE community_id = $1 AND status = 'pending'", [c.id]);
+      await db.query("DELETE FROM notifications WHERE community_id = $1 AND type = 'group_request'", [c.id]);
     }
     res.json(await loadCommunity(c.id, req.userId));
   } catch (err) {
@@ -214,10 +238,12 @@ async function joinCommunity(req, res) {
     if (c.my_status) return res.json(c); // already a member / already requested
     if (await isBanned(c.id, req.userId)) throw new CommunityError(403, "You can't join this group");
     const status = c.privacy === 'public' ? 'member' : 'pending';
-    await db.query(
-      "INSERT INTO community_members (community_id, user_id, role, status) VALUES ($1, $2, 'member', $3) ON CONFLICT DO NOTHING",
+    const inserted = await db.query(
+      "INSERT INTO community_members (community_id, user_id, role, status) VALUES ($1, $2, 'member', $3) ON CONFLICT DO NOTHING RETURNING user_id",
       [c.id, req.userId, status]
     );
+    // Day 50: a new request tells the admins (once, even on a double click).
+    if (status === 'pending' && inserted.rows.length > 0) await notifyAdminsOfRequest(c.id, req.userId);
     res.status(201).json(await loadCommunity(c.id, req.userId));
   } catch (err) {
     handle(res, err, 'Joining the group failed. Please try again later.');
@@ -237,6 +263,8 @@ async function removeMember(req, res) {
       [c.id, targetId]
     );
     if (removed.rows.length === 0) throw new CommunityError(404, 'Not a member of this group');
+    // A request turned down or cancelled: its notifications go (Day 50).
+    if (removed.rows[0].status === 'pending') await clearRequestNotifications(c.id, targetId);
     const outcome = removed.rows[0].status === 'member' ? await ensureAdminOrDelete(c.id) : { deleted: false };
     res.json(outcome);
   } catch (err) {
@@ -321,6 +349,10 @@ async function approveRequest(req, res) {
       [c.id, Number(req.params.userId)]
     );
     if (updated.rows.length === 0) throw new CommunityError(404, 'No pending request from that person');
+    // Day 50: they're told; the admins' request notifications go.
+    const memberId = updated.rows[0].user_id;
+    await clearRequestNotifications(c.id, memberId);
+    await notificationService.notify({ userId: memberId, actorId: req.userId, type: 'group_approved', communityId: c.id });
     res.json({ ok: true });
   } catch (err) {
     handle(res, err, 'Approving the request failed. Please try again later.');
@@ -354,6 +386,7 @@ async function banMember(req, res) {
        INSERT INTO community_bans (community_id, user_id, banned_by) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
       [c.id, targetId, req.userId]
     );
+    await clearRequestNotifications(c.id, targetId);
     res.status(201).json({ banned: true });
   } catch (err) {
     handle(res, err, 'Updating the group failed. Please try again later.');

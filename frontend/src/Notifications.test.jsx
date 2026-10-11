@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import userEvent from '@testing-library/user-event';
 import api from './api';
 import Notifications from './Notifications';
 import { setLanguage } from './i18n';
@@ -37,6 +38,52 @@ describe('Notifications: scheduled posts', () => {
     show();
     expect(await screen.findByText('نُشر منشورك المجدول')).toBeInTheDocument();
     expect(screen.getByText('تعذّر نشر منشورك المجدول. أُعيد إلى مسوداتك.')).toBeInTheDocument();
+  });
+});
+
+// Day 50: groups -- a request to join one you run; you were let in.
+describe('Notifications: groups', () => {
+  beforeEach(() => {
+    api.get.mockResolvedValue({
+      data: {
+        notifications: [
+          { ...me, id: 5, actor_username: 'dana', type: 'group_request', post_id: null, comment_id: null, community_id: 12, community_name: 'Night Owls' },
+          { ...me, id: 6, type: 'group_approved', post_id: null, comment_id: null, community_id: 13, community_name: 'Trail Runners' }
+        ]
+      }
+    });
+  });
+  const showWithGroups = () => render(
+    <MemoryRouter initialEntries={['/notifications']}>
+      <Routes>
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/groups/:id/manage" element={<p>Manage page</p>} />
+        <Route path="/groups/:id" element={<p>Group page</p>} />
+      </Routes>
+    </MemoryRouter>
+  );
+
+  it('names the group; a request opens Manage group', async () => {
+    await setLanguage('en');
+    showWithGroups();
+    expect((await screen.findByText('dana', { selector: 'strong' })).parentElement).toHaveTextContent('dana asked to join Night Owls');
+    expect(screen.getByText('Trail Runners', { selector: 'strong' }).parentElement).toHaveTextContent("You're now a member of Trail Runners");
+    await userEvent.click(screen.getByRole('button', { name: 'Review requests to join Night Owls' }));
+    expect(await screen.findByText('Manage page')).toBeInTheDocument();
+  });
+
+  it('being let in opens the group', async () => {
+    await setLanguage('en');
+    showWithGroups();
+    await userEvent.click(await screen.findByRole('button', { name: 'Open Trail Runners' }));
+    expect(await screen.findByText('Group page')).toBeInTheDocument();
+  });
+
+  it('in Arabic', async () => {
+    await setLanguage('ar');
+    showWithGroups();
+    expect((await screen.findByText('dana', { selector: 'strong' })).parentElement).toHaveTextContent('طلب dana الانضمام إلى Night Owls');
+    expect(screen.getByRole('button', { name: 'فتح Trail Runners' })).toBeInTheDocument();
   });
 });
 

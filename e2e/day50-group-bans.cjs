@@ -143,6 +143,32 @@ const GONE = /status of 404/;
   await ar.screenshot({ path: path.join(SP, 'day50-ban-ar-dark-375.png') });
   await ar.context().close();
 
+  // 5b. Notifications (step 4): bob asks to join alice's private group;
+  // she's told and reviews it; he's told he's in.
+  const quiet = await (await api('alice', 'POST', '/communities', { name: 'Quiet Readers', privacy: 'private' })).json();
+  await api('bob', 'POST', `/communities/${quiet.id}/join`);
+  const inbox = await open('alice', '/notifications');
+  const asked = inbox.getByText('Quiet Readers', { exact: true });
+  await asked.first().waitFor({ timeout: 8000 }).catch(() => {});
+  check('alice is told "bob asked to join Quiet Readers"', ((await asked.first().locator('..').innerText().catch(() => '')).includes('bob asked to join Quiet Readers')));
+  await axe(inbox, 'en/light, Notifications with a group request');
+  await inbox.getByRole('button', { name: 'Review requests to join Quiet Readers' }).click();
+  await inbox.waitForURL(`${WEB}/groups/${quiet.id}/manage`, { timeout: 8000 }).catch(() => {});
+  await inbox.getByRole('button', { name: 'Approve' }).click();
+  await inbox.getByText('No pending requests.').waitFor({ timeout: 8000 }).catch(() => {});
+  check('Review requests opens Manage group; approving clears her notification',
+    inbox.url() === `${WEB}/groups/${quiet.id}/manage` && sql(`SELECT COUNT(*) FROM notifications WHERE community_id = ${quiet.id} AND type = 'group_request'`) === '0');
+  await inbox.context().close();
+  const bobInbox = await open('bob', '/notifications');
+  await bobInbox.getByText(/now a member of/).waitFor({ timeout: 8000 }).catch(() => {});
+  check("bob is told he's in, and Open group takes him there", (await bobInbox.getByText(/now a member of/).count()) === 1);
+  await bobInbox.getByRole('button', { name: 'Open Quiet Readers' }).click();
+  await bobInbox.waitForURL(`${WEB}/groups/${quiet.id}`, { timeout: 8000 }).catch(() => {});
+  check('...on the group page', bobInbox.url() === `${WEB}/groups/${quiet.id}`);
+  await bobInbox.goto(`${WEB}/settings/notifications`, { waitUntil: 'networkidle' });
+  check('Settings > Notifications has a Groups switch', (await bobInbox.getByText('Groups', { exact: true }).count()) === 1);
+  await bobInbox.context().close();
+
   // 6. Delete the group (step 2): the name typed to confirm.
   const owner = await open('alice', `/groups/${group.id}/manage`);
   await owner.getByRole('button', { name: 'Delete group' }).click();

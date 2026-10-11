@@ -537,8 +537,14 @@
       "scheduledPost": "Your scheduled post was published",
       "scheduledFailed": "Your scheduled post couldn't be published. It's back in your drafts.",
       "pollEnded": "<b>{{name}}</b>'s poll has ended. See the results.",
-      "pollEndedOwn": "Your poll has ended. See the results."
-    }
+      "pollEndedOwn": "Your poll has ended. See the results.",
+      "groupRequest": "<b>{{name}}</b> asked to join <b>{{group}}</b>",
+      "groupApproved": "You're now a member of <b>{{group}}</b>"
+    },
+    "reviewRequests": "Review requests",
+    "reviewRequestsIn": "Review requests to join {{group}}",
+    "openGroup": "Open group",
+    "openGroupNamed": "Open {{group}}"
   },
   "saved": {
     "title": "Saved Posts",
@@ -769,6 +775,10 @@
       "messages": {
         "title": "Messages",
         "description": "When someone sends you a message (each chat can also be muted on its own)"
+      },
+      "groups": {
+        "title": "Groups",
+        "description": "Requests to join groups you run, and when you're let into a group"
       }
     },
     "push": {

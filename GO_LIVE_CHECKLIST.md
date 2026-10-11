@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 061, check the environment variables,
+database, run migrations 015 → 062, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -98,7 +98,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 061 on production
+## 3. Run migrations 015 → 062 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -142,16 +142,17 @@ rows there.)
            050_add_polls 051_drop_myanmar_ui_language 052_add_post_drafts \
            053_add_poll_ended_notified 054_add_bookmark_collections 055_add_user_mutes \
            056_add_user_restrictions 057_add_close_friends 058_add_interaction_permissions \
-           059_add_activity_indexes 060_add_hidden_words 061_add_community_bans; do
+           059_add_activity_indexes 060_add_hidden_words 061_add_community_bans \
+           062_add_group_notifications; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
-- [ ] Check the result (this should print `22`, then `17`, then `11`):
+- [ ] Check the result (this should print `22`, then `19`, then `11`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
     "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews','push_subscriptions','message_reactions','suggestion_dismissals','search_history','polls','poll_options','poll_votes','post_drafts','bookmark_collections','bookmark_collection_items','user_mutes','user_restrictions','close_friends','user_hidden_words','community_bans')"
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM information_schema.columns WHERE (table_name = 'reports' AND column_name IN ('target_owner_id','target_snapshot')) OR (table_name = 'users' AND column_name IN ('banned_until','language')) OR (table_name = 'notification_preferences' AND column_name = 'messages') OR (table_name = 'conversation_participants' AND column_name = 'muted_until') OR (table_name = 'messages' AND column_name = 'is_forwarded') OR (table_name = 'conversations' AND column_name = 'avatar_url') OR (table_name = 'users' AND column_name = 'links') OR (table_name = 'users' AND column_name = 'cover_url') OR (table_name = 'users' AND column_name = 'pinned_post_id') OR (table_name = 'polls' AND column_name = 'ended_notified') OR (table_name = 'comments' AND column_name = 'awaiting_approval') OR (table_name = 'stories' AND column_name = 'close_friends') OR (table_name = 'users' AND column_name IN ('message_permission','comment_permission','hidden_words_mode'))"
+    "SELECT count(*) FROM information_schema.columns WHERE (table_name = 'reports' AND column_name IN ('target_owner_id','target_snapshot')) OR (table_name = 'users' AND column_name IN ('banned_until','language')) OR (table_name = 'notification_preferences' AND column_name = 'messages') OR (table_name = 'conversation_participants' AND column_name = 'muted_until') OR (table_name = 'messages' AND column_name = 'is_forwarded') OR (table_name = 'conversations' AND column_name = 'avatar_url') OR (table_name = 'users' AND column_name = 'links') OR (table_name = 'users' AND column_name = 'cover_url') OR (table_name = 'users' AND column_name = 'pinned_post_id') OR (table_name = 'polls' AND column_name = 'ended_notified') OR (table_name = 'comments' AND column_name = 'awaiting_approval') OR (table_name = 'stories' AND column_name = 'close_friends') OR (table_name = 'users' AND column_name IN ('message_permission','comment_permission','hidden_words_mode')) OR (table_name = 'notifications' AND column_name = 'community_id') OR (table_name = 'notification_preferences' AND column_name = 'groups')"
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
     "SELECT count(*) FROM pg_indexes WHERE indexname IN ('idx_messages_conversation_id','idx_post_hashtags_hashtag','idx_participants_last_read','idx_story_views_viewer','idx_posts_content_fts','idx_hashtags_tag_trgm','idx_search_history_user_recent','idx_poll_votes_user','idx_post_drafts_due','idx_polls_end_queue','idx_bookmark_collections_user_name')"
   ```

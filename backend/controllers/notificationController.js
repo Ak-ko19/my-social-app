@@ -17,10 +17,13 @@ async function getNotifications(req, res) {
         CASE WHEN posts.user_id = $1 OR posts.visibility IN ('public', 'followers')
           -- Day 47: a close-friends post only for people on the list.
           OR (posts.visibility = 'close_friends' AND EXISTS (SELECT 1 FROM close_friends cf WHERE cf.user_id = posts.user_id AND cf.friend_id = $1))
-          THEN posts.content END AS post_content
+          THEN posts.content END AS post_content,
+        -- Day 50: group notifications name the group.
+        notifications.community_id, communities.name AS community_name
       FROM notifications
       JOIN users actor ON notifications.actor_id = actor.id
       LEFT JOIN posts ON notifications.post_id = posts.id
+      LEFT JOIN communities ON notifications.community_id = communities.id
       WHERE notifications.user_id = $1
       ORDER BY notifications.created_at DESC
       LIMIT $2 OFFSET $3

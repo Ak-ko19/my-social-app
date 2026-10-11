@@ -24,6 +24,9 @@ function notificationKey(n) {
   if (n.type === 'scheduled_failed') return 'scheduledFailed';
   if (n.type === 'poll_ended') return 'pollEnded';
   if (n.type === 'poll_ended_own') return 'pollEndedOwn';
+  // Day 50: groups.
+  if (n.type === 'group_request') return 'groupRequest';
+  if (n.type === 'group_approved') return 'groupApproved';
   return 'other';
 }
 
@@ -127,9 +130,18 @@ function Notifications() {
                   alt=""
                 />
                 <div className="card-row-body">
-                  <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username }} components={{ b: <strong /> }} />
+                  <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username, group: n.community_name }} components={{ b: <strong /> }} />
                   {n.post_content && <p className="card-row-quote" dir="auto">“{n.post_content}”</p>}
                   <span className="card-row-meta">{formatDate(n.created_at)}</span>
+                  {/* Day 50: where a group notification leads. */}
+                  {n.community_id && (
+                    <div className="card-row-actions">
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => navigate(n.type === 'group_request' ? `/groups/${n.community_id}/manage` : `/groups/${n.community_id}`)}
+                        aria-label={t(n.type === 'group_request' ? 'notifications.reviewRequestsIn' : 'notifications.openGroupNamed', { group: n.community_name })}>
+                        {t(n.type === 'group_request' ? 'notifications.reviewRequests' : 'notifications.openGroup')}
+                      </button>
+                    </div>
+                  )}
                   {!n.is_read && (
                     <div className="card-row-actions">
                       <button type="button" className="btn btn-secondary btn-sm" onClick={() => markAsRead(n.id)}>

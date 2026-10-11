@@ -296,7 +296,9 @@ CREATE TABLE notification_preferences (
   follow_accepted boolean NOT NULL DEFAULT true,
   updated_at timestamptz NOT NULL DEFAULT now(),
   -- Added by migration 037_add_message_notification_settings (Day 23).
-  messages boolean NOT NULL DEFAULT true
+  messages boolean NOT NULL DEFAULT true,
+  -- Added by migration 062_add_group_notifications (Day 50).
+  groups boolean NOT NULL DEFAULT true
 );
 
 CREATE TABLE reports (
@@ -597,3 +599,7 @@ CREATE TABLE community_bans (
   PRIMARY KEY (community_id, user_id)
 );
 CREATE INDEX idx_community_bans_user ON community_bans (user_id);
+
+-- Added by migration 062_add_group_notifications (Day 50).
+ALTER TABLE notifications ADD COLUMN community_id INTEGER REFERENCES communities(id) ON DELETE CASCADE;
+CREATE INDEX idx_notifications_community ON notifications (community_id) WHERE community_id IS NOT NULL;

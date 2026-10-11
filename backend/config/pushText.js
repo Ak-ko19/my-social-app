@@ -19,7 +19,10 @@ const TEXT = {
     scheduled_post: 'Your scheduled post was published',
     scheduled_failed: "Your scheduled post couldn't be published. It's back in your drafts.",
     poll_ended: "{name}'s poll has ended. See the results.",
-    poll_ended_own: 'Your poll has ended. See the results.'
+    poll_ended_own: 'Your poll has ended. See the results.',
+    // Day 50.
+    group_request: '{name} asked to join {group}',
+    group_approved: "You're now a member of {group}"
   },
   ar: {
     like: 'أعجب {name} بمنشورك',
@@ -36,7 +39,9 @@ const TEXT = {
     scheduled_post: 'نُشر منشورك المجدول',
     scheduled_failed: 'تعذّر نشر منشورك المجدول. أُعيد إلى مسوداتك.',
     poll_ended: 'انتهى استطلاع {name}. اطّلع على النتائج.',
-    poll_ended_own: 'انتهى استطلاعك. اطّلع على النتائج.'
+    poll_ended_own: 'انتهى استطلاعك. اطّلع على النتائج.',
+    group_request: 'طلب {name} الانضمام إلى {group}',
+    group_approved: 'أصبحت عضوًا في {group}'
   }
 };
 

@@ -189,6 +189,71 @@ describe('group moderation (Day 50)', () => {
     });
   });
 
+  // Day 50 step 4: group notifications.
+  describe('notifications', () => {
+    const { pool } = require('../helpers/testDb');
+    const inbox = async (user) => (await request(app).get('/notifications').set(auth(user))).body.notifications
+      .map((n) => ({ type: n.type, from: n.actor_username, group: n.community_name, groupId: n.community_id }));
+    let group;
+    let coAdmin;
+    beforeEach(async () => {
+      group = (await create(admin, { name: 'Night Owls', privacy: 'private' })).body;
+      coAdmin = await registerAndLogin(app);
+      await join(coAdmin, group.id);
+      await request(app).post(`/communities/${group.id}/requests/${coAdmin.id}/approve`).set(auth(admin));
+      await request(app).put(`/communities/${group.id}/members/${coAdmin.id}/role`).set(auth(admin)).send({ role: 'admin' });
+      await pool.query('DELETE FROM notifications');
+    });
+    const request1 = (who) => ({ type: 'group_request', from: who.username, group: 'Night Owls', groupId: group.id });
+
+    it('a request tells every admin (not plain members), once; approving tells the person and clears it', async () => {
+      const plain = await registerAndLogin(app);
+      await join(plain, group.id);
+      await request(app).post(`/communities/${group.id}/requests/${plain.id}/approve`).set(auth(admin));
+      await pool.query('DELETE FROM notifications');
+      // The double click: two at once, and one more after.
+      await Promise.all([join(troll, group.id), join(troll, group.id)]);
+      await join(troll, group.id);
+      expect(await inbox(admin)).toEqual([request1(troll)]);
+      expect(await inbox(coAdmin)).toEqual([request1(troll)]);
+      expect(await inbox(plain)).toEqual([]);
+      await request(app).post(`/communities/${group.id}/requests/${troll.id}/approve`).set(auth(coAdmin));
+      expect(await inbox(troll)).toEqual([{ type: 'group_approved', from: coAdmin.username, group: 'Night Owls', groupId: group.id }]);
+      expect(await inbox(admin)).toEqual([]);
+      expect(await inbox(coAdmin)).toEqual([]);
+    });
+
+    it('a request turned down, cancelled or banned is cleared; going public clears them all', async () => {
+      const others = [troll, await registerAndLogin(app), await registerAndLogin(app), await registerAndLogin(app)];
+      for (const person of others) await join(person, group.id);
+      expect(await inbox(admin)).toHaveLength(4);
+      await request(app).delete(`/communities/${group.id}/members/${others[0].id}`).set(auth(admin)); // turned down
+      await request(app).delete(`/communities/${group.id}/members/${others[1].id}`).set(auth(others[1])); // cancelled
+      await ban(admin, group.id, others[2]);
+      expect(await inbox(admin)).toEqual([request1(others[3])]);
+      await request(app).patch(`/communities/${group.id}`).set(auth(admin)).send({ privacy: 'public' });
+      expect(await inbox(admin)).toEqual([]);
+    });
+
+    it('not for a public group, not to an admin who blocked them, not with Groups switched off', async () => {
+      const open = (await create(admin, { name: 'Open' })).body;
+      await join(troll, open.id);
+      expect(await inbox(admin)).toEqual([]);
+      await request(app).post(`/users/${troll.id}/block`).set(auth(coAdmin));
+      await request(app).put('/notification-preferences').set(auth(admin)).send({ groups: false });
+      await join(troll, group.id);
+      expect(await inbox(admin)).toEqual([]);
+      expect(await inbox(coAdmin)).toEqual([]);
+      expect((await request(app).get('/notification-preferences').set(auth(admin))).body.groups).toBe(false);
+    });
+
+    it('go with the group when it is deleted', async () => {
+      await join(troll, group.id);
+      await request(app).delete(`/communities/${group.id}`).set(auth(admin));
+      expect(await inbox(coAdmin)).toEqual([]);
+    });
+  });
+
   // Day 50 step 2: an admin deletes the group.
   describe('delete a group', () => {
     const remove = (user, id) => request(app).delete(`/communities/${id}`).set(auth(user));

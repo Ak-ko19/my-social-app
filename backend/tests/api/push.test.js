@@ -156,6 +156,25 @@ describe('web push (Day 22)', () => {
       ]));
     });
 
+    // Day 50: a request to join alice's private group opens its Manage
+    // screen; being let in opens the group. Both name the group.
+    it('group requests and approvals, naming the group', async () => {
+      const group = (await request(app).post('/communities').set(auth(alice)).send({ name: 'Night Owls', privacy: 'private' })).body;
+      await request(app).post(`/communities/${group.id}/join`).set(auth(bob));
+      await push().whenIdle();
+      expect(sent.map((s) => s.payload)).toEqual([
+        { title: 'MySocialApp', body: `${bob.username} asked to join Night Owls`, url: `/groups/${group.id}/manage`, tag: `group-${group.id}-group_request` }
+      ]);
+      await subscribe(bob, { endpoint: fcm('bob-phone'), keys: subKeys() });
+      await pool.query("UPDATE users SET language = 'ar' WHERE id = $1", [bob.id]);
+      sent = [];
+      await request(app).post(`/communities/${group.id}/requests/${bob.id}/approve`).set(auth(alice));
+      await push().whenIdle();
+      expect(sent.map((s) => s.payload)).toEqual([
+        { title: 'MySocialApp', body: 'أصبحت عضوًا في Night Owls', url: `/groups/${group.id}`, tag: `group-${group.id}-group_approved` }
+      ]);
+    });
+
     it('respects the notification settings (likes off -> no push)', async () => {
       await request(app).put('/notification-preferences').set(auth(alice)).send({ likes: false });
       const post = (await request(app).post('/posts').set(auth(alice)).field('content', 'hi')).body;
