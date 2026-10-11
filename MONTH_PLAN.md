@@ -223,7 +223,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 49 — Content filtering
 - [x] Local bad-word list (EN/AR) with hide-or-warn option; spam detection (repeated links, flood posting). *(Instagram-style Hidden words + server spam checks — see Progress Log.)*
 ### Day 50–52 — Groups (basic)
-- [ ] Create group, public/private, join/leave/request, group posts, group admins, group moderation.
+- [x] Create group, public/private, join/leave/request, group posts, group admins, group moderation. *(Most built in B13; added ban, delete, paging and group notifications — see Progress Log.)*
 ### Day 53–54 — Pages (basic)
 - [ ] Create page, follow page, post as page, page admins.
 ### Day 55–56 — Events (basic)
@@ -1774,3 +1774,49 @@ so nobody is stopped from writing anything (standing rule 14).
     day49-hidden-words, 22 checks) + the 6 special-stack suites (new:
     day49-spam, 9) + perf 40/40 + A3 EN/AR (276 each) + a11y (113 page
     checks).
+
+### 2026-10-11 — Day 50–52: Groups (basic)
+B13 had already built creating groups, public/private, joining (instant
+or by request), approve/deny, leaving, group posts, admins and
+promote/demote, removing members and admins deleting any post. Verified,
+then the gaps for "group moderation", Facebook-style, one slice each:
+- **Remove and ban (`db33c11`, migration 061):** Remove asks first, with
+  "Also ban them": they can't join or ask again until unbanned. There's
+  a Banned list with Unban.
+  - Only members comment on and react to a group's posts. Before, anyone
+    could on a public group, so a ban would have changed nothing.
+  - Non-members see posts and comments read-only, on the group page and
+    (`5e9b803`) on a post's own page.
+  - The group page now says why Join failed; the error used to be
+    swallowed.
+- **Delete a group (`ac80315`):** any admin; type the name to confirm, as
+  for a page. Its posts and photos go too. A deleted group's page no
+  longer offers a useless Try again.
+- **Paging (`80d4dee`):** members, join requests, bans and the groups
+  list load 20 at a time.
+  - Found: "Your groups" was split out of one site-wide top 100, so
+    with enough groups your own could disappear. Now it's two queries,
+    with a regression test using 120 groups.
+- **Notifications (`9d883b7`, migration 062):** "X asked to join G" to
+  the admins, "You're now a member of G" to the person let in. Push
+  text is EN/AR, and each notification links to the place to act.
+  - There's a Groups switch in notification settings.
+  - A handled request's notifications are removed.
+- **Bundle (`01b362c`):** the Arabic server-message table moved out of
+  every visitor's first download, which had reached 224.0 of 225 kB.
+  It's now 218.2 kB.
+- **Not done / honest notes:**
+  - The guard against two simultaneous join requests notifying twice
+    can't be raced in the test database; it stays as a defensive guard.
+  - The perf suite doesn't seed groups, so the groups list queries
+    aren't timed. "Discover" counts members per group, which is fine
+    at today's size.
+  - GET /pages has the same top-N-then-split shape as the old groups
+    list; it's for the Pages days.
+- **Tests at close:**
+  - backend 826/826 (communityModeration 17; 41 mutation checks, all
+    caught but the one above); Vitest 231/231; check:i18n 1209 keys;
+    rehearsal 015 → 062.
+  - Full browser run in batches of five: all 51 regular suites (new:
+    day50-group-bans, 28 checks) + the 6 special-stack suites + perf
+    40/40 + A3 EN/AR (276 each) + a11y (113 page checks).

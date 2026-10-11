@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 50–52 — Groups (basic)
-**Step:** post-page gap closed (committed). Next: close Day 50–52 (full browser run, tick, Progress Log).
+**Day:** 53–54 — Pages (basic)
+**Step:** 1 — audit what B14 already built against the checkbox: not started.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -118,124 +118,20 @@
 
 - Day 49: suites that need the spam checks go in SPAM_SUITES
   (SPAM_CHECKS_IN_TESTS=1); every other suite posts freely.
-- Bundle: first download 223.5 / 225 kB. New code on the first-download
-  path must be lazy-loaded (import()) or offset by a trim.
 - Hidden words is on (warn) for every account by default: test content
   with words from frontend/src/data/offensiveWords.js gets covered.
 
+- Bundle: first download 218.2 / 225 kB (Day 50 moved the Arabic server
+  messages out). Watch it; lazy-load anything big.
+- Day 53-54: GET /pages builds owned / following / discover from one
+  top-N query, like groups did before Day 50 -- yours can drop out with
+  enough pages. Split it the same way.
+- Shell gotcha: never put JS template literals (backticks) or $1 inside
+  a node -e "..." or heredoc edit -- bash eats them. Use the Edit tool.
+
 ## Plan
-Audit (2026-10-10): B13 already has create, public/private, join (instant
-or request), approve/deny, leave, group posts, promote/demote admins,
-remove member, admins delete any post, last-admin hand-over. Missing for
-"group moderation" (as Facebook groups do it), one vertical slice each:
-- Step 1 Ban ("Remove and ban"): migration 061 community_bans
-  (community_id, user_id, banned_by, created_at). Admin bans a member,
-  a pending requester, or anyone; it removes them and they can't join
-  or request again until unbanned. Bans list (paged), unban. Admins
-  can't be banned (demote first); you can't ban yourself. Also: only
-  members may comment on or react to a group's posts (today anyone can
-  on a public group, so a ban would change nothing). UI in Manage group.
-- Step 2 Delete group: DELETE /communities/:id for admins, asks first
-  (a confirm dialog, as Facebook does), its media cleaned up.
-- Step 3 Pagination: members, requests, bans and the groups list are
-  unpaged (Quality bar 5). Page them; Load more in the UI.
-- Step 4 Notifications: "X asked to join <group>" to the admins,
-  "You're now a member of <group>" to the person approved
-  (notifications.community_id, push + Notifications screen text EN/AR,
-  a "groups" setting).
+- (next: read MONTH_PLAN Day 53-54, AUDIT_REPORT and the B14 pages code;
+  tick what is already done, plan the gaps)
 
 ## Progress
-- Step 1 backend built (uncommitted): migration 061 community_bans,
-  POST/DELETE /communities/:id/bans/:userId, GET /communities/:id/bans
-  (paged), join refused when banned, services/communityService.js
-  (isBanned, assertCanInteract: only members comment / react / like
-  comments in a group; taking back is allowed), getVisiblePost returns
-  viewer_is_community_member. communityBans.test.js 6/6, 16 mutations
-  caught, backend 813, rehearsal 015 → 061, serverMessages AR.
-  Left: UI (Manage group: Remove and ban, Banned list; group posts:
-  non-members see "Join to comment and react"), browser suite, commit.
-- Step 1 done. UI: Manage group > Remove asks first, with "Also ban
-  them" (ConfirmDialog got a children slot); Banned list with Unban and
-  Load more; the group page shows why Join failed (errors were
-  swallowed); non-members see group posts and comments read-only (no
-  reaction button, Like/Reply or comment form; "Join the group to
-  comment and react."). Verified: backend 813, Vitest 222, lint,
-  check:i18n 1196, browser day50-group-bans 15/15, b13-groups, b4, b1,
-  day26-a11y (113), day30-guard, A3 ar + en (276 each).
-  Known gap: the single-post page (/posts/:id) of a group post doesn't
-  know membership, so a non-member there still sees the reaction button
-  and gets the server's "Join this group to comment and react".
-  Bundle: 223.9 / 225 kB -- step 2 must make room before adding to the
-  first download.
-- Step 2 done: DELETE /communities/:id (any admin; posts, their photos
-  and drafts for it go), Manage group > Danger zone > Delete group (the
-  name typed to confirm, like a page). The group page no longer offers
-  "Try again" for a deleted group (it stores the error kind, not the
-  text). Tests renamed communityModeration.test.js (8) + mediaCleanup
-  (20); 4 mutations, each caught by one of the two. Verified: backend
-  816, Vitest 224, browser day50-group-bans 19/19, b13-groups,
-  day24-report-places, day26-a11y, day30-guard, A3 ar + en (276 each).
-  Bundle 224.0 / 225 kB.
-- Done (before step 3): the Arabic server-message map
-  (serverMessages.ar.js) now loads with the Arabic strings; first download
-  224.0 -> 218.1 kB. check:i18n reads the new file (still catches a
-  missing line); serverMessages.test.js; Vitest 225, backend 816, b15,
-  b16, day16, day19-share (production build), day49-spam (Arabic server
-  message in the UI), A3 ar 276.
-- Step 3 plan (paging, Quality bar 5):
-  - GET /communities: was ONE query, top 100 groups site-wide, then split
-    into mine / discover -- with over 100 groups, your own could vanish
-    from "Your groups". Now two queries: mine (yours, incl. pending) and
-    discover (the rest, most members first), 20 each, mineHasMore /
-    discoverHasMore; ?section=mine|discover&page= for more of one:
-    { groups, page, hasMore }.
-  - members -> { members, page, hasMore } (admins first, then by join
-    date); requests -> { requests, page, hasMore, total } (total for the
-    heading). Bans already paged.
-  - UI: Groups screen Load more per section; Manage group Load more for
-    members and requests.
-  - Note for Day 53-54 (Pages): GET /pages has the same top-N-then-split
-    shape.
-- Step 3 done: GET /communities as two queries (mine newest-joined
-  first, discover most members first), 20 each + *HasMore, ?section=
-  for more; members { members, page, hasMore } (admins first);
-  requests { requests, page, hasMore, total }. Groups screen and Manage
-  group have Load more per list; headings use member_count / total.
-  Regression test: your group stays listed with 120 bigger groups.
-  Also fixed a lint warning my step 2 left in CommunityScreen. 9
-  mutations caught. Verified: backend 820, Vitest 228, lint, check:i18n,
-  bundle 218.0 kB, browser day50-group-bans 21/21 (incl. 26 members
-  paged), b13-groups, day24-report-places, day45-drafts, day26-a11y,
-  day30-guard, A3 ar + en (276 each; one ar start-up hiccup re-run).
-- Step 4 plan (notifications, as Facebook does for groups):
-  - Migration 062: notifications.community_id (cascade with the group),
-    notification_preferences.groups (on by default).
-  - group_request: someone asks to join a private group -> each admin
-    ("X asked to join G", action: Review requests). group_approved: an
-    admin approves -> the person ("You're now a member of G", action:
-    Open group). Category "groups" (Settings > Notifications toggle).
-    Push text EN/AR with the group's name; push opens the group (or its
-    Manage screen for a request).
-  - Once a request is handled (approved, denied, cancelled, banned) its
-    group_request notifications are removed, so admins aren't sent to a
-    request that's gone.
-  - Not notified: the requests let in when a group goes public (bulk).
-- Step 4 done: migration 062 (notifications.community_id, cascade;
-  notification_preferences.groups). group_request to each admin (not
-  plain members, not across a block), group_approved to the person;
-  request notifications cleared when the request is approved, turned
-  down, cancelled, banned, or the group goes public. Push EN/AR names
-  the group (request -> Manage group, approved -> the group).
-  Notifications screen: text + "Review requests" / "Open group"
-  (labelled with the group). Settings > Notifications: Groups switch.
-  12 mutations: all caught except the inserted-row guard against two
-  simultaneous join requests -- it can't be raced in the test DB, so
-  it stays as a defensive guard (sequential double clicks are tested).
-  Verified: backend 825 (+ notificationSettings / dataExport shapes),
-  Vitest 231, check:i18n 1209, bundle 218.2, rehearsal 015 -> 062,
-  browser day50-group-bans 27/27, b11-settings (7 switches now),
-  b13-groups, day22-push, day26-a11y, day30-guard, A3 ar + en (276).
-- Step 1's known gap closed: GET /posts/:id returns community_id and
-  group_locked; the post page passes it to PostCard, so a non-member
-  sees a group post read-only there too. Verified: backend 826, Vitest
-  231, lint, day50-group-bans 28/28.
+- (none yet)
