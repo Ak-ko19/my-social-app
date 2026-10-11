@@ -59,8 +59,14 @@ const api = (who, method, url, body) => fetch(API + url, {
   check('...adds bob by username', (await alice.getByRole('button', { name: 'Remove bob as an admin' }).count()) === 1);
   await axe(alice, 'en/light, Edit page with Admins');
 
-  // 2. Bob runs the page now.
-  const bob = await open('bob', `/pages/${page.id}`);
+  // 2. Bob runs the page now -- and is told (step 3).
+  const bob = await open('bob', '/notifications');
+  const told = bob.getByText('Corner Cafe', { exact: true });
+  await told.first().waitFor({ timeout: 8000 }).catch(() => {});
+  check('bob is told "alice made you an admin of Corner Cafe"', (await told.first().locator('..').innerText().catch(() => '')).includes('alice made you an admin of Corner Cafe'));
+  await axe(bob, 'en/light, Notifications with a page notification');
+  await bob.getByRole('button', { name: 'Open Corner Cafe' }).click();
+  await bob.waitForURL(`${WEB}/pages/${page.id}`, { timeout: 8000 }).catch(() => {});
   await bob.getByRole('button', { name: 'Post as page' }).waitFor({ timeout: 8000 }).catch(() => {});
   check('bob sees Post as page and Edit page', (await bob.getByRole('button', { name: 'Post as page' }).count()) === 1
     && (await bob.getByRole('button', { name: 'Edit page' }).count()) === 1);

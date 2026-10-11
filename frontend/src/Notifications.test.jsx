@@ -87,6 +87,37 @@ describe('Notifications: groups', () => {
   });
 });
 
+// Day 53: made an admin of a page.
+describe('Notifications: pages', () => {
+  beforeEach(() => {
+    api.get.mockResolvedValue({
+      data: { notifications: [{ ...me, id: 9, actor_username: 'olga', type: 'page_admin', post_id: null, comment_id: null, page_id: 4, page_name: 'Corner Cafe' }] }
+    });
+  });
+
+  it('names the page and opens it', async () => {
+    await setLanguage('en');
+    render(
+      <MemoryRouter initialEntries={['/notifications']}>
+        <Routes>
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/pages/:id" element={<p>Page screen</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+    expect((await screen.findByText('olga', { selector: 'strong' })).parentElement).toHaveTextContent('olga made you an admin of Corner Cafe');
+    await userEvent.click(screen.getByRole('button', { name: 'Open Corner Cafe' }));
+    expect(await screen.findByText('Page screen')).toBeInTheDocument();
+  });
+
+  it('in Arabic', async () => {
+    await setLanguage('ar');
+    show();
+    expect((await screen.findByText('olga', { selector: 'strong' })).parentElement).toHaveTextContent('جعلك olga مشرفًا على Corner Cafe');
+    await setLanguage('en');
+  });
+});
+
 // Day 45: a poll ended -- yours, or one you voted in.
 describe('Notifications: polls ended', () => {
   beforeEach(() => {

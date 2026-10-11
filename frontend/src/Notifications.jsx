@@ -27,6 +27,8 @@ function notificationKey(n) {
   // Day 50: groups.
   if (n.type === 'group_request') return 'groupRequest';
   if (n.type === 'group_approved') return 'groupApproved';
+  // Day 53: made an admin of a page.
+  if (n.type === 'page_admin') return 'pageAdmin';
   return 'other';
 }
 
@@ -130,7 +132,7 @@ function Notifications() {
                   alt=""
                 />
                 <div className="card-row-body">
-                  <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username, group: n.community_name }} components={{ b: <strong /> }} />
+                  <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username, group: n.community_name, page: n.page_name }} components={{ b: <strong /> }} />
                   {n.post_content && <p className="card-row-quote" dir="auto">“{n.post_content}”</p>}
                   <span className="card-row-meta">{formatDate(n.created_at)}</span>
                   {/* Day 50: where a group notification leads. */}
@@ -139,6 +141,14 @@ function Notifications() {
                       <button type="button" className="btn btn-secondary btn-sm" onClick={() => navigate(n.type === 'group_request' ? `/groups/${n.community_id}/manage` : `/groups/${n.community_id}`)}
                         aria-label={t(n.type === 'group_request' ? 'notifications.reviewRequestsIn' : 'notifications.openGroupNamed', { group: n.community_name })}>
                         {t(n.type === 'group_request' ? 'notifications.reviewRequests' : 'notifications.openGroup')}
+                      </button>
+                    </div>
+                  )}
+                  {n.page_id && (
+                    <div className="card-row-actions">
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => navigate(`/pages/${n.page_id}`)}
+                        aria-label={t('notifications.openPageNamed', { page: n.page_name })}>
+                        {t('notifications.openPage')}
                       </button>
                     </div>
                   )}

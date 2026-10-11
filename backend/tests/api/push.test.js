@@ -175,6 +175,16 @@ describe('web push (Day 22)', () => {
       ]);
     });
 
+    // Day 53: made an admin of a page -- names it, opens it.
+    it('made a page admin', async () => {
+      const page = (await request(app).post('/pages').set(auth(bob)).send({ name: 'Corner Cafe', category: 'business' })).body;
+      await request(app).post(`/pages/${page.id}/admins`).set(auth(bob)).send({ username: alice.username });
+      await push().whenIdle();
+      expect(sent.map((s) => s.payload)).toEqual([
+        { title: 'MySocialApp', body: `${bob.username} made you an admin of Corner Cafe`, url: `/pages/${page.id}`, tag: `page-${page.id}-page_admin` }
+      ]);
+    });
+
     it('respects the notification settings (likes off -> no push)', async () => {
       await request(app).put('/notification-preferences').set(auth(alice)).send({ likes: false });
       const post = (await request(app).post('/posts').set(auth(alice)).field('content', 'hi')).body;

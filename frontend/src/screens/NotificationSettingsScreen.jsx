@@ -14,7 +14,7 @@ import './NotificationSettingsScreen.css';
 // (services/notificationService.CATEGORIES). Turning one off only stops NEW
 // notifications of that kind -- existing ones stay in your list.
 // Titles/descriptions: notifSettings.items.<key>.
-const SETTINGS = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups'];
+const SETTINGS = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages'];
 
 const authHeaders = (token) => ({ headers: { Authorization: `Bearer ${token}` } });
 

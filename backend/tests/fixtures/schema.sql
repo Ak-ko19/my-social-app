@@ -298,7 +298,9 @@ CREATE TABLE notification_preferences (
   -- Added by migration 037_add_message_notification_settings (Day 23).
   messages boolean NOT NULL DEFAULT true,
   -- Added by migration 062_add_group_notifications (Day 50).
-  groups boolean NOT NULL DEFAULT true
+  groups boolean NOT NULL DEFAULT true,
+  -- Added by migration 064_add_page_notifications (Day 53).
+  pages boolean NOT NULL DEFAULT true
 );
 
 CREATE TABLE reports (
@@ -613,3 +615,7 @@ CREATE TABLE page_admins (
   PRIMARY KEY (page_id, user_id)
 );
 CREATE INDEX idx_page_admins_user ON page_admins (user_id);
+
+-- Added by migration 064_add_page_notifications (Day 53).
+ALTER TABLE notifications ADD COLUMN page_id INTEGER REFERENCES pages(id) ON DELETE CASCADE;
+CREATE INDEX idx_notifications_page ON notifications (page_id) WHERE page_id IS NOT NULL;

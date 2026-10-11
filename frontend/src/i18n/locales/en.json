@@ -539,12 +539,15 @@
       "pollEnded": "<b>{{name}}</b>'s poll has ended. See the results.",
       "pollEndedOwn": "Your poll has ended. See the results.",
       "groupRequest": "<b>{{name}}</b> asked to join <b>{{group}}</b>",
-      "groupApproved": "You're now a member of <b>{{group}}</b>"
+      "groupApproved": "You're now a member of <b>{{group}}</b>",
+      "pageAdmin": "<b>{{name}}</b> made you an admin of <b>{{page}}</b>"
     },
     "reviewRequests": "Review requests",
     "reviewRequestsIn": "Review requests to join {{group}}",
     "openGroup": "Open group",
-    "openGroupNamed": "Open {{group}}"
+    "openGroupNamed": "Open {{group}}",
+    "openPage": "Open page",
+    "openPageNamed": "Open {{page}}"
   },
   "saved": {
     "title": "Saved Posts",
@@ -779,6 +782,10 @@
       "groups": {
         "title": "Groups",
         "description": "Requests to join groups you run, and when you're let into a group"
+      },
+      "pages": {
+        "title": "Pages",
+        "description": "When someone makes you an admin of their page"
       }
     },
     "push": {

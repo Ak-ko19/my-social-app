@@ -166,25 +166,29 @@ function fireAndForget(task) {
 }
 
 // After a notification row was created (notificationService / mentions).
-function pushNotification({ userId, actorId, type, postId = null, commentId = null, communityId = null }) {
+function pushNotification({ userId, actorId, type, postId = null, commentId = null, communityId = null, pageId = null }) {
   if (!vapid()) return;
   fireAndForget(async () => {
     const actor = (await db.query('SELECT username FROM users WHERE id = $1', [actorId])).rows[0];
     if (!actor) return;
     // Day 50: group notifications name the group and open it (a request:
-    // its Manage screen, where requests are handled).
+    // its Manage screen, where requests are handled). Day 53: the same for
+    // a page.
     const group = communityId ? (await db.query('SELECT name FROM communities WHERE id = $1', [communityId])).rows[0] : null;
     if (communityId && !group) return;
+    const page = pageId ? (await db.query('SELECT name FROM pages WHERE id = $1', [pageId])).rows[0] : null;
+    if (pageId && !page) return;
     const key = type === 'mention' ? (commentId ? 'mention_comment' : 'mention_post') : type;
     // Day 45: a scheduled post that couldn't go up is back in the drafts.
     const url = postId ? `/posts/${postId}`
       : communityId ? `/groups/${communityId}${type === 'group_request' ? '/manage' : ''}`
-        : type === 'scheduled_failed' ? '/drafts' : '/notifications';
+        : pageId ? `/pages/${pageId}`
+          : type === 'scheduled_failed' ? '/drafts' : '/notifications';
     await sendToUser(userId, (language) => ({
       title: 'MySocialApp',
-      body: pushText(language, key, { name: actor.username, group: group?.name }),
+      body: pushText(language, key, { name: actor.username, group: group?.name, page: page?.name }),
       url,
-      tag: postId ? `post-${postId}` : communityId ? `group-${communityId}-${type}` : `notify-${type}-${actorId}`
+      tag: postId ? `post-${postId}` : communityId ? `group-${communityId}-${type}` : pageId ? `page-${pageId}-${type}` : `notify-${type}-${actorId}`
     }));
   });
 }

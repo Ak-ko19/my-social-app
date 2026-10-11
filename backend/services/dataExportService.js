@@ -78,7 +78,7 @@ async function buildExport(userId) {
     rows(`SELECT s.username AS sender, r.username AS receiver, l.content, l.created_at
           FROM messages_dm_legacy l JOIN users s ON s.id = l.sender_id JOIN users r ON r.id = l.receiver_id
           WHERE l.sender_id = $1 OR l.receiver_id = $1 ORDER BY l.created_at`, [userId]),
-    rows(`SELECT n.type, a.username AS from_user, n.post_id, n.comment_id, n.community_id AS group_id, n.is_read, n.created_at
+    rows(`SELECT n.type, a.username AS from_user, n.post_id, n.comment_id, n.community_id AS group_id, n.page_id, n.is_read, n.created_at
           FROM notifications n JOIN users a ON a.id = n.actor_id
           WHERE n.user_id = $1 ORDER BY n.created_at`, [userId]),
     rows(`SELECT target_type, target_id, reason, details, status, created_at

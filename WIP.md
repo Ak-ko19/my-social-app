@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 53–54 — Pages (basic)
-**Step:** 2 — Pages list: done (committed). Next: step 3, "made you an admin" notification.
+**Step:** 3 — page notification: done (committed). Next: close Day 53–54 (full browser run, tick, Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -173,3 +173,10 @@ Audit (2026-10-11): B14 has create, edit, delete, follow, post as page
   ones. 8 mutations caught. Verified: backend 836, Vitest 236, bundle
   218.5, browser day53-page-admins 12/12, b14-pages, day43-zawgyi,
   day26-a11y, day30-guard, A3 ar + en.
+- Step 3 done: migration 064 (notifications.page_id, cascade;
+  notification_preferences.pages). page_admin to the new admin (once),
+  removed again when they're removed or leave. Push EN/AR opens the
+  page. Notifications: "Open page" (labelled); Settings: Pages switch
+  (b11 now counts 8). 5 mutations caught. Verified: backend 839, Vitest
+  238, check:i18n 1234, rehearsal 015 -> 064, browser day53-page-admins
+  14/14, b11-settings, day22-push, day26-a11y, day30-guard, A3 ar + en.

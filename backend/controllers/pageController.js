@@ -7,6 +7,7 @@ const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../servic
 const { pollColumnSql } = require('../services/pollService');
 const { toUnicode } = require('../utils/myanmarText'); // Day 43: Zawgyi -> Unicode
 const { MAX_ADMINS } = require('../services/pageAdminService');
+const notificationService = require('../services/notificationService');
 
 // B14 Pages: business/creator pages, distinct from user accounts.
 // - One owner (a user) edits the page and posts as it (POST /posts with
@@ -291,6 +292,9 @@ async function addAdmin(req, res) {
     if (added.rows.length === 0) {
       const already = await db.query('SELECT 1 FROM page_admins WHERE page_id = $1 AND user_id = $2', [page.id, person.id]);
       if (already.rows.length === 0) throw new PageError(400, `A page can have at most ${MAX_ADMINS} admins`);
+    } else {
+      // Step 3: they're told (once -- not when added again).
+      await notificationService.notify({ userId: person.id, actorId: req.userId, type: 'page_admin', pageId: page.id });
     }
     res.status(201).json(person);
   } catch (err) {
@@ -307,6 +311,8 @@ async function removeAdmin(req, res) {
     if (!Number.isInteger(targetId)) throw new PageError(400, 'Invalid user ID');
     if (targetId !== req.userId && !page.is_owner) throw new PageError(403, 'Only the page owner can do that');
     await db.query('DELETE FROM page_admins WHERE page_id = $1 AND user_id = $2', [page.id, targetId]);
+    // "X made you an admin" no longer holds.
+    await db.query("DELETE FROM notifications WHERE page_id = $1 AND user_id = $2 AND type = 'page_admin'", [page.id, targetId]);
     res.json({ removed: true });
   } catch (err) {
     handle(res, err, 'Removing the admin failed. Please try again later.');

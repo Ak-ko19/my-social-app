@@ -611,12 +611,15 @@
       "pollEnded": "انتهى استطلاع <b>{{name}}</b>. اطّلع على النتائج.",
       "pollEndedOwn": "انتهى استطلاعك. اطّلع على النتائج.",
       "groupRequest": "طلب <b>{{name}}</b> الانضمام إلى <b>{{group}}</b>",
-      "groupApproved": "أصبحت عضوًا في <b>{{group}}</b>"
+      "groupApproved": "أصبحت عضوًا في <b>{{group}}</b>",
+      "pageAdmin": "جعلك <b>{{name}}</b> مشرفًا على <b>{{page}}</b>"
     },
     "reviewRequests": "مراجعة الطلبات",
     "reviewRequestsIn": "مراجعة طلبات الانضمام إلى {{group}}",
     "openGroup": "فتح المجموعة",
-    "openGroupNamed": "فتح {{group}}"
+    "openGroupNamed": "فتح {{group}}",
+    "openPage": "فتح الصفحة",
+    "openPageNamed": "فتح {{page}}"
   },
   "saved": {
     "title": "المنشورات المحفوظة",
@@ -859,6 +862,10 @@
       "groups": {
         "title": "المجموعات",
         "description": "طلبات الانضمام إلى المجموعات التي تديرها، وعند قبولك في مجموعة"
+      },
+      "pages": {
+        "title": "الصفحات",
+        "description": "عندما يجعلك أحد مشرفًا على صفحته"
       }
     },
     "push": {

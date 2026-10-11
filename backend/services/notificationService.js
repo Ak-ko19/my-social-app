@@ -19,12 +19,14 @@ const CATEGORY_BY_TYPE = {
   follow_accepted: 'follow_accepted',
   // Day 50: groups -- a request to join (to its admins), let in (to them).
   group_request: 'groups',
-  group_approved: 'groups'
+  group_approved: 'groups',
+  // Day 53: someone made you an admin of their page.
+  page_admin: 'pages'
 };
 
 // 'messages' (Day 23) has no notification type: it controls message pushes
 // (pushService.pushNewMessage).
-const CATEGORIES = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups'];
+const CATEGORIES = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages'];
 
 function categoryFor(type) {
   const category = CATEGORY_BY_TYPE[type];
@@ -43,21 +45,21 @@ function allowedSql(category, recipientSql) {
 // Creates one notification unless the recipient turned that category off
 // (or is the actor -- nobody is notified about their own actions). The
 // preference check and the insert are one statement.
-async function notify({ userId, actorId, type, postId = null, commentId = null, communityId = null }) {
+async function notify({ userId, actorId, type, postId = null, commentId = null, communityId = null, pageId = null }) {
   if (userId === actorId) return;
   const category = categoryFor(type);
   const result = await db.query(
-    `INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id, community_id)
-     SELECT $1, $2, $3, $4, $5, $6
+    `INSERT INTO notifications (user_id, actor_id, type, post_id, comment_id, community_id, page_id)
+     SELECT $1, $2, $3, $4, $5, $6, $7
      WHERE ${allowedSql(category, '$1::int')}
        -- Day 47: nobody you restricted can notify you.
        AND ${notRestrictedSql('$1::int', '$2::int')}
      RETURNING id`,
-    [userId, actorId, type, postId, commentId, communityId]
+    [userId, actorId, type, postId, commentId, communityId, pageId]
   );
   // Day 22: a push to their devices too -- only when the notification was
   // actually created (so the same settings apply).
-  if (result.rowCount > 0) pushNotification({ userId, actorId, type, postId, commentId, communityId });
+  if (result.rowCount > 0) pushNotification({ userId, actorId, type, postId, commentId, communityId, pageId });
 }
 
 // Day 45: notifications about your OWN content that nobody else caused --
@@ -75,7 +77,7 @@ async function notifySystem({ userId, type, postId = null }) {
   pushNotification({ userId, actorId: userId, type, postId });
 }
 
-// { likes, comments, mentions, follows, follow_accepted, messages, groups } -- all true when
+// { likes, comments, mentions, follows, follow_accepted, messages, groups, pages } -- all true when
 // the user never saved settings.
 async function getPreferences(userId) {
   const result = await db.query(`SELECT ${CATEGORIES.join(', ')} FROM notification_preferences WHERE user_id = $1`, [userId]);

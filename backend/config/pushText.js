@@ -22,7 +22,9 @@ const TEXT = {
     poll_ended_own: 'Your poll has ended. See the results.',
     // Day 50.
     group_request: '{name} asked to join {group}',
-    group_approved: "You're now a member of {group}"
+    group_approved: "You're now a member of {group}",
+    // Day 53.
+    page_admin: '{name} made you an admin of {page}'
   },
   ar: {
     like: 'أعجب {name} بمنشورك',
@@ -41,7 +43,8 @@ const TEXT = {
     poll_ended: 'انتهى استطلاع {name}. اطّلع على النتائج.',
     poll_ended_own: 'انتهى استطلاعك. اطّلع على النتائج.',
     group_request: 'طلب {name} الانضمام إلى {group}',
-    group_approved: 'أصبحت عضوًا في {group}'
+    group_approved: 'أصبحت عضوًا في {group}',
+    page_admin: 'جعلك {name} مشرفًا على {page}'
   }
 };
 

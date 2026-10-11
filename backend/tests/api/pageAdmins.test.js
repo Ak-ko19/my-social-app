@@ -149,6 +149,32 @@ describe('page admins (Day 53)', () => {
     });
   });
 
+  // Day 53 step 3: "X made you an admin of P".
+  describe('notification', () => {
+    const inbox = async (user) => (await request(app).get('/notifications').set(auth(user))).body.notifications
+      .map((n) => ({ type: n.type, from: n.actor_username, page: n.page_name, pageId: n.page_id }));
+
+    it('tells the new admin once; removal or leaving takes it back', async () => {
+      await addAdmin(owner, page.id, helper.username);
+      await addAdmin(owner, page.id, helper.username); // again: no second one
+      expect(await inbox(helper)).toEqual([{ type: 'page_admin', from: owner.username, page: 'Corner Cafe', pageId: page.id }]);
+      await removeAdmin(owner, page.id, helper);
+      expect(await inbox(helper)).toEqual([]);
+      await addAdmin(owner, page.id, stranger.username);
+      await removeAdmin(stranger, page.id, stranger); // leaving
+      expect(await inbox(stranger)).toEqual([]);
+    });
+
+    it('not with Pages switched off; gone with the page', async () => {
+      await request(app).put('/notification-preferences').set(auth(helper)).send({ pages: false });
+      await addAdmin(owner, page.id, helper.username);
+      expect(await inbox(helper)).toEqual([]);
+      await addAdmin(owner, page.id, stranger.username);
+      await request(app).delete(`/pages/${page.id}`).set(auth(owner));
+      expect(await inbox(stranger)).toEqual([]);
+    });
+  });
+
   it('in the data export', async () => {
     await addAdmin(owner, page.id, helper.username);
     const data = (await request(app).get('/profile/export').set(auth(helper))).body;
