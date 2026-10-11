@@ -101,6 +101,54 @@ describe('page admins (Day 53)', () => {
     expect(full.text).toBe('A page can have at most 20 admins');
   });
 
+  // Day 53 step 2: the Pages list.
+  describe('GET /pages', () => {
+    const list = async (user, query = '') => (await request(app).get(`/pages${query}`).set(auth(user))).body;
+
+    it('"yours" includes pages you run as an admin; each section pages on its own', async () => {
+      await addAdmin(owner, page.id, helper.username);
+      // Following a page you run doesn't list it twice.
+      await request(app).post(`/pages/${page.id}/follow`).set(auth(helper));
+      const own = [];
+      for (let i = 0; i < 2; i += 1) own.push((await createPage(helper, `Helper ${i}`)).body);
+      const res = await list(helper, '?limit=2');
+      expect(res.owned.map((p) => p.name)).toEqual(['Helper 1', 'Helper 0']);
+      expect(res.ownedHasMore).toBe(true);
+      const more = await list(helper, '?section=owned&page=2&limit=2');
+      expect(more).toEqual({ pages: [expect.objectContaining({ id: page.id, is_admin: true, is_owner: false })], page: 2, hasMore: false });
+      expect(res.following).toEqual([]);
+      expect(res.discover).toEqual([]);
+    });
+
+    it('following: latest followed first; discover: the rest, most followed first', async () => {
+      const a = (await createPage(stranger, 'Alpha')).body;
+      const b = (await createPage(stranger, 'Beta')).body;
+      await request(app).post(`/pages/${a.id}/follow`).set(auth(helper));
+      await request(app).post(`/pages/${b.id}/follow`).set(auth(helper));
+      await request(app).post(`/pages/${a.id}/follow`).set(auth(owner));
+      const res = await list(helper);
+      expect(res.following.map((p) => p.name)).toEqual(['Beta', 'Alpha']); // not by followers: Alpha has more
+      expect(res.discover.map((p) => p.name)).toEqual(['Corner Cafe']);
+      const forOwner = await list(owner);
+      expect(forOwner.owned.map((p) => p.name)).toEqual(['Corner Cafe']);
+      expect(forOwner.following.map((p) => p.name)).toEqual(['Alpha']);
+      expect(forOwner.discover.map((p) => p.name)).toEqual(['Beta']);
+      // Someone new: Alpha (2 followers), Beta (1), Corner Cafe (0).
+      const newcomer = await registerAndLogin(app);
+      expect((await list(newcomer)).discover.map((p) => p.name)).toEqual(['Alpha', 'Beta', 'Corner Cafe']);
+      expect((await request(app).get('/pages?section=toString').set(auth(owner))).status).toBe(400);
+    });
+
+    it('your page never drops out because the site has many bigger ones', async () => {
+      await pool.query(
+        `WITH p AS (INSERT INTO pages (name, category, owner_id) SELECT 'Other ' || g, 'business', $1 FROM generate_series(1, 120) g RETURNING id)
+         INSERT INTO page_follows (page_id, user_id) SELECT id, $2 FROM p`,
+        [stranger.id, helper.id]
+      );
+      expect((await list(owner)).owned.map((p) => p.id)).toEqual([page.id]);
+    });
+  });
+
   it('in the data export', async () => {
     await addAdmin(owner, page.id, helper.username);
     const data = (await request(app).get('/profile/export').set(auth(helper))).body;

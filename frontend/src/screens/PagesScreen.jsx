@@ -31,7 +31,7 @@ function PageRow({ page, token, onChanged }) {
           </span>
         </span>
       </Link>
-      {!page.is_owner && !page.is_following && (
+      {!page.is_admin && !page.is_following && (
         <button type="button" className="btn btn-primary btn-sm" onClick={follow} disabled={busy} aria-label={t('pages.followName', { name: page.name })}>
           {t('follow.follow')}
         </button>
@@ -40,7 +40,7 @@ function PageRow({ page, token, onChanged }) {
   );
 }
 
-function Section({ title, pages, empty, token, onChanged }) {
+function Section({ title, pages, empty, token, onChanged, more }) {
   return (
     <>
       <h2 className="section-heading">{title}</h2>
@@ -51,6 +51,7 @@ function Section({ title, pages, empty, token, onChanged }) {
           {pages.map((p) => <PageRow key={p.id} page={p} token={token} onChanged={onChanged} />)}
         </ul>
       )}
+      {more}
     </>
   );
 }
@@ -65,6 +66,9 @@ function PagesScreen() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  // Day 53: each section pages on its own -- the last page loaded of each.
+  const [pages, setPages] = useState({ owned: 1, following: 1, discover: 1 });
+  const [moreError, setMoreError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -73,7 +77,9 @@ function PagesScreen() {
         .then((d) => {
           if (!cancelled) {
             setData(d);
+            setPages({ owned: 1, following: 1, discover: 1 });
             setError('');
+            setMoreError('');
           }
         })
         .catch((err) => {
@@ -88,6 +94,21 @@ function PagesScreen() {
   }, [token, query, reloadKey, t]);
 
   const reload = () => setReloadKey((k) => k + 1);
+  const more = (section) => {
+    setMoreError('');
+    fetchPages(token, query.trim(), { section, page: pages[section] + 1 })
+      .then((next) => {
+        setData((d) => ({ ...d, [section]: [...d[section], ...next.pages], [section + 'HasMore']: next.hasMore }));
+        setPages((p) => ({ ...p, [section]: p[section] + 1 }));
+      })
+      .catch((err) => {
+        console.error(err);
+        setMoreError(t('pages.loadFailed'));
+      });
+  };
+  const loadMore = (section) => data[section + 'HasMore'] && (
+    <button type="button" className="btn btn-secondary btn-block" onClick={() => more(section)}>{t('common.loadMore')}</button>
+  );
 
   return (
     <div className="screen-enter">
@@ -106,15 +127,17 @@ function PagesScreen() {
         {!data && !error && <p className="screen-status" role="status">{t('pages.loading')}</p>}
         {data && (
           <>
-            {data.owned.length > 0 && <Section title={t('pages.yours')} pages={data.owned} token={token} onChanged={reload} empty="" />}
-            <Section title={t('pages.following')} pages={data.following} token={token} onChanged={reload} empty={t('pages.notFollowing')} />
+            {data.owned.length > 0 && <Section title={t('pages.yours')} pages={data.owned} token={token} onChanged={reload} empty="" more={loadMore('owned')} />}
+            <Section title={t('pages.following')} pages={data.following} token={token} onChanged={reload} empty={t('pages.notFollowing')} more={loadMore('following')} />
             <Section
               title={t('pages.discover')}
               pages={data.discover}
               token={token}
               onChanged={reload}
               empty={query ? t('pages.noMatch') : t('pages.noneYet')}
+              more={loadMore('discover')}
             />
+            {moreError && <p className="form-error" role="alert">{moreError}</p>}
           </>
         )}
       </div>

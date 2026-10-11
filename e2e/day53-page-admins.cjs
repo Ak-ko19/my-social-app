@@ -81,6 +81,12 @@ const api = (who, method, url, body) => fetch(API + url, {
   check('Edit page for an admin: no Delete page, no adding admins, a Leave button',
     (await bob.getByRole('button', { name: 'Delete page' }).count()) === 0 && (await bob.getByLabel('Add an admin by username').count()) === 0
     && (await bob.getByRole('button', { name: 'Leave' }).count()) === 1);
+  // Step 2: Pages lists it under "Your pages", with no Follow button.
+  await bob.goto(`${WEB}/pages`, { waitUntil: 'networkidle' });
+  await bob.getByRole('heading', { name: 'Your pages' }).waitFor({ timeout: 8000 }).catch(() => {});
+  const yours = bob.locator('ul.group-list').first();
+  check('Pages: Corner Cafe under "Your pages" for its admin, no Follow', (await bob.getByRole('heading', { name: 'Your pages' }).count()) === 1
+    && (await yours.getByText('Corner Cafe').count()) === 1 && (await bob.getByRole('button', { name: 'Follow Corner Cafe' }).count()) === 0);
   await bob.context().close();
 
   // 3. Alice removes him.

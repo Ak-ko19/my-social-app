@@ -9,8 +9,13 @@ const data = (res) => res.data;
 export const PAGE_CATEGORIES = ['business', 'creator', 'brand', 'organization', 'community', 'other'];
 export const categoryLabel = (value) => i18n.t(`pages.categories.${value}`, { defaultValue: value });
 
-// { owned, following, discover } -- each { id, name, category, description, follower_count, is_following, is_owner, owner_id, owner_username }
-export const fetchPages = (token, q = '') => api.get('/pages', { ...withAuth(token), params: q ? { q } : {} }).then(data);
+// { owned, ownedHasMore, following, followingHasMore, discover, discoverHasMore }
+// -- each page { id, name, category, description, follower_count,
+// is_following, is_owner, is_admin, owner_id, owner_username }; "owned" is
+// the pages you run (Day 53: as owner or admin). With a section, more of
+// it: { pages, page, hasMore }.
+export const fetchPages = (token, q = '', { section, page } = {}) =>
+  api.get('/pages', { ...withAuth(token), params: { ...(q ? { q } : {}), ...(section ? { section, page } : {}) } }).then(data);
 export const createPage = (fields, token) => api.post('/pages', fields, withAuth(token)).then(data);
 export const fetchPage = (id, token) => api.get(`/pages/${id}`, withAuth(token)).then(data);
 export const updatePage = (id, fields, token) => api.patch(`/pages/${id}`, fields, withAuth(token)).then(data);

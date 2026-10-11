@@ -108,25 +108,68 @@ async function createPage(req, res) {
   }
 }
 
-// GET /pages?q= -> { owned, following, discover }; discover is most-followed first.
+// One section of GET /pages (Day 53: each its own query -- they used to be
+// split from one site-wide top 100, so your own could go missing):
+// - owned: pages you run, as owner or admin, newest first;
+// - following: pages you follow and don't run, latest followed first;
+// - discover: the rest, most followed first.
+const PAGE_SECTIONS = {
+  owned: {
+    where: `(p.owner_id = $2 OR EXISTS (SELECT 1 FROM page_admins pa WHERE pa.page_id = p.id AND pa.user_id = $2))`,
+    order: 'p.created_at DESC, p.id DESC'
+  },
+  following: {
+    where: `p.owner_id <> $2 AND NOT EXISTS (SELECT 1 FROM page_admins pa WHERE pa.page_id = p.id AND pa.user_id = $2)
+      AND EXISTS (SELECT 1 FROM page_follows f WHERE f.page_id = p.id AND f.user_id = $2)`,
+    order: '(SELECT f.created_at FROM page_follows f WHERE f.page_id = p.id AND f.user_id = $2) DESC, p.id DESC'
+  },
+  discover: {
+    where: `p.owner_id <> $2 AND NOT EXISTS (SELECT 1 FROM page_admins pa WHERE pa.page_id = p.id AND pa.user_id = $2)
+      AND NOT EXISTS (SELECT 1 FROM page_follows f WHERE f.page_id = p.id AND f.user_id = $2)`,
+    order: 'follower_count DESC, p.id DESC'
+  }
+};
+
+async function listPageSection(section, userId, q, { limit, offset }) {
+  const { where, order } = PAGE_SECTIONS[section];
+  const result = await db.query(
+    `SELECT ${PAGE_COLUMNS}
+     FROM pages p JOIN users u ON u.id = p.owner_id
+     WHERE ${pageVisibleSql('$2')}
+       AND ($1 = '' OR p.name ILIKE '%' || $1 || '%')
+       AND ${where}
+     ORDER BY ${order}
+     LIMIT $3 OFFSET $4`,
+    [escapeLike(q), userId, limit + 1, offset]
+  );
+  const hasMore = result.rows.length > limit;
+  return { pages: (hasMore ? result.rows.slice(0, limit) : result.rows).map(withFlags), hasMore };
+}
+
+// GET /pages?q= -> { owned, ownedHasMore, following, followingHasMore,
+// discover, discoverHasMore } (the first page of each).
+// ?section=owned|following|discover&page= -> { pages, page, hasMore }.
 async function listPages(req, res) {
   try {
     // Day 43: names are stored as Unicode, so a Zawgyi query is converted.
     const q = typeof req.query.q === 'string' ? toUnicode(req.query.q.trim()) : '';
-    const result = await db.query(
-      `SELECT ${PAGE_COLUMNS}
-       FROM pages p JOIN users u ON u.id = p.owner_id
-       WHERE ${pageVisibleSql('$2')}
-         AND ($1 = '' OR p.name ILIKE '%' || $1 || '%')
-       ORDER BY follower_count DESC, p.id DESC
-       LIMIT 100`,
-      [escapeLike(q), req.userId]
+    const paging = getPagination(req, { defaultLimit: 20, maxLimit: 50 });
+    const { section } = req.query;
+    if (section !== undefined) {
+      if (!Object.hasOwn(PAGE_SECTIONS, section)) {
+        throw new PageError(400, 'section must be owned, following or discover');
+      }
+      const { pages, hasMore } = await listPageSection(section, req.userId, q, paging);
+      return res.json({ pages, page: paging.page, hasMore });
+    }
+    const first = { limit: paging.limit, offset: 0 };
+    const [owned, following, discover] = await Promise.all(
+      ['owned', 'following', 'discover'].map((s) => listPageSection(s, req.userId, q, first))
     );
-    const rows = result.rows.map(withFlags);
     res.json({
-      owned: rows.filter((p) => p.is_owner),
-      following: rows.filter((p) => !p.is_owner && p.is_following),
-      discover: rows.filter((p) => !p.is_owner && !p.is_following)
+      owned: owned.pages, ownedHasMore: owned.hasMore,
+      following: following.pages, followingHasMore: following.hasMore,
+      discover: discover.pages, discoverHasMore: discover.hasMore
     });
   } catch (err) {
     handle(res, err, 'Loading pages failed. Please try again later.');

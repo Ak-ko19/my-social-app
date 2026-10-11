@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 53–54 — Pages (basic)
-**Step:** 1 — page admins: done (committed). Next: step 2, the Pages list (split + paging).
+**Step:** 2 — Pages list: done (committed). Next: step 3, "made you an admin" notification.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -165,3 +165,11 @@ Audit (2026-10-11): B14 has create, edit, delete, follow, post as page
   235, lint, check:i18n 1229, bundle 218.4, browser day53-page-admins
   11/11, b14-pages (owner-only text updated), day24-report-places,
   day45-drafts, day26-a11y, day30-guard, A3 ar + en (276 each).
+- Step 2 done: GET /pages as three queries (owned = owner or admin,
+  newest first; following = not run by you, latest followed first;
+  discover = the rest, most followed first), 20 each + *HasMore,
+  ?section= for more. Pages screen: Load more per section, no Follow
+  on pages you run. Regression test: your page stays with 120 bigger
+  ones. 8 mutations caught. Verified: backend 836, Vitest 236, bundle
+  218.5, browser day53-page-admins 12/12, b14-pages, day43-zawgyi,
+  day26-a11y, day30-guard, A3 ar + en.
