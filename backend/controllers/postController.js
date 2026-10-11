@@ -186,11 +186,18 @@ async function getPost(req, res) {
     // postVisibilityService -- the same check likes, comments and bookmarks
     // use, so the post page can never disagree with them. Hidden -> 404
     // (not 403), so a direct link doesn't confirm the post exists.
-    if (!(await getVisiblePost(post.id, viewerId))) {
+    const visible = await getVisiblePost(post.id, viewerId);
+    if (!visible) {
       return res.status(404).send('Post not found');
     }
 
-    res.json(post);
+    // Day 50: a group post seen by someone not in the group is read-only
+    // for them (communityService.assertCanInteract); the page shows it so.
+    res.json({
+      ...post,
+      community_id: visible.community_id,
+      group_locked: Boolean(visible.community_id && !visible.viewer_is_community_member)
+    });
   } catch (err) {
     sendServerError(res, err, 'Fetch post failed. Please try again later.');
   }

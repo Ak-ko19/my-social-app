@@ -71,6 +71,11 @@ const GONE = /status of 404/;
   check('...reads the comments, with "Join the group to comment and react." instead of the form',
     (await bob.getByText('Join the group to comment and react.').count()) === 1 && (await card(bob).locator('input[id^="comment-input-"]').count()) === 0);
   await axe(bob, 'en/light, group as a non-member');
+  await bob.goto(`${WEB}/posts/${post.id}`, { waitUntil: 'networkidle' });
+  await card(bob).waitFor({ timeout: 8000 }).catch(() => {});
+  check('...and on the post\'s own page too', (await card(bob).count()) === 1
+    && (await card(bob).locator('.post-card-actions button').allInnerTexts()).every((x) => !/Like/.test(x)));
+  await bob.goto(`${WEB}/groups/${group.id}`, { waitUntil: 'networkidle' });
 
   // 2. He joins; alice removes and bans him.
   await bob.getByRole('button', { name: 'Join group' }).click();

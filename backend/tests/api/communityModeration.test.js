@@ -113,6 +113,20 @@ describe('group moderation (Day 50)', () => {
     expect((await request(app).delete(`/comments/${adminComment.id}/like`).set(auth(troll))).status).toBe(200);
   });
 
+  it('the post page says whether you can take part (group_locked)', async () => {
+    const group = (await create(admin, { name: 'Open' })).body;
+    const post = await postIn(admin, group.id, 'Welcome!');
+    const page = async (user) => (await request(app).get(`/posts/${post.id}`).set(user ? auth(user) : {})).body;
+    expect(await page(troll)).toMatchObject({ community_id: group.id, group_locked: true });
+    expect((await page(null)).group_locked).toBe(true);
+    expect((await page(admin)).group_locked).toBe(false);
+    await join(troll, group.id);
+    expect((await page(troll)).group_locked).toBe(false);
+    const own = await postIn(admin, '', 'Mine');
+    expect(await page(troll)).toMatchObject({ group_locked: false });
+    expect((await request(app).get(`/posts/${own.id}`).set(auth(troll))).body).toMatchObject({ community_id: null, group_locked: false });
+  });
+
   it('a normal post is unaffected', async () => {
     const post = await postIn(admin, '', 'Just me');
     expect((await request(app).post(`/posts/${post.id}/comments`).set(auth(troll)).send({ content: 'nice' })).status).toBe(201);

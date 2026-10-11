@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 50–52 — Groups (basic)
-**Step:** 4 — group notifications: done (committed). Next: close Day 50–52 (full browser run, tick, Progress Log).
+**Step:** post-page gap closed (committed). Next: close Day 50–52 (full browser run, tick, Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -235,3 +235,7 @@ remove member, admins delete any post, last-admin hand-over. Missing for
   Vitest 231, check:i18n 1209, bundle 218.2, rehearsal 015 -> 062,
   browser day50-group-bans 27/27, b11-settings (7 switches now),
   b13-groups, day22-push, day26-a11y, day30-guard, A3 ar + en (276).
+- Step 1's known gap closed: GET /posts/:id returns community_id and
+  group_locked; the post page passes it to PostCard, so a non-member
+  sees a group post read-only there too. Verified: backend 826, Vitest
+  231, lint, day50-group-bans 28/28.
