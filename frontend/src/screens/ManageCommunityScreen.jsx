@@ -33,8 +33,9 @@ function ManageCommunityScreen() {
   const { token, userId } = useAuth();
   const [group, setGroup] = useState(null);
   const [form, setForm] = useState(null);
-  const [requests, setRequests] = useState([]);
-  const [members, setMembers] = useState([]);
+  // Day 50: paged -- { list, page, hasMore } (+ total for requests).
+  const [requests, setRequests] = useState({ list: [], page: 1, hasMore: false, total: 0 });
+  const [members, setMembers] = useState({ list: [], page: 1, hasMore: false });
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [saved, setSaved] = useState(false);
@@ -51,8 +52,8 @@ function ManageCommunityScreen() {
       setForm({ name: g.name, description: g.description || '', privacy: g.privacy });
       if (!g.is_admin) return;
       const [r, m, b] = await Promise.all([fetchJoinRequests(id, token), fetchCommunityMembers(id, token), fetchCommunityBans(id, token)]);
-      setRequests(r);
-      setMembers(m);
+      setRequests({ list: r.requests, page: 1, hasMore: r.hasMore, total: r.total });
+      setMembers({ list: m.members, page: 1, hasMore: m.hasMore });
       setBans({ list: b.bans, page: 1, hasMore: b.hasMore });
       setError('');
     } catch (err) {
@@ -72,8 +73,8 @@ function ManageCommunityScreen() {
         if (!g.is_admin) return;
         const [r, m, b] = await Promise.all([fetchJoinRequests(id, token), fetchCommunityMembers(id, token), fetchCommunityBans(id, token)]);
         if (!cancelled) {
-          setRequests(r);
-          setMembers(m);
+          setRequests({ list: r.requests, page: 1, hasMore: r.hasMore, total: r.total });
+          setMembers({ list: m.members, page: 1, hasMore: m.hasMore });
           setBans({ list: b.bans, page: 1, hasMore: b.hasMore });
         }
       } catch (err) {
@@ -130,9 +131,21 @@ function ManageCommunityScreen() {
         setDeleteError(serverErrorText(err, 'groups.deleteFailed'));
       });
   };
-  const moreBans = () => act(fetchCommunityBans(id, token, { page: bans.page + 1 }).then((b) => {
-    setBans((prev) => ({ list: [...prev.list, ...b.bans], page: prev.page + 1, hasMore: b.hasMore }));
-  }), { reload: false });
+  // Day 50: the next page of requests, members or banned people.
+  const LISTS = {
+    requests: [requests, setRequests, fetchJoinRequests],
+    members: [members, setMembers, fetchCommunityMembers],
+    bans: [bans, setBans, fetchCommunityBans]
+  };
+  const more = (kind) => {
+    const [current, setList, fetchPage] = LISTS[kind];
+    return act(fetchPage(id, token, { page: current.page + 1 }).then((next) => {
+      setList((prev) => ({ ...prev, list: [...prev.list, ...next[kind]], page: prev.page + 1, hasMore: next.hasMore }));
+    }), { reload: false });
+  };
+  const loadMore = (kind) => LISTS[kind][0].hasMore && (
+    <button type="button" className="btn btn-secondary btn-block" onClick={() => more(kind)}>{t('common.loadMore')}</button>
+  );
 
   return (
     <div className="screen-enter">
@@ -162,19 +175,19 @@ function ManageCommunityScreen() {
               </label>
             ))}
           </fieldset>
-          {group.privacy === 'private' && form.privacy === 'public' && requests.length > 0 && (
-            <p className="group-privacy-hint">{t('groups.admitHint', { count: requests.length })}</p>
+          {group.privacy === 'private' && form.privacy === 'public' && requests.total > 0 && (
+            <p className="group-privacy-hint">{t('groups.admitHint', { count: requests.total })}</p>
           )}
           <button type="submit" className="btn btn-primary btn-block" disabled={!form.name.trim()}>{t('common.saveChanges')}</button>
           {saved && <p className="form-success" role="status">{t('common.saved')}</p>}
         </form>
 
-        <h2 className="section-heading">{t('groups.requests', { count: requests.length })}</h2>
-        {requests.length === 0 ? (
+        <h2 className="section-heading">{t('groups.requests', { count: requests.total })}</h2>
+        {requests.list.length === 0 ? (
           <p className="screen-status">{t('groups.noRequests')}</p>
         ) : (
           <ul className="card-list">
-            {requests.map((r) => (
+            {requests.list.map((r) => (
               <li key={r.id} className="card-row group-member-row">
                 <Avatar src={resolveImageUrl(r.avatar_url)} initials={initials(r.username)} size={36} alt="" />
                 <span className="card-row-body">{r.username}</span>
@@ -184,10 +197,11 @@ function ManageCommunityScreen() {
             ))}
           </ul>
         )}
+        {loadMore('requests')}
 
-        <h2 className="section-heading">{t('groups.members', { count: members.length })}</h2>
+        <h2 className="section-heading">{t('groups.members', { count: group.member_count })}</h2>
         <ul className="card-list">
-          {members.map((m) => (
+          {members.list.map((m) => (
             <li key={m.id} className="card-row group-member-row">
               <Avatar src={resolveImageUrl(m.avatar_url)} initials={initials(m.username)} size={36} alt="" />
               <span className="card-row-body">
@@ -207,6 +221,7 @@ function ManageCommunityScreen() {
             </li>
           ))}
         </ul>
+        {loadMore('members')}
 
         <h2 className="section-heading">{t('groups.banned')}</h2>
         {bans.list.length === 0 ? (
@@ -224,9 +239,7 @@ function ManageCommunityScreen() {
             ))}
           </ul>
         )}
-        {bans.hasMore && (
-          <button type="button" className="btn btn-secondary btn-block" onClick={moreBans}>{t('common.loadMore')}</button>
-        )}
+        {loadMore('bans')}
 
         <h2 className="section-heading">{t('groups.dangerZone')}</h2>
         <button type="button" className="btn btn-danger btn-block" onClick={() => setConfirmDelete(true)}>{t('groups.deleteGroup')}</button>

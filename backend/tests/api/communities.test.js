@@ -96,7 +96,8 @@ describe('groups / communities (B13)', () => {
       expect((await postIn(member, g.id, 'too soon')).status).toBe(403);
 
       const pending = await request(app).get(`/communities/${g.id}/requests`).set(auth(owner));
-      expect(pending.body.map((r) => r.id)).toEqual([member.id]);
+      expect(pending.body.requests.map((r) => r.id)).toEqual([member.id]);
+      expect(pending.body.total).toBe(1);
       expect((await request(app).get(`/communities/${g.id}/requests`).set(auth(member))).status).toBe(403);
 
       expect((await request(app).post(`/communities/${g.id}/requests/${member.id}/approve`).set(auth(owner))).status).toBe(200);
@@ -107,7 +108,7 @@ describe('groups / communities (B13)', () => {
     it('deny (= remove the request); a bookmark of a group post disappears after leaving', async () => {
       await join(member, g.id);
       expect((await request(app).delete(`/communities/${g.id}/members/${member.id}`).set(auth(owner))).status).toBe(200);
-      expect((await request(app).get(`/communities/${g.id}/requests`).set(auth(owner))).body).toEqual([]);
+      expect((await request(app).get(`/communities/${g.id}/requests`).set(auth(owner))).body).toEqual({ requests: [], page: 1, hasMore: false, total: 0 });
 
       await join(member, g.id);
       await request(app).post(`/communities/${g.id}/requests/${member.id}/approve`).set(auth(owner));
@@ -155,7 +156,7 @@ describe('groups / communities (B13)', () => {
 
     it('demoting the only admin re-promotes someone (never admin-less)', async () => {
       await request(app).put(`/communities/${g.id}/members/${owner.id}/role`).set(auth(owner)).send({ role: 'member' });
-      const members = (await request(app).get(`/communities/${g.id}/members`).set(auth(owner))).body;
+      const { members } = (await request(app).get(`/communities/${g.id}/members`).set(auth(owner))).body;
       expect(members.filter((m) => m.role === 'admin')).toHaveLength(1);
     });
   });

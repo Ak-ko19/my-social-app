@@ -45,7 +45,7 @@ function CommunityScreen() {
           setGroupError(err.response?.status === 404 ? 'gone' : 'failed');
           return null;
         }),
-    [id, token, t]
+    [id, token]
   );
 
   const loadPosts = useCallback(

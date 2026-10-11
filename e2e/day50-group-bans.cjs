@@ -109,6 +109,25 @@ const GONE = /status of 404/;
   check('...and he can join again', (await bob.getByRole('button', { name: 'Leave' }).count()) === 1);
   await bob.context().close();
 
+  // 4b. Paged members (step 3): 24 more people join; Manage shows 20 of
+  // the 26, then the rest on Load more.
+  for (let i = 0; i < 24; i += 1) {
+    const email = `crowd${i}@example.com`;
+    await fetch(`${API}/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: `crowd${i}`, email, password: 'a-fine-password-123' }) });
+    const { token } = await (await fetch(`${API}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: 'a-fine-password-123' }) })).json();
+    await fetch(`${API}/communities/${group.id}/join`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+  }
+  const paged = await open('alice', `/groups/${group.id}/manage`);
+  await paged.getByRole('heading', { name: 'Members (26)' }).waitFor({ timeout: 8000 }).catch(() => {});
+  const memberRows = () => paged.locator('.card-list').nth(0).locator('li');
+  check('Manage group: "Members (26)", the first 20 shown', (await paged.getByRole('heading', { name: 'Members (26)' }).count()) === 1
+    && (await paged.getByRole('button', { name: /^Remove (crowd|bob)/ }).count()) === 19);
+  await paged.getByRole('button', { name: 'Load more' }).click();
+  await paged.getByRole('button', { name: 'Remove crowd23' }).waitFor({ timeout: 8000 }).catch(() => {});
+  check('...Load more shows the other 6', (await paged.getByRole('button', { name: /^Remove (crowd|bob)/ }).count()) === 25
+    && (await paged.getByRole('button', { name: 'Load more' }).count()) === 0, String(await memberRows().count()));
+  await paged.context().close();
+
   // 5. Arabic, dark, 375px.
   const ar = await open('alice', `/groups/${group.id}/manage`, { lang: 'ar', theme: 'dark', width: 375 });
   const removeName = AR.groups.removeName.replace('{{name}}', 'bob');

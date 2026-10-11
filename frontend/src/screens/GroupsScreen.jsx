@@ -60,6 +60,9 @@ function GroupsScreen() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  // Day 50: each section pages on its own -- the last page loaded of each.
+  const [pages, setPages] = useState({ mine: 1, discover: 1 });
+  const [moreError, setMoreError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -69,7 +72,9 @@ function GroupsScreen() {
         .then((d) => {
           if (!cancelled) {
             setData(d);
+            setPages({ mine: 1, discover: 1 });
             setError('');
+            setMoreError('');
           }
         })
         .catch((err) => {
@@ -84,6 +89,21 @@ function GroupsScreen() {
   }, [token, query, reloadKey, t]);
 
   const reload = () => setReloadKey((k) => k + 1);
+  const more = (section) => {
+    setMoreError('');
+    fetchCommunities(token, query.trim(), { section, page: pages[section] + 1 })
+      .then((next) => {
+        setData((d) => ({ ...d, [section]: [...d[section], ...next.groups], [`${section}HasMore`]: next.hasMore }));
+        setPages((p) => ({ ...p, [section]: p[section] + 1 }));
+      })
+      .catch((err) => {
+        console.error(err);
+        setMoreError(t('groups.loadFailed'));
+      });
+  };
+  const loadMore = (section) => data[`${section}HasMore`] && (
+    <button type="button" className="btn btn-secondary btn-block" onClick={() => more(section)}>{t('common.loadMore')}</button>
+  );
 
   return (
     <div className="screen-enter">
@@ -110,6 +130,7 @@ function GroupsScreen() {
                 {data.mine.map((g) => <GroupRow key={g.id} group={g} token={token} onJoined={reload} />)}
               </ul>
             )}
+            {loadMore('mine')}
             <h2 className="section-heading">{t('groups.discover')}</h2>
             {data.discover.length === 0 ? (
               <p className="screen-status">{query ? t('groups.noMatch') : t('groups.noneYet')}</p>
@@ -118,6 +139,8 @@ function GroupsScreen() {
                 {data.discover.map((g) => <GroupRow key={g.id} group={g} token={token} onJoined={reload} />)}
               </ul>
             )}
+            {loadMore('discover')}
+            {moreError && <p className="form-error" role="alert">{moreError}</p>}
           </>
         )}
       </div>

@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 50–52 — Groups (basic)
-**Step:** bundle room: done (committed). Next: step 3, pagination for group lists.
+**Step:** 3 — page the group lists: done (committed). Next: step 4, group notifications.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -182,3 +182,28 @@ remove member, admins delete any post, last-admin hand-over. Missing for
   missing line); serverMessages.test.js; Vitest 225, backend 816, b15,
   b16, day16, day19-share (production build), day49-spam (Arabic server
   message in the UI), A3 ar 276.
+- Step 3 plan (paging, Quality bar 5):
+  - GET /communities: was ONE query, top 100 groups site-wide, then split
+    into mine / discover -- with over 100 groups, your own could vanish
+    from "Your groups". Now two queries: mine (yours, incl. pending) and
+    discover (the rest, most members first), 20 each, mineHasMore /
+    discoverHasMore; ?section=mine|discover&page= for more of one:
+    { groups, page, hasMore }.
+  - members -> { members, page, hasMore } (admins first, then by join
+    date); requests -> { requests, page, hasMore, total } (total for the
+    heading). Bans already paged.
+  - UI: Groups screen Load more per section; Manage group Load more for
+    members and requests.
+  - Note for Day 53-54 (Pages): GET /pages has the same top-N-then-split
+    shape.
+- Step 3 done: GET /communities as two queries (mine newest-joined
+  first, discover most members first), 20 each + *HasMore, ?section=
+  for more; members { members, page, hasMore } (admins first);
+  requests { requests, page, hasMore, total }. Groups screen and Manage
+  group have Load more per list; headings use member_count / total.
+  Regression test: your group stays listed with 120 bigger groups.
+  Also fixed a lint warning my step 2 left in CommunityScreen. 9
+  mutations caught. Verified: backend 820, Vitest 228, lint, check:i18n,
+  bundle 218.0 kB, browser day50-group-bans 21/21 (incl. 26 members
+  paged), b13-groups, day24-report-places, day45-drafts, day26-a11y,
+  day30-guard, A3 ar + en (276 each; one ar start-up hiccup re-run).

@@ -114,28 +114,48 @@ async function createCommunity(req, res) {
   }
 }
 
-// GET /communities -> { mine: [...], discover: [...] }. "mine" includes
-// groups you've requested to join (my_status 'pending'); "discover" lists
-// other groups (public and private), most members first.
+// One section of GET /communities. "mine" is the groups you're in or have
+// asked to join (newest first); "discover" is the others, most members
+// first. Each is its own query (Day 50: they used to be split from one
+// site-wide top 100, so with enough groups your own could go missing).
+async function listSection(section, userId, q, { limit, offset }) {
+  const mine = section === 'mine';
+  const result = await db.query(
+    `SELECT c.id, c.name, c.description, c.privacy,
+       (SELECT COUNT(*)::int FROM community_members m WHERE m.community_id = c.id AND m.status = 'member') AS member_count,
+       me.role AS my_role, me.status AS my_status
+     FROM communities c
+     LEFT JOIN community_members me ON me.community_id = c.id AND me.user_id = $1
+     WHERE ($2 = '' OR c.name ILIKE '%' || $2 || '%')
+       AND ${mine ? 'me.user_id IS NOT NULL' : 'me.user_id IS NULL'}
+     ORDER BY ${mine ? 'me.joined_at DESC, c.id DESC' : 'member_count DESC, c.id DESC'}
+     LIMIT $3 OFFSET $4`,
+    [userId, escapeLike(q), limit + 1, offset]
+  );
+  const hasMore = result.rows.length > limit;
+  return { groups: hasMore ? result.rows.slice(0, limit) : result.rows, hasMore };
+}
+
+// GET /communities?q= -> { mine, mineHasMore, discover, discoverHasMore }
+// (the first page of each). ?section=mine|discover&page= -> { groups,
+// page, hasMore } for more of one.
 async function listCommunities(req, res) {
   try {
     // Day 43: names are stored as Unicode, so a Zawgyi query is converted.
     const q = typeof req.query.q === 'string' ? toUnicode(req.query.q.trim()) : '';
-    const result = await db.query(
-      `SELECT c.id, c.name, c.description, c.privacy,
-         (SELECT COUNT(*)::int FROM community_members m WHERE m.community_id = c.id AND m.status = 'member') AS member_count,
-         me.role AS my_role, me.status AS my_status
-       FROM communities c
-       LEFT JOIN community_members me ON me.community_id = c.id AND me.user_id = $1
-       WHERE ($2 = '' OR c.name ILIKE '%' || $2 || '%')
-       ORDER BY member_count DESC, c.id DESC
-       LIMIT 100`,
-      [req.userId, escapeLike(q)]
-    );
-    res.json({
-      mine: result.rows.filter((c) => c.my_status),
-      discover: result.rows.filter((c) => !c.my_status)
-    });
+    const paging = getPagination(req, { defaultLimit: 20, maxLimit: 50 });
+    const { section } = req.query;
+    if (section !== undefined) {
+      if (!['mine', 'discover'].includes(section)) throw new CommunityError(400, 'section must be mine or discover');
+      const { groups, hasMore } = await listSection(section, req.userId, q, paging);
+      return res.json({ groups, page: paging.page, hasMore });
+    }
+    const first = { limit: paging.limit, offset: 0 };
+    const [mine, discover] = await Promise.all([
+      listSection('mine', req.userId, q, first),
+      listSection('discover', req.userId, q, first)
+    ]);
+    res.json({ mine: mine.groups, mineHasMore: mine.hasMore, discover: discover.groups, discoverHasMore: discover.hasMore });
   } catch (err) {
     handle(res, err, 'Loading groups failed. Please try again later.');
   }
@@ -225,18 +245,22 @@ async function removeMember(req, res) {
 }
 
 // GET /communities/:id/members -- readable wherever posts are readable.
+// Admins first, then by join date; paged (Day 50): { members, page, hasMore }.
 async function listMembers(req, res) {
   try {
     const c = await loadCommunity(Number(req.params.id), req.userId);
     if (!c.can_read) throw new CommunityError(403, 'Join this group to see its members');
+    const { page, limit, offset } = getPagination(req, { defaultLimit: 20, maxLimit: 50 });
     const result = await db.query(
       `SELECT u.id, u.username, u.avatar_url, m.role, m.joined_at
        FROM community_members m JOIN users u ON u.id = m.user_id
        WHERE m.community_id = $1 AND m.status = 'member'
-       ORDER BY (m.role = 'admin') DESC, m.joined_at ASC, u.id ASC`,
-      [c.id]
+       ORDER BY (m.role = 'admin') DESC, m.joined_at ASC, u.id ASC
+       LIMIT $2 OFFSET $3`,
+      [c.id, limit + 1, offset]
     );
-    res.json(result.rows);
+    const hasMore = result.rows.length > limit;
+    res.json({ members: hasMore ? result.rows.slice(0, limit) : result.rows, page, hasMore });
   } catch (err) {
     handle(res, err, 'Loading members failed. Please try again later.');
   }
@@ -261,19 +285,27 @@ async function setRole(req, res) {
   }
 }
 
-// GET /communities/:id/requests -- admins.
+// GET /communities/:id/requests -- admins. Oldest first; paged (Day 50):
+// { requests, page, hasMore, total }.
 async function listRequests(req, res) {
   try {
     const c = await loadCommunity(Number(req.params.id), req.userId);
     requireAdmin(c);
+    const { page, limit, offset } = getPagination(req, { defaultLimit: 20, maxLimit: 50 });
     const result = await db.query(
-      `SELECT u.id, u.username, u.avatar_url, m.joined_at AS requested_at
+      `SELECT u.id, u.username, u.avatar_url, m.joined_at AS requested_at, COUNT(*) OVER ()::int AS total
        FROM community_members m JOIN users u ON u.id = m.user_id
        WHERE m.community_id = $1 AND m.status = 'pending'
-       ORDER BY m.joined_at ASC`,
-      [c.id]
+       ORDER BY m.joined_at ASC, u.id ASC
+       LIMIT $2 OFFSET $3`,
+      [c.id, limit + 1, offset]
     );
-    res.json(result.rows);
+    const hasMore = result.rows.length > limit;
+    const rows = (hasMore ? result.rows.slice(0, limit) : result.rows).map(({ total: _total, ...r }) => r);
+    // An empty page has no rows to carry the count.
+    const total = result.rows[0]?.total
+      ?? Number((await db.query("SELECT COUNT(*) FROM community_members WHERE community_id = $1 AND status = 'pending'", [c.id])).rows[0].count);
+    res.json({ requests: rows, page, hasMore, total });
   } catch (err) {
     handle(res, err, 'Loading requests failed. Please try again later.');
   }

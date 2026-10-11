@@ -14,7 +14,7 @@ describe('group moderation (Day 50)', () => {
   const ban = (user, id, target) => request(app).post(`/communities/${id}/bans/${target.id ?? target}`).set(auth(user));
   const unban = (user, id, target) => request(app).delete(`/communities/${id}/bans/${target.id}`).set(auth(user));
   const bans = (user, id, query = '') => request(app).get(`/communities/${id}/bans${query}`).set(auth(user));
-  const members = async (id, user) => (await request(app).get(`/communities/${id}/members`).set(auth(user))).body.map((m) => m.id);
+  const members = async (id, user) => (await request(app).get(`/communities/${id}/members`).set(auth(user))).body.members.map((m) => m.id);
   const postIn = async (user, id, content) => (await request(app).post('/posts').set(auth(user)).field('content', content).field('communityId', String(id))).body;
 
   let admin;
@@ -47,7 +47,7 @@ describe('group moderation (Day 50)', () => {
     const group = (await create(admin, { name: 'Quiet', privacy: 'private' })).body;
     await join(troll, group.id);
     await ban(admin, group.id, troll);
-    expect((await request(app).get(`/communities/${group.id}/requests`).set(auth(admin))).body).toEqual([]);
+    expect((await request(app).get(`/communities/${group.id}/requests`).set(auth(admin))).body.requests).toEqual([]);
     expect((await join(troll, group.id)).status).toBe(403);
     const stranger = await registerAndLogin(app);
     expect((await ban(admin, group.id, stranger)).status).toBe(201);
@@ -116,6 +116,77 @@ describe('group moderation (Day 50)', () => {
   it('a normal post is unaffected', async () => {
     const post = await postIn(admin, '', 'Just me');
     expect((await request(app).post(`/posts/${post.id}/comments`).set(auth(troll)).send({ content: 'nice' })).status).toBe(201);
+  });
+
+  // Day 50 step 3: every group list is paged.
+  describe('paged lists', () => {
+    const { pool } = require('../helpers/testDb');
+
+    it('members: admins first, then by join date, a page at a time', async () => {
+      const group = (await create(admin, { name: 'Big' })).body;
+      const people = [];
+      for (let i = 0; i < 3; i += 1) {
+        const person = await registerAndLogin(app);
+        people.push(person);
+        await join(person, group.id);
+      }
+      // The last to join is made an admin: admins come first.
+      await request(app).put(`/communities/${group.id}/members/${people[2].id}/role`).set(auth(admin)).send({ role: 'admin' });
+      const get = (query) => request(app).get(`/communities/${group.id}/members${query}`).set(auth(admin));
+      const first = (await get('?limit=2')).body;
+      expect(first.members.map((m) => m.id)).toEqual([admin.id, people[2].id]);
+      expect(first).toMatchObject({ page: 1, hasMore: true });
+      const second = (await get('?limit=2&page=2')).body;
+      expect(second.members.map((m) => m.id)).toEqual([people[0].id, people[1].id]);
+      expect(second.hasMore).toBe(false);
+    });
+
+    it('requests: oldest first, paged, with the total for the heading', async () => {
+      const group = (await create(admin, { name: 'Closed', privacy: 'private' })).body;
+      const people = [];
+      for (let i = 0; i < 3; i += 1) {
+        const person = await registerAndLogin(app);
+        people.push(person);
+        await join(person, group.id);
+      }
+      const get = (query) => request(app).get(`/communities/${group.id}/requests${query}`).set(auth(admin));
+      const first = (await get('?limit=2')).body;
+      expect(first.requests.map((r) => r.id)).toEqual([people[0].id, people[1].id]);
+      expect(first).toMatchObject({ page: 1, hasMore: true, total: 3 });
+      expect(first.requests[0].total).toBeUndefined();
+      const past = (await get('?limit=2&page=9')).body;
+      expect(past).toEqual({ requests: [], page: 9, hasMore: false, total: 3 });
+    });
+
+    it('groups: yours and the rest, each paged; more of one with ?section=', async () => {
+      const mine = [];
+      for (let i = 0; i < 3; i += 1) mine.push((await create(admin, { name: `Mine ${i}` })).body);
+      for (let i = 0; i < 3; i += 1) await create(troll, { name: `Theirs ${i}` });
+      // Your groups are newest-joined first, whatever their size.
+      await join(troll, mine[0].id);
+      const list = (await request(app).get('/communities?limit=2').set(auth(admin))).body;
+      expect(list.mine.map((g) => g.name)).toEqual(['Mine 2', 'Mine 1']);
+      expect(list.mineHasMore).toBe(true);
+      expect(list.discover).toHaveLength(2);
+      expect(list.discoverHasMore).toBe(true);
+      const more = (await request(app).get('/communities?section=mine&page=2&limit=2').set(auth(admin))).body;
+      expect(more).toEqual({ groups: [expect.objectContaining({ name: 'Mine 0' })], page: 2, hasMore: false });
+      expect((await request(app).get('/communities?section=all').set(auth(admin))).status).toBe(400);
+      const search = (await request(app).get('/communities?section=discover&q=theirs 1').set(auth(admin))).body;
+      expect(search.groups.map((g) => g.name)).toEqual(['Theirs 1']);
+    });
+
+    it('your groups never drop out because the site has many bigger ones', async () => {
+      const own = (await create(admin, { name: 'Tiny club' })).body;
+      // 120 other groups, each with one member (more than the old top-100 cut).
+      await pool.query(
+        `WITH c AS (INSERT INTO communities (name, created_by) SELECT 'Other ' || g, $1 FROM generate_series(1, 120) g RETURNING id)
+         INSERT INTO community_members (community_id, user_id, role) SELECT id, $1, 'admin' FROM c`,
+        [troll.id]
+      );
+      const list = (await request(app).get('/communities').set(auth(admin))).body;
+      expect(list.mine.map((g) => g.id)).toEqual([own.id]);
+    });
   });
 
   // Day 50 step 2: an admin deletes the group.
