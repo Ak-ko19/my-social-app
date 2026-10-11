@@ -12,6 +12,7 @@ import {
   fetchDraft, saveDraft, publishDraft, toLocalInputValue, fromLocalInputValue, scheduleProblem,
   MIN_SCHEDULE_MINUTES, MAX_SCHEDULE_DAYS
 } from './services/draftService';
+import { timeZone } from './utils/localTime';
 
 // Matches the backend's MAX_POST_IMAGES (middleware/cloudinaryUpload.js).
 const MAX_IMAGES = 10;
@@ -24,15 +25,6 @@ const POLL_LENGTHS = [
   { hours: 72, key: 'compose.pollThreeDays' },
   { hours: 168, key: 'compose.pollOneWeek' }
 ];
-
-// Day 45: the time zone the date-time picker is in, e.g. "Asia/Dubai".
-const timeZone = () => {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-  } catch {
-    return '';
-  }
-};
 
 function CreatePost() {
   const [content, setContent] = useState('');

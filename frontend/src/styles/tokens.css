@@ -47,6 +47,11 @@
   /* Day 49: error text (.form-error). #e11d48 is 4.4:1 on --color-bg, so
      a darker red in light mode and a lighter one in dark mode (~6:1 each). */
   --color-error-text: #be123c;
+  /* Day 55: text on the pale badge backgrounds (which stay the same in
+     dark mode) -- the -fg colours are ~3-4:1 there, these are 6:1+. */
+  --badge-red-text: #9f1239;
+  --badge-green-text: #166534;
+  --badge-amber-text: #92400e;
   /* Not in the original spec list -- IconButton's background was given as
      a literal #F1F2F5. Promoted to a token here instead of hardcoding it
      in ui.css, same reasoning as every other value in this file: one

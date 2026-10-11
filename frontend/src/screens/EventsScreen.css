@@ -1,0 +1,232 @@
+/* Day 55: events -- the list, the form and the event page. Tokens only;
+   logical properties. */
+
+.events-tablist {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.events-tab {
+  flex: 1 1 0;
+  min-height: 48px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.events-tab.is-active {
+  color: var(--color-accent-text);
+  border-bottom-color: var(--color-accent);
+}
+
+.events-tab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.event-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event-row {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.event-row-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  color: var(--color-text);
+  text-align: start;
+  text-decoration: none;
+}
+
+.event-row-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.event-badge {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 56px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.event-badge-month {
+  width: 100%;
+  padding: 2px 0;
+  background: var(--badge-red-bg);
+  color: var(--badge-red-text);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.event-badge-day {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  color: var(--color-text);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.event-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.event-row-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.event-row-meta {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.event-status {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.event-status-going,
+.event-status-hosting {
+  background: var(--badge-green-bg);
+  color: var(--badge-green-text);
+}
+
+.event-status-interested {
+  background: var(--badge-amber-bg);
+  color: var(--badge-amber-text);
+}
+
+.event-status-cancelled {
+  background: var(--badge-red-bg);
+  color: var(--badge-red-text);
+}
+
+/* The event page. */
+.event-page {
+  text-align: start;
+}
+
+.event-hero {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.event-hero-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.event-title {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text);
+  font-size: 22px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.event-when {
+  margin: 0;
+  color: var(--color-accent-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.event-notice {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.event-notice-cancelled {
+  background: var(--badge-red-bg);
+  color: var(--badge-red-text);
+}
+
+.event-facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event-fact {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.event-fact svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--color-text-muted);
+}
+
+.event-details {
+  margin: var(--space-4) 0 0;
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.event-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.event-actions .btn {
+  flex: 1 1 8em;
+}
+
+.event-guest-tabs {
+  margin-top: var(--space-5);
+}
+
+.event-form .event-times {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}

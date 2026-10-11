@@ -36,17 +36,9 @@ export function deleteDraft(id, token) {
   return api.delete(`/drafts/${id}`, authHeaders(token)).then((res) => res.data);
 }
 
-// <input type="datetime-local"> works in local time without a zone:
-// "2026-10-07T15:15". These convert to and from it.
-const pad = (n) => String(n).padStart(2, '0');
-export function toLocalInputValue(date) {
-  const d = date instanceof Date ? date : new Date(date);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-export function fromLocalInputValue(value) {
-  const d = new Date(value); // a zone-less date-time is read as local time
-  return Number.isNaN(d.getTime()) ? null : d;
-}
+// The datetime-local helpers moved to utils/localTime (Day 55); kept here
+// for the code and tests that import them from drafts.
+export { toLocalInputValue, fromLocalInputValue } from '../utils/localTime';
 
 // The backend's range (services/draftService.js): 5 minutes to 30 days.
 export const MIN_SCHEDULE_MINUTES = 5;

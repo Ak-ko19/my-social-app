@@ -53,6 +53,10 @@ const LandingScreen = lazy(() => import('./screens/LandingScreen'));
 const CreatePageScreen = lazy(() => import('./screens/CreatePageScreen'));
 const PageScreen = lazy(() => import('./screens/PageScreen'));
 const EditPageScreen = lazy(() => import('./screens/EditPageScreen'));
+// Day 55: events.
+const EventsScreen = lazy(() => import('./screens/EventsScreen'));
+const EventFormScreen = lazy(() => import('./screens/EventFormScreen'));
+const EventScreen = lazy(() => import('./screens/EventScreen'));
 const ConnectionsScreen = lazy(() => import('./screens/ConnectionsScreen'));
 
 // Day 30: routes that need an account (see RequireAuth). Public browsing
@@ -212,6 +216,10 @@ function App() {
         <Route path="/pages/new" element={authOnly(<PhoneShell hideTabBar><CreatePageScreen /></PhoneShell>)} />
         <Route path="/pages/:id" element={<PhoneShell><PageScreen /></PhoneShell>} />
         <Route path="/pages/:id/edit" element={authOnly(<PhoneShell hideTabBar><EditPageScreen /></PhoneShell>)} />
+        <Route path="/events" element={authOnly(<PhoneShell><EventsScreen /></PhoneShell>)} />
+        <Route path="/events/new" element={authOnly(<PhoneShell hideTabBar><EventFormScreen /></PhoneShell>)} />
+        <Route path="/events/:id" element={<PhoneShell><EventScreen /></PhoneShell>} />
+        <Route path="/events/:id/edit" element={authOnly(<PhoneShell hideTabBar><EventFormScreen /></PhoneShell>)} />
       </Routes>
     </BrowserRouter>
   );

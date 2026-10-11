@@ -5,7 +5,7 @@ import {
   Bookmark,
   FilePen,
   UsersRound,
-  Flag,
+  CalendarDays, Flag,
   ChevronLeft,
   ChevronRight,
   Search,
@@ -157,6 +157,17 @@ function MenuScreen() {
           <span className="menu-category-text">
             <span className="menu-category-title">{t('menu.pages')}</span>
             <span className="menu-category-subtitle">{t('menu.pagesSub')}</span>
+          </span>
+          <ChevronRight size={18} className="menu-category-chevron" aria-hidden="true" />
+        </button>
+        {/* Day 55. */}
+        <button type="button" className="menu-category-row" onClick={() => navigate('/events')}>
+          <span className="menu-category-icon-badge" style={{ background: 'var(--badge-red-bg)', color: 'var(--badge-red-fg)' }}>
+            <CalendarDays size={20} aria-hidden="true" />
+          </span>
+          <span className="menu-category-text">
+            <span className="menu-category-title">{t('menu.events')}</span>
+            <span className="menu-category-subtitle">{t('menu.eventsSub')}</span>
           </span>
           <ChevronRight size={18} className="menu-category-chevron" aria-hidden="true" />
         </button>

@@ -1142,7 +1142,9 @@
       }
     },
     "drafts": "Drafts & scheduled",
-    "draftsSub": "Posts you saved for later or scheduled"
+    "draftsSub": "Posts you saved for later or scheduled",
+    "events": "Events",
+    "eventsSub": "Plan something, see what's on"
   },
   "legal": {
     "draftNote": "Draft — this document will be reviewed before MySocialApp's public launch.",
@@ -1535,5 +1537,81 @@
     "coverPost": "This post may contain words you chose to hide.",
     "coverComment": "Hidden comment: it may contain words you chose to hide.",
     "show": "Show anyway"
+  },
+  "events": {
+    "title": "Events",
+    "event": "Event",
+    "tab": {
+      "mine": "Your events",
+      "discover": "Discover"
+    },
+    "loadFailed": "Couldn't load events.",
+    "empty": {
+      "mine": "Nothing coming up. Events you host or answer show up here.",
+      "discover": "No upcoming events to show yet."
+    },
+    "hostedBy": "Hosted by {{name}}",
+    "goingCount_one": "{{count}} going",
+    "goingCount_other": "{{count}} going",
+    "interestedCount_one": "{{count}} interested",
+    "interestedCount_other": "{{count}} interested",
+    "status": {
+      "going": "Going",
+      "interested": "Interested",
+      "hosting": "Hosting",
+      "cancelled": "Cancelled"
+    },
+    "backToEvents": "Back to events",
+    "backToEvent": "Back to the event",
+    "hostOnly": "Only the host can edit this event.",
+    "gone": "This event no longer exists.",
+    "edit": "Edit event",
+    "going": "Going",
+    "interested": "Interested",
+    "answerFailed": "Couldn't save your answer. Please try again.",
+    "actionFailed": "That didn't work. Please try again.",
+    "cancelledNotice": "The host cancelled this event.",
+    "endedNotice": "This event has ended.",
+    "audienceNote": {
+      "public": "Public: anyone can see it",
+      "followers": "For the host's followers"
+    },
+    "cancel": "Cancel event",
+    "delete": "Delete event",
+    "keep": "Keep it",
+    "cancelTitle": "Cancel {{name}}?",
+    "cancelText": "It stays visible, marked as cancelled, and nobody can answer it anymore.",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteText": "The event and its guest list will be gone for everyone.",
+    "guests": "Guests",
+    "guestTab": {
+      "going": "Going ({{count}})",
+      "interested": "Interested ({{count}})"
+    },
+    "guestsFailed": "Couldn't load the guests.",
+    "noGuests": {
+      "going": "No one has said they're going yet.",
+      "interested": "No one has said they're interested yet."
+    },
+    "audience": {
+      "public": "Public",
+      "followers": "Followers"
+    },
+    "form": {
+      "createTitle": "Create event",
+      "editTitle": "Edit event",
+      "name": "Event name",
+      "namePlaceholder": "e.g. Saturday beach clean-up",
+      "starts": "Starts",
+      "ends": "Ends (optional)",
+      "location": "Location (optional)",
+      "locationPlaceholder": "A place, an address or a link",
+      "details": "Details (optional)",
+      "audience": "Who can see it?",
+      "create": "Create event",
+      "saveFailed": "Couldn't save the event. Please try again.",
+      "pickStart": "Choose when the event starts.",
+      "endAfterStart": "The event must end after it starts."
+    }
   }
 }

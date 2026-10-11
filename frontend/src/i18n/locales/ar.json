@@ -1234,7 +1234,9 @@
       }
     },
     "drafts": "المسودات والمنشورات المجدولة",
-    "draftsSub": "منشورات حفظتها لوقت لاحق أو جدولتها"
+    "draftsSub": "منشورات حفظتها لوقت لاحق أو جدولتها",
+    "events": "الأحداث",
+    "eventsSub": "خطّط لشيء واكتشف ما يجري"
   },
   "landing": {
     "navLogin": "تسجيل الدخول",
@@ -1643,5 +1645,89 @@
     "coverPost": "قد يحتوي هذا المنشور على كلمات اخترت إخفاءها.",
     "coverComment": "تعليق مخفي: قد يحتوي على كلمات اخترت إخفاءها.",
     "show": "العرض على أي حال"
+  },
+  "events": {
+    "title": "الأحداث",
+    "event": "حدث",
+    "tab": {
+      "mine": "أحداثك",
+      "discover": "استكشاف"
+    },
+    "loadFailed": "تعذّر تحميل الأحداث.",
+    "empty": {
+      "mine": "لا شيء قادم. تظهر هنا الأحداث التي تستضيفها أو ترد عليها.",
+      "discover": "لا توجد أحداث قادمة لعرضها بعد."
+    },
+    "hostedBy": "يستضيفه {{name}}",
+    "goingCount_zero": "لا أحد ذاهب",
+    "goingCount_one": "شخص واحد ذاهب",
+    "goingCount_two": "شخصان ذاهبان",
+    "goingCount_few": "{{count}} أشخاص ذاهبون",
+    "goingCount_many": "{{count}} شخصًا ذاهبًا",
+    "goingCount_other": "{{count}} شخص ذاهب",
+    "interestedCount_zero": "لا أحد مهتم",
+    "interestedCount_one": "شخص واحد مهتم",
+    "interestedCount_two": "شخصان مهتمان",
+    "interestedCount_few": "{{count}} أشخاص مهتمون",
+    "interestedCount_many": "{{count}} شخصًا مهتمًا",
+    "interestedCount_other": "{{count}} شخص مهتم",
+    "status": {
+      "going": "ذاهب",
+      "interested": "مهتم",
+      "hosting": "مضيف",
+      "cancelled": "أُلغي"
+    },
+    "backToEvents": "العودة إلى الأحداث",
+    "backToEvent": "العودة إلى الحدث",
+    "hostOnly": "يمكن للمضيف فقط تعديل هذا الحدث.",
+    "gone": "لم يعد هذا الحدث موجودًا.",
+    "edit": "تعديل الحدث",
+    "going": "ذاهب",
+    "interested": "مهتم",
+    "answerFailed": "تعذّر حفظ ردك. حاول مرة أخرى.",
+    "actionFailed": "لم ينجح ذلك. حاول مرة أخرى.",
+    "cancelledNotice": "ألغى المضيف هذا الحدث.",
+    "endedNotice": "انتهى هذا الحدث.",
+    "audienceNote": {
+      "public": "عام: يمكن لأي شخص رؤيته",
+      "followers": "لمتابعي المضيف"
+    },
+    "cancel": "إلغاء الحدث",
+    "delete": "حذف الحدث",
+    "keep": "إبقاؤه",
+    "cancelTitle": "إلغاء {{name}}؟",
+    "cancelText": "يبقى ظاهرًا مع علامة الإلغاء، ولا يمكن لأحد الرد عليه بعد ذلك.",
+    "deleteTitle": "حذف {{name}}؟",
+    "deleteText": "سيُحذف الحدث وقائمة ضيوفه للجميع.",
+    "guests": "الضيوف",
+    "guestTab": {
+      "going": "ذاهبون ({{count}})",
+      "interested": "مهتمون ({{count}})"
+    },
+    "guestsFailed": "تعذّر تحميل الضيوف.",
+    "noGuests": {
+      "going": "لم يقل أحد إنه ذاهب بعد.",
+      "interested": "لم يقل أحد إنه مهتم بعد."
+    },
+    "audience": {
+      "public": "عام",
+      "followers": "المتابعون"
+    },
+    "form": {
+      "createTitle": "إنشاء حدث",
+      "editTitle": "تعديل الحدث",
+      "name": "اسم الحدث",
+      "namePlaceholder": "مثلًا: تنظيف الشاطئ يوم السبت",
+      "starts": "يبدأ",
+      "ends": "ينتهي (اختياري)",
+      "location": "المكان (اختياري)",
+      "locationPlaceholder": "مكان أو عنوان أو رابط",
+      "details": "التفاصيل (اختياري)",
+      "audience": "من يمكنه رؤيته؟",
+      "create": "إنشاء الحدث",
+      "saveFailed": "تعذّر حفظ الحدث. حاول مرة أخرى.",
+      "pickStart": "اختر موعد بدء الحدث.",
+      "endAfterStart": "يجب أن ينتهي الحدث بعد بدايته."
+    }
   }
 }

@@ -19,7 +19,7 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
 
 const GUARDED = ['/menu', '/settings', '/settings/sessions', '/settings/blocked-users', '/settings/follow-requests', '/settings/account',
   '/settings/notifications', '/saved', '/create-post', '/drafts', '/saved/collections/1', '/settings/muted', '/settings/restricted', '/settings/close-friends', '/settings/interactions', '/settings/hidden-words', '/activity', '/edit-profile', '/notifications', '/messages', '/messages/new-group', '/messages/1',
-  '/messages/1/info', '/admin', '/groups', '/groups/new', '/groups/1/manage', '/pages', '/pages/new', '/pages/1/edit'];
+  '/messages/1/info', '/admin', '/groups', '/groups/new', '/groups/1/manage', '/pages', '/pages/new', '/pages/1/edit', '/events', '/events/new', '/events/1/edit'];
 const PUBLIC = ['/posts/1', '/profile/2', '/pages/1', '/groups/1', '/hashtag/welcome', '/explore', '/search', '/terms', '/privacy', '/welcome', '/settings/language', '/login', '/signup', '/forgot-password'];
 
 (async () => {

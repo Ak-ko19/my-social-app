@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 55–56 — Events (basic)
-**Step:** 1 — events API: done (committed). Next: step 2, events UI.
+**Step:** 2 — events UI: done (committed). Next: step 3, reminders and notifications.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -170,3 +170,15 @@ Facebook Events, basic. Nothing exists yet. Three slices:
   host, blocks, followers = accepted). Export events.hosted / responses;
   Privacy Policy EN/AR. events.test.js 11, 20 mutations caught, backend
   850, rehearsal 015 -> 065, browser day28-export + c2-legal.
+- Step 2 done: Menu > Events; /events (Your events / Discover tabs,
+  arrow keys, Load more), /events/new + /events/:id/edit (EventFormScreen:
+  local pickers, time zone shown, audience), /events/:id (EventScreen:
+  badge, when, host / counts, place, audience, details, Going /
+  Interested toggles, host Edit / Cancel / Delete with confirm, guest
+  tabs paged, cancelled / ended / deleted states). utils/localTime.js
+  now shared with drafts; utils/eventTime.js. New tokens
+  --badge-{red,green,amber}-text: the -fg colours were ~3-4:1 on their
+  pale badges (axe caught it). Verified: Vitest 246, lint, check:i18n
+  1292, bundle 219.5, browser day55-events 17/17, day30-guard (routes
+  added), day26-a11y (117), a2, day45-drafts, A3 ar + en (288 each),
+  backend 850.
