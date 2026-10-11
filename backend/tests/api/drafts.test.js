@@ -236,7 +236,7 @@ describe('drafts (Day 45)', () => {
       const group = await send(me, { content: 'x', communityId: '0' });
       expect([group.status, group.text]).toEqual([403, 'Join this group to post in it']);
       const page = await send(me, { content: 'x', pageId: '0' });
-      expect([page.status, page.text]).toEqual([403, 'Only the page owner can post as this page']);
+      expect([page.status, page.text]).toEqual([403, "Only the page's owner and admins can post as this page"]);
       const onlyMe = await send(me, { content: 'x', communityId: '0', visibility: 'only_me' });
       expect(onlyMe.status).toBe(400);
     }

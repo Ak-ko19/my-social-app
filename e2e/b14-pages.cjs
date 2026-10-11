@@ -100,7 +100,7 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
 
   // Non-owner opening the edit URL.
   await alice.goto(`${WEB}/pages/${pid}/edit`, { waitUntil: 'networkidle' });
-  await alice.getByText('Only the page owner can edit this page.').waitFor();
+  await alice.getByText("Only the page's owner and admins can edit this page.").waitFor();
   check('non-owner cannot edit', true);
 
   // Owner edits then deletes.

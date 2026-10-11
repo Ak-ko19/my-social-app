@@ -14,5 +14,9 @@ router.delete('/pages/:id', authMiddleware, p.deletePage);
 router.get('/pages/:id/posts', optionalAuth, p.listPagePosts);
 router.post('/pages/:id/follow', authMiddleware, p.followPage);
 router.delete('/pages/:id/follow', authMiddleware, p.unfollowPage);
+// Day 53: page admins.
+router.get('/pages/:id/admins', authMiddleware, p.listAdmins);
+router.post('/pages/:id/admins', authMiddleware, p.addAdmin);
+router.delete('/pages/:id/admins/:userId', authMiddleware, p.removeAdmin);
 
 module.exports = router;

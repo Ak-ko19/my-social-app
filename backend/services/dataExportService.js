@@ -30,7 +30,7 @@ async function buildExport(userId) {
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
     legacyMessages, notifications, reports, sessions, pushDevices, messageReactions, hiddenSuggestions, searches,
-    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends, hiddenWords
+    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends, hiddenWords, pagesAdmin
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -124,7 +124,10 @@ async function buildExport(userId) {
     rows(`SELECT u.username, cf.created_at FROM close_friends cf JOIN users u ON u.id = cf.friend_id
           WHERE cf.user_id = $1 ORDER BY cf.created_at`, [userId]),
     // Day 49: your hidden words.
-    rows('SELECT word, created_at FROM user_hidden_words WHERE user_id = $1 ORDER BY created_at', [userId])
+    rows('SELECT word, created_at FROM user_hidden_words WHERE user_id = $1 ORDER BY created_at', [userId]),
+    // Day 53: pages you're an admin of.
+    rows(`SELECT p.id, p.name, pa.created_at AS since FROM page_admins pa JOIN pages p ON p.id = pa.page_id
+          WHERE pa.user_id = $1 ORDER BY pa.created_at`, [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -182,7 +185,7 @@ async function buildExport(userId) {
       close_friends: closeFriends
     },
     groups,
-    pages: { owned: pagesOwned, followed: pagesFollowed },
+    pages: { owned: pagesOwned, admin_of: pagesAdmin, followed: pagesFollowed },
     conversations: conversations.map((c) => ({
       ...c,
       participants: (peopleByConversation[c.id] || []).map((p) => p.username),

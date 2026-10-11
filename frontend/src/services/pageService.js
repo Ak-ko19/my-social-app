@@ -19,3 +19,8 @@ export const followPage = (id, token) => api.post(`/pages/${id}/follow`, {}, wit
 export const unfollowPage = (id, token) => api.delete(`/pages/${id}/follow`, withAuth(token)).then(data);
 export const fetchPagePosts = (id, token, { page = 1, limit = 10 } = {}) =>
   api.get(`/pages/${id}/posts`, { ...withAuth(token), params: { page, limit } }).then(data);
+// Day 53: page admins -- { owner, admins }; the owner adds / removes, an
+// admin may remove themselves (leave).
+export const fetchPageAdmins = (id, token) => api.get(`/pages/${id}/admins`, withAuth(token)).then(data);
+export const addPageAdmin = (id, username, token) => api.post(`/pages/${id}/admins`, { username }, withAuth(token)).then(data);
+export const removePageAdmin = (id, userId, token) => api.delete(`/pages/${id}/admins/${userId}`, withAuth(token)).then(data);

@@ -29,10 +29,11 @@ const AUDIENCE_ITEMS = [
 
 // saved / onSaved (Day 46): the post's Save state, for "Save to collection".
 // onMuted (Day 47): the author was muted -- Home drops their posts.
-function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, onDeleted, onEdit, onTogglePin, canModerate = false, saved = false, onSaved, onMuted }) {
+function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, onDeleted, onEdit, onTogglePin, canModerate = false, saved = false, onSaved, onMuted, canManagePage = false }) {
   const { t } = useTranslation();
   const { token, userId } = useAuth();
-  const isOwner = post.user_id === userId;
+  // Day 53: a page's admins handle its posts like their author.
+  const isOwner = post.user_id === userId || (canManagePage && Boolean(post.page));
   const [sheetOpen, setSheetOpen] = useState(false);
   const [confirmBlockOpen, setConfirmBlockOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);

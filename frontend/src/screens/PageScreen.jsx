@@ -93,7 +93,8 @@ function PageScreen() {
       <header className="screen-header">
         <IconButton icon={ChevronLeft} aria-label={t('pages.backToPages')} onClick={() => navigate('/pages')} />
         <h1 className="screen-header-title">{page.name}</h1>
-        {page.is_owner ? (
+        {/* Day 53: the owner or an admin. */}
+        {page.is_admin ? (
           <IconButton icon={Pencil} aria-label={t('pages.edit')} onClick={() => navigate(`/pages/${id}/edit`)} />
         ) : (
           // Day 24
@@ -112,7 +113,7 @@ function PageScreen() {
           </p>
           {page.description && <p className="community-description" dir="auto">{page.description}</p>}
           <div className="community-actions">
-            {page.is_owner ? (
+            {page.is_admin ? (
               <button type="button" className="btn btn-primary" onClick={() => navigate(`/create-post?pageId=${id}`)}>
                 {t('pages.postAsPage')}
               </button>
@@ -136,7 +137,7 @@ function PageScreen() {
         {posts && posts.length === 0 && <p className="screen-status">{t('pages.noPosts')}</p>}
         {posts &&
           posts.map((p) => (
-            <PostCard key={p.id} post={p} onRemovePost={removePost} onRemovePostsByUser={ownerBlocked} onUpdatePost={() => {}} />
+            <PostCard key={p.id} post={p} onRemovePost={removePost} onRemovePostsByUser={ownerBlocked} onUpdatePost={() => {}} canManagePage={page.is_admin} />
           ))}
         {postsError && <FeedErrorState message={postsError} onRetry={loadMore} />}
         {hasMore && (

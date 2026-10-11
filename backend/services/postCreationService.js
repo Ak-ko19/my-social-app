@@ -8,6 +8,7 @@ const { toUnicode } = require('../utils/myanmarText');
 const pollService = require('./pollService');
 const hashtagService = require('./hashtagService');
 const mentionService = require('./mentionService');
+const { managesPage } = require('./pageAdminService');
 
 // B5: keep in sync with migration 020's CHECK constraint.
 // Day 20: 'only_me' -- seen by its author only. Day 47: 'close_friends' --
@@ -93,10 +94,10 @@ async function checkAudience(userId, fields) {
     );
     if (membership.rows.length === 0) throw new PostInputError(403, 'Join this group to post in it');
   }
-  // B14: posting as a page -- only its owner can, and it's always public.
-  if (fields.pageId !== null) {
-    const owned = await db.query('SELECT 1 FROM pages WHERE id = $1 AND owner_id = $2', [fields.pageId, userId]);
-    if (owned.rows.length === 0) throw new PostInputError(403, 'Only the page owner can post as this page');
+  // B14: posting as a page -- its owner (Day 53: or one of its admins);
+  // always public.
+  if (fields.pageId !== null && !(await managesPage(fields.pageId, userId))) {
+    throw new PostInputError(403, "Only the page's owner and admins can post as this page");
   }
 }
 
@@ -104,11 +105,14 @@ async function checkAudience(userId, fields) {
 // a post can never exist with only some of them. posts.image_url mirrors
 // the first image for older readers (see migration 017). `queryable` is
 // the pool or a transaction's client. Returns the posts row.
+// Day 53: a page post's author is the page's OWNER, whichever admin wrote
+// it -- blocks, visibility and account deletion work on the owner (B14).
 async function insertPost(queryable, userId, fields, imageUrls) {
   const { content, visibility, poll, communityId, pageId } = fields;
   const result = await queryable.query(
     `WITH new_post AS (
-       INSERT INTO posts (user_id, content, image_url, visibility, community_id, page_id) VALUES ($1, $2, $3, $5, $6, $7) RETURNING *
+       INSERT INTO posts (user_id, content, image_url, visibility, community_id, page_id)
+       VALUES (COALESCE((SELECT owner_id FROM pages WHERE id = $7), $1), $2, $3, $5, $6, $7) RETURNING *
      ), new_media AS (
        INSERT INTO post_media (post_id, url, position)
        SELECT new_post.id, m.url, (m.ord - 1)::smallint
@@ -133,7 +137,8 @@ async function insertPost(queryable, userId, fields, imageUrls) {
 // notifications. Returns the post as POST /posts answers it.
 async function finishPost(row, userId, fields, imageUrls) {
   await hashtagService.syncPostHashtags(row.id, row.content);
-  await mentionService.notifyMentions({ content: row.content, authorId: userId, postId: row.id });
+  // The post's author (a page post: the page's owner), not whoever typed it.
+  await mentionService.notifyMentions({ content: row.content, authorId: row.user_id, postId: row.id });
   return {
     ...row,
     media: imageUrls.map((url) => ({ url })),

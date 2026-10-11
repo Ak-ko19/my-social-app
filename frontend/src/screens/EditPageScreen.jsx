@@ -7,14 +7,16 @@ import { useAuth } from '../hooks/useAuth';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import { categoryLabel, deletePage, fetchPage, PAGE_CATEGORIES, updatePage } from '../services/pageService';
 import { serverErrorText } from '../utils/serverError';
+import PageAdminsSection from '../components/pages/PageAdminsSection';
 import './GroupsScreen.css';
 
-// B14: /pages/:id/edit -- owner only (the API enforces it too).
+// B14: /pages/:id/edit -- owner only (the API enforces it too). Day 53:
+// admins too -- details and Admins; deleting stays the owner's.
 function EditPageScreen() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { id } = useParams();
-  const { token } = useAuth();
+  const { token, userId } = useAuth();
   const [page, setPage] = useState(null);
   const [form, setForm] = useState(null);
   const [error, setError] = useState('');
@@ -59,7 +61,7 @@ function EditPageScreen() {
     );
   }
   if (!page || !form) return <p className="screen-status" role="status">{t('common.loading')}</p>;
-  if (!page.is_owner) {
+  if (!page.is_admin) {
     return (
       <div className="screen-enter">
         {header}
@@ -118,10 +120,17 @@ function EditPageScreen() {
         {saveError && <p className="form-error" role="alert">{saveError}</p>}
         <button type="submit" className="btn btn-primary btn-block" disabled={!form.name.trim()}>{t('common.saveChanges')}</button>
         {saved && <p className="form-success" role="status">{t('common.saved')}</p>}
-
-        <h2 className="section-heading">{t('pages.dangerZone')}</h2>
-        <button type="button" className="btn btn-danger btn-block" onClick={() => setConfirmDelete(true)}>{t('pages.deletePage')}</button>
       </form>
+
+      <div className="screen-body form-stack">
+        <PageAdminsSection page={page} token={token} userId={userId} onLeft={() => navigate(`/pages/${id}`, { replace: true })} />
+        {page.is_owner && (
+          <>
+            <h2 className="section-heading">{t('pages.dangerZone')}</h2>
+            <button type="button" className="btn btn-danger btn-block" onClick={() => setConfirmDelete(true)}>{t('pages.deletePage')}</button>
+          </>
+        )}
+      </div>
 
       <ConfirmDialog
         open={confirmDelete}

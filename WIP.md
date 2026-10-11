@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 53–54 — Pages (basic)
-**Step:** 1 — audit what B14 already built against the checkbox: not started.
+**Step:** 1 — page admins: done (committed). Next: step 2, the Pages list (split + paging).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -130,8 +130,38 @@
   a node -e "..." or heredoc edit -- bash eats them. Use the Edit tool.
 
 ## Plan
-- (next: read MONTH_PLAN Day 53-54, AUDIT_REPORT and the B14 pages code;
-  tick what is already done, plan the gaps)
+Audit (2026-10-11): B14 has create, edit, delete, follow, post as page
+(owner only), page posts in followers' feeds. Missing: page admins.
+- Step 1 Page admins (Facebook's Page roles, simplified to owner +
+  admins): migration 063 page_admins (page_id, user_id, added_by,
+  created_at). The owner adds people by username and removes them; an
+  admin may leave. Admins edit the page, post as it, and edit / delete
+  its posts. Only the owner deletes the page and manages admins.
+  - Page posts keep posts.user_id = the page's OWNER (B14's rule: blocks,
+    visibility and account deletion rest on it) even when an admin
+    writes them; drafts / scheduled posts check the person who made
+    them is still an admin when they go up.
+  - Not addable: yourself, the owner, deactivated accounts, anyone with
+    a block either way. Max 20 admins.
+  - UI: Edit page > Admins (add by username, remove; Leave for an
+    admin); the page and composer treat admins like the owner.
+- Step 2 Pages list: GET /pages builds owned / following / discover
+  from one top-100 query (yours can drop out). Split into queries,
+  "Pages you manage" includes admin pages, paged with Load more.
+- Step 3 Notification "X made you an admin of P" (notifications.page_id,
+  Groups-style category "pages"), push EN/AR, opens the page.
 
 ## Progress
-- (none yet)
+- Step 1 done: migration 063 page_admins,
+  services/pageAdminService.js (managesPage / managesPageSql, MAX 20),
+  GET/POST/DELETE /pages/:id/admins, is_admin on pages, admins edit the
+  page (loadManagedPage) and post as it (checkAudience), page posts
+  inserted as the OWNER, admins edit/delete page posts, export
+  pages.admin_of. pageAdmins.test.js 7, 17 mutations caught, drafts test
+  + Arabic updated for the new message, rehearsal 015 -> 063.
+  UI: page actions and post menu for admins (canManagePage), Edit page
+  > Admins (components/pages/PageAdminsSection: add by username,
+  remove, Leave; Delete page owner-only). Verified: backend 833, Vitest
+  235, lint, check:i18n 1229, bundle 218.4, browser day53-page-admins
+  11/11, b14-pages (owner-only text updated), day24-report-places,
+  day45-drafts, day26-a11y, day30-guard, A3 ar + en (276 each).

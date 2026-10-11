@@ -11,6 +11,7 @@ const pollService = require('../services/pollService');
 const postCreation = require('../services/postCreationService');
 const { notMutedSql } = require('../services/muteService');
 const spamService = require('../services/spamService');
+const { managesPage } = require('../services/pageAdminService');
 
 const { POST_VISIBILITIES, MAX_POST_LENGTH } = postCreation;
 
@@ -230,7 +231,8 @@ async function updatePost(req, res) {
     if (postCheck.rows.length === 0) {
       return res.status(404).send('Post not found');
     }
-    if (postCheck.rows[0].user_id !== req.userId) {
+    // Day 53: a page's posts belong to the page -- its admins edit them too.
+    if (postCheck.rows[0].user_id !== req.userId && !(await managesPage(postCheck.rows[0].page_id, req.userId))) {
       return res.status(403).send('You can only edit your own posts');
     }
     if (visibility !== undefined && (postCheck.rows[0].community_id || postCheck.rows[0].page_id)) {
@@ -269,7 +271,8 @@ async function deletePost(req, res) {
         );
         isCommunityAdmin = admin.rows.length > 0;
       }
-      if (!isCommunityAdmin) {
+      // Day 53: a page's admins remove any of its posts.
+      if (!isCommunityAdmin && !(await managesPage(target.page_id, req.userId))) {
         return res.status(403).send('You can only delete your own posts');
       }
     }

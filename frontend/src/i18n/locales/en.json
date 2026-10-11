@@ -1009,7 +1009,7 @@
     "noPosts": "No posts yet.",
     "loadMoreFailed": "Could not load more posts",
     "backToPage": "Back to the page",
-    "ownerOnly": "Only the page owner can edit this page.",
+    "ownerOnly": "Only the page's owner and admins can edit this page.",
     "editLoadFailed": "Could not load the page",
     "saveFailed": "Saving failed. Please try again.",
     "dangerZone": "Danger zone",
@@ -1025,7 +1025,29 @@
       "community": "Community",
       "other": "Other"
     },
-    "report": "Report page"
+    "report": "Report page",
+    "admins": {
+      "title": "Admins",
+      "explainOwner": "Admins can edit this page, post as it and manage its posts. Only you can delete the page or change who's an admin.",
+      "explainAdmin": "You're an admin of this page: you can edit it, post as it and manage its posts.",
+      "loadFailed": "Couldn't load the page's admins.",
+      "failed": "That didn't work. Please try again.",
+      "owner": "Owner",
+      "admin": "Admin",
+      "addLabel": "Add an admin by username",
+      "addPlaceholder": "Username",
+      "add": "Add",
+      "added": "{{name}} is now an admin.",
+      "removed": "{{name}} is no longer an admin.",
+      "remove": "Remove",
+      "removeName": "Remove {{name}} as an admin",
+      "removeTitle": "Remove {{name}} as an admin of {{page}}?",
+      "removeText": "They won't be able to edit the page, post as it or manage its posts. Posts they made as the page stay.",
+      "leave": "Leave",
+      "leaveTitle": "Stop being an admin of {{page}}?",
+      "leaveText": "You won't be able to edit the page or post as it unless the owner adds you again.",
+      "full": "This page has {{max}} admins, the most it can have."
+    }
   },
   "menu": {
     "eyebrow": "Explore MySocialApp",

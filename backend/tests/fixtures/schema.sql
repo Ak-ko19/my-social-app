@@ -603,3 +603,13 @@ CREATE INDEX idx_community_bans_user ON community_bans (user_id);
 -- Added by migration 062_add_group_notifications (Day 50).
 ALTER TABLE notifications ADD COLUMN community_id INTEGER REFERENCES communities(id) ON DELETE CASCADE;
 CREATE INDEX idx_notifications_community ON notifications (community_id) WHERE community_id IS NOT NULL;
+
+-- Added by migration 063_add_page_admins (Day 53): page admins.
+CREATE TABLE page_admins (
+  page_id INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  added_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (page_id, user_id)
+);
+CREATE INDEX idx_page_admins_user ON page_admins (user_id);

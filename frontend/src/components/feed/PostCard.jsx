@@ -45,11 +45,13 @@ import './PostCard.css';
 // server event the way a like/bookmark is), so it's omitted from the stats
 // row but the action itself is real: Web Share API where available,
 // clipboard-copy fallback otherwise (see handleShare below).
+// canManagePage (Day 53): you run the page this post is on -- edit and
+// delete it like its author.
 // groupLocked (Day 50): a group post seen by someone not in the group --
 // they may read it (and its comments) but not react or comment.
 // standalone (Day 49): the post page -- a post your Hidden words would
 // leave out of a list is covered there instead (you followed a link to it).
-function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTogglePin, canModerate = false, standalone = false, groupLocked = false }) {
+function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTogglePin, canModerate = false, standalone = false, groupLocked = false, canManagePage = false }) {
   const { t } = useTranslation();
   const { token, userId, username } = useAuth();
   const like = useLikeToggle(
@@ -236,6 +238,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
           onDeleted={onRemovePost}
           onEdit={startEditing}
           canModerate={canModerate}
+          canManagePage={canManagePage}
           onTogglePin={onTogglePin ? () => onTogglePin(post) : undefined}
           saved={bookmark.bookmarked}
           onSaved={bookmark.markSaved}
