@@ -10,6 +10,8 @@
   and checks the checklist's migration list).
 - Any new migration: up + down files, update tests/fixtures/schema.sql
   (+ testDb TABLES), GO_LIVE_CHECKLIST loop, and the rehearsal must pass.
+- Never chain a commit after a check without gating on its result
+  (Day 55 slip: a red backend run got committed).
 - Logging: use utils/logger (a test forbids console.* in backend
   sources); 500s via sendServerError so they reach the error log.
 - Suites that need the production build go in DIST_SUITES (run-all.sh);
@@ -182,3 +184,10 @@ Facebook Events, basic. Nothing exists yet. Three slices:
   1292, bundle 219.5, browser day55-events 17/17, day30-guard (routes
   added), day26-a11y (117), a2, day45-drafts, A3 ar + en (288 each),
   backend 850.
+- Process slip (Day 55 step 2): ea48e34 was committed in the same
+  command as a backend run that had 1 failure (monitoring "request
+  log"). Root cause was a flaky TEST, not the step: it asserted the log
+  line had no "123", but the line's random request id / timestamp /
+  duration can contain "123". Fixed with an id and token that can't
+  occur by chance; backend 850/850 after. Rule: gate every commit on
+  the checks, e.g. `npm test ... | tee log && ! grep -q failed log && git commit`.

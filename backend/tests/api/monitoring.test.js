@@ -101,7 +101,9 @@ describe('monitoring', () => {
     }
 
     it('logs one line per request with the route pattern, status, time and ids', async () => {
-      const res = await request(appWithLogger()).get('/posts/123?token=secret');
+      // An id and token that can't turn up by chance in the line's random
+      // request id, timestamp or duration (Day 55: "123" could, now and then).
+      const res = await request(appWithLogger()).get('/posts/987654321?token=sekrit-token-value');
       expect(res.headers['x-request-id']).toMatch(/^[0-9a-f-]{36}$/);
       const line = out.mock.calls.map((c) => c[0]).find((l) => l.includes('request'));
       expect(line).toMatch(/"route":"\/posts\/:id"/);
@@ -109,7 +111,7 @@ describe('monitoring', () => {
       expect(line).toMatch(/"ms":\d+/);
       expect(line).toMatch(/"userId":7/);
       expect(line).toContain(res.headers['x-request-id']);
-      expect(line).not.toMatch(/123|secret/); // the pattern, never the concrete URL
+      expect(line).not.toMatch(/987654321|sekrit-token-value/); // the pattern, never the concrete URL
     });
 
     it('reuses a safe incoming X-Request-Id, replaces an unsafe one', async () => {
