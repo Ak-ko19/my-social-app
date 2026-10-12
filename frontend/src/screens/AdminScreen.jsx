@@ -7,6 +7,7 @@ import { ConfirmDialog, IconButton } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import AdminErrorsPanel from '../components/admin/AdminErrorsPanel';
+import AdminStoragePanel from '../components/admin/AdminStoragePanel';
 import { fetchReports, dismissReport, removeReportedContent, banUser, suspendUser, unbanUser } from '../services/adminService';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
 import { Trans, useTranslation } from 'react-i18next';
@@ -359,9 +360,9 @@ function AdminScreen() {
         <h1 className="screen-header-title">{t('admin.title')}</h1>
       </header>
       <div className="screen-body">
-        {/* Day 10: Reports | Errors. */}
+        {/* Day 10: Reports | Errors. Day 57: | Storage. */}
         <div role="tablist" aria-label={t('admin.sections')} className="admin-tabs admin-sections">
-          {['reports', 'errors'].map((s) => (
+          {['reports', 'errors', 'storage'].map((s) => (
             <button
               key={s}
               type="button"
@@ -375,7 +376,9 @@ function AdminScreen() {
           ))}
         </div>
 
-        {section === 'errors' ? <AdminErrorsPanel token={token} /> : (
+        {section === 'storage' && <AdminStoragePanel token={token} />}
+        {section === 'errors' && <AdminErrorsPanel token={token} />}
+        {section === 'reports' && (
           <>
             <div role="tablist" aria-label={t('admin.statusTabs')} className="admin-tabs">
               {['pending', 'reviewed'].map((s) => (

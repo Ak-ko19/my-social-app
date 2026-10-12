@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 57 — Storage safety
-**Step:** 2 — per-person upload limits: done (committed). Next: step 3, Admin > Storage.
+**Step:** 3 — Admin > Storage: done (committed). Next: close Day 57 (full browser run, tick, Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -174,3 +174,16 @@ with the existing keys (when they're set).
   11 mutations caught. Verified: backend 862, Vitest 254, rehearsal 015
   -> 067, browser day57-storage 3/3 (limit message in the composer),
   b2-media, b3-stories, c2-legal, day28-export.
+- Step 3 done: GET /admin/storage (services/storageService.js): database
+  size vs NEON_STORAGE_LIMIT_MB (default 512) + 8 biggest tables;
+  Cloudinary usage from its Admin API with the existing keys (credits,
+  storage, bandwidth, files; cached 10 min; "not set up" / "unavailable");
+  uploads in 24 h + top 5 uploaders; levels ok / warn 80 % / alert 95 %
+  and warnings. Admin > Storage tab (components/admin/AdminStoragePanel:
+  warnings, meters, lists, Refresh), utils/formatBytes (formatBytes,
+  formatPercent; EN/AR units). 10 mutations caught. The storage test
+  first timed out in the full run: a report measures the whole database
+  (~0.5 s locally); Cloudinary checks now hit the service directly and
+  the file has a 20 s timeout. Verified: backend 868, Vitest 258, bundle
+  220.5, browser day57-storage 8/8 (+ AR dark 375 axe), b12-admin,
+  day12-review, day26-a11y, day30-guard, A3 ar + en (288 each).

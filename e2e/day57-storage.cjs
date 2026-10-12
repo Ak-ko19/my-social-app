@@ -80,6 +80,44 @@ const tokens = { alice: fs.readFileSync(path.join(SP, 'alice.token'), 'utf8').tr
   check("over today's upload limit: the composer says so and keeps the post", (await limitMsg.count()) === 1
     && (await page.locator('textarea').inputValue()) === 'one more photo' && sql("SELECT COUNT(*) FROM posts WHERE content = 'one more photo'") === '0');
 
+  // Step 3: Admin > Storage.
+  sql('UPDATE users SET is_admin = true WHERE id = 1');
+  const AXE = fs.readFileSync(path.join(SP, 'node_modules', 'axe-core', 'axe.min.js'), 'utf8');
+  const axe = async (tab, label) => {
+    await tab.waitForTimeout(400);
+    await tab.evaluate(AXE);
+    const r = await tab.evaluate(() => window.axe.run(document.querySelector('.screen-enter') || document.body, {
+      runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] }
+    }));
+    const bad = r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
+    check(`${label}: axe finds nothing serious`, bad.length === 0, bad.map((v) => `${v.id}: ${v.nodes[0]?.html.slice(0, 80)}`).join(' | '));
+  };
+  await page.goto(`${WEB}/admin`, { waitUntil: 'networkidle' });
+  await page.getByRole('tab', { name: 'Storage' }).click();
+  await page.getByRole('meter', { name: 'Database' }).waitFor({ timeout: 8000 }).catch(() => {});
+  check('Admin > Storage: the database meter and its size', (await page.getByRole('meter', { name: 'Database' }).count()) === 1
+    && /MB of 512 MB/.test(await page.locator('.storage-figure').first().innerText().catch(() => '')));
+  check('...Cloudinary marked not set up here, alice among the top uploaders', (await page.getByText('Not set up on this server.').count()) === 1
+    && (await page.locator('.storage-list').last().innerText()).includes('alice'));
+  await axe(page, 'en/light, Admin > Storage');
+  await ctx.close();
+  const arCtx = await browser.newContext({ viewport: { width: 375, height: 844 } });
+  await arCtx.addInitScript((t) => {
+    localStorage.setItem('token', t); localStorage.setItem('userId', '1'); localStorage.setItem('username', 'alice');
+    localStorage.setItem('emailVerified', 'true'); localStorage.setItem('lang', 'ar'); localStorage.setItem('theme', 'dark');
+  }, tokens.alice);
+  const ar = await arCtx.newPage();
+  ar.on('pageerror', (e) => errors.push(e.message));
+  await ar.goto(`${WEB}/admin`, { waitUntil: 'networkidle' });
+  await ar.getByRole('tab', { name: 'التخزين' }).click();
+  await ar.getByRole('meter').first().waitFor({ timeout: 8000 }).catch(() => {});
+  check('ar: Storage in Arabic, right to left, no sideways scroll', (await ar.getByText('قاعدة البيانات').count()) >= 1
+    && (await ar.evaluate(() => document.documentElement.dir)) === 'rtl'
+    && (await ar.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)));
+  await axe(ar, 'ar/dark, Admin > Storage');
+  await ar.screenshot({ path: path.join(SP, 'day57-storage-ar-dark-375.png'), fullPage: true });
+  await arCtx.close();
+
   await browser.close();
   console.log(results.join('\n'));
   console.log('\nconsole/page errors:', errors.length);

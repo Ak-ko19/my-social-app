@@ -843,7 +843,8 @@
     "sections": "Moderation sections",
     "section": {
       "reports": "Reports",
-      "errors": "Errors"
+      "errors": "Errors",
+      "storage": "Storage"
     },
     "errors": {
       "statusTabs": "Error status",
@@ -902,7 +903,40 @@
     "removedPage": "Page removed",
     "confirmRemoveGroup": "Remove the group \"{{name}}\"?",
     "confirmRemovePage": "Remove the page \"{{name}}\"?",
-    "confirmRemoveBody": "All of its posts are deleted too. This cannot be undone."
+    "confirmRemoveBody": "All of its posts are deleted too. This cannot be undone.",
+    "storage": {
+      "loadFailed": "Couldn't load storage.",
+      "warning": {
+        "warn": "{{what}} is {{percent}} full.",
+        "alert": "{{what}} is almost full: {{percent}}. Act now."
+      },
+      "source": {
+        "database": "Database",
+        "cloudinary": "Photos and voice (Cloudinary)"
+      },
+      "usedOf": "{{used}} of {{limit}} ({{percent}})",
+      "biggestTables": "Biggest tables",
+      "notConfigured": "Not set up on this server.",
+      "unavailable": "Couldn't reach Cloudinary just now.",
+      "credits": "{{used}} of {{limit}} credits ({{percent}})",
+      "stored": "Stored",
+      "bandwidth": "Bandwidth",
+      "files": "Files",
+      "uploadsTitle": "Uploads, last 24 hours",
+      "uploadsTotal_one": "{{count}} file, {{size}}",
+      "uploadsTotal_other": "{{count}} files, {{size}}",
+      "topUploaders": "Most uploaded",
+      "uploaderLine_one": "{{count}} file, {{size}}",
+      "uploaderLine_other": "{{count}} files, {{size}}",
+      "refresh": "Refresh",
+      "unit": {
+        "B": "B",
+        "KB": "KB",
+        "MB": "MB",
+        "GB": "GB",
+        "TB": "TB"
+      }
+    }
   },
   "groups": {
     "title": "Groups",

@@ -37,3 +37,9 @@ export function fetchErrors(token, { status = 'open', page = 1 } = {}) {
 export function resolveError(fingerprint, token) {
   return api.post(`/admin/errors/${fingerprint}/resolve`, {}, withAuth(token));
 }
+
+// Day 57: Admin > Storage -- { database, cloudinary, uploads, warnings,
+// warnAt, alertAt } (backend services/storageService.js).
+export function fetchStorage(token) {
+  return api.get('/admin/storage', withAuth(token)).then((res) => res.data);
+}

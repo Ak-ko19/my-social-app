@@ -1,0 +1,106 @@
+/* Day 57: Admin > Storage. Same card language as the errors list; tokens
+   only; logical properties so it mirrors in RTL. */
+.storage-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  text-align: start;
+}
+
+.storage-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.storage-warning.is-warn {
+  background: var(--badge-amber-bg);
+  color: var(--badge-amber-text);
+}
+
+.storage-warning.is-alert {
+  background: var(--badge-red-bg);
+  color: var(--badge-red-text);
+}
+
+.storage-card {
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text);
+}
+
+.storage-card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.storage-figure {
+  margin: 0 0 var(--space-2);
+  font-size: 14px;
+}
+
+.storage-note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.storage-meter {
+  block-size: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-subtle-bg);
+  overflow: hidden;
+}
+
+.storage-meter-fill {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--badge-green-fg);
+}
+
+.storage-meter-fill.is-warn {
+  background: var(--badge-amber-fg);
+}
+
+.storage-meter-fill.is-alert {
+  background: var(--badge-red-fg);
+}
+
+.storage-subtitle {
+  margin: var(--space-3) 0 var(--space-1);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.storage-list {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.storage-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.storage-list li:last-child {
+  border-bottom: none;
+}

@@ -4,6 +4,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const requireAdmin = require('../middleware/requireAdmin');
 const adminController = require('../controllers/adminController');
 const errorLogController = require('../controllers/errorLogController');
+const storageController = require('../controllers/storageController');
 
 // B12 admin moderation. Every route: logged in AND users.is_admin (checked
 // in the DB on each request). Non-admins get 404.
@@ -17,5 +18,7 @@ router.post('/admin/users/:id/unban', ...admin, adminController.unbanUser);
 // Day 10: built-in error log.
 router.get('/admin/errors', ...admin, errorLogController.listErrors);
 router.post('/admin/errors/:fingerprint/resolve', ...admin, errorLogController.resolveError);
+// Day 57: how full the free plans are.
+router.get('/admin/storage', ...admin, storageController.getStorage);
 
 module.exports = router;

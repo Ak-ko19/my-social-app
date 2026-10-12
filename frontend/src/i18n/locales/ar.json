@@ -927,7 +927,8 @@
     "sections": "أقسام الإشراف",
     "section": {
       "reports": "البلاغات",
-      "errors": "الأخطاء"
+      "errors": "الأخطاء",
+      "storage": "التخزين"
     },
     "errors": {
       "statusTabs": "حالة الخطأ",
@@ -990,7 +991,48 @@
     "removedPage": "أُزيلت الصفحة",
     "confirmRemoveGroup": "إزالة المجموعة \"{{name}}\"؟",
     "confirmRemovePage": "إزالة الصفحة \"{{name}}\"؟",
-    "confirmRemoveBody": "ستُحذف جميع منشوراتها أيضًا. لا يمكن التراجع عن هذا."
+    "confirmRemoveBody": "ستُحذف جميع منشوراتها أيضًا. لا يمكن التراجع عن هذا.",
+    "storage": {
+      "loadFailed": "تعذّر تحميل بيانات التخزين.",
+      "warning": {
+        "warn": "{{what}} ممتلئ بنسبة {{percent}}.",
+        "alert": "{{what}} يكاد يمتلئ: {{percent}}. تصرّف الآن."
+      },
+      "source": {
+        "database": "قاعدة البيانات",
+        "cloudinary": "الصور والرسائل الصوتية (Cloudinary)"
+      },
+      "usedOf": "{{used}} من {{limit}} ({{percent}})",
+      "biggestTables": "أكبر الجداول",
+      "notConfigured": "غير مُعدّ على هذا الخادم.",
+      "unavailable": "تعذّر الوصول إلى Cloudinary الآن.",
+      "credits": "{{used}} من {{limit}} رصيدًا ({{percent}})",
+      "stored": "المخزّن",
+      "bandwidth": "حركة البيانات",
+      "files": "الملفات",
+      "uploadsTitle": "الملفات المرفوعة خلال آخر 24 ساعة",
+      "uploadsTotal_zero": "لا ملفات، {{size}}",
+      "uploadsTotal_one": "ملف واحد، {{size}}",
+      "uploadsTotal_two": "ملفان، {{size}}",
+      "uploadsTotal_few": "{{count}} ملفات، {{size}}",
+      "uploadsTotal_many": "{{count}} ملفًا، {{size}}",
+      "uploadsTotal_other": "{{count}} ملف، {{size}}",
+      "topUploaders": "الأكثر رفعًا",
+      "uploaderLine_zero": "لا ملفات، {{size}}",
+      "uploaderLine_one": "ملف واحد، {{size}}",
+      "uploaderLine_two": "ملفان، {{size}}",
+      "uploaderLine_few": "{{count}} ملفات، {{size}}",
+      "uploaderLine_many": "{{count}} ملفًا، {{size}}",
+      "uploaderLine_other": "{{count}} ملف، {{size}}",
+      "refresh": "تحديث",
+      "unit": {
+        "B": "بايت",
+        "KB": "ك.ب",
+        "MB": "م.ب",
+        "GB": "غ.ب",
+        "TB": "ت.ب"
+      }
+    }
   },
   "groups": {
     "title": "المجموعات",
