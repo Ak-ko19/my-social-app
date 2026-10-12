@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 57 — Storage safety
-**Step:** 3 — Admin > Storage: done (committed). Next: close Day 57 (full browser run, tick, Progress Log).
+**Day:** 58 — Accessibility + translations check
+**Step:** 1 — audit every screen added since Day 26 (EN/AR, RTL, a11y): not started.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -123,7 +123,7 @@
 - Hidden words is on (warn) for every account by default: test content
   with words from frontend/src/data/offensiveWords.js gets covered.
 
-- Bundle: first download 218.2 / 225 kB (Day 50 moved the Arabic server
+- Bundle: first download 220.5 / 225 kB (Day 50 moved the Arabic server
   messages out). Watch it; lazy-load anything big.
 - Shell gotcha: never put JS template literals (backticks) or $1 inside
   a node -e "..." or heredoc edit -- bash eats them. Use the Edit tool.
@@ -132,63 +132,13 @@
 - Backend test logs go in the scratchpad, never outside the project
   (writing ../../be-run.txt was refused on Day 55).
 
+- A picked photo now shows after it is shrunk (Day 57): browser suites
+  must wait for .image-picker-item before checking the composer.
+
 ## Plan
-Audit (2026-10-12): uploads are capped at 5 MB a file (multer); media
-is deleted with its content; an orphan scan exists. Nothing compresses
-images, measures usage, limits a person, or warns the admin. No new
-accounts: Postgres reports its own size and Cloudinary's usage API works
-with the existing keys (when they're set).
-- Step 1 Compression in the browser (utils/compressImage.js): photos
-  larger than 2048 px on the long side, or over about 1 MB, are redrawn
-  at most 2048 px and re-encoded (WebP where the browser can, else
-  JPEG, quality 0.85). Not GIFs (animation), not when the result would
-  be bigger. Used everywhere a photo is picked: posts, stories, avatar,
-  cover, chat photos, group photo. A photo too big even after that
-  still gets the server's 5 MB message.
-- Step 2 Per-person limits: migration 067 media_uploads (user_id, bytes,
-  kind, created_at), written after each Cloudinary upload. Limits per
-  day (e.g. 100 files and 300 MB) and refused with a 429 and a clear
-  message in EN/AR.
-- Step 3 Admin > Storage: database size vs. the plan (Neon free 0.5 GB,
-  NEON_STORAGE_LIMIT_MB env name, default 512) with the biggest tables;
-  Cloudinary usage from its API (or "not configured"); uploads in the
-  last 24 h and the top uploaders; a warning at 80 % and an alert at 95 %.
+- (next: list every screen and component added since the last a11y /
+  translation sweep; check each in EN light and AR dark at 375px with
+  axe, keyboard, and text that should be translated or isolated)
 
 ## Progress
-- Step 1 done: utils/compressImage.js (<= 2048 px, WebP else JPEG, q 0.85;
-  not GIFs; original kept if not smaller or on any error), used for
-  post photos (when picked), stories, chat photos, group photo, cover,
-  avatar. The composer shows "Preparing your photo…" and keeps Post /
-  Save draft disabled until photos are ready (a quick tap could have
-  posted without them). Verified: Vitest 254 (compressImage 5, composer
-  1), backend 856, bundle 220.1, browser day57-storage (8.2 MB PNG ->
-  2.5 MB WebP in real Edge), b2-media (now waits for thumbnails),
-  b3-stories, b9-dm, day34-group-photo, day36-cover, day45-drafts,
-  day26-a11y, A3 ar + en (288 each).
-- Step 2 done: migration 067 media_uploads (ledger, 30 days), services/
-  uploadQuotaService.js (rolling 24 h: 100 files / 300 MB by default;
-  UPLOAD_LIMIT_FILES_PER_DAY, UPLOAD_LIMIT_MB_PER_DAY env names), checked
-  in both upload paths BEFORE Cloudinary, recorded after; 429 with an
-  EN/AR message (a test guards its Arabic, which check:i18n can't see);
-  cleanup trims the ledger; export recent_uploads; Privacy Policy EN/AR.
-  11 mutations caught. Verified: backend 862, Vitest 254, rehearsal 015
-  -> 067, browser day57-storage 3/3 (limit message in the composer),
-  b2-media, b3-stories, c2-legal, day28-export.
-- Step 3 done: GET /admin/storage (services/storageService.js): database
-  size vs NEON_STORAGE_LIMIT_MB (default 512) + 8 biggest tables;
-  Cloudinary usage from its Admin API with the existing keys (credits,
-  storage, bandwidth, files; cached 10 min; "not set up" / "unavailable");
-  uploads in 24 h + top 5 uploaders; levels ok / warn 80 % / alert 95 %
-  and warnings. Admin > Storage tab (components/admin/AdminStoragePanel:
-  warnings, meters, lists, Refresh), utils/formatBytes (formatBytes,
-  formatPercent; EN/AR units). 10 mutations caught. The storage test
-  first timed out in the full run: a report measures the whole database
-  (~0.5 s locally); Cloudinary checks now hit the service directly and
-  the file has a 20 s timeout. Verified: backend 868, Vitest 258, bundle
-  220.5, browser day57-storage 8/8 (+ AR dark 375 axe), b12-admin,
-  day12-review, day26-a11y, day30-guard, A3 ar + en (288 each).
-- Day 57 close, batch 3: b13-groups failed once ("approve moves bob into
-  Members"). Real cause, from Day 50 step 3: Manage group set the group
-  (its Members (n) heading) before the lists, so for a moment it read
-  "Members (2)" next to "Join requests (1)". Fixed: all of it updates
-  together. b13 + day50 green after.
+- (none yet)

@@ -74,6 +74,8 @@ const tokens = { alice: fs.readFileSync(path.join(SP, 'alice.token'), 'utf8').tr
   // Photos and a poll exclude each other.
   const photos = await open('alice', '/create-post');
   await photos.locator('input[type=file]').setInputFiles({ name: 'a.png', mimeType: 'image/png', buffer: Buffer.from('89504e470d0a1a0a', 'hex') });
+  // Day 57: a picked photo shows once it's been prepared (shrunk).
+  await photos.locator('.image-picker-item').first().waitFor({ timeout: 10000 }).catch(() => {});
   check('with a photo picked, "Add a poll" is off and says why',
     await photos.getByRole('button', { name: 'Add a poll' }).isDisabled() && (await photos.getByText("A poll can't have photos").count()) === 1);
   await photos.context().close();

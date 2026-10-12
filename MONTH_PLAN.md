@@ -229,7 +229,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 55–56 — Events (basic)
 - [x] Create event, going/interested, event page, reminders via notifications. *(Built new, Facebook-style — see Progress Log.)*
 ### Day 57 — Storage safety
-- [ ] Check Neon and Cloudinary usage; client-side image compression before upload; limits per user; warn in admin panel near limits.
+- [x] Check Neon and Cloudinary usage; client-side image compression before upload; limits per user; warn in admin panel near limits. *(See Progress Log.)*
 ### Day 58 — Accessibility + translations check
 - [ ] All new screens translated (EN/AR) and RTL-correct.
 ### Day 59 — Re-audit (AUDIT_REPORT_3.md)
@@ -1905,3 +1905,43 @@ New: nothing existed. Facebook Events, basic, in three slices:
     day55-events, 20 checks, including a reminder from the real ticker)
     + the 6 special-stack suites + perf 40/40 + A3 EN/AR (288 each) +
     a11y (117 page checks).
+
+### 2026-10-12 — Day 57: Storage safety
+Before: a 5 MB cap per file, media deleted with its content, and an
+orphan scan. Nothing measured usage, compressed photos, limited a
+person, or warned anyone. Three slices, with no new accounts:
+- **Compression in the browser (`c699a45`):** photos over 2048 px or
+  1 MB are redrawn and re-encoded (WebP, else JPEG, quality 0.85)
+  wherever one is picked: posts, stories, chats, group photos, covers
+  and avatars.
+  - GIFs are left alone, and the original is kept if it isn't smaller.
+  - In real Edge an 8.2 MB photo went up as 2.5 MB.
+  - Found on the way: Post could be tapped while photos were still
+    being prepared, sending the post without them. It now waits, with
+    "Preparing your photo…".
+- **Upload limit per person (`8d1ab62`, migration 067):** 100 files or
+  300 MB per 24 hours by default (UPLOAD_LIMIT_FILES_PER_DAY,
+  UPLOAD_LIMIT_MB_PER_DAY).
+  - It's checked before anything goes to Cloudinary, from a 30-day
+    upload ledger.
+  - Over the limit, the composer says why (EN/AR). The data export and
+    the Privacy Policy include the ledger.
+- **Admin > Storage (`ecd8af6`):** the database measured by Postgres
+  against the Neon plan (NEON_STORAGE_LIMIT_MB, default 512 MB), with
+  its biggest tables.
+  - Cloudinary credits, storage and bandwidth come from its Admin API
+    with the existing keys, cached for 10 minutes; it shows "not set up"
+    without them.
+  - It lists uploads in the last 24 hours and the top uploaders, with a
+    warning at 80 % and an alert at 95 %.
+- **Found in the close-out run:** Manage group showed a new "Members
+  (n)" a moment before its request list caught up (from Day 50); fixed
+  in `25e68f3`. day44-polls and b2-media now wait for a picked photo's
+  thumbnail.
+- **Tests at close:**
+  - backend 868/868 (uploadQuota 6, storage 6; 31 mutation checks, all
+    caught); Vitest 258/258; check:i18n 1323 keys; bundle 220.5 kB;
+    rehearsal 015 → 067.
+  - Full browser run in batches of five: all 54 regular suites (new:
+    day57-storage, 8 checks) + the 6 special-stack suites + perf 40/40 +
+    A3 EN/AR (288 each) + a11y (117 page checks).
