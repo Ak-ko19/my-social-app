@@ -130,6 +130,43 @@ describe('Modal', () => {
     render(<Host onClose={() => {}} />);
     expect(screen.getByRole('dialog')).toHaveFocus();
   });
+
+  // Day 58: keyboard users stay inside the dialog and get their place back.
+  function Opener() {
+    const [open, setOpen] = useState(false);
+    return (
+      <>
+        <button type="button" onClick={() => setOpen(true)}>open</button>
+        <button type="button">behind</button>
+        <Modal open={open} onClose={() => setOpen(false)} title="Dialog">
+          <button type="button">first</button>
+          <button type="button">last</button>
+        </Modal>
+      </>
+    );
+  }
+
+  it('keeps Tab and Shift+Tab inside the dialog', async () => {
+    render(<Opener />);
+    await userEvent.click(screen.getByText('open'));
+    await userEvent.tab();
+    expect(screen.getByText('first')).toHaveFocus();
+    await userEvent.tab();
+    expect(screen.getByText('last')).toHaveFocus();
+    await userEvent.tab();
+    expect(screen.getByText('first')).toHaveFocus();
+    await userEvent.tab({ shift: true });
+    expect(screen.getByText('last')).toHaveFocus();
+  });
+
+  it('gives focus back to the button that opened it on Escape', async () => {
+    render(<Opener />);
+    const opener = screen.getByText('open');
+    await userEvent.click(opener);
+    expect(screen.getByRole('dialog')).toHaveFocus();
+    await userEvent.keyboard('{Escape}');
+    expect(opener).toHaveFocus();
+  });
 });
 
 describe('ErrorBoundary', () => {

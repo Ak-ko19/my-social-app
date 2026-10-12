@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 58 — Accessibility + translations check
-**Step:** 2 — left/right CSS: done (committed). Next: step 3, open states (dialogs, menus, sheets).
+**Step:** 3 — open states: done (committed). Modal now keeps Tab inside and gives focus back to its opener; e2e/day58-open-states.cjs (50 checks, EN light 390 + AR dark 375; 14 of them fail on the old Modal). Next: close Day 58 (full browser run in batches, perf, tick MONTH_PLAN, Progress Log, WIP -> Day 59).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

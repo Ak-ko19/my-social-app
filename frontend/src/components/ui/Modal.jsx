@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
 
+// What Tab can land on inside the dialog.
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 // Generic centered overlay + panel -- the one modal primitive every
 // confirm dialog / reason-picker / form-in-a-modal in the app builds on
 // (ConfirmDialog wraps this; ReportDialog, the account-deletion
@@ -25,15 +28,42 @@ function Modal({ open, onClose, title, children, className, variant = 'center' }
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) return undefined;
+    // Day 58: where focus was (the button that opened this) -- it goes back
+    // there on close, so a keyboard or screen-reader user keeps their place.
+    const opener = document.activeElement;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onCloseRef.current();
+      if (e.key === 'Escape') {
+        onCloseRef.current();
+        return;
+      }
+      // Day 58: Tab and Shift+Tab stay inside the dialog (aria-modal says
+      // the page behind can't be used, so focus mustn't wander there).
+      if (e.key !== 'Tab' || !panelRef.current) return;
+      const focusable = [...panelRef.current.querySelectorAll(FOCUSABLE)].filter((el) => !el.closest('[inert]'));
+      if (focusable.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const inside = panelRef.current.contains(document.activeElement);
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === panelRef.current || !inside)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (document.activeElement === last || !inside)) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
     // Focus the panel so Escape/Tab work immediately without requiring a
     // click first, and so screen readers land inside the dialog.
     panelRef.current?.focus();
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    };
   }, [open]);
 
   return createPortal(
