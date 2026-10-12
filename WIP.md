@@ -187,3 +187,8 @@ with the existing keys (when they're set).
   the file has a 20 s timeout. Verified: backend 868, Vitest 258, bundle
   220.5, browser day57-storage 8/8 (+ AR dark 375 axe), b12-admin,
   day12-review, day26-a11y, day30-guard, A3 ar + en (288 each).
+- Day 57 close, batch 3: b13-groups failed once ("approve moves bob into
+  Members"). Real cause, from Day 50 step 3: Manage group set the group
+  (its Members (n) heading) before the lists, so for a moment it read
+  "Members (2)" next to "Join requests (1)". Fixed: all of it updates
+  together. b13 + day50 green after.

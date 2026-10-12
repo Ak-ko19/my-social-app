@@ -48,10 +48,17 @@ function ManageCommunityScreen() {
   const loadAll = useCallback(async () => {
     try {
       const g = await fetchCommunity(id, token);
+      if (!g.is_admin) {
+        setGroup(g);
+        setForm({ name: g.name, description: g.description || '', privacy: g.privacy });
+        return;
+      }
+      const [r, m, b] = await Promise.all([fetchJoinRequests(id, token), fetchCommunityMembers(id, token), fetchCommunityBans(id, token)]);
+      // Day 57: everything updates together -- the Members (n) heading comes
+      // from the group, and showing it before the lists caught up read as
+      // "Members (2)" next to "Join requests (1)" for a moment.
       setGroup(g);
       setForm({ name: g.name, description: g.description || '', privacy: g.privacy });
-      if (!g.is_admin) return;
-      const [r, m, b] = await Promise.all([fetchJoinRequests(id, token), fetchCommunityMembers(id, token), fetchCommunityBans(id, token)]);
       setRequests({ list: r.requests, page: 1, hasMore: r.hasMore, total: r.total });
       setMembers({ list: m.members, page: 1, hasMore: m.hasMore });
       setBans({ list: b.bans, page: 1, hasMore: b.hasMore });
