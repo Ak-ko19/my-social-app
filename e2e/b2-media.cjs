@@ -88,6 +88,8 @@ function sql(q) {
   await page.locator('textarea').fill('multi upload test');
   const files = ['icon-512.png', 'icon-192.png', 'apple-touch-icon.png'].map((f) => path.join(PUBLIC_DIR, f));
   await page.locator('input[type=file]').setInputFiles(files);
+  // Day 57: photos are shrunk before they show (and before Post is enabled).
+  await page.locator('.image-picker-item').nth(2).waitFor({ timeout: 10000 }).catch(() => {});
   check('3 thumbnails after picking 3', (await page.locator('.image-picker-item').count()) === 3);
   await page.getByRole('button', { name: 'Remove image 2' }).click();
   check('remove -> 2 thumbnails', (await page.locator('.image-picker-item').count()) === 2);
@@ -100,6 +102,7 @@ function sql(q) {
   await page.goto('http://localhost:5173/create-post', { waitUntil: 'networkidle' });
   const eleven = Array.from({ length: 11 }, (_, i) => ({ name: `p${i}.png`, mimeType: 'image/png', buffer: fs.readFileSync(files[1]) }));
   await page.locator('input[type=file]').setInputFiles(eleven);
+  await page.locator('.image-picker-item').nth(9).waitFor({ timeout: 10000 }).catch(() => {});
   const thumbs = await page.locator('.image-picker-item').count();
   const alert = await page.locator('[role=alert]').allInnerTexts();
   check('picking 11 keeps 10 and explains why', thumbs === 10 && alert.some((t) => /up to 10/.test(t)), `thumbs=${thumbs}`);

@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 57 — Storage safety
-**Step:** 1 — audit what exists (usage numbers, uploads, admin panel): not started.
+**Step:** 1 — client-side image compression: done (committed). Next: step 2, per-person upload limits.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -133,8 +133,35 @@
   (writing ../../be-run.txt was refused on Day 55).
 
 ## Plan
-- (next: read MONTH_PLAN Day 57, check what already measures or limits
-  storage, plan with no new accounts or keys)
+Audit (2026-10-12): uploads are capped at 5 MB a file (multer); media
+is deleted with its content; an orphan scan exists. Nothing compresses
+images, measures usage, limits a person, or warns the admin. No new
+accounts: Postgres reports its own size and Cloudinary's usage API works
+with the existing keys (when they're set).
+- Step 1 Compression in the browser (utils/compressImage.js): photos
+  larger than 2048 px on the long side, or over about 1 MB, are redrawn
+  at most 2048 px and re-encoded (WebP where the browser can, else
+  JPEG, quality 0.85). Not GIFs (animation), not when the result would
+  be bigger. Used everywhere a photo is picked: posts, stories, avatar,
+  cover, chat photos, group photo. A photo too big even after that
+  still gets the server's 5 MB message.
+- Step 2 Per-person limits: migration 067 media_uploads (user_id, bytes,
+  kind, created_at), written after each Cloudinary upload. Limits per
+  day (e.g. 100 files and 300 MB) and refused with a 429 and a clear
+  message in EN/AR.
+- Step 3 Admin > Storage: database size vs. the plan (Neon free 0.5 GB,
+  NEON_STORAGE_LIMIT_MB env name, default 512) with the biggest tables;
+  Cloudinary usage from its API (or "not configured"); uploads in the
+  last 24 h and the top uploaders; a warning at 80 % and an alert at 95 %.
 
 ## Progress
-- (none yet)
+- Step 1 done: utils/compressImage.js (<= 2048 px, WebP else JPEG, q 0.85;
+  not GIFs; original kept if not smaller or on any error), used for
+  post photos (when picked), stories, chat photos, group photo, cover,
+  avatar. The composer shows "Preparing your photo…" and keeps Post /
+  Save draft disabled until photos are ready (a quick tap could have
+  posted without them). Verified: Vitest 254 (compressImage 5, composer
+  1), backend 856, bundle 220.1, browser day57-storage (8.2 MB PNG ->
+  2.5 MB WebP in real Edge), b2-media (now waits for thumbnails),
+  b3-stories, b9-dm, day34-group-photo, day36-cover, day45-drafts,
+  day26-a11y, A3 ar + en (288 each).

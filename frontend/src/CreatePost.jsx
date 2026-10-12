@@ -13,6 +13,7 @@ import {
   MIN_SCHEDULE_MINUTES, MAX_SCHEDULE_DAYS
 } from './services/draftService';
 import { timeZone } from './utils/localTime';
+import { compressImage } from './utils/compressImage';
 
 // Matches the backend's MAX_POST_IMAGES (middleware/cloudinaryUpload.js).
 const MAX_IMAGES = 10;
@@ -30,6 +31,8 @@ function CreatePost() {
   const [content, setContent] = useState('');
   const [images, setImages] = useState([]); // [{ file, preview }] -- new picks
   const [submitting, setSubmitting] = useState(false);
+  // Day 57: photos still being shrunk -- Post waits for them.
+  const [preparing, setPreparing] = useState(0);
   const [visibility, setVisibility] = useState('public'); // B5 audience
   const [error, setError] = useState('');
   // Day 44: an optional poll; the post's text is its question.
@@ -113,7 +116,8 @@ function CreatePost() {
 
   // Picking more files ADDS to the selection (up to MAX_IMAGES) instead of
   // replacing it, so images can be chosen across several picker opens.
-  const handleImageChange = (e) => {
+  // Day 57: each photo is shrunk in the browser first (utils/compressImage).
+  const handleImageChange = async (e) => {
     const picked = Array.from(e.target.files || []);
     e.target.value = ''; // allow re-picking the same file after removing it
     if (picked.length === 0) return;
@@ -123,8 +127,15 @@ function CreatePost() {
     } else {
       setError('');
     }
-    const added = picked.slice(0, Math.max(0, room)).map((file) => ({ file, preview: URL.createObjectURL(file) }));
-    setImages((current) => [...current, ...added]);
+    const chosen = picked.slice(0, Math.max(0, room));
+    setPreparing((n) => n + chosen.length);
+    try {
+      const files = await Promise.all(chosen.map((file) => compressImage(file)));
+      const added = files.map((file) => ({ file, preview: URL.createObjectURL(file) }));
+      setImages((current) => [...current, ...added]);
+    } finally {
+      setPreparing((n) => n - chosen.length);
+    }
   };
 
   const removeImage = (index) => {
@@ -434,12 +445,13 @@ function CreatePost() {
           )}
         </div>
         {error && <p className="form-error" role="alert">{error}</p>}
-        <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+        {preparing > 0 && <p className="form-hint" role="status">{t('compose.preparingPhotos', { count: preparing })}</p>}
+        <button type="submit" className="btn btn-primary btn-block" disabled={submitting || preparing > 0}>
           {scheduleOn
             ? (submitting ? t('drafts.scheduling') : t('drafts.schedule'))
             : (submitting ? t('compose.posting') : t('compose.post'))}
         </button>
-        <button type="button" className="btn btn-secondary btn-block" onClick={handleSaveDraft} disabled={submitting}>
+        <button type="button" className="btn btn-secondary btn-block" onClick={handleSaveDraft} disabled={submitting || preparing > 0}>
           {t('drafts.saveDraft')}
         </button>
       </form>

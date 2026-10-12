@@ -1,4 +1,5 @@
 import api from '../api';
+import { compressImage } from '../utils/compressImage';
 
 function authHeaders(token) {
   return { headers: { Authorization: `Bearer ${token}` } };
@@ -26,9 +27,10 @@ export function saveLanguage(language, token) {
 
 // Day 36: cover photo (saved at once, not with the Edit Profile form).
 // Both resolve to { cover_url }.
-export function setCoverPhoto(file, token) {
+// Day 57: shrunk first (utils/compressImage).
+export async function setCoverPhoto(file, token) {
   const form = new FormData();
-  form.append('cover', file);
+  form.append('cover', await compressImage(file));
   return api.put('/profile/cover', form, authHeaders(token)).then((res) => res.data);
 }
 

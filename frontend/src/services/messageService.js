@@ -1,4 +1,5 @@
 import api from '../api';
+import { compressImage } from '../utils/compressImage';
 
 function authHeaders(token) {
   return { headers: { Authorization: `Bearer ${token}` } };
@@ -49,9 +50,10 @@ export function editMessageRest(conversationId, messageId, content, token) {
 // B9: image message (multipart 'image'; optional caption / reply target).
 // Always REST, like voice -- a file isn't something you emit over the
 // socket. The backend broadcasts new_message once it's saved.
-export function sendImageMessageRest(conversationId, file, clientTempId, token, { caption, replyToMessageId, onUploadProgress } = {}) {
+// Day 57: the photo is shrunk first (utils/compressImage).
+export async function sendImageMessageRest(conversationId, file, clientTempId, token, { caption, replyToMessageId, onUploadProgress } = {}) {
   const formData = new FormData();
-  formData.append('image', file);
+  formData.append('image', await compressImage(file));
   if (clientTempId) formData.append('clientTempId', clientTempId);
   if (caption) formData.append('caption', caption);
   if (replyToMessageId) formData.append('replyToMessageId', String(replyToMessageId));
@@ -134,9 +136,9 @@ export function setGroupMemberRole(conversationId, userId, role, token) {
 }
 
 // Day 34: group photo (admins). Resolve to { avatar_url }.
-export function setGroupPhoto(conversationId, file, token) {
+export async function setGroupPhoto(conversationId, file, token) {
   const form = new FormData();
-  form.append('photo', file);
+  form.append('photo', await compressImage(file));
   return api.put(`/conversations/${conversationId}/photo`, form, authHeaders(token)).then((res) => res.data);
 }
 

@@ -379,7 +379,13 @@
     "pollOptionsEmpty": "املأ كل الخيارات أو أزل الفارغة منها.",
     "pollOptionsSame": "يجب أن يكون كل خيار مختلفًا.",
     "choosePhotos": "اختر صورًا",
-    "closeFriends": "الأصدقاء المقرّبون"
+    "closeFriends": "الأصدقاء المقرّبون",
+    "preparingPhotos_zero": "جارٍ تجهيز الصور…",
+    "preparingPhotos_one": "جارٍ تجهيز صورتك…",
+    "preparingPhotos_two": "جارٍ تجهيز صورتين…",
+    "preparingPhotos_few": "جارٍ تجهيز {{count}} صور…",
+    "preparingPhotos_many": "جارٍ تجهيز {{count}} صورة…",
+    "preparingPhotos_other": "جارٍ تجهيز {{count}} صورة…"
   },
   "poll": {
     "label": "استطلاع",

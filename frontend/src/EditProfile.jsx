@@ -9,6 +9,7 @@ import { serverErrorText } from './utils/serverError';
 import { MAX_BIO_LENGTH } from './utils/textLimits';
 import CoverPhoto from './components/profile/CoverPhoto';
 import { removeCoverPhoto, setCoverPhoto } from './services/profileService';
+import { compressImage } from './utils/compressImage';
 
 // Day 36: same limit as the server (backend/utils/profileLinks.js).
 const MAX_LINKS = 3;
@@ -85,7 +86,7 @@ function EditProfile() {
     if (file) changeCover(setCoverPhoto(file, token));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -96,7 +97,8 @@ function EditProfile() {
     formData.append('bio', bio);
     formData.append('links', JSON.stringify(links.map((l) => l.trim()).filter(Boolean)));
     if (avatar) {
-      formData.append('avatar', avatar);
+      // Day 57: shrunk first (utils/compressImage).
+      formData.append('avatar', await compressImage(avatar));
     }
 
     api.put('/profile',

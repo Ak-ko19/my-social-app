@@ -1,4 +1,5 @@
 import api from '../api';
+import { compressImage } from '../utils/compressImage';
 
 // B3 Stories -- see backend/controllers/storiesController.js.
 function authHeaders(token) {
@@ -11,9 +12,10 @@ export function fetchStoriesTray(token) {
 }
 
 // Day 47: closeFriends -- for the people on your close friends list only.
-export function createStory(file, token, { closeFriends = false } = {}) {
+// Day 57: shrunk first (utils/compressImage).
+export async function createStory(file, token, { closeFriends = false } = {}) {
   const formData = new FormData();
-  formData.append('image', file);
+  formData.append('image', await compressImage(file));
   if (closeFriends) formData.append('closeFriends', 'true');
   return api.post('/stories', formData, authHeaders(token)).then((res) => res.data);
 }

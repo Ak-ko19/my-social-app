@@ -347,7 +347,9 @@
     "pollOptionsEmpty": "Fill in every option, or remove the empty ones.",
     "pollOptionsSame": "Each option must be different.",
     "choosePhotos": "Choose photos",
-    "closeFriends": "Close friends"
+    "closeFriends": "Close friends",
+    "preparingPhotos_one": "Preparing your photo…",
+    "preparingPhotos_other": "Preparing {{count}} photos…"
   },
   "poll": {
     "label": "Poll",
