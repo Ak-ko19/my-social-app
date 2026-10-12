@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 58 — Accessibility + translations check
-**Step:** 1 — scan for UI text not going through t(): done (committed). Next: step 2, left/right CSS.
+**Step:** 2 — left/right CSS: done (committed). Next: step 3, open states (dialogs, menus, sheets).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -163,3 +163,12 @@ What nothing catches yet, one automated check each:
   on fixtures (6 kinds caught, states / t() / skip / tests passed).
   Verified: Vitest 260, backend 868, check:i18n, lint, c3-landing,
   day11-bots.
+- Step 2 done: scripts/check-rtl-css.cjs (in check:i18n): margin /
+  padding / border -left/-right, left: / right:, corner radii, text-align
+  / float left/right, and translateX (not translateX(0)); [dir] override
+  rules and /* rtl-ok: why */ lines pass; comments ignored; one-line
+  rules split by declaration. The CSS was already logical: the only
+  physical rule was the always-LTR stack trace (now `start`, same
+  effect); three already-mirrored animations got rtl-ok notes. Vitest
+  test on fixtures. Verified: Vitest 262, backend 868, bundle 220.5,
+  check:i18n, lint, b16-rtl, b11-settings, day12-review.

@@ -43,7 +43,7 @@
    transition can reasonably do here without a page-transition library. */
 @keyframes screen-slide-in {
   from {
-    transform: translateX(24px);
+    transform: translateX(24px); /* rtl-ok: screen-slide-in-rtl below */
     opacity: 0;
   }
   to {
@@ -59,7 +59,7 @@
 /* B16: in right-to-left layouts screens slide in from the other side. */
 @keyframes screen-slide-in-rtl {
   from {
-    transform: translateX(-24px);
+    transform: translateX(-24px); /* rtl-ok: the RTL twin of screen-slide-in */
     opacity: 0;
   }
   to {
