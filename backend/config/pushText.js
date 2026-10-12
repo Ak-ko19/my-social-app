@@ -24,7 +24,11 @@ const TEXT = {
     group_request: '{name} asked to join {group}',
     group_approved: "You're now a member of {group}",
     // Day 53.
-    page_admin: '{name} made you an admin of {page}'
+    page_admin: '{name} made you an admin of {page}',
+    // Day 55: the reminder goes about an hour before (the server doesn't
+    // know the recipient's time zone, so no clock time here).
+    event_reminder: '{event} starts in about an hour',
+    event_cancelled: '{name} cancelled {event}'
   },
   ar: {
     like: 'أعجب {name} بمنشورك',
@@ -44,7 +48,9 @@ const TEXT = {
     poll_ended_own: 'انتهى استطلاعك. اطّلع على النتائج.',
     group_request: 'طلب {name} الانضمام إلى {group}',
     group_approved: 'أصبحت عضوًا في {group}',
-    page_admin: 'جعلك {name} مشرفًا على {page}'
+    page_admin: 'جعلك {name} مشرفًا على {page}',
+    event_reminder: 'يبدأ {event} بعد ساعة تقريبًا',
+    event_cancelled: 'ألغى {name} {event}'
   }
 };
 

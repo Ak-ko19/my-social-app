@@ -29,6 +29,9 @@ function notificationKey(n) {
   if (n.type === 'group_approved') return 'groupApproved';
   // Day 53: made an admin of a page.
   if (n.type === 'page_admin') return 'pageAdmin';
+  // Day 55: events you answered.
+  if (n.type === 'event_reminder') return 'eventReminder';
+  if (n.type === 'event_cancelled') return 'eventCancelled';
   return 'other';
 }
 
@@ -132,7 +135,7 @@ function Notifications() {
                   alt=""
                 />
                 <div className="card-row-body">
-                  <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username, group: n.community_name, page: n.page_name }} components={{ b: <strong /> }} />
+                  <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username, group: n.community_name, page: n.page_name, event: n.event_name, time: n.event_starts_at ? formatDate(n.event_starts_at, 'time') : '' }} components={{ b: <strong /> }} />
                   {n.post_content && <p className="card-row-quote" dir="auto">“{n.post_content}”</p>}
                   <span className="card-row-meta">{formatDate(n.created_at)}</span>
                   {/* Day 50: where a group notification leads. */}
@@ -141,6 +144,14 @@ function Notifications() {
                       <button type="button" className="btn btn-secondary btn-sm" onClick={() => navigate(n.type === 'group_request' ? `/groups/${n.community_id}/manage` : `/groups/${n.community_id}`)}
                         aria-label={t(n.type === 'group_request' ? 'notifications.reviewRequestsIn' : 'notifications.openGroupNamed', { group: n.community_name })}>
                         {t(n.type === 'group_request' ? 'notifications.reviewRequests' : 'notifications.openGroup')}
+                      </button>
+                    </div>
+                  )}
+                  {n.event_id && (
+                    <div className="card-row-actions">
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => navigate(`/events/${n.event_id}`)}
+                        aria-label={t('notifications.openEventNamed', { event: n.event_name })}>
+                        {t('notifications.openEvent')}
                       </button>
                     </div>
                   )}

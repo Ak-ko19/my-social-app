@@ -7,6 +7,7 @@ const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const { toUnicode } = require('../utils/myanmarText');
+const { notifyResponders } = require('../services/eventNotificationService');
 
 const AUDIENCES = ['public', 'followers'];
 const RESPONSES = ['going', 'interested'];
@@ -162,7 +163,12 @@ async function cancelEvent(req, res) {
   try {
     const event = await loadHostedEvent(Number(req.params.id), req.userId);
     if (event.has_ended) throw new EventError(400, 'This event has ended');
-    await db.query('UPDATE events SET cancelled_at = COALESCE(cancelled_at, now()) WHERE id = $1', [event.id]);
+    const cancelled = await db.query(
+      'UPDATE events SET cancelled_at = now() WHERE id = $1 AND cancelled_at IS NULL RETURNING id',
+      [event.id]
+    );
+    // Step 3: the people who answered are told -- once, not on a repeat.
+    if (cancelled.rows.length > 0) await notifyResponders(event.id, event.host_id, 'event_cancelled');
     res.json(await loadEvent(event.id, req.userId));
   } catch (err) {
     handle(res, err, 'Cancelling the event failed. Please try again later.');

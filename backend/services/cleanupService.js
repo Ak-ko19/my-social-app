@@ -10,6 +10,7 @@ const { deleteMedia } = require('./mediaCleanupService');
 const { liftExpiredSuspensions } = require('./moderationService');
 const scheduledPostService = require('./scheduledPostService');
 const pollEndService = require('./pollEndService');
+const eventNotificationService = require('./eventNotificationService');
 
 const STORY_GRACE = '1 hour'; // past expires_at (stories already vanish from reads at expiry)
 const NOTIFICATION_RETENTION = '90 days';
@@ -91,10 +92,12 @@ async function run({ dryRun = false } = {}) {
   // Day 45: a backstop for the server's own 30 s ticker (services/ticker).
   const scheduledPosts = await scheduledPostService.publishDue();
   const endedPolls = await pollEndService.notifyEnded();
+  const eventReminders = await eventNotificationService.remindDue();
   return {
     dryRun: false, stories, storyMedia, notifications, sessions, errorGroups, suspensionsLifted, linkPreviews,
     scheduledPostsPublished: scheduledPosts.published, scheduledPostsFailed: scheduledPosts.failed,
     endedPollsNotified: endedPolls.polls,
+    eventRemindersSent: eventReminders.events,
     durationMs: Date.now() - started
   };
 }

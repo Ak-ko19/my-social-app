@@ -90,6 +90,17 @@ const EXPECTED = /status of 404/;
   await mine.waitFor({ timeout: 8000 }).catch(() => {});
   check('...and it moves to his events, marked Interested', (await mine.getByText('Interested').count()) === 1);
 
+  // 2b. Step 3: the server's ticker reminds him when it's an hour away.
+  sql(`UPDATE events SET starts_at = now() + interval '30 minutes' WHERE id = ${eventId}`);
+  for (let i = 0; i < 45 && sql(`SELECT COUNT(*) FROM notifications WHERE event_id = ${eventId} AND type = 'event_reminder'`) === '0'; i += 1) {
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  await bob.goto(`${WEB}/notifications`, { waitUntil: 'networkidle' });
+  const reminder = bob.getByText('Beach clean-up', { exact: true });
+  await reminder.first().waitFor({ timeout: 8000 }).catch(() => {});
+  check('the ticker reminds him: "Beach clean-up starts at …"', /Beach clean-up starts at \d/.test(await reminder.first().locator('..').innerText().catch(() => '')));
+  await axe(bob, 'en/light, Notifications with an event reminder');
+
   // 3. A followers-only event stays hidden from bob.
   const secret = await (await api('alice', 'POST', '/events', { name: 'Family dinner', startsAt: new Date(Date.now() + 72 * 3600e3).toISOString(), audience: 'followers' })).json();
   await bob.goto(`${WEB}/events/${secret.id}`, { waitUntil: 'networkidle' });
@@ -112,6 +123,9 @@ const EXPECTED = /status of 404/;
   const bob2 = await open('bob', `/events/${eventId}`);
   await bob2.getByText('The host cancelled this event.').waitFor({ timeout: 8000 }).catch(() => {});
   check('bob sees it cancelled, with no answer buttons', (await bob2.getByRole('button', { name: 'Interested', exact: true }).count()) === 0);
+  await bob2.goto(`${WEB}/notifications`, { waitUntil: 'networkidle' });
+  await bob2.getByRole('button', { name: 'Open Beach clean-up' }).first().waitFor({ timeout: 8000 }).catch(() => {});
+  check('...and was told: "alice cancelled Beach clean-up"', (await bob2.getByText(/alice cancelled Beach clean-up/).count()) === 1);
   await bob2.context().close();
 
   // 6. Arabic, dark, 375px.

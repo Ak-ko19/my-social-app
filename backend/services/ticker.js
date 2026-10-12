@@ -1,19 +1,23 @@
 // Day 45: the server's own 30 s clock, for work that must happen at a set
-// time rather than once a day: scheduled posts going up, and "poll ended"
-// notifications. It also runs at start-up, so whatever fell due while the
-// free-tier server slept happens as soon as it wakes. The daily cleanup
-// runs the same jobs as a backstop. Several instances are safe: each job
-// takes its rows with FOR UPDATE SKIP LOCKED.
+// time rather than once a day: scheduled posts going up, "poll ended"
+// notifications and (Day 55) event reminders. It also runs at start-up,
+// so whatever fell due while the free-tier server slept happens as soon
+// as it wakes. The daily cleanup runs the same jobs as a backstop.
+// Several instances are safe: each job takes its rows with FOR UPDATE
+// SKIP LOCKED.
 const logger = require('../utils/logger');
 const scheduledPostService = require('./scheduledPostService');
 const pollEndService = require('./pollEndService');
+const eventNotificationService = require('./eventNotificationService');
 
 const TICK_MS = 30 * 1000;
 
 // Each job on its own, so one failing doesn't hold up the other.
 const JOBS = [
   ['scheduled posts', () => scheduledPostService.publishDue(), (r) => r.published || r.failed],
-  ['ended polls', () => pollEndService.notifyEnded(), (r) => r.polls]
+  ['ended polls', () => pollEndService.notifyEnded(), (r) => r.polls],
+  // Day 55: "starts in about an hour".
+  ['event reminders', () => eventNotificationService.remindDue(), (r) => r.events]
 ];
 
 let timer = null;

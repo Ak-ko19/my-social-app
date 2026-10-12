@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 55–56 — Events (basic)
-**Step:** 2 — events UI: done (committed). Next: step 3, reminders and notifications.
+**Step:** 3 — event reminders and notifications: done (committed). Next: close Day 55–56 (full browser run, tick, Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -191,3 +191,15 @@ Facebook Events, basic. Nothing exists yet. Three slices:
   duration can contain "123". Fixed with an id and token that can't
   occur by chance; backend 850/850 after. Rule: gate every commit on
   the checks, e.g. `npm test ... | tee log && ! grep -q failed log && git commit`.
+- Step 3 done: migration 066 (notifications.event_id,
+  notification_preferences.events); services/eventNotificationService.js
+  (remindDue: an hour before, FOR UPDATE SKIP LOCKED, marked first, no
+  late reminder if already started; notifyResponders: active, no block,
+  still allowed by the audience) in the ticker and the daily cleanup;
+  cancel notifies once; push EN/AR; Notifications screen + Events
+  switch (b11 counts 9). events.test.js 16, 13 mutations caught,
+  rehearsal 015 -> 066, day55-events 20/20 (real ticker reminder),
+  Vitest 248. scheduledPosts ticker test: a pass is now 4 connections.
+  Verified: backend 856 (one run first failed to start the test DB: it
+  was replaying its log after a crash; it came up, re-run clean),
+  day22-push, day26-a11y, day30-guard, A3 ar + en (288 each).

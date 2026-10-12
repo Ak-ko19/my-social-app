@@ -162,6 +162,92 @@ describe('events (Day 55)', () => {
     expect((await request(app).get('/events?section=all').set(auth(host))).status).toBe(400);
   });
 
+  // Day 55 step 3: reminders and the cancel notification.
+  describe('notifications', () => {
+    const reminders = () => require('../../services/eventNotificationService');
+    const inbox = async (user) => (await request(app).get('/notifications').set(auth(user))).body.notifications
+      .map((n) => ({ type: n.type, from: n.actor_username, event: n.event_name }));
+    // Starts in `minutes` (straight into the table: create wants the future
+    // and keeps it there).
+    const startsIn = (id, minutes) => pool.query('UPDATE events SET starts_at = now() + make_interval(mins => $2) WHERE id = $1', [id, minutes]);
+
+    it('an hour before: everyone going or interested who can still see it; once', async () => {
+      const event = (await create(host, { name: 'Picnic' })).body;
+      await answer(guest, event.id, 'going');
+      await answer(other, event.id, 'interested');
+      const blocked = await registerAndLogin(app);
+      await answer(blocked, event.id, 'going');
+      await request(app).post(`/users/${blocked.id}/block`).set(auth(host));
+      const gone = await registerAndLogin(app);
+      await answer(gone, event.id, 'interested');
+      await pool.query('UPDATE users SET is_deactivated = true WHERE id = $1', [gone.id]);
+      expect(await reminders().remindDue()).toEqual({ events: 0, people: 0 }); // two days away
+      await startsIn(event.id, 30);
+      expect(await reminders().remindDue()).toEqual({ events: 1, people: 2 });
+      expect(await inbox(guest)).toEqual([{ type: 'event_reminder', from: host.username, event: 'Picnic' }]);
+      expect(await inbox(other)).toEqual([{ type: 'event_reminder', from: host.username, event: 'Picnic' }]);
+      expect(await inbox(blocked)).toEqual([]);
+      expect(await inbox(host)).toEqual([]);
+      expect(await reminders().remindDue()).toEqual({ events: 0, people: 0 });
+    });
+
+    it('a new start time re-arms it; slept past the start: marked, no late reminder', async () => {
+      const event = (await create(host)).body;
+      await answer(guest, event.id, 'going');
+      await startsIn(event.id, 30);
+      await reminders().remindDue();
+      await request(app).patch(`/events/${event.id}`).set(auth(host)).send({ startsAt: inHours(30) });
+      await startsIn(event.id, 20);
+      expect((await reminders().remindDue()).people).toBe(1);
+      expect((await inbox(guest)).filter((n) => n.type === 'event_reminder')).toHaveLength(2);
+      const late = (await create(host, { name: 'Late' })).body;
+      await answer(guest, late.id, 'going');
+      await startsIn(late.id, -10);
+      expect(await reminders().remindDue()).toEqual({ events: 1, people: 0 });
+      expect((await pool.query('SELECT reminder_sent_at IS NOT NULL AS sent FROM events WHERE id = $1', [late.id])).rows[0].sent).toBe(true);
+    });
+
+    it('not for a cancelled event, nor a followers-only one they can no longer see, nor with Events off', async () => {
+      const cancelled = (await create(host, { name: 'Off' })).body;
+      await answer(guest, cancelled.id, 'going');
+      await request(app).post(`/events/${cancelled.id}/cancel`).set(auth(host));
+      await startsIn(cancelled.id, 30);
+      const forFollowers = (await create(host, { name: 'Close', audience: 'followers' })).body;
+      await request(app).post(`/users/${host.id}/follow`).set(auth(other));
+      await answer(other, forFollowers.id, 'going');
+      await request(app).delete(`/users/${host.id}/follow`).set(auth(other)); // no longer a follower
+      await startsIn(forFollowers.id, 30);
+      const quiet = (await create(host, { name: 'Quiet' })).body;
+      const muted = await registerAndLogin(app);
+      await answer(muted, quiet.id, 'going');
+      await request(app).put('/notification-preferences').set(auth(muted)).send({ events: false });
+      await startsIn(quiet.id, 30);
+      await pool.query('DELETE FROM notifications');
+      expect(await reminders().remindDue()).toEqual({ events: 2, people: 1 }); // "Close" has nobody left; "Quiet" one, switched off
+      expect(await inbox(guest)).toEqual([]);
+      expect(await inbox(other)).toEqual([]);
+      expect(await inbox(muted)).toEqual([]);
+    });
+
+    it('cancelling tells the people who answered, once; deleting takes the notifications with it', async () => {
+      const event = (await create(host, { name: 'Picnic' })).body;
+      await answer(guest, event.id, 'interested');
+      await request(app).post(`/events/${event.id}/cancel`).set(auth(host));
+      await request(app).post(`/events/${event.id}/cancel`).set(auth(host)); // again: no second one
+      expect(await inbox(guest)).toEqual([{ type: 'event_cancelled', from: host.username, event: 'Picnic' }]);
+      await request(app).delete(`/events/${event.id}`).set(auth(host));
+      expect(await inbox(guest)).toEqual([]);
+    });
+
+    it('the daily cleanup is a backstop for the ticker', async () => {
+      const event = (await create(host)).body;
+      await answer(guest, event.id, 'going');
+      await startsIn(event.id, 30);
+      const cleanup = require('../../services/cleanupService');
+      expect((await cleanup.run()).eventRemindersSent).toBe(1);
+    });
+  });
+
   it('in the data export', async () => {
     const event = (await create(host, { name: 'Book club' })).body;
     await answer(guest, event.id, 'going');

@@ -612,14 +612,18 @@
       "pollEndedOwn": "انتهى استطلاعك. اطّلع على النتائج.",
       "groupRequest": "طلب <b>{{name}}</b> الانضمام إلى <b>{{group}}</b>",
       "groupApproved": "أصبحت عضوًا في <b>{{group}}</b>",
-      "pageAdmin": "جعلك <b>{{name}}</b> مشرفًا على <b>{{page}}</b>"
+      "pageAdmin": "جعلك <b>{{name}}</b> مشرفًا على <b>{{page}}</b>",
+      "eventReminder": "يبدأ <b>{{event}}</b> الساعة {{time}}",
+      "eventCancelled": "ألغى <b>{{name}}</b> <b>{{event}}</b>"
     },
     "reviewRequests": "مراجعة الطلبات",
     "reviewRequestsIn": "مراجعة طلبات الانضمام إلى {{group}}",
     "openGroup": "فتح المجموعة",
     "openGroupNamed": "فتح {{group}}",
     "openPage": "فتح الصفحة",
-    "openPageNamed": "فتح {{page}}"
+    "openPageNamed": "فتح {{page}}",
+    "openEvent": "فتح الحدث",
+    "openEventNamed": "فتح {{event}}"
   },
   "saved": {
     "title": "المنشورات المحفوظة",
@@ -866,6 +870,10 @@
       "pages": {
         "title": "الصفحات",
         "description": "عندما يجعلك أحد مشرفًا على صفحته"
+      },
+      "events": {
+        "title": "الأحداث",
+        "description": "تذكيرات بالأحداث التي أنت ذاهب إليها أو مهتم بها، وعند إلغاء أحدها"
       }
     },
     "push": {

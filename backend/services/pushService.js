@@ -166,7 +166,7 @@ function fireAndForget(task) {
 }
 
 // After a notification row was created (notificationService / mentions).
-function pushNotification({ userId, actorId, type, postId = null, commentId = null, communityId = null, pageId = null }) {
+function pushNotification({ userId, actorId, type, postId = null, commentId = null, communityId = null, pageId = null, eventId = null }) {
   if (!vapid()) return;
   fireAndForget(async () => {
     const actor = (await db.query('SELECT username FROM users WHERE id = $1', [actorId])).rows[0];
@@ -178,17 +178,22 @@ function pushNotification({ userId, actorId, type, postId = null, commentId = nu
     if (communityId && !group) return;
     const page = pageId ? (await db.query('SELECT name FROM pages WHERE id = $1', [pageId])).rows[0] : null;
     if (pageId && !page) return;
+    // Day 55: and an event's.
+    const event = eventId ? (await db.query('SELECT name FROM events WHERE id = $1', [eventId])).rows[0] : null;
+    if (eventId && !event) return;
     const key = type === 'mention' ? (commentId ? 'mention_comment' : 'mention_post') : type;
     // Day 45: a scheduled post that couldn't go up is back in the drafts.
     const url = postId ? `/posts/${postId}`
       : communityId ? `/groups/${communityId}${type === 'group_request' ? '/manage' : ''}`
         : pageId ? `/pages/${pageId}`
-          : type === 'scheduled_failed' ? '/drafts' : '/notifications';
+          : eventId ? `/events/${eventId}`
+            : type === 'scheduled_failed' ? '/drafts' : '/notifications';
     await sendToUser(userId, (language) => ({
       title: 'MySocialApp',
-      body: pushText(language, key, { name: actor.username, group: group?.name, page: page?.name }),
+      body: pushText(language, key, { name: actor.username, group: group?.name, page: page?.name, event: event?.name }),
       url,
-      tag: postId ? `post-${postId}` : communityId ? `group-${communityId}-${type}` : pageId ? `page-${pageId}-${type}` : `notify-${type}-${actorId}`
+      tag: postId ? `post-${postId}` : communityId ? `group-${communityId}-${type}` : pageId ? `page-${pageId}-${type}`
+        : eventId ? `event-${eventId}-${type}` : `notify-${type}-${actorId}`
     }));
   });
 }

@@ -540,14 +540,18 @@
       "pollEndedOwn": "Your poll has ended. See the results.",
       "groupRequest": "<b>{{name}}</b> asked to join <b>{{group}}</b>",
       "groupApproved": "You're now a member of <b>{{group}}</b>",
-      "pageAdmin": "<b>{{name}}</b> made you an admin of <b>{{page}}</b>"
+      "pageAdmin": "<b>{{name}}</b> made you an admin of <b>{{page}}</b>",
+      "eventReminder": "<b>{{event}}</b> starts at {{time}}",
+      "eventCancelled": "<b>{{name}}</b> cancelled <b>{{event}}</b>"
     },
     "reviewRequests": "Review requests",
     "reviewRequestsIn": "Review requests to join {{group}}",
     "openGroup": "Open group",
     "openGroupNamed": "Open {{group}}",
     "openPage": "Open page",
-    "openPageNamed": "Open {{page}}"
+    "openPageNamed": "Open {{page}}",
+    "openEvent": "Open event",
+    "openEventNamed": "Open {{event}}"
   },
   "saved": {
     "title": "Saved Posts",
@@ -786,6 +790,10 @@
       "pages": {
         "title": "Pages",
         "description": "When someone makes you an admin of their page"
+      },
+      "events": {
+        "title": "Events",
+        "description": "Reminders for events you're going to or interested in, and when one is cancelled"
       }
     },
     "push": {

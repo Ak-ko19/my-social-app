@@ -300,7 +300,9 @@ CREATE TABLE notification_preferences (
   -- Added by migration 062_add_group_notifications (Day 50).
   groups boolean NOT NULL DEFAULT true,
   -- Added by migration 064_add_page_notifications (Day 53).
-  pages boolean NOT NULL DEFAULT true
+  pages boolean NOT NULL DEFAULT true,
+  -- Added by migration 066_add_event_notifications (Day 55).
+  events boolean NOT NULL DEFAULT true
 );
 
 CREATE TABLE reports (
@@ -648,3 +650,7 @@ CREATE TABLE event_responses (
 );
 -- "Events I'm going to", and the cascade from a deleted account.
 CREATE INDEX idx_event_responses_user ON event_responses (user_id);
+
+-- Added by migration 066_add_event_notifications (Day 55).
+ALTER TABLE notifications ADD COLUMN event_id INTEGER REFERENCES events(id) ON DELETE CASCADE;
+CREATE INDEX idx_notifications_event ON notifications (event_id) WHERE event_id IS NOT NULL;

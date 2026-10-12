@@ -185,6 +185,22 @@ describe('web push (Day 22)', () => {
       ]);
     });
 
+    // Day 55: an event's reminder and its cancellation open the event.
+    it('event reminder and cancellation', async () => {
+      const startsAt = new Date(Date.now() + 48 * 3600e3).toISOString();
+      const event = (await request(app).post('/events').set(auth(bob)).send({ name: 'Picnic', startsAt })).body;
+      await request(app).put(`/events/${event.id}/response`).set(auth(alice)).send({ status: 'going' });
+      await pool.query("UPDATE events SET starts_at = now() + interval '30 minutes' WHERE id = $1", [event.id]);
+      await require('../../services/eventNotificationService').remindDue();
+      await pool.query("UPDATE users SET language = 'ar' WHERE id = $1", [alice.id]);
+      await request(app).post(`/events/${event.id}/cancel`).set(auth(bob));
+      await push().whenIdle();
+      expect(sent.map((s) => s.payload)).toEqual([
+        { title: 'MySocialApp', body: 'Picnic starts in about an hour', url: `/events/${event.id}`, tag: `event-${event.id}-event_reminder` },
+        { title: 'MySocialApp', body: `ألغى ${bob.username} Picnic`, url: `/events/${event.id}`, tag: `event-${event.id}-event_cancelled` }
+      ]);
+    });
+
     it('respects the notification settings (likes off -> no push)', async () => {
       await request(app).put('/notification-preferences').set(auth(alice)).send({ likes: false });
       const post = (await request(app).post('/posts').set(auth(alice)).field('content', 'hi')).body;

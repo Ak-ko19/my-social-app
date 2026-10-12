@@ -118,6 +118,45 @@ describe('Notifications: pages', () => {
   });
 });
 
+// Day 55: an event you answered -- its reminder, or the host cancelling.
+describe('Notifications: events', () => {
+  const startsAt = '2026-10-12T15:00:00Z';
+  beforeEach(() => {
+    api.get.mockResolvedValue({
+      data: {
+        notifications: [
+          { ...me, id: 11, actor_username: 'olga', type: 'event_reminder', post_id: null, comment_id: null, event_id: 8, event_name: 'Picnic', event_starts_at: startsAt },
+          { ...me, id: 12, actor_username: 'olga', type: 'event_cancelled', post_id: null, comment_id: null, event_id: 9, event_name: 'Book club', event_starts_at: startsAt }
+        ]
+      }
+    });
+  });
+
+  it('the reminder shows the start in your time; cancelled names who; both open the event', async () => {
+    await setLanguage('en');
+    render(
+      <MemoryRouter initialEntries={['/notifications']}>
+        <Routes>
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/events/:id" element={<p>Event screen</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+    const time = new Date(startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    expect((await screen.findByText('Picnic', { selector: 'strong' })).parentElement).toHaveTextContent(`Picnic starts at ${time}`);
+    expect(screen.getByText('Book club', { selector: 'strong' }).parentElement).toHaveTextContent('olga cancelled Book club');
+    await userEvent.click(screen.getByRole('button', { name: 'Open Picnic' }));
+    expect(await screen.findByText('Event screen')).toBeInTheDocument();
+  });
+
+  it('in Arabic', async () => {
+    await setLanguage('ar');
+    show();
+    expect((await screen.findByText('Book club', { selector: 'strong' })).parentElement).toHaveTextContent('ألغى olga Book club');
+    await setLanguage('en');
+  });
+});
+
 // Day 45: a poll ended -- yours, or one you voted in.
 describe('Notifications: polls ended', () => {
   beforeEach(() => {

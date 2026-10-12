@@ -21,12 +21,16 @@ async function getNotifications(req, res) {
         -- Day 50: group notifications name the group.
         notifications.community_id, communities.name AS community_name,
         -- Day 53: and page notifications name the page.
-        notifications.page_id, pages.name AS page_name
+        notifications.page_id, pages.name AS page_name,
+        -- Day 55: and event notifications name the event; the app shows its
+        -- start in the viewer's own time zone.
+        notifications.event_id, events.name AS event_name, events.starts_at AS event_starts_at
       FROM notifications
       JOIN users actor ON notifications.actor_id = actor.id
       LEFT JOIN posts ON notifications.post_id = posts.id
       LEFT JOIN communities ON notifications.community_id = communities.id
       LEFT JOIN pages ON notifications.page_id = pages.id
+      LEFT JOIN events ON notifications.event_id = events.id
       WHERE notifications.user_id = $1
       ORDER BY notifications.created_at DESC
       LIMIT $2 OFFSET $3
