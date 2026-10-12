@@ -148,7 +148,8 @@ export function useFormGuard(minMs = null) {
   // keyboard, autoComplete off from autofill.
   const honeypot = (
     <>
-      <div className="hp-field" aria-hidden="true">
+      {/* data-i18n="skip": bait for bots in English, never shown to people. */}
+      <div className="hp-field" aria-hidden="true" data-i18n="skip">
         <label>
           Website
           <input ref={honeypotRef} type="text" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />

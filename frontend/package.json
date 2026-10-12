@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check:i18n": "node scripts/check-i18n.cjs",
+    "check:i18n": "node scripts/check-i18n.cjs && node scripts/check-hardcoded-text.cjs",
     "check:headers": "node scripts/check-headers.cjs",
     "check:bundle": "node scripts/check-bundle.cjs",
     "test": "vitest run",

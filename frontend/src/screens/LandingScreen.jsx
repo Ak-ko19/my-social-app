@@ -67,7 +67,8 @@ function LandingScreen() {
           {/* A small, static illustration of a feed card (not real data). */}
           <figure className="landing-preview" aria-label={t('landing.previewCaption')}>
             <div className="landing-preview-card">
-              <div className="landing-preview-head">
+              {/* A sample username and its initials: names aren't translated. */}
+            <div className="landing-preview-head" data-i18n="skip">
                 <span className="landing-preview-avatar" aria-hidden="true">TH</span>
                 <span>
                   <strong>thiri</strong>

@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 58 — Accessibility + translations check
-**Step:** 1 — audit every screen added since Day 26 (EN/AR, RTL, a11y): not started.
+**Step:** 1 — scan for UI text not going through t(): done (committed). Next: step 2, left/right CSS.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -136,9 +136,30 @@
   must wait for .image-picker-item before checking the composer.
 
 ## Plan
-- (next: list every screen and component added since the last a11y /
-  translation sweep; check each in EN light and AR dark at 375px with
-  axe, keyboard, and text that should be translated or isolated)
+What's already enforced: check:i18n (every key in EN and AR, plurals,
+no English copies in AR, Arabic for server messages), day26-a11y (axe
+on 117 resting pages in both themes), A3 (every page, EN/AR, 375px).
+What nothing catches yet, one automated check each:
+- Step 1 Text that skips t(): scripts/check-hardcoded-text.cjs scans
+  frontend/src JSX for text children and aria-label / placeholder /
+  title / alt string literals containing letters. Fix what it finds;
+  run it inside check:i18n so CI keeps it.
+- Step 2 Left/right CSS: scan every .css for physical properties
+  (margin-left, padding-right, left:, right:, text-align: left/right,
+  border-left...) that should be logical (inline-start/end). Fix them;
+  same CI hook.
+- Step 3 Open states: axe on dialogs, menus, sheets and pickers (the
+  resting-page suite never opens them) in AR dark 375 and EN light;
+  keyboard: Escape closes, focus returns, Tab stays inside.
 
 ## Progress
-- (none yet)
+- Step 1 done: scripts/check-hardcoded-text.cjs (espree AST): JSX text,
+  aria-label / placeholder / title / alt and our components' text props
+  (label, description, message, confirmLabel...), and setError('...')-
+  style setters (a single camelCase word counts as a state). Skips test
+  files and data-i18n="skip" subtrees. Part of `npm run check:i18n`
+  (so CI). It found nothing real: the bot honeypot's "Website" and the
+  landing page's sample username were marked skip. A Vitest test runs it
+  on fixtures (6 kinds caught, states / t() / skip / tests passed).
+  Verified: Vitest 260, backend 868, check:i18n, lint, c3-landing,
+  day11-bots.
