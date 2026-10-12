@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 57 — Storage safety
-**Step:** 1 — client-side image compression: done (committed). Next: step 2, per-person upload limits.
+**Step:** 2 — per-person upload limits: done (committed). Next: step 3, Admin > Storage.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -165,3 +165,12 @@ with the existing keys (when they're set).
   2.5 MB WebP in real Edge), b2-media (now waits for thumbnails),
   b3-stories, b9-dm, day34-group-photo, day36-cover, day45-drafts,
   day26-a11y, A3 ar + en (288 each).
+- Step 2 done: migration 067 media_uploads (ledger, 30 days), services/
+  uploadQuotaService.js (rolling 24 h: 100 files / 300 MB by default;
+  UPLOAD_LIMIT_FILES_PER_DAY, UPLOAD_LIMIT_MB_PER_DAY env names), checked
+  in both upload paths BEFORE Cloudinary, recorded after; 429 with an
+  EN/AR message (a test guards its Arabic, which check:i18n can't see);
+  cleanup trims the ledger; export recent_uploads; Privacy Policy EN/AR.
+  11 mutations caught. Verified: backend 862, Vitest 254, rehearsal 015
+  -> 067, browser day57-storage 3/3 (limit message in the composer),
+  b2-media, b3-stories, c2-legal, day28-export.

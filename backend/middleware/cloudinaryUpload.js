@@ -2,6 +2,7 @@ const multer = require('multer');
 const cloudinary = require('../config/cloudinary');
 const { clientError, uploadFailed } = require('./errorHandler');
 const { deleteMedia } = require('../services/mediaCleanupService');
+const uploadQuota = require('../services/uploadQuotaService');
 
 // Files are uploaded before the route handler runs, so a request the
 // handler then refuses (4xx: validation, not a member, blocked, ...) would
@@ -70,9 +71,19 @@ const uploadAudio = multer({
 // Voice messages pass format: 'mp3' (see conversationRoutes.js) so every
 // client, regardless of which browser recorded the original file, always
 // gets back a URL in one universally-playable format.
+// Day 57: the person's daily upload budget is checked first (nothing is
+// sent to Cloudinary when it's used up) and each stored file is recorded.
+const ledgerKind = (resourceType) => (resourceType === 'video' ? 'audio' : 'image');
+const storedSize = (result, file) => ({ bytes: Number.isFinite(result?.bytes) ? result.bytes : file.size });
+
 function uploadToCloudinary(folder = 'mysocialapp', resourceType = 'image', format) {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     if (!req.file) return next();
+    try {
+      await uploadQuota.checkQuota(req.userId, [req.file]);
+    } catch (err) {
+      return next(err);
+    }
 
     const uploadOptions = { folder, resource_type: resourceType };
     if (format) uploadOptions.format = format;
@@ -81,7 +92,7 @@ function uploadToCloudinary(folder = 'mysocialapp', resourceType = 'image', form
       if (err) return next(uploadFailed(err));
       req.cloudinaryResult = result;
       deleteIfRefused(res, [result.secure_url]);
-      next();
+      uploadQuota.record(req.userId, ledgerKind(resourceType), [storedSize(result, req.file)]).then(() => next(), next);
     });
     stream.end(req.file.buffer);
   };
@@ -126,6 +137,11 @@ function uploadBufferToCloudinary(buffer, options) {
 function uploadManyToCloudinary(folder = 'mysocialapp') {
   return async (req, res, next) => {
     const files = req.postImageFiles || [];
+    try {
+      await uploadQuota.checkQuota(req.userId, files);
+    } catch (err) {
+      return next(err);
+    }
     const settled = await Promise.allSettled(
       files.map((file) => uploadBufferToCloudinary(file.buffer, { folder, resource_type: 'image' }))
     );
@@ -136,6 +152,11 @@ function uploadManyToCloudinary(folder = 'mysocialapp') {
     }
     req.cloudinaryResults = settled.map((s) => s.value);
     deleteIfRefused(res, req.cloudinaryResults.map((r) => r.secure_url));
+    try {
+      await uploadQuota.record(req.userId, 'image', req.cloudinaryResults.map((r, i) => storedSize(r, files[i])));
+    } catch (err) {
+      return next(err);
+    }
     next();
   };
 }

@@ -110,6 +110,8 @@ const AR = {
   'Page not found': 'الصفحة غير موجودة',
   'Only the page owner can do that': 'يمكن لمالك الصفحة فقط القيام بذلك',
   "Only the page's owner and admins can post as this page": 'يمكن لمالك الصفحة ومشرفيها فقط النشر باسمها',
+  // Day 57: the daily upload limit (services/uploadQuotaService).
+  "You've reached today's upload limit. Please try again tomorrow.": 'لقد بلغت حد الرفع لهذا اليوم. يرجى المحاولة غدًا.',
   // Day 55: events.
   'An event needs a name': 'يجب أن يكون للحدث اسم',
   'Choose when the event starts': 'اختر موعد بدء الحدث',

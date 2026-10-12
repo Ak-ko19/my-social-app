@@ -654,3 +654,16 @@ CREATE INDEX idx_event_responses_user ON event_responses (user_id);
 -- Added by migration 066_add_event_notifications (Day 55).
 ALTER TABLE notifications ADD COLUMN event_id INTEGER REFERENCES events(id) ON DELETE CASCADE;
 CREATE INDEX idx_notifications_event ON notifications (event_id) WHERE event_id IS NOT NULL;
+
+-- Added by migration 067_add_media_uploads (Day 57): the upload ledger.
+CREATE TABLE media_uploads (
+  id BIGSERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind varchar(10) NOT NULL CONSTRAINT chk_media_uploads_kind CHECK (kind IN ('image', 'audio')),
+  bytes BIGINT NOT NULL CONSTRAINT chk_media_uploads_bytes CHECK (bytes >= 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- "What did this person upload in the last 24 hours."
+CREATE INDEX idx_media_uploads_user_recent ON media_uploads (user_id, created_at DESC);
+-- The admin's "last 24 hours" and the cleanup.
+CREATE INDEX idx_media_uploads_created ON media_uploads (created_at);

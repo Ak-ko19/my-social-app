@@ -30,7 +30,7 @@ async function buildExport(userId) {
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
     legacyMessages, notifications, reports, sessions, pushDevices, messageReactions, hiddenSuggestions, searches,
-    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends, hiddenWords, pagesAdmin, eventsHosted, eventResponses
+    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends, hiddenWords, pagesAdmin, eventsHosted, eventResponses, uploads
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -132,7 +132,9 @@ async function buildExport(userId) {
     rows(`SELECT id, name, description, starts_at, ends_at, location, audience, cancelled_at, created_at
           FROM events WHERE host_id = $1 ORDER BY created_at`, [userId]),
     rows(`SELECT r.event_id, e.name, r.status, r.created_at FROM event_responses r JOIN events e ON e.id = r.event_id
-          WHERE r.user_id = $1 ORDER BY r.created_at`, [userId])
+          WHERE r.user_id = $1 ORDER BY r.created_at`, [userId]),
+    // Day 57: what you uploaded lately (kept 30 days, for the daily limit).
+    rows('SELECT kind, bytes, created_at FROM media_uploads WHERE user_id = $1 ORDER BY created_at', [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -192,6 +194,7 @@ async function buildExport(userId) {
     groups,
     pages: { owned: pagesOwned, admin_of: pagesAdmin, followed: pagesFollowed },
     events: { hosted: eventsHosted, responses: eventResponses },
+    recent_uploads: uploads,
     conversations: conversations.map((c) => ({
       ...c,
       participants: (peopleByConversation[c.id] || []).map((p) => p.username),
