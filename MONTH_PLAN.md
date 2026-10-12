@@ -227,7 +227,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 53–54 — Pages (basic)
 - [x] Create page, follow page, post as page, page admins. *(Create/follow/post as page from B14; page admins, the pages list and the admin notification added — see Progress Log.)*
 ### Day 55–56 — Events (basic)
-- [ ] Create event, going/interested, event page, reminders via notifications.
+- [x] Create event, going/interested, event page, reminders via notifications. *(Built new, Facebook-style — see Progress Log.)*
 ### Day 57 — Storage safety
 - [ ] Check Neon and Cloudinary usage; client-side image compression before upload; limits per user; warn in admin panel near limits.
 ### Day 58 — Accessibility + translations check
@@ -1857,3 +1857,51 @@ Verified, then the gaps, one slice each:
   - Full browser run in batches of five: all 52 regular suites (new:
     day53-page-admins, 14 checks) + the 6 special-stack suites + perf
     40/40 + A3 EN/AR (276 each) + a11y (113 page checks).
+
+### 2026-10-12 — Day 55–56: Events (basic)
+New: nothing existed. Facebook Events, basic, in three slices:
+- **API (`f690a05`, migration 065):** events (host, name, time with an
+  optional end, place, details, public or followers-only) and Going /
+  Interested answers.
+  - Seen the way posts are: blocks either way, a deactivated host, and
+    "followers" meaning accepted followers.
+  - The host edits, cancels (it stays, marked) or deletes. Nobody
+    answers a cancelled or finished event.
+  - Lists: your events (hosting or answered) and Discover, upcoming
+    soonest first, paged; guest lists paged.
+  - The data export and the Privacy Policy include events.
+- **UI (`ea48e34`):** Menu > Events with Your events and Discover tabs.
+  - Create and edit: local date-time pickers, with the time zone shown.
+  - The event page: a calendar badge, when, host and counts, place,
+    details, Going / Interested toggles, guest tabs, and the host's Edit,
+    Cancel and Delete (asking first).
+  - The composer's date helpers moved to utils/localTime.js, now shared.
+  - axe found that badge text on the pale badges was 3–4:1 (the same
+    colours are used app-wide). There are new --badge-*-text tokens at
+    6:1+.
+- **Reminders and notifications (`d6ea3b5`, migration 066):** the
+  server's 30 s ticker reminds everyone going or interested about an
+  hour before. It skips a late reminder if the server slept past the
+  start, and the daily cleanup is a backstop.
+  - The host cancelling tells them.
+  - Each person's settings apply (a new Events switch), and so do blocks
+    and the audience.
+  - Push in EN/AR; the in-app reminder shows the start in the viewer's
+    own time zone.
+- **Process notes, honestly:**
+  - `ea48e34` was committed in the same command as a backend run with
+    one failure. That was a flaky TEST (it looked for "123" in a log
+    line holding a random id and timestamps). It's fixed in `23c35ab`,
+    and every commit is now gated on its checks.
+  - One backend run couldn't start the test database while it replayed
+    its log after a crash; the re-run was clean.
+- **Not done:** an event photo (Cloudinary; can follow the profile cover
+  pattern), "invite friends", and events in search. The perf suite
+  doesn't time the events lists yet.
+- **Tests at close:**
+  - backend 856/856 (events 16; 33 mutation checks, all caught); Vitest
+    248/248; check:i18n 1298 keys; bundle 219.5 kB; rehearsal 015 → 066.
+  - Full browser run in batches of five: all 53 regular suites (new:
+    day55-events, 20 checks, including a reminder from the real ticker)
+    + the 6 special-stack suites + perf 40/40 + A3 EN/AR (288 each) +
+    a11y (117 page checks).

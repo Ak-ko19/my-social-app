@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 55–56 — Events (basic)
-**Step:** 3 — event reminders and notifications: done (committed). Next: close Day 55–56 (full browser run, tick, Progress Log).
+**Day:** 57 — Storage safety
+**Step:** 1 — audit what exists (usage numbers, uploads, admin panel): not started.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -129,77 +129,12 @@
   a node -e "..." or heredoc edit -- bash eats them. Use the Edit tool.
 
 
+- Backend test logs go in the scratchpad, never outside the project
+  (writing ../../be-run.txt was refused on Day 55).
+
 ## Plan
-Facebook Events, basic. Nothing exists yet. Three slices:
-- Step 1 API (migration 065):
-  - events (id, host_id cascade, name <=100, description <=2000,
-    starts_at, ends_at null and after starts_at, location <=200 free
-    text, audience 'public' | 'followers', cancelled_at,
-    reminder_sent_at, created_at); event_responses (event_id, user_id,
-    'going' | 'interested', created_at).
-  - Indexes: starts_at for upcoming, host_id, responses by user, and a
-    partial index for reminders that are due.
-  - Who sees an event: as posts do. A deactivated host's events are
-    hidden, a block either way hides them, and "followers" means the
-    host's accepted followers (and the host).
-  - POST /events, GET /events/:id (+ going / interested counts, your
-    response, is_host), PATCH (host; a new time re-arms the reminder),
-    POST /events/:id/cancel (host), DELETE (host),
-    PUT/DELETE /events/:id/response, GET /events/:id/guests?status=,
-    GET /events?section=mine|discover (mine = hosting or responded,
-    upcoming first; discover = public upcoming events you can see,
-    soonest first). Everything paged.
-  - Rules: start in the future when created (up to a year ahead), no
-    responding to a cancelled or finished event, spam-like limits via
-    the global limiter.
-- Step 2 UI: Menu > Events (/events: Upcoming / Discover tabs), Create
-  (/events/new: name, start, end, location, details, audience; time
-  zone shown), event page (/events/:id: date, host, place, details,
-  Going / Interested, guests, host: Edit, Cancel, Delete), Edit.
-  EN/AR, RTL, dark, a11y; browser suite.
-- Step 3 reminders and notifications (migration 066:
-  notifications.event_id, notification_preferences.events): the ticker
-  reminds Going / Interested people an hour before ("<event> starts at
-  <time>"; skipped if the server slept past the start). The host
-  cancelling tells them. Push EN/AR, plus an Events settings switch.
+- (next: read MONTH_PLAN Day 57, check what already measures or limits
+  storage, plan with no new accounts or keys)
 
 ## Progress
-- Step 1 done: migration 065 (events, event_responses + indexes),
-  controllers/eventController.js, routes/eventRoutes.js (POST /events,
-  GET /events?section=mine|discover, GET/PATCH/DELETE /events/:id,
-  POST /events/:id/cancel, PUT/DELETE /events/:id/response,
-  GET /events/:id/guests?status=). Visibility like posts (deactivated
-  host, blocks, followers = accepted). Export events.hosted / responses;
-  Privacy Policy EN/AR. events.test.js 11, 20 mutations caught, backend
-  850, rehearsal 015 -> 065, browser day28-export + c2-legal.
-- Step 2 done: Menu > Events; /events (Your events / Discover tabs,
-  arrow keys, Load more), /events/new + /events/:id/edit (EventFormScreen:
-  local pickers, time zone shown, audience), /events/:id (EventScreen:
-  badge, when, host / counts, place, audience, details, Going /
-  Interested toggles, host Edit / Cancel / Delete with confirm, guest
-  tabs paged, cancelled / ended / deleted states). utils/localTime.js
-  now shared with drafts; utils/eventTime.js. New tokens
-  --badge-{red,green,amber}-text: the -fg colours were ~3-4:1 on their
-  pale badges (axe caught it). Verified: Vitest 246, lint, check:i18n
-  1292, bundle 219.5, browser day55-events 17/17, day30-guard (routes
-  added), day26-a11y (117), a2, day45-drafts, A3 ar + en (288 each),
-  backend 850.
-- Process slip (Day 55 step 2): ea48e34 was committed in the same
-  command as a backend run that had 1 failure (monitoring "request
-  log"). Root cause was a flaky TEST, not the step: it asserted the log
-  line had no "123", but the line's random request id / timestamp /
-  duration can contain "123". Fixed with an id and token that can't
-  occur by chance; backend 850/850 after. Rule: gate every commit on
-  the checks, e.g. `npm test ... | tee log && ! grep -q failed log && git commit`.
-- Step 3 done: migration 066 (notifications.event_id,
-  notification_preferences.events); services/eventNotificationService.js
-  (remindDue: an hour before, FOR UPDATE SKIP LOCKED, marked first, no
-  late reminder if already started; notifyResponders: active, no block,
-  still allowed by the audience) in the ticker and the daily cleanup;
-  cancel notifies once; push EN/AR; Notifications screen + Events
-  switch (b11 counts 9). events.test.js 16, 13 mutations caught,
-  rehearsal 015 -> 066, day55-events 20/20 (real ticker reminder),
-  Vitest 248. scheduledPosts ticker test: a pass is now 4 connections.
-  Verified: backend 856 (one run first failed to start the test DB: it
-  was replaying its log after a crash; it came up, re-run clean),
-  day22-push, day26-a11y, day30-guard, A3 ar + en (288 each).
+- (none yet)
