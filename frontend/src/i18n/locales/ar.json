@@ -925,7 +925,8 @@
       "reports": "البلاغات",
       "errors": "الأخطاء",
       "storage": "التخزين",
-      "overview": "نظرة عامة"
+      "overview": "نظرة عامة",
+      "log": "السجل"
     },
     "errors": {
       "statusTabs": "حالة الخطأ",
@@ -1076,6 +1077,53 @@
       "day": "اليوم",
       "utcNote": "تُحسب الأيام بالتوقيت العالمي (UTC). عمود اليوم لا يزال يمتلئ.",
       "refresh": "تحديث"
+    },
+    "log": {
+      "filterLabel": "عرض",
+      "filter": {
+        "all": "كل القرارات",
+        "report_dismissed": "البلاغات المرفوضة",
+        "content_removed": "المحتوى المُزال",
+        "user_banned": "الحظر",
+        "user_suspended": "التعليق",
+        "user_unbanned": "رفع الحظر",
+        "error_resolved": "الأخطاء المحلولة"
+      },
+      "loadFailed": "تعذّر تحميل السجل.",
+      "empty": "لا توجد قرارات إشرافية بعد.",
+      "emptyFiltered": "لا يوجد شيء من هذا النوع بعد.",
+      "unknownName": "حساب محذوف",
+      "what": {
+        "post": "منشورًا لـ {{name}}",
+        "comment": "تعليقًا لـ {{name}}",
+        "message": "رسالة لـ {{name}}",
+        "community": "المجموعة {{name}}",
+        "page": "الصفحة {{name}}",
+        "user": "الحساب {{name}}",
+        "error": "خطأً"
+      },
+      "sentence": {
+        "report_dismissed": "رفض {{admin}} البلاغات عن {{what}}",
+        "content_removed": "أزال {{admin}} {{what}}",
+        "user_banned": "حظر {{admin}} {{name}}",
+        "user_suspended_zero": "علّق {{admin}} حساب {{name}} لمدة {{days}} يوم",
+        "user_suspended_one": "علّق {{admin}} حساب {{name}} لمدة يوم واحد",
+        "user_suspended_two": "علّق {{admin}} حساب {{name}} لمدة يومين",
+        "user_suspended_few": "علّق {{admin}} حساب {{name}} لمدة {{days}} أيام",
+        "user_suspended_many": "علّق {{admin}} حساب {{name}} لمدة {{days}} يومًا",
+        "user_suspended_other": "علّق {{admin}} حساب {{name}} لمدة {{days}} يوم",
+        "user_unbanned": "رفع {{admin}} الحظر عن {{name}}",
+        "error_resolved": "عيّن {{admin}} خطأً كمحلول: {{name}}"
+      },
+      "reportsClosed_zero": "أُغلق {{n}} بلاغ",
+      "reportsClosed_one": "أُغلق بلاغ واحد",
+      "reportsClosed_two": "أُغلق بلاغان",
+      "reportsClosed_few": "أُغلقت {{n}} بلاغات",
+      "reportsClosed_many": "أُغلق {{n}} بلاغًا",
+      "reportsClosed_other": "أُغلق {{n}} بلاغ",
+      "reason": "السبب:",
+      "loadMore": "عرض الأقدم",
+      "note": "يُسجَّل هنا كل قرار إشرافي ويُحتفَظ به لمدة سنتين. لا يُحتفَظ بالمحتوى المُزال."
     }
   },
   "groups": {

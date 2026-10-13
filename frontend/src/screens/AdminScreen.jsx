@@ -9,6 +9,7 @@ import FeedErrorState from '../components/feed/FeedErrorState';
 import AdminErrorsPanel from '../components/admin/AdminErrorsPanel';
 import AdminStoragePanel from '../components/admin/AdminStoragePanel';
 import AdminOverviewPanel from '../components/admin/AdminOverviewPanel';
+import AdminLogPanel from '../components/admin/AdminLogPanel';
 import { fetchReports, dismissReport, removeReportedContent, banUser, suspendUser, unbanUser } from '../services/adminService';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
 import { Trans, useTranslation } from 'react-i18next';
@@ -18,7 +19,7 @@ import '../components/feed/Feed.css';
 import './AdminScreen.css';
 
 // The sections, in tab order (labels: admin.section.<key>).
-const SECTIONS = ['overview', 'reports', 'errors', 'storage'];
+const SECTIONS = ['overview', 'reports', 'errors', 'storage', 'log'];
 // Labels: admin.resolution.<key>.
 const RESOLUTIONS = ['dismissed', 'content_removed', 'user_banned', 'user_suspended'];
 // Day 12: suspension lengths an admin can pick (the API accepts these).
@@ -368,7 +369,7 @@ function AdminScreen() {
         <h1 className="screen-header-title">{t('admin.title')}</h1>
       </header>
       <div className="screen-body">
-        {/* Day 10: Reports | Errors. Day 57: | Storage. Day 61: Overview first. */}
+        {/* Day 10: Reports | Errors. Day 57: | Storage. Day 61: Overview first. Day 63: | Log. */}
         <div role="tablist" aria-label={t('admin.sections')} className="admin-tabs admin-sections">
           {SECTIONS.map((s) => (
             <button
@@ -386,6 +387,7 @@ function AdminScreen() {
 
         {section === 'overview' && <AdminOverviewPanel token={token} onOpenSection={setSection} />}
         {section === 'storage' && <AdminStoragePanel token={token} />}
+        {section === 'log' && <AdminLogPanel token={token} />}
         {section === 'errors' && <AdminErrorsPanel token={token} />}
         {section === 'reports' && (
           <>

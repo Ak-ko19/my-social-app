@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 63 — Audit log: record admin actions (who removed what, when).
-**Step:** 1 — backend: done (committed). Migration 069 admin_actions; adminLogService (record in the action's transaction, labels = account/group/page/error message, never content; list 30/page + action filter); dismiss / remove content / ban / suspend / unban / resolve error all logged atomically, media deleted after COMMIT; GET /admin/log; cleanup keeps 2 years; Privacy Policy sections 3 + 7 (EN/AR, 2026-10-13). API adminLog 8 (atomicity mutation caught); backend 885; rehearsal 015->069 (139 indexes); checklist 28/23/15. Next: step 2, Admin > Log UI.
+**Step:** 2 — Log UI: done (committed). Admin > Log (5th section, /admin?section=log): each decision as a sentence (names in Unicode isolates), time, reason, reports closed; filter by kind; Show older; EN/AR with Arabic plurals. Section tabs now wrap to a second row on phones. Vitest 278, day63-log 16/16, a11y 125, bundle 222.2 kB (2.8 kB headroom -- en.json grows; watch it). Next: close Day 63 (full browser run in small batches, Progress Log, WIP -> Day 64).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

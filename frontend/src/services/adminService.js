@@ -50,3 +50,9 @@ export function fetchStorage(token) {
 export function fetchOverview(token, days) {
   return api.get('/admin/overview', { ...withAuth(token), params: { days } }).then((res) => res.data);
 }
+
+// Day 63: Admin > Log -- { actions, hasMore, page } newest first; action
+// narrows it to one kind (backend services/adminLogService.js).
+export function fetchAdminLog(token, { action = '', page = 1 } = {}) {
+  return api.get('/admin/log', { ...withAuth(token), params: { page, ...(action ? { action } : {}) } }).then((res) => res.data);
+}

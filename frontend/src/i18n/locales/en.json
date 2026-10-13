@@ -841,7 +841,8 @@
       "reports": "Reports",
       "errors": "Errors",
       "storage": "Storage",
-      "overview": "Overview"
+      "overview": "Overview",
+      "log": "Log"
     },
     "errors": {
       "statusTabs": "Error status",
@@ -968,6 +969,45 @@
       "day": "Day",
       "utcNote": "Days are counted in UTC. Today's bar is still filling up.",
       "refresh": "Refresh"
+    },
+    "log": {
+      "filterLabel": "Show",
+      "filter": {
+        "all": "All decisions",
+        "report_dismissed": "Reports dismissed",
+        "content_removed": "Content removed",
+        "user_banned": "Bans",
+        "user_suspended": "Suspensions",
+        "user_unbanned": "Bans lifted",
+        "error_resolved": "Errors resolved"
+      },
+      "loadFailed": "Couldn't load the log.",
+      "empty": "No moderation decisions yet.",
+      "emptyFiltered": "None of these yet.",
+      "unknownName": "a deleted account",
+      "what": {
+        "post": "a post by {{name}}",
+        "comment": "a comment by {{name}}",
+        "message": "a message by {{name}}",
+        "community": "the group {{name}}",
+        "page": "the page {{name}}",
+        "user": "the account {{name}}",
+        "error": "an error"
+      },
+      "sentence": {
+        "report_dismissed": "{{admin}} dismissed the reports on {{what}}",
+        "content_removed": "{{admin}} removed {{what}}",
+        "user_banned": "{{admin}} banned {{name}}",
+        "user_suspended_one": "{{admin}} suspended {{name}} for {{days}} day",
+        "user_suspended_other": "{{admin}} suspended {{name}} for {{days}} days",
+        "user_unbanned": "{{admin}} lifted the ban on {{name}}",
+        "error_resolved": "{{admin}} marked an error as resolved: {{name}}"
+      },
+      "reportsClosed_one": "closed {{n}} report",
+      "reportsClosed_other": "closed {{n}} reports",
+      "reason": "Reason:",
+      "loadMore": "Show older",
+      "note": "Every moderation decision is recorded here and kept for 2 years. Removed content is not kept."
     }
   },
   "groups": {

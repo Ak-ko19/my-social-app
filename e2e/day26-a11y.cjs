@@ -20,7 +20,7 @@ const AUTHED = [
   '/', '/menu', '/settings', '/settings/blocked-users', '/settings/follow-requests', '/settings/account', '/settings/sessions',
   '/settings/notifications', '/settings/language', '/saved', '/posts/1', '/hashtag/welcome', '/profile/1', '/profile/2',
   '/create-post', '/edit-profile', '/notifications', '/messages', '/messages/1', '/messages/new-group', '/search', '/explore',
-  '/admin', '/admin?section=reports', '/groups', '/groups/new', '/groups/1', '/groups/1/manage', '/pages', '/pages/new', '/pages/1', '/pages/1/edit',
+  '/admin', '/admin?section=reports', '/admin?section=log', '/groups', '/groups/new', '/groups/1', '/groups/1/manage', '/pages', '/pages/new', '/pages/1', '/pages/1/edit',
   '/profile/1/connections?tab=friends', '/profile/2/connections?tab=followers',
   // Day 42: search results (tabs, people, hashtags, posts).
   '/search?q=welcome', '/search?q=bob&type=people',

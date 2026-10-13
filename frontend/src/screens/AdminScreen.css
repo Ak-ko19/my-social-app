@@ -26,6 +26,15 @@
 /* Day 10: the Reports | Errors switch sits above the per-section tabs. */
 .admin-sections {
   margin-bottom: var(--space-3);
+  /* Day 63: five sections -- they wrap to a second row on a phone rather
+     than squeezing a label onto two lines. */
+  flex-wrap: wrap;
+}
+
+.admin-sections .admin-tab {
+  flex: 1 1 auto;
+  padding-inline: var(--space-3);
+  white-space: nowrap;
 }
 
 .admin-tab:focus-visible {
