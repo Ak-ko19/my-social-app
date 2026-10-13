@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 58 — Accessibility + translations check
-**Step:** 3 — open states: done (committed). Modal now keeps Tab inside and gives focus back to its opener; e2e/day58-open-states.cjs (50 checks, EN light 390 + AR dark 375; 14 of them fail on the old Modal). Next: close Day 58 (full browser run in batches, perf, tick MONTH_PLAN, Progress Log, WIP -> Day 59).
+**Day:** 59 — Re-audit (write AUDIT_REPORT_3.md; read-only, no app code changes)
+**Step:** 1 — PLAN. Same method as AUDIT_REPORT_2.md: code at a clean, verified commit (Day 58 close); re-check every AUDIT_REPORT_2 finding; classify all routes by auth middleware with a script; fresh API/Socket.io probes on everything added since Day 29 (Days 30–58); npm audit (prod deps: backend, frontend, e2e); compare numbers with audit 2; list new findings by severity, to fix on the following days.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

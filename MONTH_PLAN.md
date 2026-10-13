@@ -22,6 +22,11 @@ Commit and push ONLY at step 5 (once per finished step). Do not commit half-fini
 
 Never end the turn while waiting for tests: run them in the foreground and wait for the result (long runs: use a wait loop in the same turn), then continue.
 
+Save memory (owner rule, 2026-10-13 — this machine has run out of memory during browser runs):
+- Run browser suites in small batches (`E2E_ONLY="a b c" bash run-all.sh`, at most five suites; heavy ones such as a3-visual, day26-a11y and day27-perf alone).
+- Shut down the test stack between batches (`cd e2e && bash e2e-down.sh`).
+- Never run two heavy jobs at the same time: one browser batch, or one backend Jest run, or one build — never two at once.
+
 ## When the owner presses Esc
 The owner may press Esc for an emergency, when the usage limit is near, or to end the day's work. So:
 - WIP.md must always show the current Day, step, plan, and which parts are done (update it as you go — it is a file, not a commit).
@@ -231,7 +236,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 57 — Storage safety
 - [x] Check Neon and Cloudinary usage; client-side image compression before upload; limits per user; warn in admin panel near limits. *(See Progress Log.)*
 ### Day 58 — Accessibility + translations check
-- [ ] All new screens translated (EN/AR) and RTL-correct.
+- [x] All new screens translated (EN/AR) and RTL-correct.
 ### Day 59 — Re-audit (AUDIT_REPORT_3.md)
 ### Day 60 — GO LIVE (only if you have the access)
 
@@ -1944,4 +1949,40 @@ person, or warned anyone. Three slices, with no new accounts:
     rehearsal 015 → 067.
   - Full browser run in batches of five: all 54 regular suites (new:
     day57-storage, 8 checks) + the 6 special-stack suites + perf 40/40 +
+    A3 EN/AR (288 each) + a11y (117 page checks).
+
+### 2026-10-13 — Day 58: Accessibility + translations check
+check-i18n already proved every key exists in English and Arabic. Two
+new scans, now part of `npm run check:i18n` (so CI fails on them), plus
+a suite for the open overlays:
+- **UI text that skips t() (`53246e8`):** scripts/check-hardcoded-text.cjs
+  parses every .jsx and flags JSX text, text attributes (aria-label,
+  placeholder, title, alt…) and our components' text props, plus
+  setError('…')-style setters given words.
+  - Text that isn't UI (the bot honeypot, a sample username) is marked
+    `data-i18n="skip"`.
+  - The app passes; fixture tests prove the scan catches each kind.
+- **CSS that breaks right-to-left (`dad6cca`):** scripts/check-rtl-css.cjs
+  flags physical left/right margins, padding, borders, positions,
+  corner radii, text-align and float, and translateX motion. It allows
+  [dir] override rules and lines marked `rtl-ok`.
+  - Fixed: the admin error list aligned its text left in Arabic.
+- **Open states (`75e0a19`):** found that Modal (every dialog and sheet)
+  let Tab wander to the page behind, and lost keyboard focus on close.
+  - It now keeps Tab and Shift+Tab inside, and gives focus back to the
+    button that opened it.
+  - New suite day58-open-states, 50 checks: the post menu, Report, Save
+    to collection, the Delete confirm and the reaction picker, in EN
+    light 390 and AR dark 375.
+  - Each gets axe, and the suite checks that Escape closes, focus
+    returns and Tab stays inside. 14 of the checks fail on the old Modal.
+- **Memory:** a3 was stopped once for low system memory (not a test
+  failure). The Work rhythm now says: small batches, test stack down
+  between batches, never two heavy jobs at once.
+- **Tests at close:**
+  - backend 868/868; Vitest 264/264 (+6: both scans, the Modal Tab trap
+    and focus return); check:i18n 1323 keys, no hardcoded text, logical
+    CSS everywhere; bundle 220.8 kB.
+  - Full browser run in small batches: all 55 regular suites (new:
+    day58-open-states) + the 6 special-stack suites + perf 40/40 +
     A3 EN/AR (288 each) + a11y (117 page checks).
