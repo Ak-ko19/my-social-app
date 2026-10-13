@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 63 — Audit log: record admin actions (who removed what, when).
-**Step:** 2 — Log UI: done (committed). Admin > Log (5th section, /admin?section=log): each decision as a sentence (names in Unicode isolates), time, reason, reports closed; filter by kind; Show older; EN/AR with Arabic plurals. Section tabs now wrap to a second row on phones. Vitest 278, day63-log 16/16, a11y 125, bundle 222.2 kB (2.8 kB headroom -- en.json grows; watch it). Next: close Day 63 (full browser run in small batches, Progress Log, WIP -> Day 64).
+**Day:** 64–66 — End-to-end tests: Playwright tests for the 15 most important user journeys; run in CI.
+**Step:** 1 — PLAN. Inventory: 60 regular browser suites already run in CI (smoke on push, full on PRs to master). Map the 15 most important journeys to what exists, find the gaps (journeys only covered piecemeal), and decide: a journeys suite set (e2e/journeys/*) that each walks one journey end to end in the UI, a smoke subset of them on every push. Also AUDIT_REPORT_3 A3: split the two longest suites (a3, day26-a11y) so each part runs in a few minutes.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

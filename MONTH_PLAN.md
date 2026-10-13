@@ -249,7 +249,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 61–62 — Admin dashboard
 - [x] Users, posts, reports, signups per day, storage usage, error log — charts built locally, no outside analytics. *(Admin > Overview — see Progress Log.)*
 ### Day 63 — Audit log
-- [ ] Record admin actions (who removed what, when).
+- [x] Record admin actions (who removed what, when). *(Admin > Log — see Progress Log.)*
 ### Day 64–66 — End-to-end tests
 - [ ] Playwright tests for the 15 most important user journeys; run in CI.
 ### Day 67–68 — API documentation
@@ -2084,3 +2084,37 @@ outside analytics and no chart library.
     all 59 regular suites (new: day61-overview, 23 checks) + the 6
     special-stack suites + perf 41/41 + A3 EN/AR (288 each) + a11y (123
     page checks).
+
+### 2026-10-13 — Day 63: Admin audit log
+- **Backend (`b5d53cb`, migration 069 `admin_actions`):** every
+  moderation decision is written to the log in the same transaction as
+  the decision itself: dismissing a report, removing content, banning,
+  suspending, unbanning, and resolving an error.
+  - Photos and voice notes are deleted only after that transaction
+    commits.
+  - The log names the admin (their name is kept even if their account
+    goes), the account, group or page concerned (or the error's message),
+    the reason and the number of reports closed. It never keeps the
+    removed content.
+  - `GET /admin/log`: newest first, 30 a page, filterable by kind.
+  - The daily cleanup keeps it for 2 years. The Privacy Policy (sections
+    3 and 7, EN/AR) says so, updated 2026-10-13.
+  - GO_LIVE_CHECKLIST: 015 → 069 (28 tables, 23 columns, 15 indexes).
+    The rehearsal passed, with 139 indexes matching.
+- **UI (`7baf28d`):** Admin > Log, a fifth section.
+  - Each decision reads as a sentence ("alice removed a post by carol",
+    "alice suspended carol for 3 days"), with the time, the reason and
+    the reports closed.
+  - Filter by kind, and "Show older".
+  - English and Arabic, with Arabic plurals. Names keep their own
+    direction inside the other script (Unicode isolates).
+  - The admin tabs now wrap to a second row on phones instead of
+    squeezing a label onto two lines.
+- **Tests at close:**
+  - backend 885/885 (adminLog 8; a mutation that drops the transaction
+    is caught); Vitest 278/278; check:i18n 1403 keys.
+  - bundle 222.2 kB: 2.8 kB of headroom left, mostly taken by en.json
+    growing. Worth a look in Day 74 (performance round 2).
+  - Full browser run in small batches: all 60 regular suites (new:
+    day63-log, 16 checks) + the 6 special-stack suites + perf 41/41 +
+    A3 EN/AR (288 each) + a11y (125 page checks).
