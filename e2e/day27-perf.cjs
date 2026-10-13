@@ -57,11 +57,18 @@ function seqScans() {
     '/activity/likes', '/activity/comments',
     // Search is a substring match (ILIKE '%q%'): served by the pg_trgm
     // indexes (002). A word that matches nothing is the worst case.
-    '/search/posts?q=shwedagon', '/search/posts?q=mohinga', '/search/posts?q=perf', '/search/posts?q=sunset%20shwedagon', '/search/users?q=perf12', '/search/users?q=zawgyi', '/search/hashtags?q=t1', '/search/hashtags?q=perf'
+    '/search/posts?q=shwedagon', '/search/posts?q=mohinga', '/search/posts?q=perf', '/search/posts?q=sunset%20shwedagon', '/search/users?q=perf12', '/search/users?q=zawgyi', '/search/hashtags?q=t1', '/search/hashtags?q=perf',
+    // Day 61: Admin > Overview (alice is made an admin below).
+    '/admin/overview?days=90'
   ];
 
   const results = [];
   const auth = { Authorization: `Bearer ${aliceToken}` };
+  // Day 61: the overview counts each finished day once (the ticker does
+  // it as days end; the first time, 90 days back). Do that once here, as a
+  // running server already has, so what's measured is a normal visit.
+  sql('UPDATE users SET is_admin = true WHERE id = 1');
+  await fetch(`${API}/admin/overview?days=90`, { headers: auth });
   for (const ep of endpoints) {
     const before = seqScans();
     const start = Date.now();

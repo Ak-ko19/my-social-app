@@ -1,14 +1,17 @@
 // Day 45: the server's own 30 s clock, for work that must happen at a set
 // time rather than once a day: scheduled posts going up, "poll ended"
-// notifications and (Day 55) event reminders. It also runs at start-up,
-// so whatever fell due while the free-tier server slept happens as soon
-// as it wakes. The daily cleanup runs the same jobs as a backstop.
-// Several instances are safe: each job takes its rows with FOR UPDATE
-// SKIP LOCKED.
+// notifications, (Day 55) event reminders and (Day 61) the daily stats.
+// It also runs at start-up, so whatever fell due while the free-tier
+// server slept happens as soon as it wakes. The daily cleanup runs the
+// first three as a backstop (opening Admin > Overview counts any missing
+// days itself). Several instances are safe: each job takes its
+// rows with FOR UPDATE SKIP LOCKED (the daily stats: ON CONFLICT DO
+// NOTHING).
 const logger = require('../utils/logger');
 const scheduledPostService = require('./scheduledPostService');
 const pollEndService = require('./pollEndService');
 const eventNotificationService = require('./eventNotificationService');
+const statsService = require('./statsService');
 
 const TICK_MS = 30 * 1000;
 
@@ -17,7 +20,9 @@ const JOBS = [
   ['scheduled posts', () => scheduledPostService.publishDue(), (r) => r.published || r.failed],
   ['ended polls', () => pollEndService.notifyEnded(), (r) => r.polls],
   // Day 55: "starts in about an hour".
-  ['event reminders', () => eventNotificationService.remindDue(), (r) => r.events]
+  ['event reminders', () => eventNotificationService.remindDue(), (r) => r.events],
+  // Day 61: count each finished day once, for Admin > Overview.
+  ['daily stats', () => statsService.rollUp(), (r) => r.days]
 ];
 
 let timer = null;

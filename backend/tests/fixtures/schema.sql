@@ -667,3 +667,16 @@ CREATE TABLE media_uploads (
 CREATE INDEX idx_media_uploads_user_recent ON media_uploads (user_id, created_at DESC);
 -- The admin's "last 24 hours" and the cleanup.
 CREATE INDEX idx_media_uploads_created ON media_uploads (created_at);
+
+-- Added by migration 068_add_daily_stats (Day 61): Admin > Overview.
+CREATE TABLE daily_stats (
+  day date PRIMARY KEY,
+  signups integer NOT NULL DEFAULT 0,
+  posts integer NOT NULL DEFAULT 0,
+  comments integer NOT NULL DEFAULT 0,
+  reports integer NOT NULL DEFAULT 0,
+  computed_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_users_created_at ON users (created_at);
+CREATE INDEX idx_comments_created_at ON comments (created_at);
+CREATE INDEX idx_reports_created_at ON reports (created_at);

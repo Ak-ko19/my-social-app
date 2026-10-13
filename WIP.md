@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 61–62 — Admin dashboard: users, posts, reports, signups per day, storage usage, error log; charts built locally, no outside analytics.
-**Step:** 1 — PLAN. Read AdminScreen (tabs: reports, errors, storage), adminRoutes and storageService first; then decide the data (daily counts over 30 days from created_at columns; one admin-only endpoint) and the chart (plain SVG, no library: bundle has 3.5 kB of headroom).
+**Step:** 1 — backend: done (committed). Migration 068 daily_stats + 3 created_at indexes; statsService (rollUp by ticker + on demand, today live, totals exact under 10k rows else pg estimate, storage levels); GET /admin/overview?days=7|30|90; API adminOverview 8 tests (5 mutations caught incl. a two-server race); perf 41/41 (overview 160 ms, 2 rows); rehearsal 015->068 passed (137 indexes); checklist 27 tables / 23 columns / 14 indexes; backend 877. Next: step 2, Overview tab UI (SVG bar charts + table, RTL, EN/AR).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

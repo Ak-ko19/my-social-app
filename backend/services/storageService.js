@@ -20,16 +20,21 @@ function dbLimitBytes() {
   return (Number.isFinite(mb) && mb > 0 ? mb : DEFAULT_DB_LIMIT_MB) * 1024 * 1024;
 }
 
-async function database() {
+// How full the database is (Day 61: also on Admin > Overview).
+async function databaseUsage() {
   const size = await db.query('SELECT pg_database_size(current_database())::bigint AS bytes');
+  const bytes = Number(size.rows[0].bytes);
+  const limitBytes = dbLimitBytes();
+  const percent = percentOf(bytes, limitBytes);
+  return { bytes, limitBytes, percent, level: levelOf(percent) };
+}
+
+async function database() {
   const tables = await db.query(
     `SELECT relname AS name, pg_total_relation_size(relid)::bigint AS bytes
      FROM pg_stat_user_tables ORDER BY pg_total_relation_size(relid) DESC, relname LIMIT 8`
   );
-  const bytes = Number(size.rows[0].bytes);
-  const limitBytes = dbLimitBytes();
-  const percent = percentOf(bytes, limitBytes);
-  return { bytes, limitBytes, percent, level: levelOf(percent), tables: tables.rows.map((t) => ({ name: t.name, bytes: Number(t.bytes) })) };
+  return { ...(await databaseUsage()), tables: tables.rows.map((t) => ({ name: t.name, bytes: Number(t.bytes) })) };
 }
 
 let cached = null; // { at, value }
@@ -97,4 +102,4 @@ async function report() {
 // For tests: forget the cached Cloudinary answer.
 const resetCache = () => { cached = null; };
 
-module.exports = { report, cloudinaryUsage, levelOf, resetCache, WARN_AT, ALERT_AT };
+module.exports = { report, databaseUsage, cloudinaryUsage, levelOf, resetCache, WARN_AT, ALERT_AT };
