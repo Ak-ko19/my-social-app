@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 63 — Audit log: record admin actions (who removed what, when).
-**Step:** 1 — PLAN. Read adminController (dismiss, remove content, ban, suspend, unban), errorLog resolve, community/page moderation by site admins; one append-only admin_actions table (admin, action, target, details, at), written in the same transaction as each action; Admin > Log section (newest first, paged), EN/AR.
+**Step:** 1 — backend: done (committed). Migration 069 admin_actions; adminLogService (record in the action's transaction, labels = account/group/page/error message, never content; list 30/page + action filter); dismiss / remove content / ban / suspend / unban / resolve error all logged atomically, media deleted after COMMIT; GET /admin/log; cleanup keeps 2 years; Privacy Policy sections 3 + 7 (EN/AR, 2026-10-13). API adminLog 8 (atomicity mutation caught); backend 885; rehearsal 015->069 (139 indexes); checklist 28/23/15. Next: step 2, Admin > Log UI.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

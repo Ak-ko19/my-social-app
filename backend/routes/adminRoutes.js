@@ -6,6 +6,7 @@ const adminController = require('../controllers/adminController');
 const errorLogController = require('../controllers/errorLogController');
 const storageController = require('../controllers/storageController');
 const statsController = require('../controllers/statsController');
+const adminLogController = require('../controllers/adminLogController');
 
 // B12 admin moderation. Every route: logged in AND users.is_admin (checked
 // in the DB on each request). Non-admins get 404.
@@ -23,5 +24,7 @@ router.post('/admin/errors/:fingerprint/resolve', ...admin, errorLogController.r
 router.get('/admin/storage', ...admin, storageController.getStorage);
 // Day 61: the overview (daily counts, totals, storage levels).
 router.get('/admin/overview', ...admin, statsController.getOverview);
+// Day 63: the audit log of admin actions.
+router.get('/admin/log', ...admin, adminLogController.getLog);
 
 module.exports = router;

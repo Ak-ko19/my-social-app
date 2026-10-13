@@ -51,6 +51,8 @@ const PREVIEWS_OLD = "fetched_at < now() - interval '30 days'";
 // Day 57: the upload ledger is for the daily limit and the admin's
 // recent numbers -- a month is plenty.
 const UPLOADS_OLD = "created_at < now() - interval '30 days'";
+// Day 63: the admin audit log is kept for 2 years.
+const ADMIN_LOG_OLD = "created_at < now() - interval '2 years'";
 
 // Expired stories: rows first (their views cascade), then the media of
 // exactly the rows that were deleted.
@@ -82,6 +84,7 @@ async function run({ dryRun = false } = {}) {
       suspensionsLifted: await countWhere('users', SUSPENSIONS_OVER),
       linkPreviews: await countWhere('link_previews', PREVIEWS_OLD),
       uploadLedger: await countWhere('media_uploads', UPLOADS_OLD),
+      adminLog: await countWhere('admin_actions', ADMIN_LOG_OLD),
       scheduledPostsDue: await scheduledPostService.countDue(),
       endedPollsWaiting: await pollEndService.countWaiting(),
       durationMs: Date.now() - started
@@ -94,12 +97,13 @@ async function run({ dryRun = false } = {}) {
   const suspensionsLifted = await liftExpiredSuspensions();
   const linkPreviews = await deleteInBatches('link_previews', PREVIEWS_OLD, ROW_BATCH);
   const uploadLedger = await deleteInBatches('media_uploads', UPLOADS_OLD, ROW_BATCH);
+  const adminLog = await deleteInBatches('admin_actions', ADMIN_LOG_OLD, ROW_BATCH);
   // Day 45: a backstop for the server's own 30 s ticker (services/ticker).
   const scheduledPosts = await scheduledPostService.publishDue();
   const endedPolls = await pollEndService.notifyEnded();
   const eventReminders = await eventNotificationService.remindDue();
   return {
-    dryRun: false, stories, storyMedia, notifications, sessions, errorGroups, suspensionsLifted, linkPreviews, uploadLedger,
+    dryRun: false, stories, storyMedia, notifications, sessions, errorGroups, suspensionsLifted, linkPreviews, uploadLedger, adminLog,
     scheduledPostsPublished: scheduledPosts.published, scheduledPostsFailed: scheduledPosts.failed,
     endedPollsNotified: endedPolls.polls,
     eventRemindersSent: eventReminders.events,

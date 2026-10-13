@@ -4,6 +4,9 @@ const { mediaOfPost, mediaOfCommunity, mediaOfPage, deleteMedia } = require('../
 const { getIO } = require('../sockets');
 const messageService = require('../services/messageService');
 const logger = require('../utils/logger');
+const adminLog = require('../services/adminLogService');
+
+const { inTransaction } = adminLog;
 
 // B12 admin moderation. All routes sit behind authMiddleware + requireAdmin.
 //
@@ -13,12 +16,14 @@ const logger = require('../utils/logger');
 
 const REPORTS_PAGE_SIZE = 20;
 
-async function resolvePending(where, params, adminId, resolution) {
-  await db.query(
+// q: the action's transaction (Day 63). Returns how many reports it closed.
+async function resolvePending(q, where, params, adminId, resolution) {
+  const result = await q.query(
     `UPDATE reports SET status = 'reviewed', resolution = $${params.length + 1}, resolved_by = $${params.length + 2}, resolved_at = now()
      WHERE status = 'pending' AND (${where})`,
     [...params, resolution, adminId]
   );
+  return result.rowCount;
 }
 
 // GET /admin/reports?status=pending|reviewed&page=N
@@ -95,7 +100,17 @@ async function dismissReport(req, res) {
   try {
     const report = await getReport(req.params.id);
     if (!report) return res.status(404).send('Report not found');
-    await resolvePending('target_type = $1 AND target_id = $2', [report.target_type, report.target_id], req.userId, 'dismissed');
+    await inTransaction(async (q) => {
+      const closed = await resolvePending(q, 'target_type = $1 AND target_id = $2', [report.target_type, report.target_id], req.userId, 'dismissed');
+      await adminLog.record(q, {
+        adminId: req.userId,
+        action: 'report_dismissed',
+        targetType: report.target_type,
+        targetId: report.target_id,
+        targetLabel: await adminLog.labelOfReportTarget(q, report),
+        details: { reportId: report.id, reportsResolved: closed }
+      });
+    });
     res.json({ ok: true });
   } catch (err) {
     sendServerError(res, err, 'Dismissing the report failed. Please try again later.');
@@ -111,36 +126,53 @@ async function removeReportedContent(req, res) {
     const report = await getReport(req.params.id);
     if (!report) return res.status(404).send('Report not found');
     if (report.target_type === 'user') return res.status(400).send('Accounts cannot be removed here; ban or suspend the user instead');
-    if (report.target_type === 'post') {
-      const media = await mediaOfPost(report.target_id);
-      await db.query('DELETE FROM posts WHERE id = $1', [report.target_id]);
-      deleteMedia(media);
-    } else if (report.target_type === 'comment') {
-      await db.query('DELETE FROM comments WHERE id = $1', [report.target_id]);
-    } else if (report.target_type === 'community') {
-      // Day 24: the whole group -- its posts (and their photos) go with it.
-      const media = await mediaOfCommunity(report.target_id);
-      await db.query('DELETE FROM communities WHERE id = $1', [report.target_id]);
-      deleteMedia(media);
-    } else if (report.target_type === 'page') {
-      const media = await mediaOfPage(report.target_id);
-      await db.query('DELETE FROM pages WHERE id = $1', [report.target_id]);
-      deleteMedia(media);
-    } else {
-      const removed = await messageService.removeMessageAsModerator(report.target_id);
-      if (removed) {
-        try {
-          getIO().to(`conv_${removed.conversation_id}`).emit('message_deleted', {
-            conversationId: removed.conversation_id,
-            messageId: removed.id,
-            deletedAt: removed.deleted_at
-          });
-        } catch (err) {
-          logger.error('socket emit failed', { event: 'message_deleted', err });
-        }
+    // Day 63: the removal, its reports and the log entry are one
+    // transaction; photos and voice notes are deleted (from Cloudinary,
+    // which can't be undone) only once it has committed.
+    let media = [];
+    const removed = await inTransaction(async (q) => {
+      // The label first: whose content (or which group / page) it was.
+      const targetLabel = await adminLog.labelOfReportTarget(q, report);
+      let message = null;
+      if (report.target_type === 'post') {
+        media = await mediaOfPost(report.target_id);
+        await q.query('DELETE FROM posts WHERE id = $1', [report.target_id]);
+      } else if (report.target_type === 'comment') {
+        await q.query('DELETE FROM comments WHERE id = $1', [report.target_id]);
+      } else if (report.target_type === 'community') {
+        // Day 24: the whole group -- its posts (and their photos) go with it.
+        media = await mediaOfCommunity(report.target_id);
+        await q.query('DELETE FROM communities WHERE id = $1', [report.target_id]);
+      } else if (report.target_type === 'page') {
+        media = await mediaOfPage(report.target_id);
+        await q.query('DELETE FROM pages WHERE id = $1', [report.target_id]);
+      } else {
+        message = await messageService.removeMessageAsModerator(report.target_id, { q, deleteMediaNow: false });
+        if (message?.media_url) media = [message.media_url];
+      }
+      const closed = await resolvePending(q, 'target_type = $1 AND target_id = $2', [report.target_type, report.target_id], req.userId, 'content_removed');
+      await adminLog.record(q, {
+        adminId: req.userId,
+        action: 'content_removed',
+        targetType: report.target_type,
+        targetId: report.target_id,
+        targetLabel,
+        details: { reportId: report.id, reportsResolved: closed }
+      });
+      return message;
+    });
+    deleteMedia(media);
+    if (removed) {
+      try {
+        getIO().to(`conv_${removed.conversation_id}`).emit('message_deleted', {
+          conversationId: removed.conversation_id,
+          messageId: removed.id,
+          deletedAt: removed.deleted_at
+        });
+      } catch (err) {
+        logger.error('socket emit failed', { event: 'message_deleted', err });
       }
     }
-    await resolvePending('target_type = $1 AND target_id = $2', [report.target_type, report.target_id], req.userId, 'content_removed');
     res.json({ ok: true });
   } catch (err) {
     sendServerError(res, err, 'Removing the content failed. Please try again later.');
@@ -173,7 +205,7 @@ async function restrictUser(req, res, days) {
     const targetId = Number(req.params.id);
     if (!Number.isInteger(targetId)) return res.status(400).send('Invalid user ID');
     if (targetId === req.userId) return res.status(400).send("You can't ban yourself");
-    const target = await db.query('SELECT id, is_admin FROM users WHERE id = $1', [targetId]);
+    const target = await db.query('SELECT id, username, is_admin FROM users WHERE id = $1', [targetId]);
     if (!target.rows[0]) return res.status(404).send('User not found');
     if (target.rows[0].is_admin) return res.status(400).send("Admins can't be banned here -- remove their admin role first");
 
@@ -183,20 +215,33 @@ async function restrictUser(req, res, days) {
     const reason = typeof rawReason === 'string' ? rawReason.trim().slice(0, 500) : '';
     // A ban replaces any suspension (banned_until NULL); a suspension
     // replaces an earlier one or even a ban -- the admin's latest decision.
-    await db.query(
-      `UPDATE users SET banned_at = COALESCE(banned_at, now()), ban_reason = $2,
-         banned_until = CASE WHEN $3::int IS NULL THEN NULL ELSE now() + make_interval(days => $3::int) END,
-         is_deactivated = true, deactivated_at = COALESCE(deactivated_at, now())
-       WHERE id = $1`,
-      [targetId, reason || null, days]
-    );
-    await resolvePending(
-      `(target_type = 'user' AND target_id = $1) OR (target_type = 'post' AND target_id IN (SELECT id FROM posts WHERE user_id = $1))
-       OR target_owner_id = $1`,
-      [targetId],
-      req.userId,
-      days === null ? 'user_banned' : 'user_suspended'
-    );
+    const action = days === null ? 'user_banned' : 'user_suspended';
+    await inTransaction(async (q) => {
+      await q.query(
+        `UPDATE users SET banned_at = COALESCE(banned_at, now()), ban_reason = $2,
+           banned_until = CASE WHEN $3::int IS NULL THEN NULL ELSE now() + make_interval(days => $3::int) END,
+           is_deactivated = true, deactivated_at = COALESCE(deactivated_at, now())
+         WHERE id = $1`,
+        [targetId, reason || null, days]
+      );
+      const closed = await resolvePending(
+        q,
+        `(target_type = 'user' AND target_id = $1) OR (target_type = 'post' AND target_id IN (SELECT id FROM posts WHERE user_id = $1))
+         OR target_owner_id = $1`,
+        [targetId],
+        req.userId,
+        action
+      );
+      // Day 63: in the log, with the reason the admin gave.
+      await adminLog.record(q, {
+        adminId: req.userId,
+        action,
+        targetType: 'user',
+        targetId,
+        targetLabel: target.rows[0].username,
+        details: { ...(days === null ? {} : { days }), ...(reason ? { reason } : {}), reportsResolved: closed }
+      });
+    });
     try {
       getIO().in(`user_${targetId}`).disconnectSockets(true);
     } catch (err) {
@@ -213,12 +258,17 @@ async function unbanUser(req, res) {
   try {
     const targetId = Number(req.params.id);
     if (!Number.isInteger(targetId)) return res.status(400).send('Invalid user ID');
-    const result = await db.query(
-      `UPDATE users SET banned_at = NULL, ban_reason = NULL, banned_until = NULL, is_deactivated = false, deactivated_at = NULL
-       WHERE id = $1 AND banned_at IS NOT NULL RETURNING id`,
-      [targetId]
-    );
-    if (result.rows.length === 0) return res.status(404).send('That user is not banned');
+    const lifted = await inTransaction(async (q) => {
+      const result = await q.query(
+        `UPDATE users SET banned_at = NULL, ban_reason = NULL, banned_until = NULL, is_deactivated = false, deactivated_at = NULL
+         WHERE id = $1 AND banned_at IS NOT NULL RETURNING id, username`,
+        [targetId]
+      );
+      if (result.rows.length === 0) return false;
+      await adminLog.record(q, { adminId: req.userId, action: 'user_unbanned', targetType: 'user', targetId, targetLabel: result.rows[0].username });
+      return true;
+    });
+    if (!lifted) return res.status(404).send('That user is not banned');
     res.json({ ok: true });
   } catch (err) {
     sendServerError(res, err, 'Unbanning the user failed. Please try again later.');

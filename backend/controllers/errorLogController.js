@@ -1,6 +1,7 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
+const adminLog = require('../services/adminLogService');
 
 // Day 10: the admin error log (error_groups, one row per distinct error).
 
@@ -30,11 +31,18 @@ async function listErrors(req, res) {
 // error happens again (see errorLogService).
 async function resolveError(req, res) {
   try {
-    const result = await db.query(
-      'UPDATE error_groups SET resolved_at = now() WHERE fingerprint = $1 AND resolved_at IS NULL RETURNING fingerprint',
-      [req.params.fingerprint]
-    );
-    if (result.rows.length === 0) return res.status(404).send('Error not found');
+    // Day 63: in the audit log too, in the same transaction.
+    const resolved = await adminLog.inTransaction(async (q) => {
+      const result = await q.query(
+        'UPDATE error_groups SET resolved_at = now() WHERE fingerprint = $1 AND resolved_at IS NULL RETURNING fingerprint, message',
+        [req.params.fingerprint]
+      );
+      if (result.rows.length === 0) return false;
+      const { fingerprint, message } = result.rows[0];
+      await adminLog.record(q, { adminId: req.userId, action: 'error_resolved', targetType: 'error', targetId: fingerprint, targetLabel: message });
+      return true;
+    });
+    if (!resolved) return res.status(404).send('Error not found');
     res.json({ ok: true });
   } catch (err) {
     sendServerError(res, err, 'Updating the error log failed. Please try again later.');

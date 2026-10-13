@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 068, check the environment variables,
+database, run migrations 015 → 069, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -98,7 +98,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 068 on production
+## 3. Run migrations 015 → 069 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -117,7 +117,7 @@ rows there.)
 - [ ] Confirm none of the new tables exist yet (this should print `0`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews','push_subscriptions','message_reactions','suggestion_dismissals','search_history','polls','poll_options','poll_votes','post_drafts','bookmark_collections','bookmark_collection_items','user_mutes','user_restrictions','close_friends','user_hidden_words','community_bans','page_admins','events','event_responses','media_uploads','daily_stats')"
+    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews','push_subscriptions','message_reactions','suggestion_dismissals','search_history','polls','poll_options','poll_votes','post_drafts','bookmark_collections','bookmark_collection_items','user_mutes','user_restrictions','close_friends','user_hidden_words','community_bans','page_admins','events','event_responses','media_uploads','daily_stats','admin_actions')"
   ```
 - [ ] Run them **one at a time, in this order**, from `backend/`. Each
   prints `Migration applied successfully`.
@@ -145,18 +145,18 @@ rows there.)
            059_add_activity_indexes 060_add_hidden_words 061_add_community_bans \
            062_add_group_notifications 063_add_page_admins 064_add_page_notifications \
            065_add_events 066_add_event_notifications 067_add_media_uploads \
-           068_add_daily_stats; do
+           068_add_daily_stats 069_add_admin_actions; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
-- [ ] Check the result (this should print `27`, then `23`, then `14`):
+- [ ] Check the result (this should print `28`, then `23`, then `15`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews','push_subscriptions','message_reactions','suggestion_dismissals','search_history','polls','poll_options','poll_votes','post_drafts','bookmark_collections','bookmark_collection_items','user_mutes','user_restrictions','close_friends','user_hidden_words','community_bans','page_admins','events','event_responses','media_uploads','daily_stats')"
+    "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews','push_subscriptions','message_reactions','suggestion_dismissals','search_history','polls','poll_options','poll_votes','post_drafts','bookmark_collections','bookmark_collection_items','user_mutes','user_restrictions','close_friends','user_hidden_words','community_bans','page_admins','events','event_responses','media_uploads','daily_stats','admin_actions')"
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
     "SELECT count(*) FROM information_schema.columns WHERE (table_name = 'reports' AND column_name IN ('target_owner_id','target_snapshot')) OR (table_name = 'users' AND column_name IN ('banned_until','language')) OR (table_name = 'notification_preferences' AND column_name = 'messages') OR (table_name = 'conversation_participants' AND column_name = 'muted_until') OR (table_name = 'messages' AND column_name = 'is_forwarded') OR (table_name = 'conversations' AND column_name = 'avatar_url') OR (table_name = 'users' AND column_name = 'links') OR (table_name = 'users' AND column_name = 'cover_url') OR (table_name = 'users' AND column_name = 'pinned_post_id') OR (table_name = 'polls' AND column_name = 'ended_notified') OR (table_name = 'comments' AND column_name = 'awaiting_approval') OR (table_name = 'stories' AND column_name = 'close_friends') OR (table_name = 'users' AND column_name IN ('message_permission','comment_permission','hidden_words_mode')) OR (table_name = 'notifications' AND column_name = 'community_id') OR (table_name = 'notification_preferences' AND column_name = 'groups') OR (table_name = 'notifications' AND column_name = 'page_id') OR (table_name = 'notification_preferences' AND column_name = 'pages') OR (table_name = 'notifications' AND column_name = 'event_id') OR (table_name = 'notification_preferences' AND column_name = 'events')"
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM pg_indexes WHERE indexname IN ('idx_messages_conversation_id','idx_post_hashtags_hashtag','idx_participants_last_read','idx_story_views_viewer','idx_posts_content_fts','idx_hashtags_tag_trgm','idx_search_history_user_recent','idx_poll_votes_user','idx_post_drafts_due','idx_polls_end_queue','idx_bookmark_collections_user_name','idx_users_created_at','idx_comments_created_at','idx_reports_created_at')"
+    "SELECT count(*) FROM pg_indexes WHERE indexname IN ('idx_messages_conversation_id','idx_post_hashtags_hashtag','idx_participants_last_read','idx_story_views_viewer','idx_posts_content_fts','idx_hashtags_tag_trgm','idx_search_history_user_recent','idx_poll_votes_user','idx_post_drafts_due','idx_polls_end_queue','idx_bookmark_collections_user_name','idx_users_created_at','idx_comments_created_at','idx_reports_created_at','idx_admin_actions_created')"
   ```
   - 039, 047, 048 and 059 build indexes, which briefly holds back writes to each
     table while they run: seconds at today's size, another reason for a

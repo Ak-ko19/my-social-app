@@ -365,15 +365,17 @@ async function deleteMessage({ conversationId, messageId, userId }) {
 // Day 12: a moderator removing a reported message -- the same soft delete
 // as an unsend (the chat shows "message deleted"), without the sender
 // check. Returns the updated row, or null if it's missing or already gone.
-async function removeMessageAsModerator(messageId) {
-  const result = await db.query(
+// Day 63: q is the admin action's transaction; deleteMediaNow false leaves
+// the photo / voice note to the caller, to delete once that has committed.
+async function removeMessageAsModerator(messageId, { q = db, deleteMediaNow = true } = {}) {
+  const result = await q.query(
     'UPDATE messages SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL RETURNING *',
     [messageId]
   );
   const message = result.rows[0];
   if (!message) return null;
-  await db.query('DELETE FROM message_reactions WHERE message_id = $1', [messageId]);
-  deleteMedia([message.media_url]);
+  await q.query('DELETE FROM message_reactions WHERE message_id = $1', [messageId]);
+  if (deleteMediaNow) deleteMedia([message.media_url]);
   return message;
 }
 

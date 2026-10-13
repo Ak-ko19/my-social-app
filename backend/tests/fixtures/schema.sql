@@ -680,3 +680,21 @@ CREATE TABLE daily_stats (
 CREATE INDEX idx_users_created_at ON users (created_at);
 CREATE INDEX idx_comments_created_at ON comments (created_at);
 CREATE INDEX idx_reports_created_at ON reports (created_at);
+
+-- Added by migration 069_add_admin_actions (Day 63): the admin audit log.
+CREATE TABLE admin_actions (
+  id BIGSERIAL PRIMARY KEY,
+  admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  admin_username varchar(50) NOT NULL,
+  action varchar(20) NOT NULL CONSTRAINT chk_admin_actions_action CHECK (action IN (
+    'report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved'
+  )),
+  target_type varchar(10) NOT NULL CONSTRAINT chk_admin_actions_target CHECK (target_type IN (
+    'post', 'comment', 'message', 'community', 'page', 'user', 'error'
+  )),
+  target_id varchar(40) NOT NULL,
+  target_label varchar(120),
+  details jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_admin_actions_created ON admin_actions (created_at DESC, id DESC);

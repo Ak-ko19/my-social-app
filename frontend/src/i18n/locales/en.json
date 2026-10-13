@@ -1278,7 +1278,7 @@
         },
         {
           "heading": "3. Who can see what",
-          "body": "Public posts, public profiles and pages can be seen by anyone. Followers-only posts, private accounts and private groups are limited to the people allowed in, and \"Only me\" posts are visible only to you. Stories disappear after 24 hours. Direct and group messages are visible only to the people in that conversation, who can also see when you are online or were last active. Blocking someone hides you from each other. Our moderators can see content that has been reported, so they can review it. Poll votes are anonymous: everyone, including the poll's author, sees only how many votes each option has."
+          "body": "Public posts, public profiles and pages can be seen by anyone. Followers-only posts, private accounts and private groups are limited to the people allowed in, and \"Only me\" posts are visible only to you. Stories disappear after 24 hours. Direct and group messages are visible only to the people in that conversation, who can also see when you are online or were last active. Blocking someone hides you from each other. Our moderators can see content that has been reported, so they can review it. Each moderation decision (for example removing a post or suspending an account) is recorded with which moderator made it, when, and the account, group or page it concerned — not the removed content itself. Poll votes are anonymous: everyone, including the poll's author, sees only how many votes each option has."
         },
         {
           "heading": "4. Links and sharing",
@@ -1294,7 +1294,7 @@
         },
         {
           "heading": "7. How long we keep it",
-          "body": "What you post stays until you delete it or delete your account. Stories are removed with their photos after 24 hours, notifications after 90 days, and signed-out sessions within a day. Records of server errors, which may note which account ran into the error, are deleted after 90 days without a new occurrence. Deleting a post, story or message, or changing your profile picture or cover photo, also deletes the old file from our media provider."
+          "body": "What you post stays until you delete it or delete your account. Stories are removed with their photos after 24 hours, notifications after 90 days, and signed-out sessions within a day. Records of server errors, which may note which account ran into the error, are deleted after 90 days without a new occurrence. The record of moderation decisions is kept for 2 years. Deleting a post, story or message, or changing your profile picture or cover photo, also deletes the old file from our media provider."
         },
         {
           "heading": "8. Security",
