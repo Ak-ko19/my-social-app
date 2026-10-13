@@ -49,6 +49,9 @@ const ManageCommunityScreen = lazy(() => import('./screens/ManageCommunityScreen
 const PagesScreen = lazy(() => import('./screens/PagesScreen'));
 const LanguageScreen = lazy(() => import('./screens/LanguageScreen'));
 const LegalScreen = lazy(() => import('./screens/LegalScreen'));
+// Day 60: Settings > Help & Support and About (public, like /terms).
+const HelpScreen = lazy(() => import('./screens/HelpScreen'));
+const AboutScreen = lazy(() => import('./screens/AboutScreen'));
 const LandingScreen = lazy(() => import('./screens/LandingScreen'));
 const CreatePageScreen = lazy(() => import('./screens/CreatePageScreen'));
 const PageScreen = lazy(() => import('./screens/PageScreen'));
@@ -213,6 +216,8 @@ function App() {
         <Route path="/profile/:id/connections" element={<PhoneShell><ConnectionsScreen /></PhoneShell>} />
         <Route path="/terms" element={<PhoneShell hideTabBar><LegalScreen doc="terms" /></PhoneShell>} />
         <Route path="/privacy" element={<PhoneShell hideTabBar><LegalScreen doc="privacy" /></PhoneShell>} />
+        <Route path="/help" element={<PhoneShell hideTabBar><HelpScreen /></PhoneShell>} />
+        <Route path="/about" element={<PhoneShell hideTabBar><AboutScreen /></PhoneShell>} />
         <Route path="/pages/new" element={authOnly(<PhoneShell hideTabBar><CreatePageScreen /></PhoneShell>)} />
         <Route path="/pages/:id" element={<PhoneShell><PageScreen /></PhoneShell>} />
         <Route path="/pages/:id/edit" element={authOnly(<PhoneShell hideTabBar><EditPageScreen /></PhoneShell>)} />

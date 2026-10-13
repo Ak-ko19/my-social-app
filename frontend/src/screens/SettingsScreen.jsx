@@ -21,11 +21,7 @@ import {
   Globe,
   Moon,
   Lock,
-  Eye,
   Users,
-  SlidersHorizontal,
-  Rss,
-  Film,
   Video,
   Radio,
   UsersRound,
@@ -98,16 +94,16 @@ const SETTINGS_SECTIONS = [
       { key: 'interactions', icon: MessagesSquare, to: '/settings/interactions' },
       // Day 49: Hidden words.
       { key: 'hidden-words', icon: EyeOff, to: '/settings/hidden-words' },
-      { key: 'content-visibility', icon: Eye },
-      { key: 'followers-following', icon: Users },
-      { key: 'content-preferences', icon: SlidersHorizontal }
+      // Day 60: your own followers and following (a function: it needs
+      // your id). Who can see your content is the Private Account switch
+      // above plus each post's audience, so that row went.
+      { key: 'followers-following', icon: Users, to: (userId) => `/profile/${userId}/connections?tab=followers` }
     ]
   },
   {
     id: 'features',
     rows: [
-      { key: 'news-feed-settings', icon: Rss },
-      { key: 'story-settings', icon: Film },
+      // Paused features: shown, disabled, like the Videos and Shorts tabs.
       { key: 'reels-videos', icon: Video },
       { key: 'live-streaming', icon: Radio },
       { key: 'pages', icon: UsersRound, to: '/pages' },
@@ -117,10 +113,11 @@ const SETTINGS_SECTIONS = [
   {
     id: 'support',
     rows: [
-      { key: 'help-support', icon: LifeBuoy },
+      // Day 60: a short FAQ and the app's About page.
+      { key: 'help-support', icon: LifeBuoy, to: '/help' },
       { key: 'terms', icon: FileText, to: '/terms' },
       { key: 'privacy-policy', icon: ScrollText, to: '/privacy' },
-      { key: 'about', icon: Info }
+      { key: 'about', icon: Info, to: '/about' }
     ]
   }
 ];
@@ -170,7 +167,8 @@ function SettingsScreen() {
 
           {section.rows.map((row) => {
             const Icon = row.icon;
-            const isEnabled = Boolean(row.to);
+            const to = typeof row.to === 'function' ? (userId ? row.to(userId) : null) : row.to;
+            const isEnabled = Boolean(to);
             // Notifications is the only row with a live count; every
             // other row's badgeCount (none currently) would come from
             // its own static config instead.
@@ -201,7 +199,7 @@ function SettingsScreen() {
                 key={row.key}
                 type="button"
                 className="settings-row"
-                onClick={isEnabled ? () => navigate(row.to) : undefined}
+                onClick={isEnabled ? () => navigate(to) : undefined}
                 disabled={!isEnabled}
                 title={!isEnabled ? t('common.comingSoon') : undefined}
                 aria-disabled={!isEnabled}

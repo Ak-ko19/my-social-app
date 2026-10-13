@@ -79,11 +79,7 @@
       "language": "Language",
       "dark-mode": "Dark Mode",
       "privacy-settings": "Private Account",
-      "content-visibility": "Who Can See My Content",
       "followers-following": "Followers & Following",
-      "content-preferences": "Content Preferences",
-      "news-feed-settings": "News Feed Settings",
-      "story-settings": "Story Settings",
       "reels-videos": "Reels & Videos",
       "live-streaming": "Live Streaming",
       "pages": "Pages",
@@ -1657,5 +1653,54 @@
       "pickStart": "Choose when the event starts.",
       "endAfterStart": "The event must end after it starts."
     }
+  },
+  "help": {
+    "title": "Help & Support",
+    "intro": "Answers to the most common questions. The settings mentioned here are in Settings (the Profile tab).",
+    "toAbout": "About MySocialApp",
+    "sections": [
+      {
+        "heading": "How do I make my account private?",
+        "body": "Turn on Settings → Private Account. Only the followers you approve then see your posts. New requests wait in Settings → Follow Requests."
+      },
+      {
+        "heading": "Who can see my post?",
+        "body": "You choose when you post: Public, Followers, Close friends or Only me. To change it later, open the post's ⋯ menu. Group and page posts follow the group's or page's own privacy."
+      },
+      {
+        "heading": "What's the difference between mute, restrict and block?",
+        "body": "Mute hides someone's posts and stories from your feed. Restrict keeps their new comments on your posts visible only to them and you until you approve them. Block stops them from seeing your profile and posts, following you or messaging you. Nobody is told."
+      },
+      {
+        "heading": "How do I report something?",
+        "body": "Open the ⋯ menu on a post, comment, message, group or page and choose Report. The moderators review every report."
+      },
+      {
+        "heading": "How do I choose who can message me or comment?",
+        "body": "Go to Settings → Messages and comments. You can also hide comments that contain words you choose, in Settings → Hidden words."
+      },
+      {
+        "heading": "How do I get a copy of my data?",
+        "body": "Go to Settings → Security & Privacy → Download your information. You get one file with your profile, posts, comments, reactions, messages and settings."
+      },
+      {
+        "heading": "How do I deactivate or delete my account?",
+        "body": "Go to Settings → Security & Privacy. Deactivating hides your profile until you log back in. Deleting removes your account and all your content for good."
+      },
+      {
+        "heading": "How do I change the language?",
+        "body": "Go to Settings → Language and choose English or العربية. Your choice is saved to your account."
+      }
+    ]
+  },
+  "about": {
+    "title": "About MySocialApp",
+    "whatTitle": "What it is",
+    "what": "A social network for sharing posts, photos and stories with friends, chatting one-to-one or in groups, and joining groups, pages and events.",
+    "languagesTitle": "Languages",
+    "languages": "The app is fully available in both, including right-to-left in Arabic. You can post and search in any language.",
+    "stageTitle": "Status",
+    "stage": "This is an early preview, still being built. Features and policies may change.",
+    "linksLabel": "Documents and help"
   }
 }

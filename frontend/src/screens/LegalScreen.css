@@ -34,3 +34,18 @@
   font-weight: 700;
   color: var(--color-text);
 }
+
+/* Day 60: About page. */
+.about-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.about-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}

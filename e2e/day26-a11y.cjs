@@ -33,7 +33,7 @@ const AUTHED = [
   // Day 48: the activity log.
   '/activity', '/activity?tab=comments', '/activity?tab=searches'
 ];
-const PUBLIC = ['/welcome', '/login', '/signup', '/forgot-password', '/reset-password/sometoken', '/terms', '/privacy'];
+const PUBLIC = ['/welcome', '/login', '/signup', '/forgot-password', '/reset-password/sometoken', '/terms', '/privacy', '/help', '/about'];
 const LANG_PAGES = ['/', '/messages/1', '/profile/2', '/settings', '/login', '/welcome', '/drafts'];
 const SERIOUS = new Set(['serious', 'critical']);
 

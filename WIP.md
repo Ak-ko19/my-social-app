@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 60 — GO LIVE is the owner's (no production access); owner-free part: AUDIT_REPORT_3 A1 then A2.
-**Step:** 1 — A1: done (committed). proxy-addr 2.0.8 + source-map-js 1.2.2 (lockfile only); CI job dependency-audit (backend, frontend, e2e; --omit=dev --audit-level=high) + ciWorkflow test (2 mutations caught); backend 869/869. Dev-only: 19 moderate (sprintf-js via the jest tool chain), fix needs --force (breaking) -- left. Lesson: `npm audit fix --omit=dev` strips dev deps from node_modules; run `npm install` after. Next: step 2, A2 Settings rows.
+**Step:** 2 — A2: done (committed). Decision (owner-free, logged): Followers & Following -> /profile/<me>/connections?tab=followers; built /help (8-answer FAQ) and /about (public, EN/AR); removed Who Can See My Content, Content Preferences, News Feed Settings, Story Settings (no planned feature; covered by Private Account, post audience, close friends, muted, hidden words); Reels & Live stay disabled (paused). check-i18n accepts t(key, { returnObjects: true }) for an object/list key. Vitest 270, backend 869, day60-settings 29/29, a11y 121, bundle 221.5 kB. Next: close Day 60 (full browser run in small batches, Progress Log, WIP -> Day 61).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

@@ -157,7 +157,11 @@ for (const file of files) {
   for (const re of LITERAL) {
     for (const m of code.matchAll(re)) {
       used += 1;
-      if (!enBase.has(m[1])) problems.push(`${rel}: unknown key '${m[1]}'`);
+      // t('help.sections', { returnObjects: true }) names a whole object or
+      // list (Day 60): fine when en.json has keys under it.
+      const wholeObject = /^[^)]*returnObjects:\s*true/.test(code.slice(m.index + m[0].length, m.index + m[0].length + 80));
+      const found = enBase.has(m[1]) || (wholeObject && [...enBase].some((k) => k.startsWith(`${m[1]}.`)));
+      if (!found) problems.push(`${rel}: unknown key '${m[1]}'`);
     }
   }
   for (const m of code.matchAll(TEMPLATE)) {
