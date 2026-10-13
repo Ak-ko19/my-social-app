@@ -1,6 +1,6 @@
 import { getOptimizedImageUrl } from '../utils/cloudinaryImage';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ShieldAlert } from 'lucide-react';
 import clsx from 'clsx';
 import { ConfirmDialog, IconButton } from '../components/ui';
@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import AdminErrorsPanel from '../components/admin/AdminErrorsPanel';
 import AdminStoragePanel from '../components/admin/AdminStoragePanel';
+import AdminOverviewPanel from '../components/admin/AdminOverviewPanel';
 import { fetchReports, dismissReport, removeReportedContent, banUser, suspendUser, unbanUser } from '../services/adminService';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
 import { Trans, useTranslation } from 'react-i18next';
@@ -16,6 +17,8 @@ import { formatDate } from '../i18n';
 import '../components/feed/Feed.css';
 import './AdminScreen.css';
 
+// The sections, in tab order (labels: admin.section.<key>).
+const SECTIONS = ['overview', 'reports', 'errors', 'storage'];
 // Labels: admin.resolution.<key>.
 const RESOLUTIONS = ['dismissed', 'content_removed', 'user_banned', 'user_suspended'];
 // Day 12: suspension lengths an admin can pick (the API accepts these).
@@ -302,7 +305,12 @@ function AdminScreen() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { token } = useAuth();
-  const [section, setSection] = useState('reports');
+  // Day 61: the open section lives in the URL (/admin?section=reports), so
+  // it can be linked to and Back returns to the previous one. The Overview
+  // opens first.
+  const [params, setParams] = useSearchParams();
+  const section = SECTIONS.includes(params.get('section')) ? params.get('section') : 'overview';
+  const setSection = (s) => setParams(s === 'overview' ? {} : { section: s });
   const [status, setStatus] = useState('pending');
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -360,9 +368,9 @@ function AdminScreen() {
         <h1 className="screen-header-title">{t('admin.title')}</h1>
       </header>
       <div className="screen-body">
-        {/* Day 10: Reports | Errors. Day 57: | Storage. */}
+        {/* Day 10: Reports | Errors. Day 57: | Storage. Day 61: Overview first. */}
         <div role="tablist" aria-label={t('admin.sections')} className="admin-tabs admin-sections">
-          {['reports', 'errors', 'storage'].map((s) => (
+          {SECTIONS.map((s) => (
             <button
               key={s}
               type="button"
@@ -376,6 +384,7 @@ function AdminScreen() {
           ))}
         </div>
 
+        {section === 'overview' && <AdminOverviewPanel token={token} onOpenSection={setSection} />}
         {section === 'storage' && <AdminStoragePanel token={token} />}
         {section === 'errors' && <AdminErrorsPanel token={token} />}
         {section === 'reports' && (

@@ -840,7 +840,8 @@
     "section": {
       "reports": "Reports",
       "errors": "Errors",
-      "storage": "Storage"
+      "storage": "Storage",
+      "overview": "Overview"
     },
     "errors": {
       "statusTabs": "Error status",
@@ -932,6 +933,41 @@
         "GB": "GB",
         "TB": "TB"
       }
+    },
+    "overview": {
+      "loadFailed": "Couldn't load the overview.",
+      "totalsLabel": "Totals",
+      "total": {
+        "users": "Users",
+        "posts": "Posts",
+        "comments": "Comments",
+        "groups": "Groups",
+        "pages": "Pages"
+      },
+      "about": "≈ {{count}}",
+      "attentionLabel": "Needs attention",
+      "pendingReports_one": "{{n}} report waiting for review",
+      "pendingReports_other": "{{n}} reports waiting for review",
+      "openErrors_one": "{{n}} unresolved error",
+      "openErrors_other": "{{n}} unresolved errors",
+      "storageLine": "Storage: database {{database}}, media {{media}}",
+      "notKnown": "not known",
+      "rangeLabel": "Period",
+      "lastDays_one": "{{n}} day",
+      "lastDays_other": "{{n}} days",
+      "metric": {
+        "signups": "Signups",
+        "posts": "Posts",
+        "comments": "Comments",
+        "reports": "Reports"
+      },
+      "inRange": "Total: {{n}}",
+      "today": "Today",
+      "todaySoFar": "Today so far",
+      "showTable": "Show the numbers as a table",
+      "day": "Day",
+      "utcNote": "Days are counted in UTC. Today's bar is still filling up.",
+      "refresh": "Refresh"
     }
   },
   "groups": {

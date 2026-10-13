@@ -924,7 +924,8 @@
     "section": {
       "reports": "البلاغات",
       "errors": "الأخطاء",
-      "storage": "التخزين"
+      "storage": "التخزين",
+      "overview": "نظرة عامة"
     },
     "errors": {
       "statusTabs": "حالة الخطأ",
@@ -1028,6 +1029,53 @@
         "GB": "غ.ب",
         "TB": "ت.ب"
       }
+    },
+    "overview": {
+      "loadFailed": "تعذّر تحميل النظرة العامة.",
+      "totalsLabel": "الإجماليات",
+      "total": {
+        "users": "المستخدمون",
+        "posts": "المنشورات",
+        "comments": "التعليقات",
+        "groups": "المجموعات",
+        "pages": "الصفحات"
+      },
+      "about": "≈ {{count}}",
+      "attentionLabel": "يحتاج إلى انتباه",
+      "pendingReports_zero": "لا توجد بلاغات بانتظار المراجعة",
+      "pendingReports_one": "بلاغ واحد بانتظار المراجعة",
+      "pendingReports_two": "بلاغان بانتظار المراجعة",
+      "pendingReports_few": "{{n}} بلاغات بانتظار المراجعة",
+      "pendingReports_many": "{{n}} بلاغًا بانتظار المراجعة",
+      "pendingReports_other": "{{n}} بلاغ بانتظار المراجعة",
+      "openErrors_zero": "لا توجد أخطاء غير محلولة",
+      "openErrors_one": "خطأ واحد غير محلول",
+      "openErrors_two": "خطآن غير محلولين",
+      "openErrors_few": "{{n}} أخطاء غير محلولة",
+      "openErrors_many": "{{n}} خطأً غير محلول",
+      "openErrors_other": "{{n}} خطأ غير محلول",
+      "storageLine": "التخزين: قاعدة البيانات {{database}}، الوسائط {{media}}",
+      "notKnown": "غير معروف",
+      "rangeLabel": "الفترة",
+      "lastDays_zero": "{{n}} يوم",
+      "lastDays_one": "يوم واحد",
+      "lastDays_two": "يومان",
+      "lastDays_few": "{{n}} أيام",
+      "lastDays_many": "{{n}} يومًا",
+      "lastDays_other": "{{n}} يوم",
+      "metric": {
+        "signups": "التسجيلات",
+        "posts": "المنشورات",
+        "comments": "التعليقات",
+        "reports": "البلاغات"
+      },
+      "inRange": "الإجمالي: {{n}}",
+      "today": "اليوم",
+      "todaySoFar": "اليوم حتى الآن",
+      "showTable": "عرض الأرقام في جدول",
+      "day": "اليوم",
+      "utcNote": "تُحسب الأيام بالتوقيت العالمي (UTC). عمود اليوم لا يزال يمتلئ.",
+      "refresh": "تحديث"
     }
   },
   "groups": {

@@ -69,7 +69,7 @@ const call = async (method, url, token, body) => (await fetch(API + url, { metho
 
   // 3. The moderator sees both and removes the group (after confirming).
   const a = await newPage(aliceToken, 1, 'alice', { width: 375 });
-  await a.goto(`${WEB}/admin`, { waitUntil: 'networkidle' });
+  await a.goto(`${WEB}/admin?section=reports`, { waitUntil: 'networkidle' });
   await a.locator('.admin-report').first().waitFor({ timeout: 8000 }).catch(() => {});
   const groupCard = a.locator('.admin-report', { hasText: 'Miracle cures' });
   check('admin: group card "Group Miracle cures", made by bob', (await groupCard.getByText(stripTags(fill(EN.admin.groupNamed, { name: 'Miracle cures' }))).count()) === 1
@@ -92,7 +92,7 @@ const call = async (method, url, token, body) => (await fetch(API + url, { metho
   // 4. Arabic, RTL: the page card, translated.
   const A = locale('ar');
   const ar = await newPage(aliceToken, 1, 'alice', { lang: 'ar', theme: 'dark', width: 430 });
-  await ar.goto(`${WEB}/admin`, { waitUntil: 'networkidle' });
+  await ar.goto(`${WEB}/admin?section=reports`, { waitUntil: 'networkidle' });
   await ar.locator('.admin-report').first().waitFor({ timeout: 8000 }).catch(() => {});
   check('ar: page card translated', (await ar.getByText(stripTags(fill(A.admin.pageNamed, { name: 'Lottery Winners' }))).count()) === 1);
   check('ar: no horizontal scroll', await noHScroll(ar));

@@ -67,7 +67,7 @@ const signup = async (name) => {
   await bob.getByText('watch your back').waitFor({ timeout: 8000 }).catch(() => {});
 
   const admin = await newPage(aliceToken, 1, 'alice', { width: 375 });
-  await admin.goto(`${WEB}/admin`, { waitUntil: 'networkidle' });
+  await admin.goto(`${WEB}/admin?section=reports`, { waitUntil: 'networkidle' });
   await admin.locator('.admin-report').first().waitFor({ timeout: 8000 }).catch(() => {});
   const card = (text) => admin.locator('.admin-report', { hasText: text });
 
@@ -132,7 +132,7 @@ const signup = async (name) => {
   await call('POST', '/reports', bobToken, { targetType: 'user', targetId: erin.id, reason: 'harassment' });
   const A = locale('ar');
   const adminAr = await newPage(aliceToken, 1, 'alice', { lang: 'ar', theme: 'dark', width: 430 });
-  await adminAr.goto(`${WEB}/admin`, { waitUntil: 'networkidle' });
+  await adminAr.goto(`${WEB}/admin?section=reports`, { waitUntil: 'networkidle' });
   await adminAr.locator('.admin-report').first().waitFor({ timeout: 8000 }).catch(() => {});
   await adminAr.getByRole('button', { name: fill(A.admin.suspend, { name: 'erin' }) }).click();
   check('ar: suspend form translated (legend + "يوم واحد")',

@@ -73,6 +73,9 @@ async function signup(name) {
   // Pending list.
   await admin.getByRole('button', { name: /Moderation/ }).click();
   await admin.waitForURL('http://localhost:5173/admin');
+  // Day 61: the admin screen opens on Overview; reports are one tab over.
+  await admin.getByRole('tab', { name: 'Reports' }).click();
+  await admin.waitForURL('http://localhost:5173/admin?section=reports');
   await admin.locator('.admin-report').first().waitFor();
   check('3 pending reports listed', (await admin.locator('.admin-report').count()) === 3);
   check('duplicate reports on the post are counted ("2 reports")', (await admin.getByText('2 reports').count()) >= 1);
@@ -114,7 +117,7 @@ async function signup(name) {
   check('unban -> dave can log in again', relogin.status === 200);
 
   const small = await newPage(aliceToken, 1, 'alice', { width: 375, theme: 'dark' });
-  await small.goto('http://localhost:5173/admin', { waitUntil: 'networkidle' });
+  await small.goto('http://localhost:5173/admin?section=reports', { waitUntil: 'networkidle' });
   await small.getByRole('tab', { name: 'Reviewed' }).click();
   await small.locator('.admin-report').first().waitFor();
   check('375px dark: no horizontal scroll', !(await small.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)));

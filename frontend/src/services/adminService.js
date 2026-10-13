@@ -43,3 +43,10 @@ export function resolveError(fingerprint, token) {
 export function fetchStorage(token) {
   return api.get('/admin/storage', withAuth(token)).then((res) => res.data);
 }
+
+// Day 61: Admin > Overview -- { days, series: [{ day, signups, posts,
+// comments, reports }] oldest first (today last, so far), totals, storage }
+// (backend services/statsService.js).
+export function fetchOverview(token, days) {
+  return api.get('/admin/overview', { ...withAuth(token), params: { days } }).then((res) => res.data);
+}

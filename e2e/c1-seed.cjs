@@ -41,7 +41,7 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await page.locator('article.post-card').first().waitFor();
   check('hashtag feed populated', (await page.locator('article.post-card').count()) >= 3);
 
-  await page.goto(`${WEB}/admin`, { waitUntil: 'networkidle' });
+  await page.goto(`${WEB}/admin?section=reports`, { waitUntil: 'networkidle' });
   await page.locator('.admin-report').first().waitFor();
   check('demo admin sees a pending report', true);
 

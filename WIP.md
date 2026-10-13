@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 61–62 — Admin dashboard: users, posts, reports, signups per day, storage usage, error log; charts built locally, no outside analytics.
-**Step:** 1 — backend: done (committed). Migration 068 daily_stats + 3 created_at indexes; statsService (rollUp by ticker + on demand, today live, totals exact under 10k rows else pg estimate, storage levels); GET /admin/overview?days=7|30|90; API adminOverview 8 tests (5 mutations caught incl. a two-server race); perf 41/41 (overview 160 ms, 2 rows); rehearsal 015->068 passed (137 indexes); checklist 27 tables / 23 columns / 14 indexes; backend 877. Next: step 2, Overview tab UI (SVG bar charts + table, RTL, EN/AR).
+**Step:** 2 — Overview UI: done (committed). AdminOverviewPanel (totals with ≈ for estimates, shortcuts to Reports/Errors/Storage, 7/30/90 days, 4 SVG bar charts mirrored in RTL, table fallback, UTC note), opens first; the section is in the URL (/admin?section=reports; Back works) -- suites that need Reports open that URL. Vitest 275, day61-overview 23/23, a11y 123, bundle 221.7 kB. Next: close Days 61–62 (full browser run in small batches, tick MONTH_PLAN, Progress Log, WIP -> Day 63 audit log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

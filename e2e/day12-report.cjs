@@ -112,7 +112,7 @@ const call = async (method, url, token, body) => {
   {
     const L = locale('en');
     const admin = await newPage(aliceToken, 1, 'alice');
-    await admin.goto(`${WEB}/admin`, { waitUntil: 'networkidle' });
+    await admin.goto(`${WEB}/admin?section=reports`, { waitUntil: 'networkidle' });
     await admin.locator('.admin-report').first().waitFor({ timeout: 8000 }).catch(() => {});
     const commentCard = admin.locator('.admin-report', { hasText: 'you are all losers' });
     const messageCard = admin.locator('.admin-report', { hasText: 'pay me or else' });
@@ -137,7 +137,7 @@ const call = async (method, url, token, body) => {
     // Arabic, dark, 430px: same cards, translated, no sideways scroll.
     const A = locale('ar');
     const adminAr = await newPage(aliceToken, 1, 'alice', { lang: 'ar', theme: 'dark', width: 430 });
-    await adminAr.goto(`${WEB}/admin`, { waitUntil: 'networkidle' });
+    await adminAr.goto(`${WEB}/admin?section=reports`, { waitUntil: 'networkidle' });
     await adminAr.locator('.admin-report').first().waitFor({ timeout: 8000 }).catch(() => {});
     check('ar admin: "Comment by carol" translated', (await adminAr.getByText(stripTags(fill(A.admin.commentBy, { name: 'carol' }))).count()) === 1);
     check('ar admin: unsent message translated', (await adminAr.getByText(A.admin.messageDeleted).count()) === 1);
