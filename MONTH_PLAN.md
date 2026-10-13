@@ -240,6 +240,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 59 — Re-audit (AUDIT_REPORT_3.md)
 - [x] Repeat the full read-only audit; write AUDIT_REPORT_3.md comparing with the second audit. *(AUDIT_REPORT_3.md — see Progress Log.)*
 ### Day 60 — GO LIVE (only if you have the access)
+*GO LIVE skipped 2026-10-13: no production access (CLAUDE.md hard limits) — owner action, LATER.md #2. The owner-free part is done: AUDIT_REPORT_3 A1 (dependency advisories, now audited in CI) and A2 (no dead Settings rows; Help and About pages) fixed — see Progress Log.*
 
 ---
 
@@ -2013,3 +2014,36 @@ Read-only; no application code changed. Same method as audit 2, on
 - **Next:** both fixes are planned for Day 60's owner-free part.
 - **Tests:** unchanged since the Day 58 close the same day (backend
   868/868, Vitest 264/264, full browser run green).
+
+### 2026-10-13 — Day 60: GO LIVE skipped (owner); AUDIT_REPORT_3 A1 and A2 fixed
+GO LIVE needs production access, so it stays the owner's (LATER.md #2;
+the rehearsal covers 015 → 067). The owner-free part:
+- **A1, dependency advisories (`96697f6`):** proxy-addr 2.0.8 and
+  source-map-js 1.2.2 (lockfile only).
+  - New CI job "Dependency audit": `npm audit --omit=dev
+    --audit-level=high` in backend, frontend and e2e. A CI test keeps it
+    there (2 mutations caught).
+  - Left: 19 moderate advisories in backend dev tooling (sprintf-js via
+    jest). The fix needs a breaking `--force` upgrade, and none of it runs
+    in production.
+  - Lesson: `npm audit fix --omit=dev` strips dev dependencies from
+    node_modules; run `npm install` after it.
+- **A2, Settings (`4f743db`):**
+  - Followers & Following opens your own connections.
+  - New public pages, in English and Arabic: /help (eight short answers)
+    and /about.
+  - Removed: Who Can See My Content, Content Preferences, News Feed
+    Settings and Story Settings. Nothing was planned for them, and the
+    Private Account switch, each post's audience, close friends, muted
+    accounts and hidden words already cover them.
+  - Reels and Live stay disabled (paused features).
+  - check-i18n now accepts `t(key, { returnObjects: true })` for a key
+    that holds a list.
+  - New suite day60-settings (29 checks). /help and /about joined the
+    a11y and route-guard suites.
+- **Tests at close:**
+  - backend 869/869; Vitest 270/270; check:i18n 1346 keys; bundle
+    221.5 kB.
+  - Full browser run in batches of four, with the stack down between
+    batches: all 58 regular suites + the 6 special-stack suites + perf
+    40/40 + A3 EN/AR (288 each) + a11y (121 page checks).

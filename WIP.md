@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 60 — GO LIVE is the owner's (no production access); owner-free part: AUDIT_REPORT_3 A1 then A2.
-**Step:** 2 — A2: done (committed). Decision (owner-free, logged): Followers & Following -> /profile/<me>/connections?tab=followers; built /help (8-answer FAQ) and /about (public, EN/AR); removed Who Can See My Content, Content Preferences, News Feed Settings, Story Settings (no planned feature; covered by Private Account, post audience, close friends, muted, hidden words); Reels & Live stay disabled (paused). check-i18n accepts t(key, { returnObjects: true }) for an object/list key. Vitest 270, backend 869, day60-settings 29/29, a11y 121, bundle 221.5 kB. Next: close Day 60 (full browser run in small batches, Progress Log, WIP -> Day 61).
+**Day:** 61–62 — Admin dashboard: users, posts, reports, signups per day, storage usage, error log; charts built locally, no outside analytics.
+**Step:** 1 — PLAN. Read AdminScreen (tabs: reports, errors, storage), adminRoutes and storageService first; then decide the data (daily counts over 30 days from created_at columns; one admin-only endpoint) and the chart (plain SVG, no library: bundle has 3.5 kB of headroom).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
