@@ -247,7 +247,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ## PHASE 3 — Days 61–90: Quality, admin, and long-term health
 
 ### Day 61–62 — Admin dashboard
-- [ ] Users, posts, reports, signups per day, storage usage, error log — charts built locally, no outside analytics.
+- [x] Users, posts, reports, signups per day, storage usage, error log — charts built locally, no outside analytics. *(Admin > Overview — see Progress Log.)*
 ### Day 63 — Audit log
 - [ ] Record admin actions (who removed what, when).
 ### Day 64–66 — End-to-end tests
@@ -2047,3 +2047,40 @@ the rehearsal covers 015 → 067). The owner-free part:
   - Full browser run in batches of four, with the stack down between
     batches: all 58 regular suites + the 6 special-stack suites + perf
     40/40 + A3 EN/AR (288 each) + a11y (121 page checks).
+
+### 2026-10-13 — Day 61–62: Admin dashboard (Admin > Overview)
+Built on the existing admin screen (Reports, Errors, Storage), with no
+outside analytics and no chart library.
+- **API (`4d10768`, migration 068):** `GET /admin/overview?days=7|30|90`,
+  admins only.
+  - One point per day: signups, posts, comments and reports.
+  - Totals: users, posts and comments, plus groups, pages, waiting
+    reports and unresolved errors.
+  - Storage levels: the database, and Cloudinary (cached).
+  - Finished UTC days are counted once into `daily_stats`, by the ticker
+    or when the page is opened (the first time, 90 days back). Today is
+    counted live. Big tables' totals use Postgres' own estimate.
+  - Two servers rolling up at once keep each other's days (a test
+    proves it with an uncommitted row).
+  - At the perf seed (about 1M rows) the overview takes 160 ms and reads
+    2 rows of the big tables.
+  - GO_LIVE_CHECKLIST: 015 → 068 (27 tables, 23 columns, 14 indexes).
+    The rehearsal passed, with 137 indexes matching.
+- **UI (`ceb414d`):** the admin screen opens on Overview.
+  - Total cards (≈ for estimates).
+  - Shortcuts to waiting reports, unresolved errors and storage.
+  - A 7 / 30 / 90-day switch, and four SVG bar charts: newest on the
+    left in Arabic, today paler. The same numbers are in a table.
+  - English and Arabic, with full Arabic plurals.
+  - The open section is in the URL (`/admin?section=reports`), so Back
+    works. The suites that open Reports use that URL.
+- **Decision (logged):** days are UTC, said under the charts. Per-viewer
+  time zones would need hourly counts; that's not worth it for a few
+  admins.
+- **Tests at close:**
+  - backend 877/877 (adminOverview 8; 5 mutations caught); Vitest
+    275/275 (overview panel 5); check:i18n 1373 keys; bundle 221.7 kB.
+  - Full browser run in small batches, with the stack down between them:
+    all 59 regular suites (new: day61-overview, 23 checks) + the 6
+    special-stack suites + perf 41/41 + A3 EN/AR (288 each) + a11y (123
+    page checks).

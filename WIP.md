@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 61–62 — Admin dashboard: users, posts, reports, signups per day, storage usage, error log; charts built locally, no outside analytics.
-**Step:** 2 — Overview UI: done (committed). AdminOverviewPanel (totals with ≈ for estimates, shortcuts to Reports/Errors/Storage, 7/30/90 days, 4 SVG bar charts mirrored in RTL, table fallback, UTC note), opens first; the section is in the URL (/admin?section=reports; Back works) -- suites that need Reports open that URL. Vitest 275, day61-overview 23/23, a11y 123, bundle 221.7 kB. Next: close Days 61–62 (full browser run in small batches, tick MONTH_PLAN, Progress Log, WIP -> Day 63 audit log).
+**Day:** 63 — Audit log: record admin actions (who removed what, when).
+**Step:** 1 — PLAN. Read adminController (dismiss, remove content, ban, suspend, unban), errorLog resolve, community/page moderation by site admins; one append-only admin_actions table (admin, action, target, details, at), written in the same transaction as each action; Admin > Log section (newest first, paged), EN/AR.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
