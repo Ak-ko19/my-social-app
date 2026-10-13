@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 59 — Re-audit (write AUDIT_REPORT_3.md; read-only, no app code changes)
-**Step:** 1 — PLAN. Same method as AUDIT_REPORT_2.md: code at a clean, verified commit (Day 58 close); re-check every AUDIT_REPORT_2 finding; classify all routes by auth middleware with a script; fresh API/Socket.io probes on everything added since Day 29 (Days 30–58); npm audit (prod deps: backend, frontend, e2e); compare numbers with audit 2; list new findings by severity, to fix on the following days.
+**Day:** 60 — GO LIVE is the owner's (no production access); owner-free part: AUDIT_REPORT_3 A1 then A2.
+**Step:** 1 — A1 (dependency advisories): PLAN. `npm audit fix` in backend (lockfile only), full backend run, then add an `npm audit --omit=dev --audit-level=high` step for backend, frontend and e2e to ci.yml, with the ciWorkflow test updated.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

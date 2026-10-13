@@ -238,6 +238,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 58 — Accessibility + translations check
 - [x] All new screens translated (EN/AR) and RTL-correct.
 ### Day 59 — Re-audit (AUDIT_REPORT_3.md)
+- [x] Repeat the full read-only audit; write AUDIT_REPORT_3.md comparing with the second audit. *(AUDIT_REPORT_3.md — see Progress Log.)*
 ### Day 60 — GO LIVE (only if you have the access)
 
 ---
@@ -1986,3 +1987,29 @@ a suite for the open overlays:
   - Full browser run in small batches: all 55 regular suites (new:
     day58-open-states) + the 6 special-stack suites + perf 40/40 +
     A3 EN/AR (288 each) + a11y (117 page checks).
+
+### 2026-10-13 — Day 59: Re-audit (AUDIT_REPORT_3.md)
+Read-only; no application code changed. Same method as audit 2, on
+`ca8d531` (the verified Day 58 close).
+- **Audit 2's findings:** N1 to N4 are fixed. N5 (frontend console
+  calls) and N6 (token in localStorage) are informational and unchanged.
+- **Routes:** 189, classified by a script: 142 need a login, 9 are
+  admin-only, 24 are optional-auth reads, 1 needs a secret, and 13 are
+  public. The public set is the same 13 as audit 2.
+- **Probes, 41/41:** aimed at leaks between features added on Days
+  30–58: close-friends posts, a pinned only-me post, a saved post that
+  later becomes only-me, polls, forwarding and reacting outside a chat,
+  blocks against events, page admins and close friends, group bans,
+  comment and message permissions, restrict, and owner-only edits. 4 of
+  them are live Socket.io probes (a removed member's open socket, a
+  forged send, someone else's chat).
+- **New findings:**
+  - A1, Medium: `npm audit` reports proxy-addr (critical) and
+    source-map-js (high) in the backend. Neither is reachable as
+    configured (`trust proxy` is a hop count), and CI doesn't run
+    `npm audit`.
+  - A2, Low: 7 Settings rows are still "Coming soon".
+  - A3, Info: the longest browser suites are slow on the owner's machine.
+- **Next:** both fixes are planned for Day 60's owner-free part.
+- **Tests:** unchanged since the Day 58 close the same day (backend
+  868/868, Vitest 264/264, full browser run green).
