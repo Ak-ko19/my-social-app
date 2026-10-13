@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 60 — GO LIVE is the owner's (no production access); owner-free part: AUDIT_REPORT_3 A1 then A2.
-**Step:** 1 — A1 (dependency advisories): PLAN. `npm audit fix` in backend (lockfile only), full backend run, then add an `npm audit --omit=dev --audit-level=high` step for backend, frontend and e2e to ci.yml, with the ciWorkflow test updated.
+**Step:** 1 — A1: done (committed). proxy-addr 2.0.8 + source-map-js 1.2.2 (lockfile only); CI job dependency-audit (backend, frontend, e2e; --omit=dev --audit-level=high) + ciWorkflow test (2 mutations caught); backend 869/869. Dev-only: 19 moderate (sprintf-js via the jest tool chain), fix needs --force (breaking) -- left. Lesson: `npm audit fix --omit=dev` strips dev deps from node_modules; run `npm install` after. Next: step 2, A2 Settings rows.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

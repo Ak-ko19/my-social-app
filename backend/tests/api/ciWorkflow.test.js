@@ -69,3 +69,16 @@ describe('CI browser jobs', () => {
     for (const suite of suites) expect(runAll).toMatch(new RegExp(`_?SUITES="[^"]*\\b${suite}\\b`));
   });
 });
+
+// Day 60 (AUDIT_REPORT_3 A1): known advisories in production dependencies
+// fail CI, in every package that has a lockfile.
+describe('CI dependency audit', () => {
+  it('audits the production dependencies of backend, frontend and e2e', () => {
+    const job = workflow.jobs['dependency-audit'];
+    expect(job).toBeDefined();
+    expect(job.strategy.matrix.dir).toEqual(['backend', 'frontend', 'e2e']);
+    expect(job.defaults.run['working-directory']).toBe('${{ matrix.dir }}');
+    expect(job.steps.map((s) => s.run)).toContain('npm audit --omit=dev --audit-level=high');
+    for (const dir of job.strategy.matrix.dir) expect(fs.existsSync(path.join(ROOT, dir, 'package-lock.json'))).toBe(true);
+  });
+});

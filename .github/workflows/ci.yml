@@ -58,6 +58,28 @@ jobs:
       - run: npm ci
       - run: npm test
 
+  # Day 60 (AUDIT_REPORT_3 A1): fail on a known high or critical advisory
+  # in what runs in production. Reads only the lockfiles, so no install.
+  # A new advisory upstream turns this red on its own -- that's the point:
+  # fix it with `npm audit fix` in that folder.
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: [backend, frontend, e2e]
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm audit --omit=dev --audit-level=high
+
   frontend:
     name: Frontend lint + build
     runs-on: ubuntu-latest
