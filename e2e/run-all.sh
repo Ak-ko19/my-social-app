@@ -9,6 +9,11 @@
 #                              #  need an internet connection)
 #   E2E_ONLY="b9-dm a3" bash run-all.sh   # just these suites ("a3" = the
 #                              # visual matrix); CI's smoke job uses this
+#
+# Day 66 (AUDIT_REPORT_3 A3): the two longest suites run in short parts,
+# each on its own fresh stack: day26-a11y as day26-a11y-light / -dark / -ar,
+# a3 as a3-en-light / a3-en-dark / a3-ar-light / a3-ar-dark. E2E_ONLY takes
+# the whole suite or one part (E2E_ONLY="a3-ar-dark").
 SP="$(cd "$(dirname "$0")" && pwd)"
 cd "$SP" || exit 1
 
@@ -29,13 +34,19 @@ PUSH_SUITES="day22-push"
 SPAM_SUITES="day49-spam"
 # Real photo uploads (Day 64), kept by a local Cloudinary stand-in.
 MEDIA_SUITES="journeys-social"
+# The parts of the split suites (see the top).
+A11Y_PARTS="light dark ar"
+A3_PARTS="en-light en-dark ar-light ar-dark"
 failed=0
 
 # E2E_ONLY: every name must be a real suite, so a typo can't make CI run
 # (and pass) nothing.
 wanted() { [ -z "$E2E_ONLY" ] || [[ " $E2E_ONLY " == *" $1 "* ]]; }
+# A part of a split suite: asked for by its own name or the whole suite's.
+wanted_part() { wanted "$1" || wanted "$1-$2"; }
+PART_NAMES="$(for p in $A11Y_PARTS; do printf 'day26-a11y-%s ' "$p"; done)$(for p in $A3_PARTS; do printf 'a3-%s ' "$p"; done)"
 for name in $E2E_ONLY; do
-  if [[ " $SUITES $DIST_SUITES $BOT_SUITES $TURNSTILE_SUITES $PUSH_SUITES $SPAM_SUITES $MEDIA_SUITES a3 " != *" $name "* ]]; then
+  if [[ " $SUITES $DIST_SUITES $BOT_SUITES $TURNSTILE_SUITES $PUSH_SUITES $SPAM_SUITES $MEDIA_SUITES a3 $PART_NAMES " != *" $name "* ]]; then
     echo "E2E_ONLY: unknown suite \"$name\""
     exit 2
   fi
@@ -64,6 +75,15 @@ report() { # name exit-code output-file
 }
 
 for s in $SUITES; do
+  if [ "$s" = day26-a11y ]; then
+    for part in $A11Y_PARTS; do
+      wanted_part "$s" "$part" || continue
+      fresh_stack
+      A11Y_PART=$part node "$s.cjs" > "out-$s-$part.txt" 2>&1
+      report "$s-$part" $? "out-$s-$part.txt"
+    done
+    continue
+  fi
   wanted "$s" || continue
   fresh_stack
   node "$s.cjs" > "out-$s.txt" 2>&1
@@ -112,11 +132,11 @@ for s in $MEDIA_SUITES; do
   report "$s" $? "out-$s.txt"
 done
 
-for lang in en ar; do
-  wanted a3 || continue
+for part in $A3_PARTS; do
+  wanted_part a3 "$part" || continue
   fresh_stack
-  A3_LANG=$lang node a3-visual.cjs > "out-a3-$lang.txt" 2>&1
-  report "a3-visual ($lang)" $? "out-a3-$lang.txt"
+  A3_LANG=${part%-*} A3_THEME=${part#*-} node a3-visual.cjs > "out-a3-$part.txt" 2>&1
+  report "a3-$part" $? "out-a3-$part.txt"
 done
 
 if [ "$1" = "--audit" ]; then

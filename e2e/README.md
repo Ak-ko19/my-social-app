@@ -18,7 +18,7 @@ local stack. They were used to verify every roadmap item and the C4 audit
    port 55433) that these suites reuse.
 
 Nothing here reads your `.env` database. Every suite runs against a fresh
-`(`A3_LANG=en|ar`)socialapp_e2e` database on the test cluster, with the backend on :3000
+`mysocialapp_e2e` database on the test cluster, with the backend on :3000
 and Vite on :5173 (stop your own dev servers first).
 
 ## Running
@@ -33,6 +33,14 @@ To run a single suite: `npm run up`, then `node b16-rtl.cjs`, then
 `npm run down`. To run a few, each on a fresh stack:
 `E2E_ONLY="b9-dm day12-report a3" bash run-all.sh` ("a3" = the visual
 matrix; an unknown name stops the run).
+
+The two longest suites run in parts of a few minutes each, every part on
+its own fresh stack (AUDIT_REPORT_3 A3): `day26-a11y` as
+`day26-a11y-light`, `-dark` and `-ar` (Arabic + keyboard), and `a3` as
+`a3-en-light`, `a3-en-dark`, `a3-ar-light`, `a3-ar-dark`. `E2E_ONLY` takes
+the whole suite or one part, e.g. `E2E_ONLY="a3-ar-dark"`. By hand, on a
+fresh stack: `A11Y_PART=dark node day26-a11y.cjs`,
+`A3_LANG=ar A3_THEME=dark node a3-visual.cjs`.
 
 ## In CI (GitHub Actions, Linux)
 
@@ -70,7 +78,7 @@ error. Full output goes to `out-<suite>.txt`, and screenshots to `*.png` /
 | Suite | What it checks |
 | --- | --- |
 | `a2-walkthrough` | The main user journey from signup to logout |
-| `a3-visual` | Every route × 375/390/430 px × light/dark (`A3_LANG=en\|ar`) |
+| `a3-visual` | Every route × 375/390/430 px × light/dark (`A3_LANG=en\|ar`, `A3_THEME=light\|dark`) |
 | `b1-reactions` … `b16-rtl` | One suite per roadmap feature (B1–B16) |
 | `c1-seed` | The world created by `npm run seed:demo` (needs the seed first) |
 | `c2-legal` | Terms and Privacy pages |

@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 64–66 — End-to-end tests: Playwright tests for the 15 most important user journeys; run in CI.
-**Step:** 4 — AUDIT_REPORT_3 A3 split a3/a11y: PLAN. Plan: 15 journeys, each only through the UI (two people = two browser contexts), in 3 suites of 5 so each stays a few minutes: journeys-core (J1 sign up via landing + first post on Home and profile; J2 log out, log in, reload keeps you in; J3 find bob in search, follow, like + comment, bob sees the notification; J4 private account: follow request, approve, posts appear; J5 DM from profile, live both ways), journeys-social (J6 group chat; J7 photo post; J8 story seen by a friend; J9 group: create, other joins + posts; J10 page + event), journeys-safety (J11 report -> admin removes; J12 block/unblock; J13 edit profile + Arabic RTL and back; J14 change password, old fails new works; J15 delete account, cannot log in). Shared e2e/journey-kit.cjs. journeys-core joins the CI smoke list. Then step 4: AUDIT_REPORT_3 A3 split a3/a11y; step 5: e2e/JOURNEYS.md + CI test that every journey suite runs in CI.
+**Step:** 5 — e2e/JOURNEYS.md + CI check: PLAN. Plan: 15 journeys, each only through the UI (two people = two browser contexts), in 3 suites of 5 so each stays a few minutes: journeys-core (J1 sign up via landing + first post on Home and profile; J2 log out, log in, reload keeps you in; J3 find bob in search, follow, like + comment, bob sees the notification; J4 private account: follow request, approve, posts appear; J5 DM from profile, live both ways), journeys-social (J6 group chat; J7 photo post; J8 story seen by a friend; J9 group: create, other joins + posts; J10 page + event), journeys-safety (J11 report -> admin removes; J12 block/unblock; J13 edit profile + Arabic RTL and back; J14 change password, old fails new works; J15 delete account, cannot log in). Shared e2e/journey-kit.cjs. journeys-core joins the CI smoke list. Then step 4: AUDIT_REPORT_3 A3 split a3/a11y; step 5: e2e/JOURNEYS.md + CI test that every journey suite runs in CI.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -80,10 +80,11 @@
   a regex /[က-႟]/ landed as literal Burmese). After writing
   such code, check with `grep -n ... | od -c`; to fix, build the
   backslash with String.fromCharCode(92) in a script.
-- Full browser run timing: day27-perf and the A3 matrix each need most
-  of a 10-minute tool call. Run day27-perf alone, and A3 one language
-  at a time (`A3_LANG=xx timeout 500 node a3-visual.cjs` on a fresh
-  e2e-up.sh -- one language takes ~5 min).
+- Full browser run timing: day27-perf needs most of a 10-minute tool
+  call -- run it alone. Since Day 66 the A3 matrix and day26-a11y run in
+  parts (E2E_ONLY="a3-en-light" ... "a3-ar-dark": ~4 min each, two per
+  tool call; "day26-a11y-light"/"-dark"/"-ar": ~2 min each, all three in
+  one call).
 - Time-based work (Day 45): add a job to services/ticker.js JOBS (30 s +
   start-up; take rows FOR UPDATE SKIP LOCKED so several instances are
   safe) and to cleanupService.run as the backstop.
@@ -160,5 +161,19 @@
   E2E_MEDIA=1; e2e-down frees 3904; ciWorkflow helpers list.
   STEP DONE: journeys-social 17/17 (and fails without the stub, so the
   photo checks are real); journeys-core 20/20; backend 886/886.
-- Step 3 journeys-safety (J11–J15),
-  step 4 AUDIT_REPORT_3 A3 split a3/a11y, step 5 e2e/JOURNEYS.md + CI test.
+- Step 3 journeys-safety (J11–J15) STEP DONE (76f4fbf): report -> admin
+  removes (+ admin log), block/unblock, Arabic bio + app in Arabic and back,
+  change password (other device out, old fails), delete account (typed
+  username). 21/21, 0 console errors (kit: attemptLogIn {refusal} expects
+  a 401 only then). All 3 journey suites green together; backend 886/886.
+- Step 4 AUDIT_REPORT_3 A3 split a3/a11y PLAN: a3-visual gets A3_THEME
+  (light|dark) -> 4 parts a3-en-light ... a3-ar-dark; day26-a11y gets
+  A11Y_PART (light: EN light, dark: EN dark, ar: Arabic + keyboard). run-all
+  runs each part on its own fresh stack with its own line; E2E_ONLY takes
+  a3 / day26-a11y (all parts) or one part. Same checks, same totals (a3
+  288/lang, a11y 125). README + WIP notes updated; ciWorkflow test that
+  the parts add up to the whole.
+  STEP DONE: a11y light 59 / dark 59 / ar 7 (=125, ~2 min each); a3
+  en-light/en-dark/ar-light/ar-dark 144 each (=288/lang, ~4 min each);
+  all 0 failures; backend 888/888.
+- Step 5 e2e/JOURNEYS.md + CI test that every journey suite runs in CI.

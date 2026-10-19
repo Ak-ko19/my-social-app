@@ -70,6 +70,27 @@ describe('CI browser jobs', () => {
   });
 });
 
+// Day 66 (AUDIT_REPORT_3 A3): the two longest suites run in short parts.
+// Together the parts must still be the whole suite.
+describe('split browser suites', () => {
+  const list = (name) => (runAll.match(new RegExp(`^${name}="([^"]*)"`, 'm')) || [])[1]?.split(/\s+/).filter(Boolean);
+  const a11y = read('e2e/day26-a11y.cjs');
+  const a3 = read('e2e/a3-visual.cjs');
+
+  it('day26-a11y: light, dark and ar, each passed to the suite, which runs all of them when unset', () => {
+    expect(list('A11Y_PARTS')).toEqual(['light', 'dark', 'ar']);
+    expect(runAll).toContain('A11Y_PART=$part node "$s.cjs"');
+    expect(a11y).toContain("const PARTS = process.env.A11Y_PART ? [process.env.A11Y_PART] : ['light', 'dark', 'ar'];");
+  });
+
+  it('a3: every language x theme, each passed to the suite, which runs both themes when unset', () => {
+    expect(list('A3_PARTS')).toEqual(['en-light', 'en-dark', 'ar-light', 'ar-dark']);
+    expect(runAll).toContain('A3_LANG=${part%-*} A3_THEME=${part#*-} node a3-visual.cjs');
+    expect(a3).toContain("const THEMES = process.env.A3_THEME ? [process.env.A3_THEME] : ['light', 'dark'];");
+    expect(a3).toContain("const LANG = process.env.A3_LANG || 'en';");
+  });
+});
+
 // Day 60 (AUDIT_REPORT_3 A1): known advisories in production dependencies
 // fail CI, in every package that has a lockfile.
 describe('CI dependency audit', () => {

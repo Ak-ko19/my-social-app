@@ -36,6 +36,11 @@ const AUTHED = [
 const PUBLIC = ['/welcome', '/login', '/signup', '/forgot-password', '/reset-password/sometoken', '/terms', '/privacy', '/help', '/about'];
 const LANG_PAGES = ['/', '/messages/1', '/profile/2', '/settings', '/login', '/welcome', '/drafts'];
 const SERIOUS = new Set(['serious', 'critical']);
+// Day 66 (AUDIT_REPORT_3 A3): A11Y_PART=light|dark|ar runs one part, so
+// run-all.sh can run the audit in three short parts: English light, English
+// dark, and Arabic + the keyboard checks. Unset: all of it.
+const PARTS = process.env.A11Y_PART ? [process.env.A11Y_PART] : ['light', 'dark', 'ar'];
+if (!PARTS.every((p) => ['light', 'dark', 'ar'].includes(p))) throw new Error(`A11Y_PART must be light, dark or ar, not ${process.env.A11Y_PART}`);
 
 const byRule = new Map(); // rule id -> { impact, help, pages:Set, sample }
 let pagesChecked = 0;
@@ -97,18 +102,20 @@ function record(result, label) {
     await ctx.close();
   }
 
-  for (const theme of ['light', 'dark']) {
+  for (const theme of ['light', 'dark'].filter((t) => PARTS.includes(t))) {
     await audit(AUTHED, { authed: true, theme, lang: 'en' });
     await audit(PUBLIC, { authed: false, theme, lang: 'en' });
   }
-  for (const lang of ['ar']) {
-    await audit(LANG_PAGES.filter((r) => !PUBLIC.includes(r)), { authed: true, theme: 'dark', lang });
-    await audit(LANG_PAGES.filter((r) => PUBLIC.includes(r)), { authed: false, theme: 'light', lang });
+  if (PARTS.includes('ar')) {
+    await audit(LANG_PAGES.filter((r) => !PUBLIC.includes(r)), { authed: true, theme: 'dark', lang: 'ar' });
+    await audit(LANG_PAGES.filter((r) => PUBLIC.includes(r)), { authed: false, theme: 'light', lang: 'ar' });
   }
   // Keyboard: Tab through a few screens; every stop must show a focus ring
   // (an outline or a box-shadow), and focus must never fall back to <body>.
+  // (Part "ar", the shortest.)
   const keyboard = [];
-  for (const [route, authed] of [['/welcome', false], ['/login', false], ['/', true], ['/settings', true], ['/messages/1', true]]) {
+  const KEYBOARD_PAGES = [['/welcome', false], ['/login', false], ['/', true], ['/settings', true], ['/messages/1', true]];
+  for (const [route, authed] of PARTS.includes('ar') ? KEYBOARD_PAGES : []) {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     await ctx.addInitScript(([t, a]) => {
       localStorage.setItem('lang', 'en');

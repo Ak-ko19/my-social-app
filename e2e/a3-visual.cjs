@@ -32,7 +32,10 @@ const AUTHED = [
 ];
 const PUBLIC = ['/login', '/signup', '/forgot-password', '/reset-password/sometoken', '/terms', '/privacy', '/welcome'];
 const WIDTHS = [375, 390, 430];
-const THEMES = ['light', 'dark'];
+// Day 66 (AUDIT_REPORT_3 A3): A3_THEME=light|dark runs one theme only, so
+// run-all.sh can run the matrix in four short parts (language x theme).
+const THEMES = process.env.A3_THEME ? [process.env.A3_THEME] : ['light', 'dark'];
+if (!THEMES.every((t) => ['light', 'dark'].includes(t))) throw new Error(`A3_THEME must be light or dark, not ${process.env.A3_THEME}`);
 
 const failures = [];
 let checks = 0;
