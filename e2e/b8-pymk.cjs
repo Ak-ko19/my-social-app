@@ -60,8 +60,8 @@ async function signup(name) {
   await card('carol').getByRole('button', { name: 'Follow' }).click();
   await page.waitForTimeout(700);
   check('following carol shows "Following"', (await card('carol').locator('.feed-btn').innerText()) === 'Following');
-  const aliceFollowing = await (await call('GET', '/users/1/following', aliceToken)).json();
-  check('server: alice now follows carol', aliceFollowing.some((u) => u.id === carol.id));
+  const aliceFollowing = await (await call('GET', '/users/1/connections?type=following&limit=100', aliceToken)).json();
+  check('server: alice now follows carol', aliceFollowing.users.some((u) => u.id === carol.id));
 
   // Follow eve (private) -> Requested (the useFollowToggle pending fix).
   await card('eve').getByRole('button', { name: 'Follow' }).click();

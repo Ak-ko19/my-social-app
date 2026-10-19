@@ -670,6 +670,7 @@
     "followFirst": "Follow people first — groups are made from the accounts you follow.",
     "filter": "Filter people",
     "searchPlaceholder": "Search people you follow",
+    "noMatches": "No one you follow matches that.",
     "inGroup": "In group"
   },
   "groupChat": {

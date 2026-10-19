@@ -15,8 +15,8 @@ describe('follow system (incl. private-account requests)', () => {
     expect(res.body.status).toBe('accepted');
 
     // Read as the owner: a private account's lists are owner/follower-only.
-      const followers = await request(app).get(`/users/${target.id}/followers`).set('Authorization', `Bearer ${target.token}`);
-    expect(followers.body.map((u) => u.id)).toContain(follower.id);
+      const followers = await request(app).get(`/users/${target.id}/connections?type=followers`).set('Authorization', `Bearer ${target.token}`);
+    expect(followers.body.users.map((u) => u.id)).toContain(follower.id);
   });
 
   it('rejects following yourself', async () => {
@@ -56,8 +56,8 @@ describe('follow system (incl. private-account requests)', () => {
       expect(res.body.status).toBe('pending');
 
       // Read as the owner: a private account's lists are owner/follower-only.
-      const followers = await request(app).get(`/users/${target.id}/followers`).set('Authorization', `Bearer ${target.token}`);
-      expect(followers.body.map((u) => u.id)).not.toContain(follower.id);
+      const followers = await request(app).get(`/users/${target.id}/connections?type=followers`).set('Authorization', `Bearer ${target.token}`);
+      expect(followers.body.users.map((u) => u.id)).not.toContain(follower.id);
     });
 
     it('the target can see and approve the pending request', async () => {
@@ -75,8 +75,8 @@ describe('follow system (incl. private-account requests)', () => {
       expect(approve.status).toBe(200);
 
       // Read as the owner: a private account's lists are owner/follower-only.
-      const followers = await request(app).get(`/users/${target.id}/followers`).set('Authorization', `Bearer ${target.token}`);
-      expect(followers.body.map((u) => u.id)).toContain(follower.id);
+      const followers = await request(app).get(`/users/${target.id}/connections?type=followers`).set('Authorization', `Bearer ${target.token}`);
+      expect(followers.body.users.map((u) => u.id)).toContain(follower.id);
     });
 
     it('the target can deny the pending request', async () => {

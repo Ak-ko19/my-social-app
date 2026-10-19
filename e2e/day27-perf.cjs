@@ -47,9 +47,11 @@ function seqScans() {
   const endpoints = [
     '/feed', '/feed?page=5', '/posts?page=1&limit=10', `/posts/${perfPost}`, `/posts/${perfPost}/comments`, `/posts/${perfPost}/likes`,
     `/profile/${perfUser}`, '/profile/me', `/users/${perfUser}/posts`, `/users/${perfUser}/follow-counts`,
-    '/users/1/followers', '/users/1/following', '/users/suggestions', '/follow-requests',
+    '/users/suggestions', '/follow-requests',
     // Day 37: friends (mutual follows) and connections.
-    '/users/1/connections?type=friends', '/users/1/connections?type=followers', `/users/${perfUser}/mutual-friends`,
+    '/users/1/connections?type=friends', '/users/1/connections?type=followers', '/users/1/connections?type=following',
+    // Day 69: the group-member picker's search.
+    '/users/1/connections?type=following&q=perf', `/users/${perfUser}/mutual-friends`,
     '/notifications', '/notifications/unread-count', '/conversations', `/conversations/${conv}`,
     `/conversations/${conv}/messages`, '/explore/posts', '/explore/hashtags', '/hashtags/perf/posts', '/hashtags/perf/posts?sort=top', '/hashtags/mingalar/posts',
     '/bookmarks', '/stories', '/blocked-users',

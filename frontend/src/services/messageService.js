@@ -150,9 +150,13 @@ export function renameGroup(conversationId, name, token) {
   return api.patch(`/conversations/${conversationId}`, { name }, authHeaders(token)).then((res) => res.data);
 }
 
-// People you can add to a group: the accounts you follow.
-export function fetchMyFollowing(userId, token) {
-  return api.get(`/users/${userId}/following`, authHeaders(token)).then((res) => res.data);
+// People you can add to a group: the accounts you follow, a page at a time
+// (A-Z), optionally only usernames containing q. Resolves to
+// { users, page, hasMore }.
+export function fetchFollowingPage(userId, token, { q = '', page = 1, limit = 100 } = {}) {
+  return api
+    .get(`/users/${userId}/connections`, { ...authHeaders(token), params: { type: 'following', q: q || undefined, page, limit } })
+    .then((res) => res.data);
 }
 
 // Day 31: set (reaction = 'like' | 'love' | ...) or remove (null) your

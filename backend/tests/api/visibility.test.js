@@ -102,16 +102,16 @@ describe('post visibility enforcement (A6)', () => {
       const outsider = await registerAndLogin(app);
       await makePrivate(owner);
 
-      expect((await request(app).get(`/users/${owner.id}/followers`)).status).toBe(403);
-      expect((await request(app).get(`/users/${owner.id}/following`).set(auth(outsider))).status).toBe(403);
-      expect((await request(app).get(`/users/${owner.id}/followers`).set(auth(owner))).status).toBe(200);
+      expect((await request(app).get(`/users/${owner.id}/connections?type=followers`)).status).toBe(403);
+      expect((await request(app).get(`/users/${owner.id}/connections?type=following`).set(auth(outsider))).status).toBe(403);
+      expect((await request(app).get(`/users/${owner.id}/connections?type=followers`).set(auth(owner))).status).toBe(200);
       // Counts stay public.
       expect((await request(app).get(`/users/${owner.id}/follow-counts`)).status).toBe(200);
     });
 
     it('a public account\'s lists stay public', async () => {
       const owner = await registerAndLogin(app);
-      expect((await request(app).get(`/users/${owner.id}/followers`)).status).toBe(200);
+      expect((await request(app).get(`/users/${owner.id}/connections?type=followers`)).status).toBe(200);
     });
   });
 

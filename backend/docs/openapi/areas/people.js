@@ -130,16 +130,6 @@ module.exports = {
     summary: 'Unfollow someone (or cancel a follow request)',
     responses: { 200: text('User unfollowed successfully'), 400: BAD_ID, 404: text('You are not following this user') }
   }),
-  'GET /users/:id/followers': op({
-    tag: 'Following', auth: 'optional',
-    summary: "Everyone who follows them (not paginated -- prefer GET /users/{id}/connections)",
-    responses: { 200: json(s.array(ref('UserCard')), 'Their followers'), ...CONNECTIONS_ACCESS }
-  }),
-  'GET /users/:id/following': op({
-    tag: 'Following', auth: 'optional',
-    summary: "Everyone they follow (not paginated -- prefer GET /users/{id}/connections)",
-    responses: { 200: json(s.array(ref('UserCard')), 'Who they follow'), ...CONNECTIONS_ACCESS }
-  }),
   'GET /users/:id/follow-counts': op({
     tag: 'Following', auth: 'public',
     summary: 'How many followers, following and friends they have',
@@ -156,7 +146,11 @@ module.exports = {
     tag: 'Following', auth: 'optional',
     summary: 'Their friends, followers or following, a page at a time',
     description: 'Sorted by username, with your relationship to each person.',
-    query: { type: q(s.enum(['friends', 'followers', 'following'], 'Default friends')), ...pageQuery({ defaultLimit: 30, maxLimit: 100 }) },
+    query: {
+      type: q(s.enum(['friends', 'followers', 'following'], 'Default friends')),
+      q: q(s.str('Only usernames containing this (first 100 characters)')),
+      ...pageQuery({ defaultLimit: 30, maxLimit: 100 })
+    },
     responses: {
       200: json(s.object({ users: s.array(ref('ConnectionUser')), page: s.int(), hasMore: s.bool() }), 'One page'),
       ...CONNECTIONS_ACCESS,

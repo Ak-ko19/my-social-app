@@ -1,5 +1,6 @@
 const db = require('../db');
 const { getPagination } = require('../utils/pagination');
+const { escapeLike } = require('../utils/escapeLike');
 const { sendError } = require('../utils/httpError');
 const blockService = require('../services/blockService');
 const { noBlockBetweenSql } = require('../services/blockService');
@@ -124,11 +125,12 @@ const FRIENDS_OF = (param) => `(
 
 const CONNECTION_TYPES = ['friends', 'followers', 'following'];
 
-// GET /users/:id/connections?type=friends|followers|following&page=&limit=
+// GET /users/:id/connections?type=friends|followers|following&q=&page=&limit=
 // -- one page, A-Z, with the viewer's relation to each person (for the
-// Follow / Follow back / Following button). Same access rule as the lists
-// above; deactivated accounts and anyone blocked with the viewer are left
-// out.
+// Follow / Follow back / Following button). Access: connectionsAccessError
+// (above); deactivated accounts and anyone blocked with the viewer are left
+// out. Day 69: q filters by username (the group-member picker searches the
+// people you follow with it).
 async function getConnections(req, res) {
   try {
     if (isNaN(req.params.id)) return res.status(400).send('Invalid user ID');
@@ -137,6 +139,7 @@ async function getConnections(req, res) {
     const denied = await connectionsAccessError(req.params.id, req.userId);
     if (denied) return res.status(denied.status).send(denied.message);
     const { page, limit, offset } = getPagination(req, { defaultLimit: 30, maxLimit: 100 });
+    const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
     const people = {
       friends: `SELECT friend_id AS id FROM ${FRIENDS_OF('$1')}`,
       followers: "SELECT follower_id AS id FROM follows WHERE following_id = $1 AND status = 'accepted'",
@@ -150,9 +153,10 @@ async function getConnections(req, res) {
        FROM users u
        WHERE u.id IN (${people}) AND NOT u.is_deactivated
          AND ($2::int IS NULL OR ${noBlockBetweenSql('$2', 'u.id')})
+         AND ($5 = '' OR u.username ILIKE '%' || $5 || '%')
        ORDER BY LOWER(u.username), u.id
        LIMIT $3 OFFSET $4`,
-      [req.params.id, req.userId ?? null, limit + 1, offset]
+      [req.params.id, req.userId ?? null, limit + 1, offset, escapeLike(q)]
     );
     const hasMore = result.rows.length > limit;
     res.json({ users: hasMore ? result.rows.slice(0, limit) : result.rows, page, hasMore });
@@ -190,48 +194,6 @@ async function getMutualFriends(req, res) {
     res.json(result.rows[0]);
   } catch (err) {
     sendError(res, err, 'Loading mutual friends failed. Please try again later.');
-  }
-}
-
-async function getFollowers(req, res) {
-  try {
-    if (isNaN(req.params.id)) {
-      return res.status(400).send('Invalid user ID');
-    }
-    const denied = await connectionsAccessError(req.params.id, req.userId);
-    if (denied) {
-      return res.status(denied.status).send(denied.message);
-    }
-    const result = await db.query(`
-      SELECT users.id, users.username, users.avatar_url
-      FROM follows
-      JOIN users ON follows.follower_id = users.id
-      WHERE follows.following_id = $1 AND follows.status = 'accepted' AND NOT users.is_deactivated
-    `, [req.params.id]);
-    res.json(result.rows);
-  } catch (err) {
-    sendError(res, err, 'Fetch followers failed. Please try again later.');
-  }
-}
-
-async function getFollowing(req, res) {
-  try {
-    if (isNaN(req.params.id)) {
-      return res.status(400).send('Invalid user ID');
-    }
-    const denied = await connectionsAccessError(req.params.id, req.userId);
-    if (denied) {
-      return res.status(denied.status).send(denied.message);
-    }
-    const result = await db.query(`
-      SELECT users.id, users.username, users.avatar_url
-      FROM follows
-      JOIN users ON follows.following_id = users.id
-      WHERE follows.follower_id = $1 AND follows.status = 'accepted' AND NOT users.is_deactivated
-    `, [req.params.id]);
-    res.json(result.rows);
-  } catch (err) {
-    sendError(res, err, 'Fetch following failed. Please try again later.');
   }
 }
 
@@ -320,8 +282,6 @@ async function denyFollowRequest(req, res) {
 module.exports = {
   followUser,
   unfollowUser,
-  getFollowers,
-  getFollowing,
   getFollowCounts,
   getFollowRequests,
   approveFollowRequest,

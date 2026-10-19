@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 69–71 — Code health: duplicated logic, large files, consistent errors, README + CLAUDE.md.
-**Step:** 3 — bounded lists (followers/following, comments, conversations): PLAN.
+**Step:** 4 — paginate comments: PLAN.
 
 Plan (survey: biggest file 735 lines; the real debt is duplication):
 1. utils/httpError.js: HttpError(status, message) + sendError(res, err,
@@ -29,6 +29,14 @@ Plan (survey: biggest file 735 lines; the real debt is duplication):
   two-way block checks (script parsed each, mirror verified). One-way
   mutation caught by 11 tests in 10 files. Backend 940/940, perf 41/41,
   journeys-safety, day47, b7, b8, day42 green.
+- Step 3 DONE: the unpaginated GET /users/:id/followers + /following are
+  removed; /connections gained q (username filter, LIKE-escaped); the
+  group-member picker pages (100) + searches on the server + Load more
+  (members.noMatches EN/AR); tests and e2e moved to /connections. Backend
+  941/941 (192 ops, all reached), Vitest 281, lint, i18n, bundle 222.2;
+  b8, b10, day33, journeys-social, perf green; AR dark 375 checked.
+  To look at later: in Arabic the new-group screen's back button sits on
+  the left (pre-existing; check what the other headers do).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

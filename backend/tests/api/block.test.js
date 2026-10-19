@@ -38,10 +38,10 @@ describe('block', () => {
 
     await request(app).post(`/users/${b.id}/block`).set('Authorization', `Bearer ${a.token}`);
 
-    const aFollowingB = await request(app).get(`/users/${a.id}/following`);
-    const bFollowingA = await request(app).get(`/users/${b.id}/following`);
-    expect(aFollowingB.body.map((u) => u.id)).not.toContain(b.id);
-    expect(bFollowingA.body.map((u) => u.id)).not.toContain(a.id);
+    const aFollowingB = await request(app).get(`/users/${a.id}/connections?type=following`);
+    const bFollowingA = await request(app).get(`/users/${b.id}/connections?type=following`);
+    expect(aFollowingB.body.users.map((u) => u.id)).not.toContain(b.id);
+    expect(bFollowingA.body.users.map((u) => u.id)).not.toContain(a.id);
   });
 
   it('unblocks a user', async () => {

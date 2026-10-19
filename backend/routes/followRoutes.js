@@ -7,8 +7,6 @@ const followController = require('../controllers/followController');
 
 router.post('/users/:id/follow', authMiddleware, followLimiter, followController.followUser);
 router.delete('/users/:id/follow', authMiddleware, followController.unfollowUser);
-router.get('/users/:id/followers', optionalAuth, followController.getFollowers);
-router.get('/users/:id/following', optionalAuth, followController.getFollowing);
 router.get('/users/:id/follow-counts', followController.getFollowCounts);
 // Day 37: friends (mutual follows), followers and following, one page at a time.
 router.get('/users/:id/connections', optionalAuth, followController.getConnections);

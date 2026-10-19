@@ -84,7 +84,7 @@ describe('friends and connections (Day 37)', () => {
     expect(names(await connections(owner, owner, 'followers'))).toEqual([blocked.username]); // the owner isn't blocking anyone
     const counts = (await request(app).get(`/users/${owner.id}/follow-counts`)).body;
     expect(counts).toMatchObject({ followersCount: 1, followingCount: 0, friendsCount: 0 });
-    expect((await request(app).get(`/users/${owner.id}/followers`)).body.map((u) => u.id)).toEqual([blocked.id]);
+    expect((await connections(null, owner, 'followers')).body.users.map((u) => u.id)).toEqual([blocked.id]); // logged out: no block of yours applies
   });
 
   it('a private account\'s lists are for its followers (403); bad type (400)', async () => {
@@ -95,6 +95,19 @@ describe('friends and connections (Day 37)', () => {
     expect((await connections(null, priv, 'followers')).status).toBe(403);
     expect((await connections(priv, priv, 'friends')).status).toBe(200);
     expect((await connections(priv, priv, 'enemies')).status).toBe(400);
+  });
+
+  // Day 69: the group-member picker searches the people you follow.
+  it('q filters by username (any case), and % or _ are plain characters', async () => {
+    const me = await registerAndLogin(app);
+    const people = [];
+    for (const username of ['Nadia_K', 'nadim', 'omar%x']) people.push(await registerAndLogin(app, { username }));
+    for (const person of people) await follow(me, person);
+    expect(names(await connections(me, me, 'following', '&q=NAD'))).toEqual(['Nadia_K', 'nadim']);
+    expect(names(await connections(me, me, 'following', '&q=%25'))).toEqual(['omar%x']);
+    expect(names(await connections(me, me, 'following', '&q=_'))).toEqual(['Nadia_K']);
+    expect(names(await connections(me, me, 'following', '&q=nobody'))).toEqual([]);
+    expect(names(await connections(me, me, 'following', '&q='))).toHaveLength(3);
   });
 
   describe('mutual friends', () => {
