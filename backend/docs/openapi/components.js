@@ -280,6 +280,65 @@ const schemas = {
     conversationId: s.id(), messageId: s.id(),
     reactions: s.array(s.object({ user_id: s.id(), reaction: s.str() }))
   }),
+  // ---- Groups and pages ----
+  GroupSummary: s.object({
+    id: s.id(), name: s.str(), description: s.nullable(s.str()), privacy: s.enum(['public', 'private']),
+    member_count: s.int(),
+    my_role: s.nullable(s.enum(['admin', 'member'])),
+    my_status: s.nullable(s.enum(['member', 'pending'], 'pending: you asked to join'))
+  }),
+  Group: s.object({
+    id: s.id(), name: s.str(), description: s.nullable(s.str()), privacy: s.enum(['public', 'private']),
+    created_at: s.time(), member_count: s.int(),
+    my_role: s.nullable(s.enum(['admin', 'member'])), my_status: s.nullable(s.enum(['member', 'pending'])),
+    is_member: s.bool(), is_admin: s.bool(),
+    can_read: s.bool('Public, or you are a member')
+  }),
+  Page: s.object({
+    id: s.id(), name: s.str(),
+    category: s.enum(['business', 'creator', 'brand', 'organization', 'community', 'other']),
+    description: s.nullable(s.str()), created_at: s.time(),
+    owner_id: s.id(), owner_username: s.str(),
+    follower_count: s.int(), is_following: s.bool(),
+    is_owner: s.bool(), is_admin: s.bool('The owner or one of its admins')
+  }),
+
+  // ---- Moderation ----
+  Report: s.object({
+    id: s.id(), reporter_id: s.id(),
+    target_type: s.enum(['post', 'user', 'comment', 'message', 'community', 'page']),
+    target_id: s.id(),
+    reason: s.enum(['spam', 'harassment', 'inappropriate_content', 'hate_speech', 'misinformation', 'other']),
+    details: s.nullable(s.str()),
+    status: s.enum(['pending', 'reviewed']),
+    created_at: s.time()
+  }, { description: 'The report as stored' }),
+  AdminReport: s.object({
+    id: s.id(),
+    target_type: s.enum(['post', 'user', 'comment', 'message', 'community', 'page']),
+    target_id: s.id(),
+    reason: s.str(), details: s.nullable(s.str()), status: s.enum(['pending', 'reviewed']), created_at: s.time(),
+    resolution: s.nullable(s.str()), resolved_at: s.nullable(s.time()),
+    reporter_id: s.nullable(s.id()), reporter_username: s.nullable(s.str()), resolved_by_username: s.nullable(s.str()),
+    target_snapshot: s.nullable(s.str('What was reported, as it was then (first 1000 characters)')),
+    target_owner_id: s.nullable(s.id()), target_owner_username: s.nullable(s.str()),
+    pending_for_target: s.int('Waiting reports about the same thing (one decision closes them all)')
+  }, { description: 'A report with what it is about (current text, owner, ban state); more fields per target type' }),
+  ErrorGroup: s.object({
+    fingerprint: s.str(), source: s.enum(['api', 'client', 'socket']), route: s.nullable(s.str()),
+    message: s.str(), stack: s.nullable(s.str()), status: s.nullable(s.int()), count: s.int(),
+    first_seen: s.time(), last_seen: s.time(), resolved_at: s.nullable(s.time()), last_username: s.nullable(s.str())
+  }),
+  AdminAction: s.object({
+    id: s.str('A 64-bit id, sent as a string of digits', { pattern: '^[0-9]+$' }),
+    admin_id: s.nullable(s.id('null once that admin\'s account is gone')), admin_username: s.str(),
+    action: s.enum(['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved']),
+    target_type: s.enum(['post', 'comment', 'message', 'community', 'page', 'user', 'error']),
+    target_id: s.str('The id of what it was about (an error group: its fingerprint)'),
+    target_label: s.nullable(s.str('A name for it, kept even after it is gone (never the removed content)')),
+    details: s.object({}, { description: 'Reason, report count, suspension days...' }),
+    created_at: s.time()
+  }),
   Poll: s.object({
     closes_at: s.time(),
     closed: s.bool(),

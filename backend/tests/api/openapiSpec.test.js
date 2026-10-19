@@ -15,10 +15,6 @@ describe('API spec (docs/openapi)', () => {
   const spec = build();
   const ROUTES_DIR = path.join(__dirname, '../../routes');
 
-  // Route files whose operations are still being written up (Days 67-68);
-  // this list only shrinks, and is gone once every area is documented.
-  const PENDING = new Set(['adminRoutes', 'communityRoutes', 'pageRoutes', 'reportRoutes']);
-
   // Every route the app serves: method, Express path, its route file (null
   // for the few in server.js) and its middleware's names.
   const fileOf = new Map(fs.readdirSync(ROUTES_DIR).filter((f) => f.endsWith('.js'))
@@ -52,14 +48,8 @@ describe('API spec (docs/openapi)', () => {
     expect(routes.filter((r) => r.file === null).map(label)).toEqual(['GET /']);
   });
 
-  it('documents every route (apart from the files still PENDING)', () => {
-    const missing = routes.filter((r) => !PENDING.has(r.file) && !opOf(r)).map(label);
-    expect(missing).toEqual([]);
-  });
-
-  it('PENDING only lists files that still have undocumented routes', () => {
-    const stillPending = new Set(routes.filter((r) => !opOf(r)).map((r) => r.file));
-    expect([...PENDING].filter((file) => !stillPending.has(file))).toEqual([]);
+  it('documents every route', () => {
+    expect(routes.filter((r) => !opOf(r)).map(label)).toEqual([]);
   });
 
   it('every documented operation exists in the app', () => {

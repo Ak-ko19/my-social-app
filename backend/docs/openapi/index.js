@@ -11,7 +11,8 @@ const AREAS = [
   require('./areas/auth'),
   require('./areas/people'),
   require('./areas/content'),
-  require('./areas/messages')
+  require('./areas/messages'),
+  require('./areas/groups')
 ];
 
 const TAGS = [
@@ -35,7 +36,11 @@ const TAGS = [
   { name: 'Explore', description: 'Hashtags, trending and popular posts' },
   { name: 'Stories', description: 'Photo stories (24 hours)' },
   { name: 'Events', description: 'Events, and who is going' },
-  { name: 'Messages', description: 'Direct and group chats; messages, voice notes and photos' }
+  { name: 'Messages', description: 'Direct and group chats; messages, voice notes and photos' },
+  { name: 'Groups', description: 'Groups (communities): members, requests, admins, bans, posts' },
+  { name: 'Pages', description: 'Pages: followers, admins, posts' },
+  { name: 'Moderation', description: 'Reporting something' },
+  { name: 'Admin', description: 'The admin screen (admins only; anyone else gets 404)' }
 ];
 
 const DESCRIPTION = `The MySocialApp REST API (the web app and, later, the mobile app use the same one).

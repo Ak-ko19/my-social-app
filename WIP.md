@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 67–68 — API documentation: OpenAPI spec for every endpoint; docs page.
-**Step:** 5 — groups/pages/reports/admin (PENDING empty): PLAN.
+**Step:** 6 — /openapi.json + /docs page + docs/REALTIME.md + coverage report: PLAN.
 
 Plan (192 Express routes today; FB/X publish OpenAPI-style references
 with auth, params, bodies, errors per endpoint):
@@ -57,6 +57,11 @@ reports/admin (PENDING empty), 6 docs page + realtime doc.
   photo, edit, unsend, reactions, forward, read, mute) + Conversation
   Summary/Message/GroupMember schemas. 0 mismatches; mutation caught.
   914/914. Day 69-71 note: GET /conversations is unpaginated (every chat).
+- Step 5 DONE: areas/groups (40 ops: groups, pages, reports, admin) +
+  Group/Page/Report/AdminReport/ErrorGroup/AdminAction. ALL 192 routes
+  documented; PENDING removed (test: every route documented). Contract
+  found: admin_actions.id is a string (bigint), storage warnings are
+  { source, level }. Mutation caught. Backend 913/913.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
