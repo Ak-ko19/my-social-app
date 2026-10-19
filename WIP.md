@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 67–68 — API documentation: OpenAPI spec for every endpoint; docs page.
-**Step:** 2 — profile/users/social graph/search/notifications: PLAN.
+**Step:** 3 — posts/drafts/comments/likes/saved/hashtags/explore/stories/events: PLAN.
 
 Plan (192 Express routes today; FB/X publish OpenAPI-style references
 with auth, params, bodies, errors per endpoint):
@@ -38,6 +38,14 @@ reports/admin (PENDING empty), 6 docs page + realtime doc.
   (Express default) -> server.js sends strings as text/plain (safer, and
   what the docs say). Mutations caught (schema, auth). Backend 914/914;
   journeys-safety, b15-lang, day12-report, day11-bots green; check:i18n.
+- Step 2 DONE: areas/people (61 ops: profiles, following, safety,
+  search, notifications, hidden words, activity) + User/Post/Poll/
+  Notification schemas; op({ upload }) adds 400/429/502. Contract found
+  poll_ended / poll_ended_own missing from the notification types. 914/914.
+  API issues seen while documenting (for Day 69-71 code health):
+  GET /users/:id/followers + /following are unpaginated (the app uses
+  /connections); follow-counts echoes userId as a string.
+  Idea for step 6: report documented ops no API test exercises.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

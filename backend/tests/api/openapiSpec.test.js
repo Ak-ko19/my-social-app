@@ -18,11 +18,9 @@ describe('API spec (docs/openapi)', () => {
   // Route files whose operations are still being written up (Days 67-68);
   // this list only shrinks, and is gone once every area is documented.
   const PENDING = new Set([
-    'activityRoutes', 'adminRoutes', 'blockRoutes', 'bookmarkRoutes', 'closeFriendsRoutes', 'collectionRoutes',
-    'commentRoutes', 'communityRoutes', 'conversationRoutes', 'draftRoutes', 'eventRoutes', 'exploreRoutes',
-    'followRoutes', 'hashtagRoutes', 'hiddenWordsRoutes', 'likeRoutes', 'muteRoutes', 'notificationRoutes',
-    'pageRoutes', 'postRoutes', 'profileRoutes', 'reportRoutes', 'restrictRoutes', 'searchRoutes',
-    'storyRoutes', 'suggestionRoutes', 'userPostsRoutes'
+    'adminRoutes', 'bookmarkRoutes', 'collectionRoutes', 'commentRoutes', 'communityRoutes', 'conversationRoutes',
+    'draftRoutes', 'eventRoutes', 'exploreRoutes', 'hashtagRoutes', 'likeRoutes', 'pageRoutes', 'postRoutes',
+    'reportRoutes', 'storyRoutes', 'userPostsRoutes'
   ]);
 
   // Every route the app serves: method, Express path, its route file (null

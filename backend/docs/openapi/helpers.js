@@ -79,14 +79,18 @@ const AUTH = {
 
 // One operation. auth is required (it is checked against the route's
 // middleware). `limited`: the route has its own rate limit (429 +
-// Retry-After). `pathParams` overrides the default integer id schema.
-function op({ tag, summary, description, auth, query = {}, pathParams = {}, requestBody, responses, limited = false }) {
+// Retry-After). `upload`: it takes files (wrong type / too big: 400; the
+// daily upload budget: 429; the file store failing: 502). `pathParams`
+// overrides the default integer id schema.
+function op({ tag, summary, description, auth, query = {}, pathParams = {}, requestBody, responses, limited = false, upload = false }) {
   if (!AUTH[auth]) throw new Error(`op "${summary}": unknown auth "${auth}"`);
   if (!tag || !summary || !responses) throw new Error(`op "${summary}": tag, summary and responses are required`);
   const shared = {};
   if (auth === 'user' || auth === 'admin') shared[401] = { $ref: '#/components/responses/Unauthorized' };
   if (auth === 'admin') shared[404] = { $ref: '#/components/responses/NotFound' };
-  if (limited) shared[429] = { $ref: '#/components/responses/TooManyRequests' };
+  if (upload) shared[400] = { $ref: '#/components/responses/BadUpload' };
+  if (limited || upload) shared[429] = { $ref: '#/components/responses/TooManyRequests' };
+  if (upload) shared[502] = { $ref: '#/components/responses/UploadFailed' };
   shared[500] = { $ref: '#/components/responses/ServerError' };
   return {
     tags: [tag],

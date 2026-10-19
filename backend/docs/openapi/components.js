@@ -28,6 +28,8 @@ const responses = {
     headers: { 'Retry-After': { schema: { type: 'integer' }, description: 'Seconds until the limit resets' } },
     content: { 'text/plain': { schema: { type: 'string' } } }
   },
+  BadUpload: textError('The file was refused: only JPEG, PNG, GIF and WEBP images (or the voice formats) up to 5 MB, or a field was invalid.'),
+  UploadFailed: textError('Upload failed. Please try again later. (The file store did not take the file.)'),
   ServerError: textError('Something went wrong on the server (it is logged and appears in Admin > Errors).')
 };
 
@@ -77,6 +79,108 @@ const schemas = {
       os: s.nullable(s.str('e.g. "Windows", "Android"; null when unknown')),
       kind: s.enum(['mobile', 'desktop'])
     }, { description: "Read from the browser's user agent when the session was created" })
+  }),
+
+  // ---- People ----
+  UserCard: s.object({ id: s.id(), username: s.str(), avatar_url: s.nullable(s.str('Picture URL, or null for the default')) }),
+  Profile: s.object({
+    id: s.id(),
+    username: s.str(),
+    bio: s.nullable(s.str()),
+    links: s.array(s.str(), 'Up to 3 web addresses'),
+    avatar_url: s.nullable(s.str()),
+    cover_url: s.nullable(s.str()),
+    is_private: s.bool(),
+    is_deactivated: s.bool('Only ever true when you look at your own deactivated profile'),
+    created_at: s.time(),
+    is_following: s.bool('You follow them'),
+    follow_request_pending: s.bool('You asked to follow them and they have not answered'),
+    follows_you: s.bool(),
+    is_blocked_by_me: s.bool(),
+    is_muted_by_me: s.bool(),
+    is_restricted_by_me: s.bool(),
+    can_message: s.bool('Their message setting lets you start a chat (false when logged out or for yourself)')
+  }, { description: "Someone's public profile, with the viewer's relationship to them. Never includes the email." }),
+  MyProfile: s.object({
+    id: s.id(),
+    username: s.str(),
+    email: s.str(),
+    bio: s.nullable(s.str()),
+    links: s.array(s.str()),
+    avatar_url: s.nullable(s.str()),
+    cover_url: s.nullable(s.str()),
+    is_private: s.bool(),
+    email_verified: s.bool(),
+    is_admin: s.bool(),
+    language: s.nullable(s.enum(['en', 'ar'])),
+    message_permission: s.enum(['everyone', 'following', 'nobody'], 'Who may start a chat with you'),
+    comment_permission: s.enum(['everyone', 'followers', 'following'], 'Who may comment on your posts'),
+    created_at: s.time()
+  }, { description: 'Your own account, as only you see it' }),
+  UpdatedProfile: s.object({
+    id: s.id(), username: s.str(), email: s.str(), bio: s.nullable(s.str()), links: s.array(s.str()),
+    avatar_url: s.nullable(s.str()), email_verified: s.bool('false after an email change, until the new address is verified'), created_at: s.time()
+  }),
+  ConnectionUser: s.object({
+    id: s.id(), username: s.str(), avatar_url: s.nullable(s.str()),
+    is_following: s.bool(), request_pending: s.bool(), follows_you: s.bool()
+  }),
+  Suggestion: s.object({
+    id: s.id(), username: s.str(), avatar_url: s.nullable(s.str()), bio: s.nullable(s.str()), is_private: s.bool(),
+    mutual_count: s.int('People you follow who follow them'),
+    follows_you: s.bool(),
+    mutual_sample: s.nullable(s.array(s.str(), 'Up to 2 of those mutual usernames'))
+  }, { optional: ['mutual_count', 'follows_you', 'mutual_sample'], description: 'Friends of friends and people who follow you first; then popular accounts' }),
+  Notification: s.object({
+    id: s.id(),
+    type: s.enum(['like', 'comment_like', 'comment', 'reply', 'mention', 'follow', 'follow_request', 'follow_accepted',
+      'group_request', 'group_approved', 'page_admin', 'event_reminder', 'event_cancelled', 'scheduled_post', 'scheduled_failed',
+      'poll_ended', 'poll_ended_own']),
+    post_id: s.nullable(s.id()),
+    comment_id: s.nullable(s.id()),
+    is_read: s.bool(),
+    created_at: s.time(),
+    actor_id: s.id('Who did it (you, for notifications about your own content)'),
+    actor_username: s.str(),
+    actor_avatar_url: s.nullable(s.str()),
+    post_content: s.nullable(s.str("The post's text, unless you may no longer see it")),
+    community_id: s.nullable(s.id()), community_name: s.nullable(s.str()),
+    page_id: s.nullable(s.id()), page_name: s.nullable(s.str()),
+    event_id: s.nullable(s.id()), event_name: s.nullable(s.str()), event_starts_at: s.nullable(s.time())
+  }),
+  NotificationPreferences: s.object(Object.fromEntries(
+    ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events'].map((c) => [c, s.bool()])
+  ), { description: 'Each category on (true) or off; everything starts on' }),
+
+  // ---- Posts ----
+  Post: s.object({
+    id: s.id(),
+    content: s.nullable(s.str()),
+    visibility: s.enum(['public', 'followers', 'close_friends', 'only_me']),
+    image_url: s.nullable(s.str('The first photo of an older post (newer posts use media)')),
+    created_at: s.time(),
+    user_id: s.id('The author'),
+    username: s.str(),
+    avatar_url: s.nullable(s.str()),
+    like_count: s.int('All reactions together'),
+    liked_by_me: s.bool(),
+    my_reaction: s.nullable(s.enum(['like', 'love', 'haha', 'wow', 'sad', 'angry'])),
+    reaction_counts: s.object({}, { description: 'Reaction -> count, only for reactions someone used' }),
+    media: s.array(s.object({ url: s.str() }), 'Photos in order (empty when none)'),
+    poll: s.nullable(s.ref('Poll')),
+    page: s.nullable(s.object({ id: s.id(), name: s.str() }, { description: 'Set when the post was published as a page' })),
+    bookmarked_by_me: s.bool()
+  }, {
+    optional: ['visibility', 'image_url', 'avatar_url', 'like_count', 'liked_by_me', 'my_reaction', 'reaction_counts', 'media', 'poll', 'page', 'bookmarked_by_me'],
+    description: 'A post card. Lists may add fields of their own (e.g. a group or an edit time).'
+  }),
+  Poll: s.object({
+    closes_at: s.time(),
+    closed: s.bool(),
+    total_votes: s.int(),
+    my_vote: s.nullable(s.id('The option you voted for')),
+    show_results: s.bool('Counts are shown once you voted, the poll closed, or it is yours'),
+    options: s.array(s.object({ id: s.id(), label: s.str(), votes: s.nullable(s.int('null until show_results')) }))
   })
 };
 
