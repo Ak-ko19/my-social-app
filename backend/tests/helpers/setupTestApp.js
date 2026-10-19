@@ -33,7 +33,9 @@ function setupTestApp() {
             const ext = options.format || (type === 'video' ? 'webm' : 'jpg');
             callback(null, {
               secure_url: `https://res.cloudinary.com/test/${type}/upload/v1700000000/${folder}/img${seq}.${ext}`,
-              public_id: `${folder}/img${seq}`
+              public_id: `${folder}/img${seq}`,
+              // Like Cloudinary: audio (resource_type video) comes back with its length.
+              ...(type === 'video' && { duration: 3.4 })
             });
           }
         }),
@@ -60,8 +62,11 @@ function setupTestApp() {
   // Day 67: every response these tests see must match the API spec
   // (docs/openapi) -- see helpers/contract.js.
   const violations = [];
-  require('./contract').install(app, violations);
+  const seen = new Set();
+  const contract = require('./contract');
+  contract.install(app, violations, seen);
   afterAll(() => {
+    contract.saveSeen(seen);
     if (violations.length) throw new Error(`Responses that differ from the API spec (docs/openapi):\n  ${violations.join('\n  ')}`);
   });
 

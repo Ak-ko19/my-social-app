@@ -8,6 +8,8 @@
 // Only responses from a matched route of a documented operation are checked:
 // the app-wide limiter and body parser answer before routing, and
 // openapiSpec.test.js is what makes sure every route is documented.
+const fs = require('fs');
+const path = require('path');
 const Ajv2020 = require('ajv/dist/2020');
 const addFormats = require('ajv-formats');
 const { build, toOpenApiPath } = require('../../docs/openapi');
@@ -46,15 +48,22 @@ function validator(at) {
   return validators.get(at);
 }
 
+// The operation a request matched ('get /posts/{id}'), or null.
+function operationOf(req) {
+  if (!req.route || req.method === 'HEAD') return null;
+  const key = `${req.method.toLowerCase()} ${toOpenApiPath(req.route.path)}`;
+  const [verb, route] = key.split(' ');
+  return load().spec.paths[route]?.[verb] ? key : null;
+}
+
 // null when the response matches the spec, else what's wrong.
 function check(req, res, body) {
   const { spec } = load();
-  if (!req.route || req.method === 'HEAD') return null;
-  const path = toOpenApiPath(req.route.path);
+  if (!operationOf(req)) return null;
+  const route = toOpenApiPath(req.route.path);
   const verb = req.method.toLowerCase();
-  if (!spec.paths[path]?.[verb]) return null;
   const where = `${req.method} ${req.route.path} -> ${res.statusCode}`;
-  const doc = documented(spec, path, verb, res.statusCode);
+  const doc = documented(spec, route, verb, res.statusCode);
   if (!doc) return `${where}: this status is not documented`;
   const types = Object.keys(doc.response.content || {});
   const type = (res.get('Content-Type') || '').split(';')[0].trim();
@@ -70,8 +79,9 @@ function check(req, res, body) {
 }
 
 // Wraps the app so each finished response is checked; mismatches are
-// pushed onto `violations` (one entry per distinct problem).
-function install(app, violations) {
+// pushed onto `violations` (one entry per distinct problem), and the
+// operations reached are added to `seen`.
+function install(app, violations, seen = new Set()) {
   const json = app.response.json;
   app.response.json = function contractJson(obj) {
     this.contractBody = obj;
@@ -80,6 +90,8 @@ function install(app, violations) {
   const handle = app.handle;
   app.handle = function contractHandle(req, res, next) {
     res.on('finish', () => {
+      const reached = operationOf(req);
+      if (reached) seen.add(reached);
       const problem = check(req, res, res.contractBody);
       if (problem && !violations.includes(problem)) violations.push(problem);
     });
@@ -87,4 +99,20 @@ function install(app, violations) {
   };
 }
 
-module.exports = { install, check };
+// Which documented operations the API tests reach: each test file saves
+// its list (setupTestApp), and globalTeardown prints the ones none reached
+// -- their responses have never been checked against the spec.
+const SEEN_DIR = path.join(__dirname, '..', '.contract-seen');
+function saveSeen(seen) {
+  fs.mkdirSync(SEEN_DIR, { recursive: true });
+  fs.writeFileSync(path.join(SEEN_DIR, `${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.json`), JSON.stringify([...seen]));
+}
+function coverageReport() {
+  if (!fs.existsSync(SEEN_DIR)) return null;
+  const seen = new Set(fs.readdirSync(SEEN_DIR).flatMap((f) => JSON.parse(fs.readFileSync(path.join(SEEN_DIR, f), 'utf8'))));
+  fs.rmSync(SEEN_DIR, { recursive: true, force: true });
+  const all = Object.entries(load().spec.paths).flatMap(([route, ops]) => Object.keys(ops).map((verb) => `${verb} ${route}`));
+  return { total: all.length, reached: all.filter((key) => seen.has(key)).length, missed: all.filter((key) => !seen.has(key)) };
+}
+
+module.exports = { install, check, saveSeen, coverageReport, SEEN_DIR };

@@ -12,6 +12,11 @@
   (`npm run check:i18n` enforces it). User content (posts, comments,
   messages, search) stays open to ANY language, Burmese included.
 
+- API reference: backend/docs/openapi (served at GET /docs and
+  GET /openapi.json; real-time events in backend/docs/REALTIME.md). Every
+  route must be documented, and every API test's responses must match it
+  (tests/api/openapiSpec.test.js, tests/helpers/contract.js).
+
 ## Project Goal
 Building a Facebook-style, large-scale social media platform. Plan: build a
 budget-friendly MVP/prototype first (no significant startup capital yet),

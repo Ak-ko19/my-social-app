@@ -10,6 +10,14 @@ const PG_BIN = 'C:\\Program Files\\PostgreSQL\\17\\bin';
 const DATA_DIR = path.join(__dirname, '.pgdata_test_cluster');
 
 module.exports = async function globalTeardown() {
+  // Day 68: which documented API operations no test reached (informational;
+  // a run of only some test files reaches fewer, of course).
+  const report = require('./helpers/contract').coverageReport();
+  if (report) {
+    const lines = [`API operations reached by the tests: ${report.reached} of ${report.total}`];
+    if (report.missed.length) lines.push('Never reached (their responses are unchecked):', ...report.missed.map((key) => `  ${key}`));
+    process.stdout.write(`\n${lines.join('\n')}\n`);
+  }
   // CI mode (see globalSetup.js): the external database isn't ours to stop.
   if (process.env.TEST_DATABASE_URL) return;
   try {

@@ -14,6 +14,7 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { report, startMonitoring, whenIdle } = require('./services/errorLogService');
 const requestLogger = require('./middleware/requestLogger');
 const healthRoutes = require('./routes/healthRoutes');
+const docsRoutes = require('./routes/docsRoutes');
 const logger = require('./utils/logger');
 const { initSocket } = require('./sockets');
 
@@ -119,6 +120,8 @@ app.get('/', (req, res) => {
 });
 // Day 10: GET /health (app + database) replaces the old GET /test-db.
 app.use(healthRoutes);
+// Day 68: GET /openapi.json + GET /docs (off in production unless API_DOCS=1).
+app.use(docsRoutes);
 app.use(configRoutes);
 app.use(internalRoutes);
 app.use(clientErrorRoutes);

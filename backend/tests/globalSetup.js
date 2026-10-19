@@ -39,6 +39,8 @@ async function loadSchemaIntoExternalDb(connectionString) {
 }
 
 module.exports = async function globalSetup() {
+  // Day 68: a fresh list of the API operations the tests reach (contract.js).
+  fs.rmSync(path.join(__dirname, '.contract-seen'), { recursive: true, force: true });
   if (process.env.TEST_DATABASE_URL) {
     await loadSchemaIntoExternalDb(process.env.TEST_DATABASE_URL);
     return;

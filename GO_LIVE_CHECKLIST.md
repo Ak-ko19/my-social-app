@@ -84,6 +84,7 @@ failed and keeps the old version running. It's still better to check now.
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | needed for uploads | already set (photos work today) |
 | `BREVO_API_KEY`, `EMAIL_FROM` | optional | turns on real emails; see LATER.md #3. Without them the app says "reset by email isn't available" |
 | `CLEANUP_SECRET` | optional | turns on the daily cleanup job (32+ random characters); the same value goes into a GitHub Actions secret, see LATER.md #4 |
+| `API_DOCS` | optional | `1` turns on the API reference (GET /docs, GET /openapi.json) in production. Leave it unset unless developers need it there |
 | `SENTRY_DSN` | optional | also sends server errors to Sentry (see LATER.md #5). Errors are always kept in Admin → Errors anyway |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | optional | push notifications (see LATER.md #7). Push is on only with both keys |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | optional | Cloudflare "are you human?" check on signup and forgot password. It's on only with both keys (see LATER.md #6) |

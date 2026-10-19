@@ -4,3 +4,4 @@ node_modules/
 uploads/
 tests/.pgdata_test_cluster/
 tests/.pgdata_test_cluster.log
+tests/.contract-seen/

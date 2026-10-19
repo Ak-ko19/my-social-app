@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 67–68 — API documentation: OpenAPI spec for every endpoint; docs page.
-**Step:** 6 — /openapi.json + /docs page + docs/REALTIME.md + coverage report: PLAN.
+**Step:** Day close — full browser run in batches.
 
 Plan (192 Express routes today; FB/X publish OpenAPI-style references
 with auth, params, bodies, errors per endpoint):
@@ -62,6 +62,13 @@ reports/admin (PENDING empty), 6 docs page + realtime doc.
   documented; PENDING removed (test: every route documented). Contract
   found: admin_actions.id is a string (bigint), storage warnings are
   { source, level }. Mutation caught. Backend 913/913.
+- Step 6 DONE: routes/docsRoutes (GET /openapi.json, GET /docs = Swagger UI
+  5.33.1 from local files, script as a file under helmet CSP; off in
+  production unless API_DOCS=1); docs/REALTIME.md + realtimeDoc.test (both
+  ways, mutation caught); coverage report in globalTeardown -> 5 unreached
+  ops got tests (apiCoverageGaps) -> 194/194 reached. Page checked in Edge:
+  1280 + 375, 25 tags, no sideways scroll, 0 console errors. 924/924.
+- Day close: full browser run in batches, then Progress Log + tick.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

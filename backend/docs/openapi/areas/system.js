@@ -28,6 +28,18 @@ module.exports = {
     description: 'Cached for 5 minutes.',
     responses: { 200: json(ref('Config'), 'The settings') }
   }),
+  'GET /openapi.json': op({
+    tag: 'System', auth: 'public',
+    summary: 'This API description (OpenAPI 3.1)',
+    description: 'On outside production; in production only when API_DOCS=1 (else 404). Built from backend/docs/openapi.',
+    responses: { 200: json(s.object({ openapi: s.str(), info: s.object({}), paths: s.object({}) }), 'The spec'), 404: html('The docs are off (production without API_DOCS=1)') }
+  }),
+  'GET /docs': op({
+    tag: 'System', auth: 'public',
+    summary: 'This API reference as a web page (Swagger UI)',
+    description: 'Same switch as GET /openapi.json. "Try it out" sends real requests: use Authorize with a token from POST /login.',
+    responses: { 200: html('The page'), 404: html('The docs are off (production without API_DOCS=1)') }
+  }),
   'GET /form-token': op({
     tag: 'Auth', auth: 'public',
     summary: 'A form token for the signup and forgot-password forms (bot protection)',

@@ -77,6 +77,17 @@ const AUTH = {
   secret: { security: [{ cleanupSecret: [] }] }
 };
 
+// Said first in every description, so the page is clear about auth
+// whatever its lock icons look like.
+const PARAGRAPH = '\n\n';
+const AUTH_NOTE = {
+  user: '**Login required.**',
+  optional: '**Works logged out too**; logged in, you also see what your account may see.',
+  admin: '**Admins only** (anyone else gets 404).',
+  public: null,
+  secret: "**Machines only** (the server's shared secret)."
+};
+
 // One operation. auth is required (it is checked against the route's
 // middleware). `limited`: the route has its own rate limit (429 +
 // Retry-After). `upload`: it takes files (wrong type / too big: 400; the
@@ -95,7 +106,7 @@ function op({ tag, summary, description, auth, query = {}, pathParams = {}, requ
   return {
     tags: [tag],
     summary,
-    ...(description && { description }),
+    ...((AUTH_NOTE[auth] || description) && { description: [AUTH_NOTE[auth], description].filter(Boolean).join(PARAGRAPH) }),
     ...AUTH[auth],
     'x-auth': auth,
     'x-query': query,
