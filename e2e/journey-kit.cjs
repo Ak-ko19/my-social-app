@@ -30,7 +30,8 @@ function createRun() {
 const launch = () => chromium.launch({ channel: 'msedge', headless: true });
 
 // A person with their own browser (no account yet). `allow` lists console
-// errors that are expected in this journey (e.g. a 404 they cause).
+// errors that are expected in this journey (e.g. a 404 they cause);
+// page.expecting holds ones expected only right now (see attemptLogIn).
 async function person(browser, run, name, { lang = 'en', theme = 'light', width = 390, allow = [] } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height: 844 } });
   await ctx.addInitScript(([l, th]) => {
@@ -40,9 +41,11 @@ async function person(browser, run, name, { lang = 'en', theme = 'light', width 
   const page = await ctx.newPage();
   page.on('pageerror', (e) => run.errors.push(`${name}: ${e.message}`));
   page.on('console', (m) => {
-    if (m.type() === 'error' && !allow.some((re) => re.test(m.text()))) run.errors.push(`${name}: ${m.text()}`);
+    if (m.type() !== 'error') return;
+    if (![...allow, ...page.expecting].some((re) => re.test(m.text()))) run.errors.push(`${name}: ${m.text()} (at ${page.url()})`);
   });
   page.username = name;
+  page.expecting = [];
   return page;
 }
 
@@ -57,20 +60,39 @@ async function signUp(page) {
   await page.waitForURL(/\/login/, { timeout: 15000 });
 }
 
-async function logIn(page, password = PASSWORD) {
+// The log-in form. Resolves to null once you're in (Home, or back to the
+// page you were sent away from), or to the form's error if it refused.
+// { refusal: true }: a refusal is what the journey expects, so the form's
+// own console report of the 401 isn't counted as a browser error.
+async function attemptLogIn(page, password = PASSWORD, { refusal = false } = {}) {
+  if (refusal) page.expecting = [/status (code|of) 401/];
+  try {
+    return await submitLogIn(page, password);
+  } finally {
+    page.expecting = [];
+  }
+}
+
+async function submitLogIn(page, password) {
   if (!/\/login/.test(page.url())) await page.goto(`${WEB}/login`, { waitUntil: 'networkidle' });
   // Sign-up has Email and Password fields too: wait until the log-in form
   // (its "Log in" button) is the one on screen.
   await page.getByRole('button', { name: 'Log in' }).waitFor({ timeout: 15000 });
   await page.getByLabel('Email').fill(`${page.username}@example.com`);
   await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Log in' }).click();
-  // Home, or back to the page you were sent away from.
-  const left = await until(() => Promise.resolve(!/\/login/.test(new URL(page.url()).pathname)), 15000);
-  if (!left) {
-    const alert = await page.getByRole('alert').allInnerTexts().catch(() => []);
-    throw new Error(`${page.username} could not log in: still at ${page.url()} ${JSON.stringify(alert)}`);
-  }
+  const [answer] = await Promise.all([
+    page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/login', { timeout: 15000 }),
+    page.getByRole('button', { name: 'Log in' }).click()
+  ]);
+  const isIn = () => !/\/login/.test(new URL(page.url()).pathname);
+  if (answer.ok() && (await until(() => Promise.resolve(isIn()), 15000))) return null;
+  await until(async () => (await page.getByRole('alert').count()) > 0, 5000);
+  return `${answer.status()}: ${(await page.getByRole('alert').allInnerTexts().catch(() => [])).join(' ')}`;
+}
+
+async function logIn(page, password = PASSWORD) {
+  const refused = await attemptLogIn(page, password);
+  if (refused !== null) throw new Error(`${page.username} could not log in: ${refused}`);
 }
 
 // Settings -> Log Out.
@@ -118,4 +140,4 @@ const until = (fn, ms = 10000) => (async () => {
   return false;
 })();
 
-module.exports = { WEB, PASSWORD, createRun, launch, person, signUp, logIn, logOut, post, openProfile, follow, loaded, until };
+module.exports = { WEB, PASSWORD, createRun, launch, person, signUp, attemptLogIn, logIn, logOut, post, openProfile, follow, loaded, until };
