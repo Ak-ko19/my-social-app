@@ -1,4 +1,5 @@
 const db = require('../db');
+const { noBlockBetweenSql } = require('../services/blockService');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 
 const { sendError } = require('../utils/httpError');
@@ -56,11 +57,7 @@ async function getPosts(req, res) {
       FROM posts
       JOIN users ON posts.user_id = users.id
       -- B13: community posts live in their community feed only.
-      WHERE posts.community_id IS NULL AND ($1::int IS NULL OR NOT EXISTS (
-        SELECT 1 FROM blocks
-        WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
-           OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
-      ))
+      WHERE posts.community_id IS NULL AND ($1::int IS NULL OR ${noBlockBetweenSql('$1', 'posts.user_id')})
       AND ${postAudienceSql('$1')}
       AND NOT users.is_deactivated
       ORDER BY posts.created_at DESC
@@ -116,11 +113,7 @@ async function getFeed(req, res) {
         -- B14: posts from pages you follow.
         OR posts.page_id IN (SELECT page_id FROM page_follows WHERE user_id = $1)
       )
-      AND NOT EXISTS (
-        SELECT 1 FROM blocks
-        WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
-           OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
-      )
+      AND ${noBlockBetweenSql('$1', 'posts.user_id')}
       AND NOT users.is_deactivated
       -- Day 47: not from people you muted (your own posts are never muted).
       AND ${notMutedSql('$1', 'posts.user_id', 'posts.page_id')}

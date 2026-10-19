@@ -3,6 +3,7 @@ const { postAudienceSql } = require('../services/postVisibilityService');
 const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 const blockService = require('../services/blockService');
+const { noBlockBetweenSql } = require('../services/blockService');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 const { pollColumnSql } = require('../services/pollService');
 
@@ -95,11 +96,7 @@ async function getUserPosts(req, res) {
       JOIN users ON posts.user_id = users.id
       -- B13: community posts live in their community feed only.
       WHERE posts.community_id IS NULL AND ${condition}
-        AND ($1::int IS NULL OR NOT EXISTS (
-          SELECT 1 FROM blocks
-          WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
-             OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
-        ))
+        AND ($1::int IS NULL OR ${noBlockBetweenSql('$1', 'posts.user_id')})
         AND ${postAudienceSql('$1')}
         AND (NOT users.is_deactivated OR users.id = $1)
       ORDER BY posts.created_at DESC

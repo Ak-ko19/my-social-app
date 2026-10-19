@@ -1,4 +1,5 @@
 const db = require('../db');
+const { noBlockBetweenSql } = require('../services/blockService');
 const { sendError } = require('../utils/httpError');
 
 const LIMIT = 10;
@@ -11,10 +12,7 @@ const ELIGIBLE_SQL = `
   AND NOT EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $1 AND f.following_id = u.id)
   -- Day 39: people you hid from suggestions stay hidden.
   AND NOT EXISTS (SELECT 1 FROM suggestion_dismissals sd WHERE sd.user_id = $1 AND sd.dismissed_user_id = u.id)
-  AND NOT EXISTS (
-    SELECT 1 FROM blocks b
-    WHERE (b.blocker_id = $1 AND b.blocked_id = u.id) OR (b.blocker_id = u.id AND b.blocked_id = $1)
-  )`;
+  AND ${noBlockBetweenSql('$1', 'u.id')}`;
 
 // B8 "People you may know" -- GET /users/suggestions.
 //

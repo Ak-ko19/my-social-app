@@ -29,4 +29,13 @@ async function hasBlocked(blockerId, blockedId) {
   return result.rows.length > 0;
 }
 
-module.exports = { isBlocked, hasBlocked };
+// The same rule inside a query (Day 69: it used to be copied into 24
+// listings): "no block between a and b, in either direction". a and b are
+// SQL expressions -- a parameter ('$1') or a column ('posts.user_id'). With
+// a NULL viewer (logged out) nothing matches, so it is true.
+function noBlockBetweenSql(a, b) {
+  return `NOT EXISTS (SELECT 1 FROM blocks blk
+    WHERE (blk.blocker_id = ${a} AND blk.blocked_id = ${b}) OR (blk.blocker_id = ${b} AND blk.blocked_id = ${a}))`;
+}
+
+module.exports = { isBlocked, hasBlocked, noBlockBetweenSql };

@@ -1,4 +1,5 @@
 const { HttpError, sendError } = require('../utils/httpError');
+const { noBlockBetweenSql } = require('../services/blockService');
 const db = require('../db');
 const { escapeLike } = require('../utils/escapeLike');
 const { mediaOfCommunity, deleteMedia } = require('../services/mediaCleanupService');
@@ -95,8 +96,7 @@ async function notifyAdminsOfRequest(communityId, requesterId) {
   const admins = await db.query(
     `SELECT m.user_id FROM community_members m
      WHERE m.community_id = $1 AND m.role = 'admin' AND m.status = 'member'
-       AND NOT EXISTS (SELECT 1 FROM blocks b
-         WHERE (b.blocker_id = m.user_id AND b.blocked_id = $2) OR (b.blocker_id = $2 AND b.blocked_id = m.user_id))`,
+       AND ${noBlockBetweenSql('m.user_id', '$2')}`,
     [communityId, requesterId]
   );
   for (const { user_id: adminId } of admins.rows) {
@@ -444,11 +444,7 @@ async function listPosts(req, res) {
        JOIN users ON users.id = posts.user_id
        WHERE posts.community_id = $4
          AND NOT users.is_deactivated
-         AND ($1::int IS NULL OR NOT EXISTS (
-           SELECT 1 FROM blocks
-           WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
-              OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
-         ))
+         AND ($1::int IS NULL OR ${noBlockBetweenSql('$1', 'posts.user_id')})
        ORDER BY posts.created_at DESC
        LIMIT $2 OFFSET $3`,
       [viewerId, limit + 1, offset, c.id]

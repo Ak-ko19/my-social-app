@@ -1,4 +1,5 @@
 const db = require('../db');
+const { noBlockBetweenSql } = require('../services/blockService');
 const { notMutedSql } = require('../services/muteService');
 const { sendError } = require('../utils/httpError');
 const { mediaOfStory, deleteMedia } = require('../services/mediaCleanupService');
@@ -22,11 +23,7 @@ const VISIBLE_TO_VIEWER_SQL = `
         SELECT 1 FROM follows f
         WHERE f.follower_id = $1 AND f.following_id = u.id AND f.status = 'accepted'
       )
-      AND NOT EXISTS (
-        SELECT 1 FROM blocks b
-        WHERE (b.blocker_id = $1 AND b.blocked_id = u.id)
-           OR (b.blocker_id = u.id AND b.blocked_id = $1)
-      )
+      AND ${noBlockBetweenSql('$1', 'u.id')}
       -- Day 47: a close-friends story is for the people on the list.
       AND (NOT s.close_friends OR EXISTS (
         SELECT 1 FROM close_friends cf WHERE cf.user_id = u.id AND cf.friend_id = $1

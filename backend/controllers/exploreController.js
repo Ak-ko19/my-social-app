@@ -1,4 +1,5 @@
 const db = require('../db');
+const { noBlockBetweenSql } = require('../services/blockService');
 const { postAudienceSql } = require('../services/postVisibilityService');
 const { notMutedSql } = require('../services/muteService');
 const { sendError } = require('../utils/httpError');
@@ -18,11 +19,7 @@ const PUBLICLY_VISIBLE_SQL = `
 
 // Hides authors the viewer ($1) has a block with, either direction.
 const NOT_BLOCKED_SQL = `
-  ($1::int IS NULL OR NOT EXISTS (
-    SELECT 1 FROM blocks
-    WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
-       OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
-  ))`;
+  ($1::int IS NULL OR ${noBlockBetweenSql('$1', 'posts.user_id')})`;
 
 // The most-used tags in the window, by how many distinct (publicly
 // visible) posts used them; ties go to the most recently used. At most 10.

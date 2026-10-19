@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 69–71 — Code health: duplicated logic, large files, consistent errors, README + CLAUDE.md.
-**Step:** 2 — block-check SQL helper: PLAN.
+**Step:** 3 — bounded lists (followers/following, comments, conversations): PLAN.
 
 Plan (survey: biggest file 735 lines; the real debt is duplication):
 1. utils/httpError.js: HttpError(status, message) + sendError(res, err,
@@ -25,6 +25,10 @@ Plan (survey: biggest file 735 lines; the real debt is duplication):
   missed a class (500 before) now answer its status. httpError.test (16,
   incl. a guard against the old pattern). Backend 940/940, contract
   194/194; b9-dm, day31/32/47, day49-spam green; check:i18n. -127 lines.
+- Step 2 DONE: blockService.noBlockBetweenSql(a, b) replaces 24 copied
+  two-way block checks (script parsed each, mirror verified). One-way
+  mutation caught by 11 tests in 10 files. Backend 940/940, perf 41/41,
+  journeys-safety, day47, b7, b8, day42 green.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

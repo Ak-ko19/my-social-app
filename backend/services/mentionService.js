@@ -3,6 +3,7 @@
 // existing notifications table/shape (user_id, actor_id, type, post_id,
 // comment_id) rather than a new table, same as 'like'/'comment'/'follow'.
 const db = require('../db');
+const { noBlockBetweenSql } = require('../services/blockService');
 const { getVisiblePost } = require('./postVisibilityService');
 const { pushNotification } = require('./pushService');
 const { allowedSql } = require('./notificationService');
@@ -45,11 +46,7 @@ async function notifyMentions({ content, authorId, postId, commentId = null, exc
        AND ${allowedSql('mentions', 'users.id')}
        -- Day 47: not someone who restricted the author.
        AND ${notRestrictedSql('users.id', '$2')}
-       AND NOT EXISTS (
-         SELECT 1 FROM blocks
-         WHERE (blocker_id = $2 AND blocked_id = users.id)
-            OR (blocker_id = users.id AND blocked_id = $2)
-       )`,
+       AND ${noBlockBetweenSql('$2', 'users.id')}`,
     [usernames, authorId, excludeUserIds]
   );
   // Day 20: only people who can see the post (a followers-only post's

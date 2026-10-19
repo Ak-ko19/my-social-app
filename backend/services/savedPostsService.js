@@ -1,6 +1,7 @@
 // The saved posts a person may still see -- GET /bookmarks and (Day 46)
 // a collection's posts share this one query, so both apply the same rules.
 const db = require('../db');
+const { noBlockBetweenSql } = require('../services/blockService');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('./reactionService');
 const { pollColumnSql } = require('./pollService');
 const { communityVisibleSql, postAudienceSql } = require('./postVisibilityService');
@@ -11,11 +12,7 @@ const { communityVisibleSql, postAudienceSql } = require('./postVisibilityServic
 // made "only me" or a deactivated author's stops showing up.
 const STILL_VISIBLE_SQL = `
   ${communityVisibleSql('$1')}
-  AND NOT EXISTS (
-    SELECT 1 FROM blocks
-    WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
-       OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
-  )
+  AND ${noBlockBetweenSql('$1', 'posts.user_id')}
   AND ${postAudienceSql('$1')}
   AND NOT users.is_deactivated`;
 

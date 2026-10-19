@@ -8,6 +8,7 @@
 // server must not POST just anywhere (SSRF): only https endpoints at the
 // browsers' known push services are accepted.
 const http = require('http');
+const { noBlockBetweenSql } = require('../services/blockService');
 const https = require('https');
 const webpush = require('web-push');
 const db = require('../db');
@@ -217,8 +218,7 @@ function pushNewMessage({ conversationId, senderId }) {
          AND ${MESSAGES_ALLOWED('cp.user_id')}
          -- Day 47: a restricted sender's messages arrive quietly.
          AND ${notRestrictedSql('cp.user_id', '$2')}
-         AND NOT EXISTS (SELECT 1 FROM blocks b
-           WHERE (b.blocker_id = cp.user_id AND b.blocked_id = $2) OR (b.blocker_id = $2 AND b.blocked_id = cp.user_id))`,
+         AND ${noBlockBetweenSql('cp.user_id', '$2')}`,
       [conversationId, senderId]
     )).rows.map((r) => r.user_id).filter((id) => !isOnline(id));
     const group = info.type === 'group';

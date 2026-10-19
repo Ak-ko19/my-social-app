@@ -1,4 +1,5 @@
 const { HttpError, sendError } = require('../utils/httpError');
+const { noBlockBetweenSql } = require('../services/blockService');
 const db = require('../db');
 const { mediaOfConversation, deleteMedia } = require('../services/mediaCleanupService');
 const { getIO, syncRooms } = require('../sockets');
@@ -37,10 +38,7 @@ async function validateMemberIds(rawIds, actorId) {
   const result = await db.query(
     `SELECT u.id FROM users u
      WHERE u.id = ANY($1::int[]) AND NOT u.is_deactivated
-       AND NOT EXISTS (
-         SELECT 1 FROM blocks b
-         WHERE (b.blocker_id = $2 AND b.blocked_id = u.id) OR (b.blocker_id = u.id AND b.blocked_id = $2)
-       )`,
+       AND ${noBlockBetweenSql('$2', 'u.id')}`,
     [ids, actorId]
   );
   if (result.rows.length !== ids.length) {

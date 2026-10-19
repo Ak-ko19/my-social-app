@@ -1,4 +1,5 @@
 const db = require('../db');
+const { noBlockBetweenSql } = require('../services/blockService');
 const { postAudienceSql } = require('../services/postVisibilityService');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 const { pollColumnSql } = require('../services/pollService');
@@ -27,11 +28,7 @@ const TAGGED_VISIBLE_SQL = `
   WHERE post_hashtags.hashtag_id = (SELECT id FROM hashtags WHERE LOWER(tag) = $2)
     -- B13: community posts live in their community feed only.
     AND posts.community_id IS NULL
-    AND ($1::int IS NULL OR NOT EXISTS (
-      SELECT 1 FROM blocks
-      WHERE (blocks.blocker_id = $1 AND blocks.blocked_id = posts.user_id)
-         OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $1)
-    ))
+    AND ($1::int IS NULL OR ${noBlockBetweenSql('$1', 'posts.user_id')})
     AND ${postAudienceSql('$1')}
     AND NOT users.is_deactivated`;
 

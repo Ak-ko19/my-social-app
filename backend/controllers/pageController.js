@@ -1,4 +1,5 @@
 const { HttpError, sendError } = require('../utils/httpError');
+const { noBlockBetweenSql } = require('../services/blockService');
 const db = require('../db');
 const { escapeLike } = require('../utils/escapeLike');
 const { mediaOfPage, deleteMedia } = require('../services/mediaCleanupService');
@@ -47,11 +48,7 @@ function cleanFields(body, { partial = false } = {}) {
 // "The viewer ($N) may see pages owned by owner alias u" -- owner active
 // (or it's the viewer's own page) and no block either way.
 const pageVisibleSql = (viewerParam) => `
-  (u.id = ${viewerParam} OR (NOT u.is_deactivated AND (${viewerParam}::int IS NULL OR NOT EXISTS (
-    SELECT 1 FROM blocks
-    WHERE (blocks.blocker_id = ${viewerParam} AND blocks.blocked_id = u.id)
-       OR (blocks.blocker_id = u.id AND blocks.blocked_id = ${viewerParam})
-  ))))`;
+  (u.id = ${viewerParam} OR (NOT u.is_deactivated AND (${viewerParam}::int IS NULL OR ${noBlockBetweenSql(`${viewerParam}`, 'u.id')})))`;
 
 const PAGE_COLUMNS = `p.id, p.name, p.category, p.description, p.created_at,
   u.id AS owner_id, u.username AS owner_username,
@@ -269,8 +266,7 @@ async function addAdmin(req, res) {
     const found = await db.query(
       `SELECT u.id, u.username, u.avatar_url FROM users u
        WHERE lower(u.username) = lower($1) AND NOT u.is_deactivated
-         AND NOT EXISTS (SELECT 1 FROM blocks b
-           WHERE (b.blocker_id = $2 AND b.blocked_id = u.id) OR (b.blocker_id = u.id AND b.blocked_id = $2))`,
+         AND ${noBlockBetweenSql('$2', 'u.id')}`,
       [username, req.userId]
     );
     const person = found.rows[0];

@@ -3,6 +3,7 @@
 // as your saved posts). Private to you. Removing an item uses the usual
 // endpoints (unlike, delete the comment); searches are /search/history.
 const db = require('../db');
+const { noBlockBetweenSql } = require('../services/blockService');
 const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 const { STILL_VISIBLE_SQL } = require('../services/savedPostsService');
@@ -15,10 +16,7 @@ const POST_COLUMNS = `posts.id AS post_id, LEFT(posts.content, ${SNIPPET}) AS po
 
 // A comment you may see: no block with its author, and not one waiting for
 // someone else's approval (Day 47).
-const COMMENT_VISIBLE_SQL = (c, cu) => `NOT EXISTS (
-    SELECT 1 FROM blocks b
-    WHERE (b.blocker_id = $1 AND b.blocked_id = ${cu}.id) OR (b.blocker_id = ${cu}.id AND b.blocked_id = $1)
-  )
+const COMMENT_VISIBLE_SQL = (c, cu) => `${noBlockBetweenSql('$1', `${cu}.id`)}
   AND (NOT ${c}.awaiting_approval OR ${c}.user_id = $1 OR posts.user_id = $1)`;
 
 // GET /activity/likes -- your reactions on posts and your comment likes,

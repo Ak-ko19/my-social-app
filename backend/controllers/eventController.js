@@ -4,6 +4,7 @@
 // either way hides them, and a "followers" event is for the host's
 // accepted followers. Hidden -> 404, so a link never confirms it exists.
 const { HttpError, sendError } = require('../utils/httpError');
+const { noBlockBetweenSql } = require('../services/blockService');
 const db = require('../db');
 const { getPagination } = require('../utils/pagination');
 const { toUnicode } = require('../utils/myanmarText');
@@ -24,8 +25,7 @@ class EventError extends HttpError {}
 const eventVisibleSql = (v) => `(
   e.host_id = ${v} OR (
     NOT u.is_deactivated
-    AND (${v}::int IS NULL OR NOT EXISTS (SELECT 1 FROM blocks b
-      WHERE (b.blocker_id = ${v} AND b.blocked_id = e.host_id) OR (b.blocker_id = e.host_id AND b.blocked_id = ${v})))
+    AND (${v}::int IS NULL OR ${noBlockBetweenSql(`${v}`, 'e.host_id')})
     AND (e.audience = 'public' OR (${v}::int IS NOT NULL AND EXISTS (SELECT 1 FROM follows f
       WHERE f.follower_id = ${v} AND f.following_id = e.host_id AND f.status = 'accepted')))
   ))`;
@@ -228,8 +228,7 @@ async function listGuests(req, res) {
       `SELECT u.id, u.username, u.avatar_url, r.created_at AS answered_at
        FROM event_responses r JOIN users u ON u.id = r.user_id
        WHERE r.event_id = $1 AND r.status = $2 AND NOT u.is_deactivated
-         AND ($5::int IS NULL OR NOT EXISTS (SELECT 1 FROM blocks b
-           WHERE (b.blocker_id = $5 AND b.blocked_id = u.id) OR (b.blocker_id = u.id AND b.blocked_id = $5)))
+         AND ($5::int IS NULL OR ${noBlockBetweenSql('$5', 'u.id')})
        ORDER BY r.created_at DESC, u.id DESC
        LIMIT $3 OFFSET $4`,
       [event.id, status, limit + 1, offset, req.userId ?? null]

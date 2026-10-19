@@ -1,4 +1,5 @@
 const db = require('../db');
+const { noBlockBetweenSql } = require('../services/blockService');
 const { postAudienceSql } = require('../services/postVisibilityService');
 const { pageColumnSql } = require('../services/reactionService');
 const { sendError } = require('../utils/httpError');
@@ -35,11 +36,7 @@ async function searchUsers(req, res) {
        FROM users
        WHERE (users.username ILIKE '%' || $1 || '%' OR users.username ILIKE '%' || $4 || '%')
          AND NOT users.is_deactivated
-         AND ($2::int IS NULL OR NOT EXISTS (
-           SELECT 1 FROM blocks
-           WHERE (blocks.blocker_id = $2 AND blocks.blocked_id = users.id)
-              OR (blocks.blocker_id = users.id AND blocks.blocked_id = $2)
-         ))
+         AND ($2::int IS NULL OR ${noBlockBetweenSql('$2', 'users.id')})
        ORDER BY LOWER(users.username) IN (LOWER($3), LOWER($5)) DESC,
          (users.username ILIKE $1 || '%' OR users.username ILIKE $4 || '%') DESC,
          is_following DESC,
@@ -81,11 +78,7 @@ async function searchPosts(req, res) {
         WHERE posts.community_id IS NULL
           AND (to_tsvector('english', posts.content) @@ websearch_to_tsquery('english', $1)
                OR posts.content ILIKE '%' || $2 || '%')
-          AND ($3::int IS NULL OR NOT EXISTS (
-            SELECT 1 FROM blocks
-            WHERE (blocks.blocker_id = $3 AND blocks.blocked_id = posts.user_id)
-               OR (blocks.blocker_id = posts.user_id AND blocks.blocked_id = $3)
-          ))
+          AND ($3::int IS NULL OR ${noBlockBetweenSql('$3', 'posts.user_id')})
           AND ${postAudienceSql('$3')}
           AND NOT users.is_deactivated
         ORDER BY posts.created_at DESC

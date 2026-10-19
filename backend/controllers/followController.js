@@ -2,6 +2,7 @@ const db = require('../db');
 const { getPagination } = require('../utils/pagination');
 const { sendError } = require('../utils/httpError');
 const blockService = require('../services/blockService');
+const { noBlockBetweenSql } = require('../services/blockService');
 const notificationService = require('../services/notificationService');
 
 // Who may see a user's follower/following LISTS (counts stay public, like
@@ -148,9 +149,7 @@ async function getConnections(req, res) {
          $2::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follower_id = u.id AND following_id = $2 AND status = 'accepted') AS follows_you
        FROM users u
        WHERE u.id IN (${people}) AND NOT u.is_deactivated
-         AND ($2::int IS NULL OR NOT EXISTS (
-           SELECT 1 FROM blocks b WHERE (b.blocker_id = $2 AND b.blocked_id = u.id) OR (b.blocker_id = u.id AND b.blocked_id = $2)
-         ))
+         AND ($2::int IS NULL OR ${noBlockBetweenSql('$2', 'u.id')})
        ORDER BY LOWER(u.username), u.id
        LIMIT $3 OFFSET $4`,
       [req.params.id, req.userId ?? null, limit + 1, offset]

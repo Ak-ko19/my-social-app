@@ -3,6 +3,7 @@ const { sendError } = require('../utils/httpError');
 const mentionService = require('../services/mentionService');
 const { getVisiblePost } = require('../services/postVisibilityService');
 const blockService = require('../services/blockService');
+const { noBlockBetweenSql } = require('../services/blockService');
 const notificationService = require('../services/notificationService');
 const { toUnicode } = require('../utils/myanmarText');
 const { isRestricted } = require('../services/restrictService');
@@ -141,11 +142,7 @@ async function getComments(req, res) {
       WHERE comments.post_id = $1
         -- Waiting for approval: seen by its author and the post's owner only.
         AND (NOT comments.awaiting_approval OR comments.user_id = $2 OR $2::int = $3::int)
-        AND ($2::int IS NULL OR NOT EXISTS (
-          SELECT 1 FROM blocks
-          WHERE (blocks.blocker_id = $2 AND blocks.blocked_id = comments.user_id)
-             OR (blocks.blocker_id = comments.user_id AND blocks.blocked_id = $2)
-        ))
+        AND ($2::int IS NULL OR ${noBlockBetweenSql('$2', 'comments.user_id')})
       ORDER BY comments.created_at ASC
     `, [req.params.id, viewerId, post.user_id]);
     res.json(result.rows);

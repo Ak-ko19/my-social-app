@@ -2,6 +2,7 @@
 // told the results are in (like X). Sent once per poll (polls.ended_notified,
 // migration 053) by the server's ticker and the daily cleanup.
 const db = require('../db');
+const { noBlockBetweenSql } = require('../services/blockService');
 const { pushNotification } = require('./pushService');
 
 const MAX_PER_RUN = 25;
@@ -23,10 +24,7 @@ const VOTERS_WHO_CAN_SEE = `
     AND p.visibility <> 'only_me'
     AND (p.visibility <> 'close_friends' OR EXISTS (
       SELECT 1 FROM close_friends cf WHERE cf.user_id = p.user_id AND cf.friend_id = v.user_id))
-    AND NOT EXISTS (
-      SELECT 1 FROM blocks b
-      WHERE (b.blocker_id = v.user_id AND b.blocked_id = p.user_id) OR (b.blocker_id = p.user_id AND b.blocked_id = v.user_id)
-    )
+    AND ${noBlockBetweenSql('v.user_id', 'p.user_id')}
     AND CASE
       WHEN p.community_id IS NOT NULL THEN c.privacy = 'public' OR EXISTS (
         SELECT 1 FROM community_members cm WHERE cm.community_id = p.community_id AND cm.user_id = v.user_id AND cm.status = 'member')

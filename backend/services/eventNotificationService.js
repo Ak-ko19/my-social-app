@@ -3,6 +3,7 @@
 // ticker), and when the host cancels it. Through notificationService, so
 // everyone's settings ("Events") and restrictions apply.
 const db = require('../db');
+const { noBlockBetweenSql } = require('../services/blockService');
 const notificationService = require('./notificationService');
 
 const REMIND_BEFORE_MINUTES = 60;
@@ -18,8 +19,7 @@ const RESPONDERS_WHO_CAN_SEE = `
   JOIN users who ON who.id = r.user_id
   WHERE r.event_id = $1
     AND NOT who.is_deactivated
-    AND NOT EXISTS (SELECT 1 FROM blocks b
-      WHERE (b.blocker_id = r.user_id AND b.blocked_id = e.host_id) OR (b.blocker_id = e.host_id AND b.blocked_id = r.user_id))
+    AND ${noBlockBetweenSql('r.user_id', 'e.host_id')}
     AND (e.audience = 'public' OR EXISTS (SELECT 1 FROM follows f
       WHERE f.follower_id = r.user_id AND f.following_id = e.host_id AND f.status = 'accepted'))
   ORDER BY r.created_at, r.user_id`;
