@@ -1,7 +1,43 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 67–68 — API documentation (not started).
-**Step:** —
+**Day:** 67–68 — API documentation: OpenAPI spec for every endpoint; docs page.
+**Step:** 2 — profile/users/social graph/search/notifications: PLAN.
+
+Plan (192 Express routes today; FB/X publish OpenAPI-style references
+with auth, params, bodies, errors per endpoint):
+- Spec as code: backend/docs/openapi/ (index.js builds an OpenAPI 3.1
+  object from per-area files + shared components: User, Post, Comment,
+  Message, Error...; small helpers so 192 ops stay readable).
+- Can't drift: tests/api/openapiSpec.test.js walks the real Express
+  router and checks, both ways: every route documented and every
+  documented op exists; security = the middleware (authMiddleware ->
+  bearer, optionalAuth -> optional, requireAdmin -> admin, none ->
+  public); path params match; upload routes say multipart/form-data;
+  every $ref resolves. While areas are being written, a PENDING list of
+  route files shrinks to empty (step 5 removes it).
+- Served: GET /openapi.json and /docs (swagger-ui-dist, local files, no
+  CDN; CSP for that page only). On outside production; in production
+  only with API_DOCS=1 (internal API -- no need to publish its map).
+- Step 6: contract test (ajv): a seeded world, the main GET endpoints
+  and key writes validated against their documented response schemas;
+  socket events documented in docs/REALTIME.md + a test that every
+  emitted/handled event name is in it; README/CLAUDE.md pointers.
+Steps: 1 framework+core/auth/sessions/misc, 2 profile/users/social
+graph/search/notifications, 3 posts/drafts/comments/likes/saved/
+hashtags/explore/stories/events, 4 conversations, 5 groups/pages/
+reports/admin (PENDING empty), 6 docs page + realtime doc.
+
+## Progress (Day 67–68)
+- Step 1 DONE: docs/openapi (helpers, components, index, areas/system +
+  auth: 25 ops). openapiSpec.test (9: both ways, auth from middleware,
+  multipart, path params, tags, refs; PENDING = 27 route files). BETTER
+  than the plan's step-6 contract test: tests/helpers/contract.js, put
+  in setupTestApp -- EVERY response of the 900 API tests is checked
+  (status documented, content type, JSON schema); a mismatch fails the
+  file. It found: every plain-text answer went out as text/html
+  (Express default) -> server.js sends strings as text/plain (safer, and
+  what the docs say). Mutations caught (schema, auth). Backend 914/914;
+  journeys-safety, b15-lang, day12-report, day11-bots green; check:i18n.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

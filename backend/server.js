@@ -54,6 +54,15 @@ const closeFriendsRoutes = require('./routes/closeFriendsRoutes');
 const activityRoutes = require('./routes/activityRoutes');
 
 const app = express();
+// Day 67: short text answers (errors, confirmations) are text/plain.
+// Express labels a bare res.send('...') as text/html, which tells a browser
+// to render the message as a web page. JSON, and the share cards that set
+// text/html themselves, already have their own type and are untouched.
+const sendResponse = app.response.send;
+app.response.send = function sendPlainText(body) {
+  if (typeof body === 'string' && !this.get('Content-Type')) this.type('text/plain');
+  return sendResponse.call(this, body);
+};
 // Hosts like Render tell the app which port to listen on (validated by
 // config/env.js; 0 = any free port).
 const PORT = process.env.PORT?.trim() ? Number(process.env.PORT) : 3000;

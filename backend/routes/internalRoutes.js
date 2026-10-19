@@ -10,7 +10,8 @@ const router = express.Router();
 // login. Without the secret configured they don't exist (404), and a wrong
 // secret gets the same 404, so the endpoint isn't advertised.
 function requireSecret(envName) {
-  return (req, res, next) => {
+  // Named, so the API spec test can tell this route's auth from the router.
+  return function sharedSecret(req, res, next) {
     const expected = process.env[envName];
     const header = req.headers.authorization || '';
     const given = header.startsWith('Bearer ') ? header.slice('Bearer '.length) : '';

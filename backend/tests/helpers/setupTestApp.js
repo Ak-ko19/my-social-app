@@ -57,6 +57,14 @@ function setupTestApp() {
 
   const app = require('../../server');
 
+  // Day 67: every response these tests see must match the API spec
+  // (docs/openapi) -- see helpers/contract.js.
+  const violations = [];
+  require('./contract').install(app, violations);
+  afterAll(() => {
+    if (violations.length) throw new Error(`Responses that differ from the API spec (docs/openapi):\n  ${violations.join('\n  ')}`);
+  });
+
   // Jest gives each test file its own module registry, so each file gets
   // its own Pool -- close it when the file finishes so no idle pg
   // connections are left holding the process open.
