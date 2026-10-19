@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 67–68 — API documentation: OpenAPI spec for every endpoint; docs page.
-**Step:** 3 — posts/drafts/comments/likes/saved/hashtags/explore/stories/events: PLAN.
+**Step:** 4 — conversations (DMs + group chats): PLAN.
 
 Plan (192 Express routes today; FB/X publish OpenAPI-style references
 with auth, params, bodies, errors per endpoint):
@@ -46,6 +46,13 @@ reports/admin (PENDING empty), 6 docs page + realtime doc.
   GET /users/:id/followers + /following are unpaginated (the app uses
   /connections); follow-counts echoes userId as a string.
   Idea for step 6: report documented ops no API test exercises.
+- Step 3 DONE: areas/content (56 ops: posts, polls, drafts, comments,
+  reactions, saved/collections, hashtags, Explore, profile tabs, stories,
+  events) + PostRow/Comment/Draft/Collection/Story/Event schemas. Contract:
+  0 mismatches; a mutation (Post.username int) is caught. 914/914.
+  More for Day 69-71: GET /posts/:id/comments returns every comment
+  (unpaginated); GET /posts/:id/likes echoes postId as a string.
+  Reminder: Jest on several files ALWAYS --runInBand (one shared test DB).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

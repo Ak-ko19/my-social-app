@@ -9,7 +9,8 @@ const components = require('./components');
 const AREAS = [
   require('./areas/system'),
   require('./areas/auth'),
-  require('./areas/people')
+  require('./areas/people'),
+  require('./areas/content')
 ];
 
 const TAGS = [
@@ -24,7 +25,15 @@ const TAGS = [
   { name: 'Safety', description: 'Blocking, muting, restricting, close friends, hidden words' },
   { name: 'Search', description: 'Finding people, posts and hashtags; your search history' },
   { name: 'Notifications', description: 'Your notifications and which kinds you get' },
-  { name: 'Activity', description: 'What you have reacted to and commented on' }
+  { name: 'Activity', description: 'What you have reacted to and commented on' },
+  { name: 'Posts', description: 'Posts, polls, Home and profile tabs' },
+  { name: 'Drafts', description: 'Drafts and scheduled posts' },
+  { name: 'Comments', description: 'Comments and replies' },
+  { name: 'Reactions', description: 'Reactions on posts' },
+  { name: 'Saved', description: 'Saved posts and collections' },
+  { name: 'Explore', description: 'Hashtags, trending and popular posts' },
+  { name: 'Stories', description: 'Photo stories (24 hours)' },
+  { name: 'Events', description: 'Events, and who is going' }
 ];
 
 const DESCRIPTION = `The MySocialApp REST API (the web app and, later, the mobile app use the same one).

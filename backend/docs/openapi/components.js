@@ -174,6 +174,65 @@ const schemas = {
     optional: ['visibility', 'image_url', 'avatar_url', 'like_count', 'liked_by_me', 'my_reaction', 'reaction_counts', 'media', 'poll', 'page', 'bookmarked_by_me'],
     description: 'A post card. Lists may add fields of their own (e.g. a group or an edit time).'
   }),
+  PostRow: s.object({
+    id: s.id(), user_id: s.id(), content: s.nullable(s.str()), created_at: s.time(),
+    visibility: s.enum(['public', 'followers', 'close_friends', 'only_me']),
+    community_id: s.nullable(s.id('The group it was posted in')),
+    page_id: s.nullable(s.id('The page it was published as')),
+    media: s.array(s.object({ url: s.str() })),
+    poll: s.nullable(s.ref('Poll'))
+  }, { optional: ['community_id', 'page_id', 'media', 'poll'], description: 'A post as stored (no author name), as returned right after a write' }),
+  ReactionSummary: s.object({
+    likeCount: s.int('All reactions together'),
+    reactionCounts: s.object({}, { description: 'Reaction -> count' })
+  }),
+  Comment: s.object({
+    id: s.id(), content: s.str(), created_at: s.time(),
+    parent_comment_id: s.nullable(s.id('Set on a reply')),
+    user_id: s.id(), username: s.str(),
+    like_count: s.int(), liked_by_me: s.bool(),
+    awaiting_approval: s.nullable(s.bool('Only shown to the post owner: a restricted person\'s comment waiting for approval'))
+  }),
+  CommentRow: s.object({
+    id: s.id(), post_id: s.id(), user_id: s.id(), content: s.str(), created_at: s.time(),
+    parent_comment_id: s.nullable(s.id())
+  }, { description: 'A comment as stored' }),
+  Draft: s.object({
+    id: s.id(),
+    content: s.str(),
+    visibility: s.enum(['public', 'followers', 'close_friends', 'only_me']),
+    community_id: s.nullable(s.id()), page_id: s.nullable(s.id()),
+    community_name: s.nullable(s.str()), page_name: s.nullable(s.str()),
+    poll: s.nullable(s.object({ options: s.array(s.str()), durationHours: s.int() }, { description: 'As POST /posts takes it' })),
+    media: s.array(s.object({ url: s.str() }), 'Photos already uploaded'),
+    scheduled_for: s.nullable(s.time('When it will be published; null for a plain draft')),
+    last_error: s.nullable(s.str('Why a scheduled post could not go up')),
+    created_at: s.time(), updated_at: s.time()
+  }),
+  Collection: s.object({
+    id: s.id(), name: s.str(), created_at: s.time(), updated_at: s.time(),
+    post_count: s.int('Saved posts in it that you may still see'),
+    cover_url: s.nullable(s.str('A photo from its newest post'))
+  }, { optional: ['post_count', 'cover_url'] }),
+  Story: s.object({
+    id: s.id(), media_url: s.str(), created_at: s.time(), expires_at: s.time('24 hours after it was posted'),
+    close_friends: s.bool('Only your close friends see it'), seen: s.bool()
+  }, { optional: ['seen'] }),
+  StoryGroup: s.object({
+    user_id: s.id(), username: s.str(), avatar_url: s.nullable(s.str()),
+    is_own: s.bool(), all_seen: s.bool(), latest_at: s.time(),
+    stories: s.array(s.ref('Story'), 'Oldest first')
+  }),
+  Event: s.object({
+    id: s.id(), name: s.str(), description: s.nullable(s.str()),
+    starts_at: s.time(), ends_at: s.nullable(s.time()), location: s.nullable(s.str()),
+    audience: s.enum(['public', 'followers']),
+    cancelled_at: s.nullable(s.time()), created_at: s.time(), has_ended: s.bool(),
+    host_id: s.id(), host_username: s.str(), host_avatar_url: s.nullable(s.str()),
+    going_count: s.int(), interested_count: s.int(),
+    my_response: s.nullable(s.enum(['going', 'interested'])),
+    is_host: s.bool()
+  }),
   Poll: s.object({
     closes_at: s.time(),
     closed: s.bool(),
