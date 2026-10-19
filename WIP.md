@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 64–66 — End-to-end tests: Playwright tests for the 15 most important user journeys; run in CI.
-**Step:** 5 — e2e/JOURNEYS.md + CI check: PLAN. Plan: 15 journeys, each only through the UI (two people = two browser contexts), in 3 suites of 5 so each stays a few minutes: journeys-core (J1 sign up via landing + first post on Home and profile; J2 log out, log in, reload keeps you in; J3 find bob in search, follow, like + comment, bob sees the notification; J4 private account: follow request, approve, posts appear; J5 DM from profile, live both ways), journeys-social (J6 group chat; J7 photo post; J8 story seen by a friend; J9 group: create, other joins + posts; J10 page + event), journeys-safety (J11 report -> admin removes; J12 block/unblock; J13 edit profile + Arabic RTL and back; J14 change password, old fails new works; J15 delete account, cannot log in). Shared e2e/journey-kit.cjs. journeys-core joins the CI smoke list. Then step 4: AUDIT_REPORT_3 A3 split a3/a11y; step 5: e2e/JOURNEYS.md + CI test that every journey suite runs in CI.
+**Step:** Day close — full browser run in batches. Plan: 15 journeys, each only through the UI (two people = two browser contexts), in 3 suites of 5 so each stays a few minutes: journeys-core (J1 sign up via landing + first post on Home and profile; J2 log out, log in, reload keeps you in; J3 find bob in search, follow, like + comment, bob sees the notification; J4 private account: follow request, approve, posts appear; J5 DM from profile, live both ways), journeys-social (J6 group chat; J7 photo post; J8 story seen by a friend; J9 group: create, other joins + posts; J10 page + event), journeys-safety (J11 report -> admin removes; J12 block/unblock; J13 edit profile + Arabic RTL and back; J14 change password, old fails new works; J15 delete account, cannot log in). Shared e2e/journey-kit.cjs. journeys-core joins the CI smoke list. Then step 4: AUDIT_REPORT_3 A3 split a3/a11y; step 5: e2e/JOURNEYS.md + CI test that every journey suite runs in CI.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -141,6 +141,9 @@
   notification type (notifySystem) -- for Day 81–82 notifications upgrade
   or the Day 85–87 buffer.
 
+- e2e/README.md suite table stops at Day 5 (+ the journeys row): finish
+  it in Day 69–71 (code health: update README).
+
 ## Progress (Day 64–66)
 - Step 1 journeys-core (J1–J5): suite + e2e/journey-kit.cjs written; added
   to run-all.sh SUITES and the CI smoke list. Bug it found: a brand-new
@@ -176,4 +179,8 @@
   STEP DONE: a11y light 59 / dark 59 / ar 7 (=125, ~2 min each); a3
   en-light/en-dark/ar-light/ar-dark 144 each (=288/lang, ~4 min each);
   all 0 failures; backend 888/888.
-- Step 5 e2e/JOURNEYS.md + CI test that every journey suite runs in CI.
+- Step 5 e2e/JOURNEYS.md + CI test STEP DONE: doc (15 rows, run, add);
+  ciWorkflow: J1..J15 in order, each has checks in its suite (mutation
+  caught), every journeys suite in run-all + core in smoke. Backend 905/905.
+- Day close: FULL browser run in batches of <=5 (heavy alone), then the
+  Progress Log entry + tick Day 64-66.

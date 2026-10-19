@@ -70,6 +70,27 @@ describe('CI browser jobs', () => {
   });
 });
 
+// Days 64–66: the 15 user journeys (e2e/JOURNEYS.md) all run in CI, and
+// each one the doc lists really has checks in the suite it names.
+describe('user journeys', () => {
+  const rows = [...read('e2e/JOURNEYS.md').matchAll(/^\| (J\d+) \| [^|]+ \| `([\w-]+)` \|/gm)].map((m) => [m[1], m[2]]);
+
+  it('JOURNEYS.md lists J1..J15, in order', () => {
+    expect(rows.map(([id]) => id)).toEqual(Array.from({ length: 15 }, (_, i) => `J${i + 1}`));
+  });
+
+  it.each(rows)('%s has checks in %s', (id, suite) => {
+    expect(read(`e2e/${suite}.cjs`)).toMatch(new RegExp(`check\\(['"\`]${id} `));
+  });
+
+  it('every journey suite runs in the full CI job, and the core one on every push', () => {
+    const suites = fs.readdirSync(path.join(ROOT, 'e2e')).filter((f) => /^journeys-.*\.cjs$/.test(f)).map((f) => f.replace(/\.cjs$/, ''));
+    expect(suites.sort()).toEqual([...new Set(rows.map(([, suite]) => suite))].sort());
+    for (const suite of suites) expect(runAll).toMatch(new RegExp(`_?SUITES="[^"]*\\b${suite}\\b`));
+    expect(workflow.jobs['browser-smoke'].env.E2E_ONLY.split(/\s+/)).toContain('journeys-core');
+  });
+});
+
 // Day 66 (AUDIT_REPORT_3 A3): the two longest suites run in short parts.
 // Together the parts must still be the whole suite.
 describe('split browser suites', () => {

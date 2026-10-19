@@ -52,7 +52,8 @@ has Microsoft Edge, and the scripts find the PostgreSQL tools on PATH
   `E2E_EXTERNAL_DB=1` tells `e2e-up.sh` / `e2e-down.sh` not to start or
   stop the local test cluster.
 - **Browser tests (smoke)**, on every push: `E2E_ONLY` = the walkthrough,
-  reports/moderation, the production build + CSP, and the bot checks.
+  reports/moderation, the production build + CSP, the bot checks, and the
+  core user journeys (`journeys-core`).
   About 10 minutes; the repo is private and its CI minutes are limited.
 - **Browser tests (full)**, on pull requests to `master` and by hand
   (Actions → CI → Run workflow): everything, including the EN/AR
@@ -77,6 +78,7 @@ error. Full output goes to `out-<suite>.txt`, and screenshots to `*.png` /
 
 | Suite | What it checks |
 | --- | --- |
+| `journeys-core`, `journeys-social`, `journeys-safety` | The 15 most important user journeys, only through the UI -- see [JOURNEYS.md](JOURNEYS.md) |
 | `a2-walkthrough` | The main user journey from signup to logout |
 | `a3-visual` | Every route × 375/390/430 px × light/dark (`A3_LANG=en\|ar`, `A3_THEME=light\|dark`) |
 | `b1-reactions` … `b16-rtl` | One suite per roadmap feature (B1–B16) |
