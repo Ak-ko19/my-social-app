@@ -99,6 +99,16 @@ async function openProfile(page, name) {
   await page.waitForURL(/\/profile\/\d+/, { timeout: 15000 });
 }
 
+// Their profile -> Follow (a public account), until it says Following.
+async function follow(page, name) {
+  await openProfile(page, name);
+  await page.getByRole('button', { name: 'Follow', exact: true }).click();
+  await page.getByRole('button', { name: 'Following', exact: true }).waitFor({ timeout: 10000 });
+}
+
+// The image really arrived (a broken or missing file has no width).
+const loaded = (img) => img.evaluate((el) => el.complete && el.naturalWidth > 0).catch(() => false);
+
 const until = (fn, ms = 10000) => (async () => {
   const end = Date.now() + ms;
   while (Date.now() < end) {
@@ -108,4 +118,4 @@ const until = (fn, ms = 10000) => (async () => {
   return false;
 })();
 
-module.exports = { WEB, PASSWORD, createRun, launch, person, signUp, logIn, logOut, post, openProfile, until };
+module.exports = { WEB, PASSWORD, createRun, launch, person, signUp, logIn, logOut, post, openProfile, follow, loaded, until };

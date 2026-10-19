@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 64–66 — End-to-end tests: Playwright tests for the 15 most important user journeys; run in CI.
-**Step:** 2 — journeys-social: PLAN. Plan: 15 journeys, each only through the UI (two people = two browser contexts), in 3 suites of 5 so each stays a few minutes: journeys-core (J1 sign up via landing + first post on Home and profile; J2 log out, log in, reload keeps you in; J3 find bob in search, follow, like + comment, bob sees the notification; J4 private account: follow request, approve, posts appear; J5 DM from profile, live both ways), journeys-social (J6 group chat; J7 photo post; J8 story seen by a friend; J9 group: create, other joins + posts; J10 page + event), journeys-safety (J11 report -> admin removes; J12 block/unblock; J13 edit profile + Arabic RTL and back; J14 change password, old fails new works; J15 delete account, cannot log in). Shared e2e/journey-kit.cjs. journeys-core joins the CI smoke list. Then step 4: AUDIT_REPORT_3 A3 split a3/a11y; step 5: e2e/JOURNEYS.md + CI test that every journey suite runs in CI.
+**Step:** 3 — journeys-safety: PLAN. Plan: 15 journeys, each only through the UI (two people = two browser contexts), in 3 suites of 5 so each stays a few minutes: journeys-core (J1 sign up via landing + first post on Home and profile; J2 log out, log in, reload keeps you in; J3 find bob in search, follow, like + comment, bob sees the notification; J4 private account: follow request, approve, posts appear; J5 DM from profile, live both ways), journeys-social (J6 group chat; J7 photo post; J8 story seen by a friend; J9 group: create, other joins + posts; J10 page + event), journeys-safety (J11 report -> admin removes; J12 block/unblock; J13 edit profile + Arabic RTL and back; J14 change password, old fails new works; J15 delete account, cannot log in). Shared e2e/journey-kit.cjs. journeys-core joins the CI smoke list. Then step 4: AUDIT_REPORT_3 A3 split a3/a11y; step 5: e2e/JOURNEYS.md + CI test that every journey suite runs in CI.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -143,5 +143,17 @@
   calling it from createConversation; tests/api/newConversationLive.test.js
   (mutation caught). STEP DONE: journeys-core 20/20; b9-dm, b10-groups,
   a2-walkthrough, day32-forward, day33-group-admins green; backend 886/886.
-- Step 2 journeys-social (J6–J10), step 3 journeys-safety (J11–J15),
+- Step 2 journeys-social (J6–J10) PLAN: J6 group chat (rana follows sami +
+  tariq; New group -> both get live messages, names on bubbles); J7 photo
+  post (pick a photo -> really uploaded -> shows on Home for a follower);
+  J8 story (sami adds one, rana sees it in the tray, opens it, ring turns
+  seen); J9 community group (create, other finds + joins, posts, creator
+  sees it); J10 page + event (create page, follower follows it, event on
+  the page, other says Going). Real uploads: e2e/cloudinary-stub.cjs (port
+  3904) answers the SDK (CLOUDINARY_URL ?upload_prefix=, test stack only,
+  no app change) and serves the file; run-all.sh MEDIA_SUITES / e2e-up
+  E2E_MEDIA=1; e2e-down frees 3904; ciWorkflow helpers list.
+  STEP DONE: journeys-social 17/17 (and fails without the stub, so the
+  photo checks are real); journeys-core 20/20; backend 886/886.
+- Step 3 journeys-safety (J11–J15),
   step 4 AUDIT_REPORT_3 A3 split a3/a11y, step 5 e2e/JOURNEYS.md + CI test.

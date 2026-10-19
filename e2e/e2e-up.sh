@@ -32,13 +32,22 @@ if [ "$E2E_PUSH" = 1 ]; then
   KEYS=$(cd "$B" && node -e "const k=require('web-push').generateVAPIDKeys();console.log(k.publicKey+' '+k.privateKey)")
   VAPID_PUB=${KEYS% *} VAPID_PRIV=${KEYS#* } PUSH_ORIGIN=http://127.0.0.1:3903
 fi
+# E2E_MEDIA=1 (Day 64): real photo uploads, kept by a local Cloudinary
+# stand-in (the SDK's own upload_prefix setting points it there).
+CLD_NAME= CLD_KEY= CLD_SECRET= CLD_URL=
+if [ "$E2E_MEDIA" = 1 ]; then
+  nohup node "$SP/cloudinary-stub.cjs" 3904 e2ecloud > "$SP/cloudinary-stub.log" 2>&1 &
+  CLD_NAME=e2ecloud CLD_KEY=e2e-key CLD_SECRET=e2e-secret
+  CLD_URL="cloudinary://$CLD_KEY:$CLD_SECRET@$CLD_NAME?upload_prefix=http://localhost:3904"
+fi
 cd "$B"
+CLOUDINARY_URL="$CLD_URL" CLOUDINARY_CLOUD_NAME="$CLD_NAME" CLOUDINARY_API_KEY="$CLD_KEY" CLOUDINARY_API_SECRET="$CLD_SECRET" \
 VAPID_PUBLIC_KEY="$VAPID_PUB" VAPID_PRIVATE_KEY="$VAPID_PRIV" VAPID_SUBJECT=mailto:e2e@example.com PUSH_TEST_ENDPOINT_ORIGIN="$PUSH_ORIGIN" \
 LINK_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3902 \
 TURNSTILE_SITE_KEY="$TS_SITE" TURNSTILE_SECRET_KEY="$TS_SECRET" TURNSTILE_VERIFY_URL="$TS_URL" \
 NODE_ENV=test DATABASE_URL=postgresql://testuser@localhost:55433/mysocialapp_e2e JWT_SECRET=e2e-local-only-secret \
 ALLOWED_ORIGINS=http://localhost:5173 FRONTEND_URL=http://localhost:5173 BREVO_API_KEY= SENTRY_DSN= CLEANUP_SECRET= EMAIL_HOST= EMAIL_USER= EMAIL_PASS= \
-CLOUDINARY_CLOUD_NAME= CLOUDINARY_API_KEY= CLOUDINARY_API_SECRET= BOT_CHECKS_IN_TESTS="${BOT_CHECKS_IN_TESTS:-}" SPAM_CHECKS_IN_TESTS="${SPAM_CHECKS_IN_TESTS:-}" nohup node server.js > "$SP/backend.log" 2>&1 &
+BOT_CHECKS_IN_TESTS="${BOT_CHECKS_IN_TESTS:-}" SPAM_CHECKS_IN_TESTS="${SPAM_CHECKS_IN_TESTS:-}" nohup node server.js > "$SP/backend.log" 2>&1 &
 cd ../frontend
 if [ "$E2E_FRONTEND" = dist ]; then
   # The production bundle served with frontend/vercel.json's real headers

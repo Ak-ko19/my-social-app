@@ -61,7 +61,7 @@ describe('CI browser jobs', () => {
   });
 
   it('every suite file is listed in run-all.sh (none silently left out of CI)', () => {
-    const helpers = new Set(['pg', 'pixel-compare', 'serve-dist', 'turnstile-stub', 'link-stub', 'push-stub', 'golive-smoke', 'c1-seed', 'c4-audit-checks', 'a3-visual', 'legal-dates', 'journey-kit']);
+    const helpers = new Set(['pg', 'pixel-compare', 'serve-dist', 'turnstile-stub', 'link-stub', 'push-stub', 'golive-smoke', 'c1-seed', 'c4-audit-checks', 'a3-visual', 'legal-dates', 'journey-kit', 'cloudinary-stub']);
     const suites = fs.readdirSync(path.join(ROOT, 'e2e'))
       .filter((f) => f.endsWith('.cjs'))
       .map((f) => f.replace(/\.cjs$/, ''))

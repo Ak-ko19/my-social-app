@@ -27,20 +27,22 @@ TURNSTILE_SUITES="day11-turnstile"
 PUSH_SUITES="day22-push"
 # Spam checks on (Day 49): off for every other suite, which post freely.
 SPAM_SUITES="day49-spam"
+# Real photo uploads (Day 64), kept by a local Cloudinary stand-in.
+MEDIA_SUITES="journeys-social"
 failed=0
 
 # E2E_ONLY: every name must be a real suite, so a typo can't make CI run
 # (and pass) nothing.
 wanted() { [ -z "$E2E_ONLY" ] || [[ " $E2E_ONLY " == *" $1 "* ]]; }
 for name in $E2E_ONLY; do
-  if [[ " $SUITES $DIST_SUITES $BOT_SUITES $TURNSTILE_SUITES $PUSH_SUITES $SPAM_SUITES a3 " != *" $name "* ]]; then
+  if [[ " $SUITES $DIST_SUITES $BOT_SUITES $TURNSTILE_SUITES $PUSH_SUITES $SPAM_SUITES $MEDIA_SUITES a3 " != *" $name "* ]]; then
     echo "E2E_ONLY: unknown suite \"$name\""
     exit 2
   fi
 done
 
 # The stack's own output goes to stack.log (kept by CI when a run fails).
-fresh_stack() { # [dist|bots|turnstile|push|spam]
+fresh_stack() { # [dist|bots|turnstile|push|spam|media]
   bash e2e-down.sh >/dev/null 2>&1
   case "$1" in
     dist) E2E_FRONTEND=dist bash e2e-up.sh > stack.log 2>&1 ;;
@@ -48,6 +50,7 @@ fresh_stack() { # [dist|bots|turnstile|push|spam]
     turnstile) E2E_TURNSTILE=1 E2E_FRONTEND=dist bash e2e-up.sh > stack.log 2>&1 ;;
     push) E2E_PUSH=1 E2E_FRONTEND=dist bash e2e-up.sh > stack.log 2>&1 ;;
     spam) SPAM_CHECKS_IN_TESTS=1 bash e2e-up.sh > stack.log 2>&1 ;;
+    media) E2E_MEDIA=1 bash e2e-up.sh > stack.log 2>&1 ;;
     *) bash e2e-up.sh > stack.log 2>&1 ;;
   esac
 }
@@ -98,6 +101,13 @@ done
 for s in $SPAM_SUITES; do
   wanted "$s" || continue
   fresh_stack spam
+  node "$s.cjs" > "out-$s.txt" 2>&1
+  report "$s" $? "out-$s.txt"
+done
+
+for s in $MEDIA_SUITES; do
+  wanted "$s" || continue
+  fresh_stack media
   node "$s.cjs" > "out-$s.txt" 2>&1
   report "$s" $? "out-$s.txt"
 done
