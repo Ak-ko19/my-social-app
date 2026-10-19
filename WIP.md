@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 67–68 — API documentation: OpenAPI spec for every endpoint; docs page.
-**Step:** 4 — conversations (DMs + group chats): PLAN.
+**Step:** 5 — groups/pages/reports/admin (PENDING empty): PLAN.
 
 Plan (192 Express routes today; FB/X publish OpenAPI-style references
 with auth, params, bodies, errors per endpoint):
@@ -53,6 +53,10 @@ reports/admin (PENDING empty), 6 docs page + realtime doc.
   More for Day 69-71: GET /posts/:id/comments returns every comment
   (unpaginated); GET /posts/:id/likes echoes postId as a string.
   Reminder: Jest on several files ALWAYS --runInBand (one shared test DB).
+- Step 4 DONE: areas/messages (21 ops: direct + group chats, text/voice/
+  photo, edit, unsend, reactions, forward, read, mute) + Conversation
+  Summary/Message/GroupMember schemas. 0 mismatches; mutation caught.
+  914/914. Day 69-71 note: GET /conversations is unpaginated (every chat).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

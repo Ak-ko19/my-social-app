@@ -233,6 +233,53 @@ const schemas = {
     my_response: s.nullable(s.enum(['going', 'interested'])),
     is_host: s.bool()
   }),
+  // ---- Messages ----
+  ConversationSummary: s.object({
+    conversation_id: s.id(),
+    type: s.enum(['direct', 'group']),
+    other_user_id: s.nullable(s.id('The other person (direct chats); null for a group')),
+    username: s.str("The other person's name, or the group's name"),
+    name: s.str("The group's name (groups only)"),
+    avatar_url: s.nullable(s.str()),
+    member_count: s.int('Groups only'),
+    last_seen: s.nullable(s.time('Direct chats: when the other person was last online')),
+    is_online: s.bool('Direct chats: online right now'),
+    last_message_id: s.nullable(s.id()),
+    last_message: s.nullable(s.str('A preview: the text, "Voice message", "Photo: caption"... (groups: with the sender\'s name)')),
+    last_message_at: s.nullable(s.time()),
+    activity_at: s.time('The last message, or when the chat was created'),
+    unread_count: s.int(),
+    muted: s.bool()
+  }, { optional: ['name', 'member_count', 'last_seen'] }),
+  Message: s.object({
+    id: s.id(),
+    conversation_id: s.id(),
+    sender_id: s.id(),
+    type: s.enum(['text', 'voice', 'image']),
+    content: s.nullable(s.str('The text or a photo\'s caption; null once deleted')),
+    media_url: s.nullable(s.str('The voice note or photo; null once deleted')),
+    duration_seconds: s.nullable(s.int('Voice notes')),
+    status: s.enum(['sent', 'delivered', 'read']),
+    client_temp_id: s.nullable(s.str('Echoed back so the sender can match its optimistic copy')),
+    created_at: s.time(),
+    edited_at: s.nullable(s.time()),
+    deleted_at: s.nullable(s.time('Unsent: kept in place, without its content')),
+    reply_to_message_id: s.nullable(s.id()),
+    is_forwarded: s.bool(),
+    reply_to: s.nullable(s.object({
+      id: s.id(), sender_id: s.id(), type: s.enum(['text', 'voice', 'image']), deleted: s.bool(),
+      content: s.nullable(s.str('The first characters of the original'))
+    })),
+    reactions: s.array(s.object({ user_id: s.id(), reaction: s.str() }), 'In the order they were added')
+  }, { optional: ['reply_to', 'reactions'] }),
+  GroupMember: s.object({
+    id: s.id(), username: s.str(), avatar_url: s.nullable(s.str()),
+    role: s.enum(['admin', 'member']), joined_at: s.time()
+  }),
+  MessageReactions: s.object({
+    conversationId: s.id(), messageId: s.id(),
+    reactions: s.array(s.object({ user_id: s.id(), reaction: s.str() }))
+  }),
   Poll: s.object({
     closes_at: s.time(),
     closed: s.bool(),
