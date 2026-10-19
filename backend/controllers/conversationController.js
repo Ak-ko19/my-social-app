@@ -5,7 +5,7 @@ const logger = require('../utils/logger');
 const { encodeCursor, decodeCursor, getLimit } = require('../utils/cursorPagination');
 const messageService = require('../services/messageService');
 const blockService = require('../services/blockService');
-const { getIO } = require('../sockets');
+const { getIO, syncRooms } = require('../sockets');
 const presence = require('../sockets/presence');
 
 async function getConversations(req, res) {
@@ -183,6 +183,9 @@ async function createConversation(req, res) {
       `INSERT INTO conversation_participants (conversation_id, user_id) VALUES ($1, $2), ($1, $3)`,
       [conversation.id, req.userId, targetUserId]
     );
+    // Day 64: both people's open sockets join the new chat's room now, or
+    // its first messages only appear after a reload (found by journeys-core).
+    syncRooms(conversation.id, [req.userId, targetUserId], 'join');
 
     const other = await db.query('SELECT id, username, avatar_url FROM users WHERE id = $1', [targetUserId]);
 

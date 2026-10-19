@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 64–66 — End-to-end tests: Playwright tests for the 15 most important user journeys; run in CI.
-**Step:** 1 — PLAN. Inventory: 60 regular browser suites already run in CI (smoke on push, full on PRs to master). Map the 15 most important journeys to what exists, find the gaps (journeys only covered piecemeal), and decide: a journeys suite set (e2e/journeys/*) that each walks one journey end to end in the UI, a smoke subset of them on every push. Also AUDIT_REPORT_3 A3: split the two longest suites (a3, day26-a11y) so each part runs in a few minutes.
+**Step:** 2 — journeys-social: PLAN. Plan: 15 journeys, each only through the UI (two people = two browser contexts), in 3 suites of 5 so each stays a few minutes: journeys-core (J1 sign up via landing + first post on Home and profile; J2 log out, log in, reload keeps you in; J3 find bob in search, follow, like + comment, bob sees the notification; J4 private account: follow request, approve, posts appear; J5 DM from profile, live both ways), journeys-social (J6 group chat; J7 photo post; J8 story seen by a friend; J9 group: create, other joins + posts; J10 page + event), journeys-safety (J11 report -> admin removes; J12 block/unblock; J13 edit profile + Arabic RTL and back; J14 change password, old fails new works; J15 delete account, cannot log in). Shared e2e/journey-kit.cjs. journeys-core joins the CI smoke list. Then step 4: AUDIT_REPORT_3 A3 split a3/a11y; step 5: e2e/JOURNEYS.md + CI test that every journey suite runs in CI.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -135,40 +135,13 @@
 - A picked photo now shows after it is shrunk (Day 57): browser suites
   must wait for .image-picker-item before checking the composer.
 
-## Plan
-What's already enforced: check:i18n (every key in EN and AR, plurals,
-no English copies in AR, Arabic for server messages), day26-a11y (axe
-on 117 resting pages in both themes), A3 (every page, EN/AR, 375px).
-What nothing catches yet, one automated check each:
-- Step 1 Text that skips t(): scripts/check-hardcoded-text.cjs scans
-  frontend/src JSX for text children and aria-label / placeholder /
-  title / alt string literals containing letters. Fix what it finds;
-  run it inside check:i18n so CI keeps it.
-- Step 2 Left/right CSS: scan every .css for physical properties
-  (margin-left, padding-right, left:, right:, text-align: left/right,
-  border-left...) that should be logical (inline-start/end). Fix them;
-  same CI hook.
-- Step 3 Open states: axe on dialogs, menus, sheets and pickers (the
-  resting-page suite never opens them) in AR dark 375 and EN light;
-  keyboard: Escape closes, focus returns, Tab stays inside.
-
-## Progress
-- Step 1 done: scripts/check-hardcoded-text.cjs (espree AST): JSX text,
-  aria-label / placeholder / title / alt and our components' text props
-  (label, description, message, confirmLabel...), and setError('...')-
-  style setters (a single camelCase word counts as a state). Skips test
-  files and data-i18n="skip" subtrees. Part of `npm run check:i18n`
-  (so CI). It found nothing real: the bot honeypot's "Website" and the
-  landing page's sample username were marked skip. A Vitest test runs it
-  on fixtures (6 kinds caught, states / t() / skip / tests passed).
-  Verified: Vitest 260, backend 868, check:i18n, lint, c3-landing,
-  day11-bots.
-- Step 2 done: scripts/check-rtl-css.cjs (in check:i18n): margin /
-  padding / border -left/-right, left: / right:, corner radii, text-align
-  / float left/right, and translateX (not translateX(0)); [dir] override
-  rules and /* rtl-ok: why */ lines pass; comments ignored; one-line
-  rules split by declaration. The CSS was already logical: the only
-  physical rule was the always-LTR stack trace (now `start`, same
-  effect); three already-mirrored animations got rtl-ok notes. Vitest
-  test on fixtures. Verified: Vitest 262, backend 868, bundle 220.5,
-  check:i18n, lint, b16-rtl, b11-settings, day12-review.
+## Progress (Day 64–66)
+- Step 1 journeys-core (J1–J5): suite + e2e/journey-kit.cjs written; added
+  to run-all.sh SUITES and the CI smoke list. Bug it found: a brand-new
+  direct chat wasn't live (sockets join chat rooms only on connect) --
+  fixed by moving groupController's syncRooms into sockets/index.js and
+  calling it from createConversation; tests/api/newConversationLive.test.js
+  (mutation caught). STEP DONE: journeys-core 20/20; b9-dm, b10-groups,
+  a2-walkthrough, day32-forward, day33-group-admins green; backend 886/886.
+- Step 2 journeys-social (J6–J10), step 3 journeys-safety (J11–J15),
+  step 4 AUDIT_REPORT_3 A3 split a3/a11y, step 5 e2e/JOURNEYS.md + CI test.

@@ -135,8 +135,9 @@ jobs:
     env:
       E2E_EXTERNAL_DB: '1'
       # walkthrough (feed, post, DM, live chat), reports + moderation,
-      # production build + CSP, bot checks.
-      E2E_ONLY: a2-walkthrough day12-report day10-errors day11-bots
+      # production build + CSP, bot checks; Day 64: the core user journeys
+      # (sign up, post, follow, private account, live messages).
+      E2E_ONLY: a2-walkthrough day12-report day10-errors day11-bots journeys-core
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -281,4 +281,16 @@ function getIO() {
   return io;
 }
 
-module.exports = { initSocket, getIO };
+// Moves these users' live sockets into/out of a conversation's room.
+// Sockets join their chats' rooms only when they connect (plus a personal
+// user_<id> room), so a new chat or a member change must move them now.
+function syncRooms(conversationId, userIds, action) {
+  if (!io) return; // No socket server (e.g. tests) -- REST still works; clients refetch.
+  for (const id of userIds) {
+    const target = io.in(`user_${id}`);
+    if (action === 'join') target.socketsJoin(`conv_${conversationId}`);
+    else target.socketsLeave(`conv_${conversationId}`);
+  }
+}
+
+module.exports = { initSocket, getIO, syncRooms };

@@ -1,7 +1,7 @@
 const db = require('../db');
 const { sendServerError } = require('../utils/sendError');
 const { mediaOfConversation, deleteMedia } = require('../services/mediaCleanupService');
-const { getIO } = require('../sockets');
+const { getIO, syncRooms } = require('../sockets');
 const { toUnicode } = require('../utils/myanmarText'); // Day 43: Zawgyi -> Unicode
 
 // B10 group chat. Rules:
@@ -79,28 +79,13 @@ async function getMembers(conversationId) {
   return result.rows;
 }
 
-// Moves these users' live sockets into/out of the conversation's room
-// (sockets also join a personal user_<id> room on connect).
-function syncRooms(conversationId, userIds, action) {
-  try {
-    const io = getIO();
-    for (const id of userIds) {
-      const target = io.in(`user_${id}`);
-      if (action === 'join') target.socketsJoin(`conv_${conversationId}`);
-      else target.socketsLeave(`conv_${conversationId}`);
-    }
-  } catch (err) {
-    // No socket server (e.g. tests) -- REST still works; clients refetch.
-  }
-}
-
 function emitGroupUpdated(conversationId, extraUserIds = []) {
   try {
     const io = getIO();
     io.to(`conv_${conversationId}`).emit('group_updated', { conversationId });
     for (const id of extraUserIds) io.to(`user_${id}`).emit('group_updated', { conversationId });
   } catch (err) {
-    // see syncRooms
+    // No socket server (e.g. tests) -- REST still works; clients refetch.
   }
 }
 
