@@ -253,7 +253,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 64–66 — End-to-end tests
 - [x] Playwright tests for the 15 most important user journeys; run in CI. *(journeys-core / -social / -safety, e2e/JOURNEYS.md; AUDIT_REPORT_3 A3 done too — see Progress Log.)*
 ### Day 67–68 — API documentation
-- [ ] OpenAPI spec for every endpoint; docs page for developers.
+- [x] OpenAPI spec for every endpoint; docs page for developers. *(backend/docs/openapi, GET /docs, docs/REALTIME.md; every API test's responses checked against it — see Progress Log.)*
 ### Day 69–71 — Code health
 - [ ] Remove duplicated logic, split large files, consistent error handling, update README and CLAUDE.md.
 ### Day 72–73 — Offline + PWA polish
@@ -2182,3 +2182,54 @@ is in `e2e/JOURNEYS.md`.
     perf 41/41.
   - a11y (125 page checks: 59 + 59 + 7) and A3 EN/AR (288 each, in 4
     parts) ran green in step 4 on the same app code.
+
+### 2026-10-19 — Days 67–68: API documentation
+- **The spec (`56987ad` … `49ee052`):** `backend/docs/openapi` builds an
+  OpenAPI 3.1 description of all 194 operations from area files. Each
+  operation documents its auth, parameters, body, every status it answers
+  with and the response schema. Small helpers keep the operations short
+  and alike.
+- **It can't drift:**
+  - `openapiSpec.test.js` walks the real Express router: every route is
+    documented and every documented operation exists. The auth must match
+    the route's middleware, uploads must say multipart, path params must
+    match, and every `$ref` must resolve.
+- **Better approach (rule 9):** instead of a separate hand-picked contract
+  test, `tests/helpers/contract.js` (installed by `setupTestApp`) checks
+  *every* response the ~920 API tests see:
+  - the status code is documented;
+  - the content type is one documented for that status;
+  - a JSON body matches its schema.
+  - A mismatch fails the test file, and mutations are caught in every
+    area.
+  - A coverage report at the end lists the operations no test reached.
+    The five it found got tests, so all 194 operations are checked.
+- **What documenting found and fixed:**
+  - Every plain-text answer (errors, confirmations) was sent as
+    `text/html`, Express's default. They are `text/plain` now: correct,
+    and never rendered as a page.
+  - The spec had missed some real shapes: notification types
+    `poll_ended`/`poll_ended_own`, the admin log's 64-bit ids (strings),
+    and storage warnings as objects.
+- **Docs page (`6563f96`):**
+  - `GET /docs` is Swagger UI served from the package (5.33.1, no CDN);
+    its script is a file, so the API's CSP stays `script-src 'self'`.
+    `GET /openapi.json` serves the spec.
+  - Both are on outside production; in production only with `API_DOCS=1`
+    (.env.example, GO_LIVE_CHECKLIST).
+  - Checked in Edge at 1280 and 375 px: no sideways scroll, 0 console
+    errors.
+  - `backend/docs/REALTIME.md` documents every Socket.IO event; a test
+    keeps it equal to the code, both ways.
+- **Decision (logged):** the docs are off in production by default. This
+  is the app's own API, and every route is protected either way, so there
+  is no need to publish its map.
+- **API issues seen while documenting (for Days 69–71, code health):**
+  - Unpaginated lists: `GET /users/:id/followers` and `/following` (the app
+    uses `/connections`), `GET /posts/:id/comments`, `GET /conversations`.
+  - `follow-counts` and `GET /posts/:id/likes` echo the id as a string.
+- **Tests at close:**
+  - backend 924/924, API operations reached 194/194; check:i18n.
+  - Full browser run in small batches: all 60 regular suites, the 6
+    special-stack suites, journeys-social 17, perf 41/41, a11y 125 (in 3
+    parts) and A3 EN/AR (288 each, in 4 parts).

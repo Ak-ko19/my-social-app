@@ -1,74 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 67–68 — API documentation: OpenAPI spec for every endpoint; docs page.
-**Step:** Day close — full browser run in batches.
-
-Plan (192 Express routes today; FB/X publish OpenAPI-style references
-with auth, params, bodies, errors per endpoint):
-- Spec as code: backend/docs/openapi/ (index.js builds an OpenAPI 3.1
-  object from per-area files + shared components: User, Post, Comment,
-  Message, Error...; small helpers so 192 ops stay readable).
-- Can't drift: tests/api/openapiSpec.test.js walks the real Express
-  router and checks, both ways: every route documented and every
-  documented op exists; security = the middleware (authMiddleware ->
-  bearer, optionalAuth -> optional, requireAdmin -> admin, none ->
-  public); path params match; upload routes say multipart/form-data;
-  every $ref resolves. While areas are being written, a PENDING list of
-  route files shrinks to empty (step 5 removes it).
-- Served: GET /openapi.json and /docs (swagger-ui-dist, local files, no
-  CDN; CSP for that page only). On outside production; in production
-  only with API_DOCS=1 (internal API -- no need to publish its map).
-- Step 6: contract test (ajv): a seeded world, the main GET endpoints
-  and key writes validated against their documented response schemas;
-  socket events documented in docs/REALTIME.md + a test that every
-  emitted/handled event name is in it; README/CLAUDE.md pointers.
-Steps: 1 framework+core/auth/sessions/misc, 2 profile/users/social
-graph/search/notifications, 3 posts/drafts/comments/likes/saved/
-hashtags/explore/stories/events, 4 conversations, 5 groups/pages/
-reports/admin (PENDING empty), 6 docs page + realtime doc.
-
-## Progress (Day 67–68)
-- Step 1 DONE: docs/openapi (helpers, components, index, areas/system +
-  auth: 25 ops). openapiSpec.test (9: both ways, auth from middleware,
-  multipart, path params, tags, refs; PENDING = 27 route files). BETTER
-  than the plan's step-6 contract test: tests/helpers/contract.js, put
-  in setupTestApp -- EVERY response of the 900 API tests is checked
-  (status documented, content type, JSON schema); a mismatch fails the
-  file. It found: every plain-text answer went out as text/html
-  (Express default) -> server.js sends strings as text/plain (safer, and
-  what the docs say). Mutations caught (schema, auth). Backend 914/914;
-  journeys-safety, b15-lang, day12-report, day11-bots green; check:i18n.
-- Step 2 DONE: areas/people (61 ops: profiles, following, safety,
-  search, notifications, hidden words, activity) + User/Post/Poll/
-  Notification schemas; op({ upload }) adds 400/429/502. Contract found
-  poll_ended / poll_ended_own missing from the notification types. 914/914.
-  API issues seen while documenting (for Day 69-71 code health):
-  GET /users/:id/followers + /following are unpaginated (the app uses
-  /connections); follow-counts echoes userId as a string.
-  Idea for step 6: report documented ops no API test exercises.
-- Step 3 DONE: areas/content (56 ops: posts, polls, drafts, comments,
-  reactions, saved/collections, hashtags, Explore, profile tabs, stories,
-  events) + PostRow/Comment/Draft/Collection/Story/Event schemas. Contract:
-  0 mismatches; a mutation (Post.username int) is caught. 914/914.
-  More for Day 69-71: GET /posts/:id/comments returns every comment
-  (unpaginated); GET /posts/:id/likes echoes postId as a string.
-  Reminder: Jest on several files ALWAYS --runInBand (one shared test DB).
-- Step 4 DONE: areas/messages (21 ops: direct + group chats, text/voice/
-  photo, edit, unsend, reactions, forward, read, mute) + Conversation
-  Summary/Message/GroupMember schemas. 0 mismatches; mutation caught.
-  914/914. Day 69-71 note: GET /conversations is unpaginated (every chat).
-- Step 5 DONE: areas/groups (40 ops: groups, pages, reports, admin) +
-  Group/Page/Report/AdminReport/ErrorGroup/AdminAction. ALL 192 routes
-  documented; PENDING removed (test: every route documented). Contract
-  found: admin_actions.id is a string (bigint), storage warnings are
-  { source, level }. Mutation caught. Backend 913/913.
-- Step 6 DONE: routes/docsRoutes (GET /openapi.json, GET /docs = Swagger UI
-  5.33.1 from local files, script as a file under helmet CSP; off in
-  production unless API_DOCS=1); docs/REALTIME.md + realtimeDoc.test (both
-  ways, mutation caught); coverage report in globalTeardown -> 5 unreached
-  ops got tests (apiCoverageGaps) -> 194/194 reached. Page checked in Edge:
-  1280 + 375, 25 tags, no sideways scroll, 0 console errors. 924/924.
-- Day close: full browser run in batches, then Progress Log + tick.
+**Day:** 69–71 — Code health (not started).
+**Step:** —
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -213,5 +146,11 @@ reports/admin (PENDING empty), 6 docs page + realtime doc.
   notification type (notifySystem) -- for Day 81–82 notifications upgrade
   or the Day 85–87 buffer.
 
+- API (Day 68): a new or changed route updates backend/docs/openapi (the
+  spec test and every API test's contract check fail otherwise); a new
+  socket event goes in backend/docs/REALTIME.md. Jest on several files:
+  always --runInBand. Code-health items from documenting: unpaginated
+  followers/following, comments, conversations; ids echoed as strings in
+  follow-counts and post likes.
 - e2e/README.md suite table stops at Day 5 (+ the journeys row): finish
   it in Day 69–71 (code health: update README).
