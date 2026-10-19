@@ -1,17 +1,16 @@
 // Day 46: saved collections -- see services/collectionService.
 const collectionService = require('../services/collectionService');
 const { getPagination } = require('../utils/pagination');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 
 const idParam = (raw) => (/^\d+$/.test(raw) ? Number(raw) : null);
 
-// Runs `work`; a CollectionError becomes its status and message.
+// Runs `work`; a CollectionError becomes its status and message (sendError).
 const handle = (fallback, work) => async (req, res) => {
   try {
     await work(req, res);
   } catch (err) {
-    if (err instanceof collectionService.CollectionError) return res.status(err.status).send(err.message);
-    sendServerError(res, err, fallback);
+    sendError(res, err, fallback);
   }
 };
 const withId = (param, invalid, fallback, work) => handle(fallback, async (req, res) => {

@@ -2,7 +2,7 @@ const express = require('express');
 const authMiddleware = require('../middleware/authMiddleware');
 const { linkPreviewLimiter } = require('../middleware/rateLimiter');
 const { getPreview, normalizeUrl } = require('../services/linkPreviewService');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ router.get('/link-preview', authMiddleware, linkPreviewLimiter, async (req, res)
     if (!preview) return res.status(204).end();
     res.json(preview);
   } catch (err) {
-    sendServerError(res, err, 'Loading the link preview failed.');
+    sendError(res, err, 'Loading the link preview failed.');
   }
 });
 

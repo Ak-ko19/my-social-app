@@ -1,6 +1,6 @@
 const db = require('../db');
 const { getPagination } = require('../utils/pagination');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const blockService = require('../services/blockService');
 const notificationService = require('../services/notificationService');
 
@@ -83,7 +83,7 @@ async function followUser(req, res) {
     if (err.code === '23505') {
       return res.status(400).send('You are already following this user');
     }
-    sendServerError(res, err, 'Follow failed. Please try again later.');
+    sendError(res, err, 'Follow failed. Please try again later.');
   }
 }
 
@@ -105,7 +105,7 @@ async function unfollowUser(req, res) {
     }
     res.send('User unfollowed successfully');
   } catch (err) {
-    sendServerError(res, err, 'Unfollow failed. Please try again later.');
+    sendError(res, err, 'Unfollow failed. Please try again later.');
   }
 }
 
@@ -158,7 +158,7 @@ async function getConnections(req, res) {
     const hasMore = result.rows.length > limit;
     res.json({ users: hasMore ? result.rows.slice(0, limit) : result.rows, page, hasMore });
   } catch (err) {
-    sendServerError(res, err, 'Loading connections failed. Please try again later.');
+    sendError(res, err, 'Loading connections failed. Please try again later.');
   }
 }
 
@@ -190,7 +190,7 @@ async function getMutualFriends(req, res) {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    sendServerError(res, err, 'Loading mutual friends failed. Please try again later.');
+    sendError(res, err, 'Loading mutual friends failed. Please try again later.');
   }
 }
 
@@ -211,7 +211,7 @@ async function getFollowers(req, res) {
     `, [req.params.id]);
     res.json(result.rows);
   } catch (err) {
-    sendServerError(res, err, 'Fetch followers failed. Please try again later.');
+    sendError(res, err, 'Fetch followers failed. Please try again later.');
   }
 }
 
@@ -232,7 +232,7 @@ async function getFollowing(req, res) {
     `, [req.params.id]);
     res.json(result.rows);
   } catch (err) {
-    sendServerError(res, err, 'Fetch following failed. Please try again later.');
+    sendError(res, err, 'Fetch following failed. Please try again later.');
   }
 }
 
@@ -259,7 +259,7 @@ async function getFollowCounts(req, res) {
       friendsCount: counts.rows[0].friends
     });
   } catch (err) {
-    sendServerError(res, err, 'Fetch follow counts failed. Please try again later.');
+    sendError(res, err, 'Fetch follow counts failed. Please try again later.');
   }
 }
 
@@ -274,7 +274,7 @@ async function getFollowRequests(req, res) {
     `, [req.userId]);
     res.json(result.rows);
   } catch (err) {
-    sendServerError(res, err, 'Fetch follow requests failed. Please try again later.');
+    sendError(res, err, 'Fetch follow requests failed. Please try again later.');
   }
 }
 
@@ -296,7 +296,7 @@ async function approveFollowRequest(req, res) {
     await notificationService.notify({ userId: Number(req.params.followerId), actorId: req.userId, type: 'follow_accepted' });
     res.status(200).send('Follow request approved');
   } catch (err) {
-    sendServerError(res, err, 'Approve follow request failed. Please try again later.');
+    sendError(res, err, 'Approve follow request failed. Please try again later.');
   }
 }
 
@@ -314,7 +314,7 @@ async function denyFollowRequest(req, res) {
     }
     res.status(200).send('Follow request denied');
   } catch (err) {
-    sendServerError(res, err, 'Deny follow request failed. Please try again later.');
+    sendError(res, err, 'Deny follow request failed. Please try again later.');
   }
 }
 

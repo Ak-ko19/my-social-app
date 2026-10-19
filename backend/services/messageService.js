@@ -5,6 +5,7 @@
 // never drift -- fixing a bug or tightening a validation rule here fixes it
 // for both at once.
 const sanitizeHtml = require('sanitize-html');
+const { HttpError } = require('../utils/httpError');
 const db = require('../db');
 const interactionService = require('./interactionService');
 const { pushNewMessage } = require('./pushService');
@@ -18,38 +19,33 @@ const { toUnicode } = require('../utils/myanmarText');
 const MAX_MESSAGE_LENGTH = 5000;
 const MAX_CLIENT_TEMP_ID_LENGTH = 255;
 
-class MessageValidationError extends Error {
+class MessageValidationError extends HttpError {
   constructor(message) {
-    super(message);
-    this.name = 'MessageValidationError';
+    super(400, message);
   }
 }
 
-class NotParticipantError extends Error {
+class NotParticipantError extends HttpError {
   constructor(message = 'You are not a participant in this conversation') {
-    super(message);
-    this.name = 'NotParticipantError';
+    super(403, message);
   }
 }
 
-class RateLimitError extends Error {
+class RateLimitError extends HttpError {
   constructor(message = 'You are sending messages too quickly. Please slow down.') {
-    super(message);
-    this.name = 'RateLimitError';
+    super(429, message);
   }
 }
 
-class MessageNotFoundError extends Error {
+class MessageNotFoundError extends HttpError {
   constructor(message = 'Message not found') {
-    super(message);
-    this.name = 'MessageNotFoundError';
+    super(404, message);
   }
 }
 
-class NotMessageOwnerError extends Error {
+class NotMessageOwnerError extends HttpError {
   constructor(message = 'You can only delete your own messages') {
-    super(message);
-    this.name = 'NotMessageOwnerError';
+    super(403, message);
   }
 }
 
@@ -58,17 +54,15 @@ class NotMessageOwnerError extends Error {
 // conversation's history can't be quietly rewritten later.
 const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000;
 
-class NotEditableError extends Error {
+class NotEditableError extends HttpError {
   constructor(message = 'This message can no longer be edited') {
-    super(message);
-    this.name = 'NotEditableError';
+    super(403, message);
   }
 }
 
-class BlockedError extends Error {
+class BlockedError extends HttpError {
   constructor(message = 'You cannot message this user') {
-    super(message);
-    this.name = 'BlockedError';
+    super(403, message);
   }
 }
 

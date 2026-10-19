@@ -2,7 +2,7 @@ const express = require('express');
 const authMiddleware = require('../middleware/authMiddleware');
 const { accountActionLimiter } = require('../middleware/rateLimiter');
 const pushService = require('../services/pushService');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.post('/push/subscribe', authMiddleware, accountActionLimiter, async (req,
     if (result !== 'ok') return res.status(400).send(result);
     res.status(201).json({ ok: true });
   } catch (err) {
-    sendServerError(res, err, 'Turning on push notifications failed. Please try again later.');
+    sendError(res, err, 'Turning on push notifications failed. Please try again later.');
   }
 });
 
@@ -29,7 +29,7 @@ router.delete('/push/subscribe', authMiddleware, async (req, res) => {
     await pushService.removeSubscription(req.userId, req.body?.endpoint);
     res.status(204).end();
   } catch (err) {
-    sendServerError(res, err, 'Turning off push notifications failed. Please try again later.');
+    sendError(res, err, 'Turning off push notifications failed. Please try again later.');
   }
 });
 

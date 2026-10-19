@@ -3,6 +3,7 @@ const db = require('../db');
 const allowedOrigins = require('../config/allowedOrigins');
 const socketAuthMiddleware = require('./socketAuth');
 const messageService = require('../services/messageService');
+const { HttpError } = require('../utils/httpError');
 const presence = require('./presence');
 const { report } = require('../services/errorLogService');
 const logger = require('../utils/logger');
@@ -17,15 +18,10 @@ function socketFailure(event, socket, err) {
 // message_error's code lets the frontend tell "edit and resend" (validation),
 // "can't be sent here" (not a participant) apart from "retry the same send"
 // (transient server/DB failure).
+// Day 69: read from the error's HTTP status, the same one REST answers with.
+const CODE_FOR_STATUS = { 400: 'VALIDATION', 403: 'FORBIDDEN', 404: 'NOT_FOUND', 429: 'RATE_LIMITED' };
 function errorCodeFor(err) {
-  if (err instanceof messageService.MessageValidationError) return 'VALIDATION';
-  if (err instanceof messageService.NotParticipantError) return 'FORBIDDEN';
-  if (err instanceof messageService.NotMessageOwnerError) return 'FORBIDDEN';
-  if (err instanceof messageService.BlockedError) return 'FORBIDDEN';
-  if (err instanceof messageService.NotEditableError) return 'FORBIDDEN';
-  if (err instanceof messageService.MessageNotFoundError) return 'NOT_FOUND';
-  if (err instanceof messageService.RateLimitError) return 'RATE_LIMITED';
-  return 'SERVER_ERROR';
+  return (err instanceof HttpError && CODE_FOR_STATUS[err.status]) || 'SERVER_ERROR';
 }
 
 let io = null;

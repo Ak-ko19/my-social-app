@@ -1,6 +1,6 @@
 const db = require('../db');
 const { postAudienceSql } = require('../services/postVisibilityService');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 const blockService = require('../services/blockService');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
@@ -117,7 +117,7 @@ async function getUserPosts(req, res) {
     }
     res.json({ posts: hasMore ? result.rows.slice(0, limit) : result.rows, pinned, currentPage: page, hasMore });
   } catch (err) {
-    sendServerError(res, err, 'Loading profile posts failed. Please try again later.');
+    sendError(res, err, 'Loading profile posts failed. Please try again later.');
   }
 }
 

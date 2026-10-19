@@ -1,6 +1,6 @@
+const { HttpError, sendError } = require('../utils/httpError');
 const db = require('../db');
 const { escapeLike } = require('../utils/escapeLike');
-const { sendServerError } = require('../utils/sendError');
 const { mediaOfPage, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
@@ -21,14 +21,7 @@ const notificationService = require('../services/notificationService');
 
 const CATEGORIES = ['business', 'creator', 'brand', 'organization', 'community', 'other'];
 
-class PageError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
-const handle = (res, err, fallback) =>
-  err instanceof PageError ? res.status(err.status).send(err.message) : sendServerError(res, err, fallback);
+class PageError extends HttpError {}
 
 function cleanFields(body, { partial = false } = {}) {
   const out = {};
@@ -105,7 +98,7 @@ async function createPage(req, res) {
     );
     res.status(201).json(await loadPage(result.rows[0].id, req.userId));
   } catch (err) {
-    handle(res, err, 'Creating the page failed. Please try again later.');
+    sendError(res, err, 'Creating the page failed. Please try again later.');
   }
 }
 
@@ -173,7 +166,7 @@ async function listPages(req, res) {
       discover: discover.pages, discoverHasMore: discover.hasMore
     });
   } catch (err) {
-    handle(res, err, 'Loading pages failed. Please try again later.');
+    sendError(res, err, 'Loading pages failed. Please try again later.');
   }
 }
 
@@ -182,7 +175,7 @@ async function getPage(req, res) {
   try {
     res.json(await loadPage(Number(req.params.id), req.userId));
   } catch (err) {
-    handle(res, err, 'Loading the page failed. Please try again later.');
+    sendError(res, err, 'Loading the page failed. Please try again later.');
   }
 }
 
@@ -197,7 +190,7 @@ async function updatePage(req, res) {
     await db.query(`UPDATE pages SET ${sets} WHERE id = $1`, [page.id, ...keys.map((k) => fields[k])]);
     res.json(await loadPage(page.id, req.userId));
   } catch (err) {
-    handle(res, err, 'Updating the page failed. Please try again later.');
+    sendError(res, err, 'Updating the page failed. Please try again later.');
   }
 }
 
@@ -210,7 +203,7 @@ async function deletePage(req, res) {
     deleteMedia(media);
     res.json({ deleted: true });
   } catch (err) {
-    handle(res, err, 'Deleting the page failed. Please try again later.');
+    sendError(res, err, 'Deleting the page failed. Please try again later.');
   }
 }
 
@@ -222,7 +215,7 @@ async function followPage(req, res) {
     await db.query('INSERT INTO page_follows (page_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [page.id, req.userId]);
     res.json(await loadPage(page.id, req.userId));
   } catch (err) {
-    handle(res, err, 'Following the page failed. Please try again later.');
+    sendError(res, err, 'Following the page failed. Please try again later.');
   }
 }
 
@@ -240,7 +233,7 @@ async function unfollowPage(req, res) {
     });
     res.json(visible || { id: pageId, is_following: false });
   } catch (err) {
-    handle(res, err, 'Unfollowing the page failed. Please try again later.');
+    sendError(res, err, 'Unfollowing the page failed. Please try again later.');
   }
 }
 
@@ -261,7 +254,7 @@ async function listAdmins(req, res) {
     const owner = (await db.query('SELECT id, username, avatar_url FROM users WHERE id = $1', [page.owner_id])).rows[0];
     res.json({ owner, admins: result.rows });
   } catch (err) {
-    handle(res, err, 'Loading the page admins failed. Please try again later.');
+    sendError(res, err, 'Loading the page admins failed. Please try again later.');
   }
 }
 
@@ -298,7 +291,7 @@ async function addAdmin(req, res) {
     }
     res.status(201).json(person);
   } catch (err) {
-    handle(res, err, 'Adding the admin failed. Please try again later.');
+    sendError(res, err, 'Adding the admin failed. Please try again later.');
   }
 }
 
@@ -315,7 +308,7 @@ async function removeAdmin(req, res) {
     await db.query("DELETE FROM notifications WHERE page_id = $1 AND user_id = $2 AND type = 'page_admin'", [page.id, targetId]);
     res.json({ removed: true });
   } catch (err) {
-    handle(res, err, 'Removing the admin failed. Please try again later.');
+    sendError(res, err, 'Removing the admin failed. Please try again later.');
   }
 }
 
@@ -345,7 +338,7 @@ async function listPagePosts(req, res) {
     const hasMore = result.rows.length > limit;
     res.json({ posts: hasMore ? result.rows.slice(0, limit) : result.rows, currentPage: pageNum, hasMore });
   } catch (err) {
-    handle(res, err, 'Loading page posts failed. Please try again later.');
+    sendError(res, err, 'Loading page posts failed. Please try again later.');
   }
 }
 

@@ -1,12 +1,8 @@
 // Day 50: group rules shared outside the groups controller.
+const { HttpError } = require('../utils/httpError');
 const db = require('../db');
 
-class GroupRuleError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
+class GroupRuleError extends HttpError {}
 
 async function isBanned(communityId, userId) {
   const result = await db.query('SELECT 1 FROM community_bans WHERE community_id = $1 AND user_id = $2', [communityId, userId]);

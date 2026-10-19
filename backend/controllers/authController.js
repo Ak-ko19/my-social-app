@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { mediaOfUser, deleteMedia } = require('../services/mediaCleanupService');
 const { sendEmail, emailEnabled } = require('../utils/email');
 const { createSession, revokeOtherSessions, disconnectOtherSockets } = require('../services/sessionService');
@@ -89,7 +89,7 @@ async function signup(req, res) {
     if (err.code === '23505') {
       return res.status(400).send('Email or username already exists');
     }
-    sendServerError(res, err, 'Signup failed. Please try again later.');
+    sendError(res, err, 'Signup failed. Please try again later.');
   }
 }
 
@@ -116,7 +116,7 @@ async function verifyEmail(req, res) {
     );
     res.status(200).send('Email verified successfully');
   } catch (err) {
-    sendServerError(res, err, 'Email verification failed. Please try again later.');
+    sendError(res, err, 'Email verification failed. Please try again later.');
   }
 }
 
@@ -135,7 +135,7 @@ async function resendVerification(req, res) {
     await issueVerificationEmail(req.userId, result.rows[0].email, result.rows[0].language);
     res.status(200).send('Verification email sent');
   } catch (err) {
-    sendServerError(res, err, 'Resend verification failed. Please try again later.');
+    sendError(res, err, 'Resend verification failed. Please try again later.');
   }
 }
 
@@ -202,7 +202,7 @@ async function login(req, res) {
       language: user.language
     });
   } catch (err) {
-    sendServerError(res, err, 'Login failed. Please try again later.');
+    sendError(res, err, 'Login failed. Please try again later.');
   }
 }
 
@@ -237,7 +237,7 @@ async function forgotPassword(req, res) {
     await sendEmail({ to: email, ...emailText(result.rows[0].language, 'reset', { link: `${FRONTEND_URL}/reset-password/${token}` }) });
     res.status(200).send(genericMessage);
   } catch (err) {
-    sendServerError(res, err, 'Forgot password failed. Please try again later.');
+    sendError(res, err, 'Forgot password failed. Please try again later.');
   }
 }
 
@@ -278,7 +278,7 @@ async function resetPassword(req, res) {
 
     res.status(200).send('Password reset successfully');
   } catch (err) {
-    sendServerError(res, err, 'Reset password failed. Please try again later.');
+    sendError(res, err, 'Reset password failed. Please try again later.');
   }
 }
 
@@ -319,7 +319,7 @@ async function changePassword(req, res) {
     if (!req.sessionId) body.token = (await createSession(req.userId, req)).token;
     res.status(200).json(body);
   } catch (err) {
-    sendServerError(res, err, 'Change password failed. Please try again later.');
+    sendError(res, err, 'Change password failed. Please try again later.');
   }
 }
 
@@ -348,7 +348,7 @@ async function deactivateAccount(req, res) {
     await db.query('UPDATE users SET is_deactivated = true, deactivated_at = now() WHERE id = $1', [req.userId]);
     res.status(200).send('Account deactivated');
   } catch (err) {
-    sendServerError(res, err, 'Deactivate account failed. Please try again later.');
+    sendError(res, err, 'Deactivate account failed. Please try again later.');
   }
 }
 
@@ -382,7 +382,7 @@ async function deleteAccount(req, res) {
     deleteMedia(media);
     res.status(200).send('Account deleted');
   } catch (err) {
-    sendServerError(res, err, 'Delete account failed. Please try again later.');
+    sendError(res, err, 'Delete account failed. Please try again later.');
   }
 }
 

@@ -1,6 +1,6 @@
 const db = require('../db');
 const interactionService = require('../services/interactionService');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const logger = require('../utils/logger');
 const { encodeCursor, decodeCursor, getLimit } = require('../utils/cursorPagination');
 const messageService = require('../services/messageService');
@@ -127,7 +127,7 @@ async function getConversations(req, res) {
     all.sort((x, y) => new Date(y.activity_at) - new Date(x.activity_at));
     res.json(all);
   } catch (err) {
-    sendServerError(res, err, 'Fetch conversations failed. Please try again later.');
+    sendError(res, err, 'Fetch conversations failed. Please try again later.');
   }
 }
 
@@ -216,7 +216,7 @@ async function createConversation(req, res) {
         avatar_url: other.rows[0].avatar_url
       });
     }
-    sendServerError(res, err, 'Create conversation failed. Please try again later.');
+    sendError(res, err, 'Create conversation failed. Please try again later.');
   }
 }
 
@@ -263,7 +263,7 @@ async function getMessages(req, res) {
     const withPreviews = await messageService.attachReactions(await messageService.attachReplyPreviews(conversationId, page.reverse()));
     res.json({ messages: withPreviews.map(messageService.scrubDeletedContent), nextCursor });
   } catch (err) {
-    sendServerError(res, err, 'Fetch messages failed. Please try again later.');
+    sendError(res, err, 'Fetch messages failed. Please try again later.');
   }
 }
 
@@ -288,19 +288,7 @@ async function sendMessage(req, res) {
 
     res.status(201).json(message);
   } catch (err) {
-    if (err instanceof messageService.MessageValidationError) {
-      return res.status(400).send(err.message);
-    }
-    if (err instanceof messageService.NotParticipantError) {
-      return res.status(403).send(err.message);
-    }
-    if (err instanceof messageService.BlockedError) {
-      return res.status(403).send(err.message);
-    }
-    if (err instanceof messageService.RateLimitError) {
-      return res.status(429).send(err.message);
-    }
-    sendServerError(res, err, 'Send message failed. Please try again later.');
+    sendError(res, err, 'Send message failed. Please try again later.');
   }
 }
 
@@ -344,19 +332,7 @@ async function sendVoiceMessage(req, res) {
 
     res.status(201).json(message);
   } catch (err) {
-    if (err instanceof messageService.MessageValidationError) {
-      return res.status(400).send(err.message);
-    }
-    if (err instanceof messageService.NotParticipantError) {
-      return res.status(403).send(err.message);
-    }
-    if (err instanceof messageService.BlockedError) {
-      return res.status(403).send(err.message);
-    }
-    if (err instanceof messageService.RateLimitError) {
-      return res.status(429).send(err.message);
-    }
-    sendServerError(res, err, 'Send voice message failed. Please try again later.');
+    sendError(res, err, 'Send voice message failed. Please try again later.');
   }
 }
 
@@ -383,16 +359,7 @@ async function deleteMessage(req, res) {
 
     res.status(200).json(messageService.scrubDeletedContent(message));
   } catch (err) {
-    if (err instanceof messageService.MessageValidationError) {
-      return res.status(400).send(err.message);
-    }
-    if (err instanceof messageService.MessageNotFoundError) {
-      return res.status(404).send(err.message);
-    }
-    if (err instanceof messageService.NotMessageOwnerError) {
-      return res.status(403).send(err.message);
-    }
-    sendServerError(res, err, 'Delete message failed. Please try again later.');
+    sendError(res, err, 'Delete message failed. Please try again later.');
   }
 }
 
@@ -407,10 +374,7 @@ async function markConversationRead(req, res) {
 
     res.send('Conversation marked as read');
   } catch (err) {
-    if (err instanceof messageService.NotParticipantError) {
-      return res.status(403).send(err.message);
-    }
-    sendServerError(res, err, 'Mark conversation as read failed. Please try again later.');
+    sendError(res, err, 'Mark conversation as read failed. Please try again later.');
   }
 }
 
@@ -438,11 +402,7 @@ async function sendImageMessage(req, res) {
     }
     res.status(201).json(message);
   } catch (err) {
-    if (err instanceof messageService.MessageValidationError) return res.status(400).send(err.message);
-    if (err instanceof messageService.NotParticipantError) return res.status(403).send(err.message);
-    if (err instanceof messageService.BlockedError) return res.status(403).send(err.message);
-    if (err instanceof messageService.RateLimitError) return res.status(429).send(err.message);
-    sendServerError(res, err, 'Send image failed. Please try again later.');
+    sendError(res, err, 'Send image failed. Please try again later.');
   }
 }
 
@@ -463,11 +423,7 @@ async function editMessage(req, res) {
     }
     res.json(message);
   } catch (err) {
-    if (err instanceof messageService.MessageValidationError) return res.status(400).send(err.message);
-    if (err instanceof messageService.MessageNotFoundError) return res.status(404).send(err.message);
-    if (err instanceof messageService.NotMessageOwnerError) return res.status(403).send(err.message);
-    if (err instanceof messageService.NotEditableError) return res.status(403).send(err.message);
-    sendServerError(res, err, 'Edit message failed. Please try again later.');
+    sendError(res, err, 'Edit message failed. Please try again later.');
   }
 }
 
@@ -491,12 +447,10 @@ async function setMessageReaction(req, res) {
     }
     res.json(update);
   } catch (err) {
-    if (err instanceof messageService.MessageValidationError) return res.status(400).send(err.message);
-    if (err instanceof messageService.NotParticipantError) return res.status(403).send(err.message);
-    if (err instanceof messageService.BlockedError) return res.status(403).send(err.message);
-    if (err instanceof messageService.MessageNotFoundError) return res.status(404).send(err.message);
+    // An unsent message can't take reactions or be forwarded: a conflict
+    // here, not the 403 it is when editing.
     if (err instanceof messageService.NotEditableError) return res.status(409).send(err.message);
-    sendServerError(res, err, 'Reacting failed. Please try again later.');
+    sendError(res, err, 'Reacting failed. Please try again later.');
   }
 }
 
@@ -522,11 +476,10 @@ async function forwardMessage(req, res) {
     }
     res.status(result.forwarded.length > 0 ? 201 : result.failed[0].status).json(result);
   } catch (err) {
-    if (err instanceof messageService.MessageValidationError) return res.status(400).send(err.message);
-    if (err instanceof messageService.NotParticipantError) return res.status(403).send(err.message);
-    if (err instanceof messageService.MessageNotFoundError) return res.status(404).send(err.message);
+    // An unsent message can't take reactions or be forwarded: a conflict
+    // here, not the 403 it is when editing.
     if (err instanceof messageService.NotEditableError) return res.status(409).send(err.message);
-    sendServerError(res, err, 'Forwarding failed. Please try again later.');
+    sendError(res, err, 'Forwarding failed. Please try again later.');
   }
 }
 
@@ -555,7 +508,7 @@ async function muteConversation(req, res) {
     if (result.rows.length === 0) return res.status(404).send('Conversation not found');
     res.json(result.rows[0]);
   } catch (err) {
-    sendServerError(res, err, 'Muting the conversation failed. Please try again later.');
+    sendError(res, err, 'Muting the conversation failed. Please try again later.');
   }
 }
 

@@ -5,6 +5,7 @@
 // with env vars (names only: UPLOAD_LIMIT_FILES_PER_DAY,
 // UPLOAD_LIMIT_MB_PER_DAY).
 const db = require('../db');
+const { HttpError } = require('../utils/httpError');
 
 const DEFAULT_FILES_PER_DAY = 100;
 const DEFAULT_MB_PER_DAY = 300;
@@ -22,11 +23,9 @@ function limits() {
 
 const TOO_MANY = "You've reached today's upload limit. Please try again tomorrow.";
 
-class UploadLimitError extends Error {
+class UploadLimitError extends HttpError {
   constructor() {
-    super(TOO_MANY);
-    this.status = 429;
-    this.expose = true;
+    super(429, TOO_MANY);
   }
 }
 

@@ -1,5 +1,5 @@
 // Day 61: Admin > Overview (see services/statsService.js).
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const statsService = require('../services/statsService');
 
 // GET /admin/overview?days=7|30|90 (default 30)
@@ -11,7 +11,7 @@ async function getOverview(req, res) {
   try {
     res.json(await statsService.overview(days));
   } catch (err) {
-    sendServerError(res, err, 'Loading the overview failed. Please try again later.');
+    sendError(res, err, 'Loading the overview failed. Please try again later.');
   }
 }
 

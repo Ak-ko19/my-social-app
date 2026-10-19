@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { getVisiblePost } = require('../services/postVisibilityService');
 const communityService = require('../services/communityService');
 const reactionService = require('../services/reactionService');
@@ -16,12 +16,7 @@ async function likePost(req, res) {
       return res.status(404).send('Post not found');
     }
     // Day 50: only members comment and react in a group.
-    try {
-      communityService.assertCanInteract(post);
-    } catch (err) {
-      if (err instanceof communityService.GroupRuleError) return res.status(err.status).send(err.message);
-      throw err;
-    }
+    communityService.assertCanInteract(post);
     const existingLike = await db.query(
       'SELECT * FROM likes WHERE post_id = $1 AND user_id = $2',
       [req.params.id, req.userId]
@@ -52,7 +47,7 @@ async function likePost(req, res) {
     if (err.code === '23505') {
       return res.status(400).send('You already liked this post');
     }
-    sendServerError(res, err, 'Like post failed. Please try again later.');
+    sendError(res, err, 'Like post failed. Please try again later.');
   }
 }
 
@@ -71,7 +66,7 @@ async function unlikePost(req, res) {
     const summary = await reactionService.getReactionSummary(req.params.id);
     res.json({ message: 'Post unliked successfully', myReaction: null, ...summary });
   } catch (err) {
-    sendServerError(res, err, 'Unlike post failed. Please try again later.');
+    sendError(res, err, 'Unlike post failed. Please try again later.');
   }
 }
 
@@ -94,12 +89,7 @@ async function setReaction(req, res) {
       return res.status(404).send('Post not found');
     }
     // Day 50: only members comment and react in a group.
-    try {
-      communityService.assertCanInteract(post);
-    } catch (err) {
-      if (err instanceof communityService.GroupRuleError) return res.status(err.status).send(err.message);
-      throw err;
-    }
+    communityService.assertCanInteract(post);
 
     // xmax = 0 only for a freshly inserted row -- distinguishes 'added'
     // from 'changed' in one atomic upsert (no check-then-insert race).
@@ -118,7 +108,7 @@ async function setReaction(req, res) {
     const summary = await reactionService.getReactionSummary(req.params.id);
     res.status(inserted ? 201 : 200).json({ myReaction: reaction, ...summary });
   } catch (err) {
-    sendServerError(res, err, 'Reaction failed. Please try again later.');
+    sendError(res, err, 'Reaction failed. Please try again later.');
   }
 }
 
@@ -135,7 +125,7 @@ async function getLikes(req, res) {
     const summary = await reactionService.getReactionSummary(req.params.id);
     res.json({ postId: req.params.id, ...summary });
   } catch (err) {
-    sendServerError(res, err, 'Fetch likes failed. Please try again later.');
+    sendError(res, err, 'Fetch likes failed. Please try again later.');
   }
 }
 

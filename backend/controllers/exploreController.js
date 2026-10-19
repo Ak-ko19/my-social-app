@@ -1,7 +1,7 @@
 const db = require('../db');
 const { postAudienceSql } = require('../services/postVisibilityService');
 const { notMutedSql } = require('../services/muteService');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 const { pollColumnSql } = require('../services/pollService');
@@ -105,7 +105,7 @@ async function getTrendingHashtags(req, res) {
     const tags = viewerId !== null && await hasBlocks(viewerId) ? await queryTrending(viewerId) : await getSharedTrending();
     res.json(tags);
   } catch (err) {
-    sendServerError(res, err, 'Loading trending hashtags failed. Please try again later.');
+    sendError(res, err, 'Loading trending hashtags failed. Please try again later.');
   }
 }
 
@@ -153,7 +153,7 @@ async function getPopularPosts(req, res) {
     const posts = (hasMore ? result.rows.slice(0, limit) : result.rows).map(({ score, ...post }) => post);
     res.json({ posts, currentPage: page, hasMore });
   } catch (err) {
-    sendServerError(res, err, 'Loading popular posts failed. Please try again later.');
+    sendError(res, err, 'Loading popular posts failed. Please try again later.');
   }
 }
 

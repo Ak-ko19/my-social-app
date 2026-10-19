@@ -3,8 +3,8 @@
 // follows the post rules: a deactivated host's events are hidden, a block
 // either way hides them, and a "followers" event is for the host's
 // accepted followers. Hidden -> 404, so a link never confirms it exists.
+const { HttpError, sendError } = require('../utils/httpError');
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
 const { getPagination } = require('../utils/pagination');
 const { toUnicode } = require('../utils/myanmarText');
 const { notifyResponders } = require('../services/eventNotificationService');
@@ -18,14 +18,7 @@ const MAX_AHEAD_DAYS = 366;
 const MAX_LENGTH_DAYS = 31;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-class EventError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
-const handle = (res, err, fallback) =>
-  err instanceof EventError ? res.status(err.status).send(err.message) : sendServerError(res, err, fallback);
+class EventError extends HttpError {}
 
 // "Viewer <v> may see event alias e, hosted by user alias u."
 const eventVisibleSql = (v) => `(
@@ -127,7 +120,7 @@ async function createEvent(req, res) {
     );
     res.status(201).json(await loadEvent(result.rows[0].id, req.userId));
   } catch (err) {
-    handle(res, err, 'Creating the event failed. Please try again later.');
+    sendError(res, err, 'Creating the event failed. Please try again later.');
   }
 }
 
@@ -136,7 +129,7 @@ async function getEvent(req, res) {
   try {
     res.json(await loadEvent(Number(req.params.id), req.userId));
   } catch (err) {
-    handle(res, err, 'Loading the event failed. Please try again later.');
+    sendError(res, err, 'Loading the event failed. Please try again later.');
   }
 }
 
@@ -154,7 +147,7 @@ async function updateEvent(req, res) {
     await db.query(`UPDATE events SET ${sets.join(', ')} WHERE id = $1`, [event.id, ...keys.map((k) => f[k])]);
     res.json(await loadEvent(event.id, req.userId));
   } catch (err) {
-    handle(res, err, 'Saving the event failed. Please try again later.');
+    sendError(res, err, 'Saving the event failed. Please try again later.');
   }
 }
 
@@ -171,7 +164,7 @@ async function cancelEvent(req, res) {
     if (cancelled.rows.length > 0) await notifyResponders(event.id, event.host_id, 'event_cancelled');
     res.json(await loadEvent(event.id, req.userId));
   } catch (err) {
-    handle(res, err, 'Cancelling the event failed. Please try again later.');
+    sendError(res, err, 'Cancelling the event failed. Please try again later.');
   }
 }
 
@@ -182,7 +175,7 @@ async function deleteEvent(req, res) {
     await db.query('DELETE FROM events WHERE id = $1', [event.id]);
     res.json({ deleted: true });
   } catch (err) {
-    handle(res, err, 'Deleting the event failed. Please try again later.');
+    sendError(res, err, 'Deleting the event failed. Please try again later.');
   }
 }
 
@@ -202,7 +195,7 @@ async function respond(req, res) {
     );
     res.json(await loadEvent(event.id, req.userId));
   } catch (err) {
-    handle(res, err, 'Saving your answer failed. Please try again later.');
+    sendError(res, err, 'Saving your answer failed. Please try again later.');
   }
 }
 
@@ -219,7 +212,7 @@ async function removeResponse(req, res) {
     });
     res.json(visible || { id: eventId, my_response: null });
   } catch (err) {
-    handle(res, err, 'Saving your answer failed. Please try again later.');
+    sendError(res, err, 'Saving your answer failed. Please try again later.');
   }
 }
 
@@ -244,7 +237,7 @@ async function listGuests(req, res) {
     const hasMore = result.rows.length > limit;
     res.json({ guests: hasMore ? result.rows.slice(0, limit) : result.rows, page, hasMore });
   } catch (err) {
-    handle(res, err, 'Loading the guests failed. Please try again later.');
+    sendError(res, err, 'Loading the guests failed. Please try again later.');
   }
 }
 
@@ -270,7 +263,7 @@ async function listEvents(req, res) {
     const hasMore = result.rows.length > limit;
     res.json({ events: hasMore ? result.rows.slice(0, limit) : result.rows, page, hasMore });
   } catch (err) {
-    handle(res, err, 'Loading events failed. Please try again later.');
+    sendError(res, err, 'Loading events failed. Please try again later.');
   }
 }
 

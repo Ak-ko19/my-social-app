@@ -3,7 +3,7 @@
 // (frontend, src/utils/hiddenWords) plus the words you add here: warn
 // (covered, "Show anyway"), hide, or off. Only changes what you see.
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 
 const MODES = ['off', 'warn', 'hide'];
 const MAX_WORDS = 100;
@@ -29,7 +29,7 @@ async function getHiddenWords(req, res) {
     if (user.rows.length === 0) return res.status(404).send('User not found');
     res.json({ mode: user.rows[0].hidden_words_mode, words: await listWords(req.userId) });
   } catch (err) {
-    sendServerError(res, err, "Couldn't load your hidden words. Please try again later.");
+    sendError(res, err, "Couldn't load your hidden words. Please try again later.");
   }
 }
 
@@ -42,7 +42,7 @@ async function setMode(req, res) {
     if (result.rows.length === 0) return res.status(404).send('User not found');
     res.json({ mode: result.rows[0].hidden_words_mode });
   } catch (err) {
-    sendServerError(res, err, 'Saving your settings failed. Please try again later.');
+    sendError(res, err, 'Saving your settings failed. Please try again later.');
   }
 }
 
@@ -65,7 +65,7 @@ async function addWord(req, res) {
     }
     res.status(201).json({ word, words: await listWords(req.userId) });
   } catch (err) {
-    sendServerError(res, err, 'Saving your settings failed. Please try again later.');
+    sendError(res, err, 'Saving your settings failed. Please try again later.');
   }
 }
 
@@ -75,7 +75,7 @@ async function removeWord(req, res) {
     await db.query('DELETE FROM user_hidden_words WHERE user_id = $1 AND word = $2', [req.userId, normalizeWord(req.params.word)]);
     res.json({ words: await listWords(req.userId) });
   } catch (err) {
-    sendServerError(res, err, 'Saving your settings failed. Please try again later.');
+    sendError(res, err, 'Saving your settings failed. Please try again later.');
   }
 }
 

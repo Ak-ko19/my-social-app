@@ -2,7 +2,7 @@
 // you see it; people on it aren't told. A "Close friends" post or story is
 // seen by them and you. You can add people who follow you.
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 
 const targetId = (req) => (/^\d+$/.test(req.params.id) ? Number(req.params.id) : null);
@@ -22,7 +22,7 @@ async function listCloseFriends(req, res) {
     const hasMore = result.rows.length > limit;
     res.json({ page, closeFriends: hasMore ? result.rows.slice(0, limit) : result.rows, hasMore });
   } catch (err) {
-    sendServerError(res, err, 'Loading close friends failed. Please try again later.');
+    sendError(res, err, 'Loading close friends failed. Please try again later.');
   }
 }
 
@@ -45,7 +45,7 @@ async function listCandidates(req, res) {
     const hasMore = result.rows.length > limit;
     res.json({ page, candidates: hasMore ? result.rows.slice(0, limit) : result.rows, hasMore });
   } catch (err) {
-    sendServerError(res, err, 'Loading followers failed. Please try again later.');
+    sendError(res, err, 'Loading followers failed. Please try again later.');
   }
 }
 
@@ -63,7 +63,7 @@ async function addCloseFriend(req, res) {
     await db.query('INSERT INTO close_friends (user_id, friend_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [req.userId, friendId]);
     res.json({ closeFriend: true });
   } catch (err) {
-    sendServerError(res, err, 'Adding to close friends failed. Please try again later.');
+    sendError(res, err, 'Adding to close friends failed. Please try again later.');
   }
 }
 
@@ -76,7 +76,7 @@ async function removeCloseFriend(req, res) {
     await db.query('DELETE FROM close_friends WHERE user_id = $1 AND friend_id = $2', [req.userId, friendId]);
     res.json({ closeFriend: false });
   } catch (err) {
-    sendServerError(res, err, 'Removing from close friends failed. Please try again later.');
+    sendError(res, err, 'Removing from close friends failed. Please try again later.');
   }
 }
 

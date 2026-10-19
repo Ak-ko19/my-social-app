@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 const adminLog = require('../services/adminLogService');
 
@@ -23,7 +23,7 @@ async function listErrors(req, res) {
     const hasMore = result.rows.length > limit;
     res.json({ page, limit, hasMore, errors: hasMore ? result.rows.slice(0, limit) : result.rows });
   } catch (err) {
-    sendServerError(res, err, 'Loading the error log failed. Please try again later.');
+    sendError(res, err, 'Loading the error log failed. Please try again later.');
   }
 }
 
@@ -45,7 +45,7 @@ async function resolveError(req, res) {
     if (!resolved) return res.status(404).send('Error not found');
     res.json({ ok: true });
   } catch (err) {
-    sendServerError(res, err, 'Updating the error log failed. Please try again later.');
+    sendError(res, err, 'Updating the error log failed. Please try again later.');
   }
 }
 

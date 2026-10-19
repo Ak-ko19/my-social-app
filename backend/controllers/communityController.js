@@ -1,6 +1,6 @@
+const { HttpError, sendError } = require('../utils/httpError');
 const db = require('../db');
 const { escapeLike } = require('../utils/escapeLike');
-const { sendServerError } = require('../utils/sendError');
 const { mediaOfCommunity, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
@@ -23,14 +23,7 @@ const notificationService = require('../services/notificationService');
 //   they can't join or ask to join again until unbanned. Only members
 //   comment on and react to a group's posts (communityService).
 
-class CommunityError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
-const handle = (res, err, fallback) =>
-  err instanceof CommunityError ? res.status(err.status).send(err.message) : sendServerError(res, err, fallback);
+class CommunityError extends HttpError {}
 
 function cleanFields(body, { partial = false } = {}) {
   const out = {};
@@ -133,7 +126,7 @@ async function createCommunity(req, res) {
     );
     res.status(201).json(await loadCommunity(result.rows[0].id, req.userId));
   } catch (err) {
-    handle(res, err, 'Creating the group failed. Please try again later.');
+    sendError(res, err, 'Creating the group failed. Please try again later.');
   }
 }
 
@@ -180,7 +173,7 @@ async function listCommunities(req, res) {
     ]);
     res.json({ mine: mine.groups, mineHasMore: mine.hasMore, discover: discover.groups, discoverHasMore: discover.hasMore });
   } catch (err) {
-    handle(res, err, 'Loading groups failed. Please try again later.');
+    sendError(res, err, 'Loading groups failed. Please try again later.');
   }
 }
 
@@ -189,7 +182,7 @@ async function getCommunity(req, res) {
   try {
     res.json(await loadCommunity(Number(req.params.id), req.userId));
   } catch (err) {
-    handle(res, err, 'Loading the group failed. Please try again later.');
+    sendError(res, err, 'Loading the group failed. Please try again later.');
   }
 }
 
@@ -212,7 +205,7 @@ async function updateCommunity(req, res) {
     }
     res.json(await loadCommunity(c.id, req.userId));
   } catch (err) {
-    handle(res, err, 'Updating the group failed. Please try again later.');
+    sendError(res, err, 'Updating the group failed. Please try again later.');
   }
 }
 
@@ -227,7 +220,7 @@ async function deleteCommunity(req, res) {
     deleteMedia(media);
     res.json({ deleted: true });
   } catch (err) {
-    handle(res, err, 'Deleting the group failed. Please try again later.');
+    sendError(res, err, 'Deleting the group failed. Please try again later.');
   }
 }
 
@@ -246,7 +239,7 @@ async function joinCommunity(req, res) {
     if (status === 'pending' && inserted.rows.length > 0) await notifyAdminsOfRequest(c.id, req.userId);
     res.status(201).json(await loadCommunity(c.id, req.userId));
   } catch (err) {
-    handle(res, err, 'Joining the group failed. Please try again later.');
+    sendError(res, err, 'Joining the group failed. Please try again later.');
   }
 }
 
@@ -268,7 +261,7 @@ async function removeMember(req, res) {
     const outcome = removed.rows[0].status === 'member' ? await ensureAdminOrDelete(c.id) : { deleted: false };
     res.json(outcome);
   } catch (err) {
-    handle(res, err, 'Updating the group failed. Please try again later.');
+    sendError(res, err, 'Updating the group failed. Please try again later.');
   }
 }
 
@@ -290,7 +283,7 @@ async function listMembers(req, res) {
     const hasMore = result.rows.length > limit;
     res.json({ members: hasMore ? result.rows.slice(0, limit) : result.rows, page, hasMore });
   } catch (err) {
-    handle(res, err, 'Loading members failed. Please try again later.');
+    sendError(res, err, 'Loading members failed. Please try again later.');
   }
 }
 
@@ -309,7 +302,7 @@ async function setRole(req, res) {
     await ensureAdminOrDelete(c.id); // demoting the last admin re-promotes someone
     res.json({ ok: true });
   } catch (err) {
-    handle(res, err, 'Changing the role failed. Please try again later.');
+    sendError(res, err, 'Changing the role failed. Please try again later.');
   }
 }
 
@@ -335,7 +328,7 @@ async function listRequests(req, res) {
       ?? Number((await db.query("SELECT COUNT(*) FROM community_members WHERE community_id = $1 AND status = 'pending'", [c.id])).rows[0].count);
     res.json({ requests: rows, page, hasMore, total });
   } catch (err) {
-    handle(res, err, 'Loading requests failed. Please try again later.');
+    sendError(res, err, 'Loading requests failed. Please try again later.');
   }
 }
 
@@ -355,7 +348,7 @@ async function approveRequest(req, res) {
     await notificationService.notify({ userId: memberId, actorId: req.userId, type: 'group_approved', communityId: c.id });
     res.json({ ok: true });
   } catch (err) {
-    handle(res, err, 'Approving the request failed. Please try again later.');
+    sendError(res, err, 'Approving the request failed. Please try again later.');
   }
 }
 
@@ -389,7 +382,7 @@ async function banMember(req, res) {
     await clearRequestNotifications(c.id, targetId);
     res.status(201).json({ banned: true });
   } catch (err) {
-    handle(res, err, 'Updating the group failed. Please try again later.');
+    sendError(res, err, 'Updating the group failed. Please try again later.');
   }
 }
 
@@ -403,7 +396,7 @@ async function unbanMember(req, res) {
     await db.query('DELETE FROM community_bans WHERE community_id = $1 AND user_id = $2', [c.id, targetId]);
     res.json({ banned: false });
   } catch (err) {
-    handle(res, err, 'Updating the group failed. Please try again later.');
+    sendError(res, err, 'Updating the group failed. Please try again later.');
   }
 }
 
@@ -424,7 +417,7 @@ async function listBans(req, res) {
     const hasMore = result.rows.length > limit;
     res.json({ bans: hasMore ? result.rows.slice(0, limit) : result.rows, page, hasMore });
   } catch (err) {
-    handle(res, err, 'Loading banned people failed. Please try again later.');
+    sendError(res, err, 'Loading banned people failed. Please try again later.');
   }
 }
 
@@ -463,7 +456,7 @@ async function listPosts(req, res) {
     const hasMore = result.rows.length > limit;
     res.json({ posts: hasMore ? result.rows.slice(0, limit) : result.rows, currentPage: page, hasMore });
   } catch (err) {
-    handle(res, err, 'Loading group posts failed. Please try again later.');
+    sendError(res, err, 'Loading group posts failed. Please try again later.');
   }
 }
 

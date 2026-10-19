@@ -1,7 +1,30 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 69–71 — Code health (not started).
-**Step:** —
+**Day:** 69–71 — Code health: duplicated logic, large files, consistent errors, README + CLAUDE.md.
+**Step:** 2 — block-check SQL helper: PLAN.
+
+Plan (survey: biggest file 735 lines; the real debt is duplication):
+1. utils/httpError.js: HttpError(status, message) + sendError(res, err,
+   fallback). The 19 error classes extend it (names kept); the 6 local
+   handle() helpers and the 29 instanceof chains in conversationController
+   go; sockets derive message_error codes from the status. Same statuses
+   and messages (the frontend translates messages) -- the contract check
+   proves no response changed.
+2. Block-check SQL (32 copies) -> one blockService helper.
+3. Unbounded lists from Day 68 (followers/following, comments,
+   conversations): bound them, frontend included.
+4. Split useConversationMessages.js (735 lines).
+5. Root README.md + CLAUDE.md up to date (its feature list is stale).
+
+## Progress (Day 69–71)
+- Step 1 DONE: utils/httpError (HttpError + sendError); 15 error classes
+  extend it (names kept); 4 local handle() helpers, 29+ instanceof
+  chains and 6 inner try/catch wrappers gone; every controller/route
+  catch-all is sendError; sockets read the code from the status. Only
+  override: NotEditableError 409 for reactions/forward. Chains that
+  missed a class (500 before) now answer its status. httpError.test (16,
+  incl. a guard against the old pattern). Backend 940/940, contract
+  194/194; b9-dm, day31/32/47, day49-spam green; check:i18n. -127 lines.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

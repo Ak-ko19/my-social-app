@@ -3,7 +3,7 @@
 // as your saved posts). Private to you. Removing an item uses the usual
 // endpoints (unlike, delete the comment); searches are /search/history.
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 const { STILL_VISIBLE_SQL } = require('../services/savedPostsService');
 
@@ -58,7 +58,7 @@ async function getLikes(req, res) {
     const hasMore = result.rows.length > limit;
     res.json({ page, items: hasMore ? result.rows.slice(0, limit) : result.rows, hasMore });
   } catch (err) {
-    sendServerError(res, err, 'Loading your likes failed. Please try again later.');
+    sendError(res, err, 'Loading your likes failed. Please try again later.');
   }
 }
 
@@ -80,7 +80,7 @@ async function getComments(req, res) {
     const hasMore = result.rows.length > limit;
     res.json({ page, items: hasMore ? result.rows.slice(0, limit) : result.rows, hasMore });
   } catch (err) {
-    sendServerError(res, err, 'Loading your comments failed. Please try again later.');
+    sendError(res, err, 'Loading your comments failed. Please try again later.');
   }
 }
 

@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const mentionService = require('../services/mentionService');
 const { getVisiblePost } = require('../services/postVisibilityService');
 const blockService = require('../services/blockService');
@@ -38,30 +38,15 @@ async function createComment(req, res) {
       return res.status(404).send('Post not found');
     }
     // Day 50: only members comment and react in a group.
-    try {
-      communityService.assertCanInteract(post);
-    } catch (err) {
-      if (err instanceof communityService.GroupRuleError) return res.status(err.status).send(err.message);
-      throw err;
-    }
+    communityService.assertCanInteract(post);
     // Day 47: the owner's "who can comment" setting (a group's or page's
     // post belongs to the group / page).
     if (!post.community_id && !post.page_id) {
-      try {
-        await interactionService.assertCanComment(req.userId, post.user_id);
-      } catch (err) {
-        if (err instanceof interactionService.InteractionError) return res.status(err.status).send(err.message);
-        throw err;
-      }
+      await interactionService.assertCanComment(req.userId, post.user_id);
     }
     // Day 49: flooding, the same comment again here, the same link again
     // and again.
-    try {
-      await spamService.checkComment(req.userId, post.id, content);
-    } catch (err) {
-      if (err instanceof spamService.SpamError) return res.status(err.status).send(err.message);
-      throw err;
-    }
+    await spamService.checkComment(req.userId, post.id, content);
     // B4 replies: optional parentCommentId. Replies are one level deep --
     // replying to a reply attaches to that reply's own parent (see
     // migration 019). The parent must be on this post and visible to the
@@ -125,7 +110,7 @@ async function createComment(req, res) {
     });
     res.status(201).json({ ...comment, like_count: 0, liked_by_me: false });
   } catch (err) {
-    sendServerError(res, err, 'Create comment failed. Please try again later.');
+    sendError(res, err, 'Create comment failed. Please try again later.');
   }
 }
 
@@ -165,7 +150,7 @@ async function getComments(req, res) {
     `, [req.params.id, viewerId, post.user_id]);
     res.json(result.rows);
   } catch (err) {
-    sendServerError(res, err, 'Fetch comments failed. Please try again later.');
+    sendError(res, err, 'Fetch comments failed. Please try again later.');
   }
 }
 
@@ -191,7 +176,7 @@ async function updateComment(req, res) {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    sendServerError(res, err, 'Update comment failed. Please try again later.');
+    sendError(res, err, 'Update comment failed. Please try again later.');
   }
 }
 
@@ -216,7 +201,7 @@ async function deleteComment(req, res) {
     await db.query('DELETE FROM comments WHERE id = $1', [req.params.id]);
     res.send('Comment deleted successfully');
   } catch (err) {
-    sendServerError(res, err, 'Delete comment failed. Please try again later.');
+    sendError(res, err, 'Delete comment failed. Please try again later.');
   }
 }
 
@@ -238,7 +223,7 @@ async function approveComment(req, res) {
     }
     res.json(result.rows[0]);
   } catch (err) {
-    sendServerError(res, err, 'Approving the comment failed. Please try again later.');
+    sendError(res, err, 'Approving the comment failed. Please try again later.');
   }
 }
 
@@ -275,12 +260,7 @@ async function likeComment(req, res) {
       return res.status(404).send('Comment not found');
     }
     // Day 50: only members comment and react in a group.
-    try {
-      communityService.assertCanInteract(comment.post);
-    } catch (err) {
-      if (err instanceof communityService.GroupRuleError) return res.status(err.status).send(err.message);
-      throw err;
-    }
+    communityService.assertCanInteract(comment.post);
     const inserted = await db.query(
       'INSERT INTO comment_likes (comment_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING comment_id',
       [comment.id, req.userId]
@@ -290,7 +270,7 @@ async function likeComment(req, res) {
     }
     res.status(inserted.rows.length > 0 ? 201 : 200).json({ likedByMe: true, likeCount: await commentLikeCount(comment.id) });
   } catch (err) {
-    sendServerError(res, err, 'Like comment failed. Please try again later.');
+    sendError(res, err, 'Like comment failed. Please try again later.');
   }
 }
 
@@ -307,7 +287,7 @@ async function unlikeComment(req, res) {
     await db.query('DELETE FROM comment_likes WHERE comment_id = $1 AND user_id = $2', [comment.id, req.userId]);
     res.json({ likedByMe: false, likeCount: await commentLikeCount(comment.id) });
   } catch (err) {
-    sendServerError(res, err, 'Unlike comment failed. Please try again later.');
+    sendError(res, err, 'Unlike comment failed. Please try again later.');
   }
 }
 

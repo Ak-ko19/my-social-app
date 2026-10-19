@@ -1,19 +1,17 @@
 // Day 45: drafts -- see services/draftService. Every route is the author's
 // own: someone else's draft answers 404, like one that doesn't exist.
 const draftService = require('../services/draftService');
-const { PostInputError } = require('../services/postCreationService');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 
 const uploadedUrls = (req) => (req.cloudinaryResults || []).map((r) => r.secure_url);
 const draftId = (req) => (/^\d+$/.test(req.params.id) ? Number(req.params.id) : null);
 
-// Runs `work`; a PostInputError becomes its status and message.
+// Runs `work`; a PostInputError becomes its status and message (sendError).
 const handle = (fallback, work) => async (req, res) => {
   try {
     await work(req, res);
   } catch (err) {
-    if (err instanceof PostInputError) return res.status(err.status).send(err.message);
-    sendServerError(res, err, fallback);
+    sendError(res, err, fallback);
   }
 };
 const withId = (fallback, work) => handle(fallback, async (req, res) => {

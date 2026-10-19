@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 
 const LIMIT = 10;
 
@@ -95,7 +95,7 @@ async function getSuggestions(req, res) {
 
     res.json(suggestions);
   } catch (err) {
-    sendServerError(res, err, 'Loading suggestions failed. Please try again later.');
+    sendError(res, err, 'Loading suggestions failed. Please try again later.');
   }
 }
 
@@ -120,7 +120,7 @@ async function dismissSuggestion(req, res) {
     }
     res.status(204).end();
   } catch (err) {
-    sendServerError(res, err, 'Hiding the suggestion failed. Please try again later.');
+    sendError(res, err, 'Hiding the suggestion failed. Please try again later.');
   }
 }
 

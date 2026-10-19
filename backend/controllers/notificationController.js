@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const notificationService = require('../services/notificationService');
 const { getPagination } = require('../utils/pagination');
 
@@ -38,7 +38,7 @@ async function getNotifications(req, res) {
 
     res.status(200).json({ page, limit, notifications: result.rows });
   } catch (err) {
-    sendServerError(res, err, 'Fetch notifications failed. Please try again later.');
+    sendError(res, err, 'Fetch notifications failed. Please try again later.');
   }
 }
 
@@ -50,7 +50,7 @@ async function getUnreadCount(req, res) {
     );
     res.status(200).json({ unreadCount: parseInt(result.rows[0].count) });
   } catch (err) {
-    sendServerError(res, err, 'Fetch unread count failed. Please try again later.');
+    sendError(res, err, 'Fetch unread count failed. Please try again later.');
   }
 }
 
@@ -68,7 +68,7 @@ async function markAsRead(req, res) {
     }
     res.status(200).json(result.rows[0]);
   } catch (err) {
-    sendServerError(res, err, 'Mark as read failed. Please try again later.');
+    sendError(res, err, 'Mark as read failed. Please try again later.');
   }
 }
 
@@ -80,7 +80,7 @@ async function markAllAsRead(req, res) {
     );
     res.status(200).send('All notifications marked as read');
   } catch (err) {
-    sendServerError(res, err, 'Mark all as read failed. Please try again later.');
+    sendError(res, err, 'Mark all as read failed. Please try again later.');
   }
 }
 
@@ -89,7 +89,7 @@ async function getPreferences(req, res) {
   try {
     res.json(await notificationService.getPreferences(req.userId));
   } catch (err) {
-    sendServerError(res, err, 'Loading notification settings failed. Please try again later.');
+    sendError(res, err, 'Loading notification settings failed. Please try again later.');
   }
 }
 
@@ -105,7 +105,7 @@ async function updatePreferences(req, res) {
     }
     res.json(await notificationService.updatePreferences(req.userId, body));
   } catch (err) {
-    sendServerError(res, err, 'Saving notification settings failed. Please try again later.');
+    sendError(res, err, 'Saving notification settings failed. Please try again later.');
   }
 }
 

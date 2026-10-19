@@ -1,7 +1,7 @@
 const db = require('../db');
 const interactionService = require('../services/interactionService');
 const { APP_LANGUAGES, isAppLanguage } = require('../config/languages');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { deleteMedia } = require('../services/mediaCleanupService');
 const blockService = require('../services/blockService');
 const { buildExport } = require('../services/dataExportService');
@@ -25,7 +25,7 @@ async function getMyProfile(req, res) {
 
     res.status(200).json(result.rows[0]);
   } catch (err) {
-    sendServerError(res, err, 'Error fetching profile. Please try again later.');
+    sendError(res, err, 'Error fetching profile. Please try again later.');
   }
 }
 
@@ -42,7 +42,7 @@ async function exportMyData(req, res) {
     res.set('Cache-Control', 'no-store');
     res.type('application/json').send(JSON.stringify(data, null, 2));
   } catch (err) {
-    sendServerError(res, err, 'Preparing your data failed. Please try again later.');
+    sendError(res, err, 'Preparing your data failed. Please try again later.');
   }
 }
 
@@ -103,7 +103,7 @@ async function getProfile(req, res) {
 
     res.status(200).json(profile);
   } catch (err) {
-    sendServerError(res, err, 'Error fetching profile. Please try again later.');
+    sendError(res, err, 'Error fetching profile. Please try again later.');
   }
 }
 
@@ -157,7 +157,7 @@ async function updateProfile(req, res) {
     if (err.code === '23505') {
       return res.status(400).send('Email or username already exists');
     }
-    sendServerError(res, err, 'Update profile failed. Please try again later.');
+    sendError(res, err, 'Update profile failed. Please try again later.');
   }
 }
 
@@ -176,7 +176,7 @@ async function setCover(req, res) {
     await replaceCover(req.userId, url);
     res.json({ cover_url: url });
   } catch (err) {
-    sendServerError(res, err, 'Updating the cover photo failed. Please try again later.');
+    sendError(res, err, 'Updating the cover photo failed. Please try again later.');
   }
 }
 
@@ -185,7 +185,7 @@ async function removeCover(req, res) {
     await replaceCover(req.userId, null);
     res.json({ cover_url: null });
   } catch (err) {
-    sendServerError(res, err, 'Updating the cover photo failed. Please try again later.');
+    sendError(res, err, 'Updating the cover photo failed. Please try again later.');
   }
 }
 
@@ -208,7 +208,7 @@ async function pinPost(req, res) {
     if (result.rows.length === 0) return res.status(404).send('Post not found');
     res.json({ pinned_post_id: postId });
   } catch (err) {
-    sendServerError(res, err, 'Pinning the post failed. Please try again later.');
+    sendError(res, err, 'Pinning the post failed. Please try again later.');
   }
 }
 
@@ -217,7 +217,7 @@ async function unpinPost(req, res) {
     await db.query('UPDATE users SET pinned_post_id = NULL WHERE id = $1', [req.userId]);
     res.json({ pinned_post_id: null });
   } catch (err) {
-    sendServerError(res, err, 'Unpinning the post failed. Please try again later.');
+    sendError(res, err, 'Unpinning the post failed. Please try again later.');
   }
 }
 
@@ -232,7 +232,7 @@ async function updatePrivacy(req, res) {
     );
     res.status(200).json(result.rows[0]);
   } catch (err) {
-    sendServerError(res, err, 'Update privacy setting failed. Please try again later.');
+    sendError(res, err, 'Update privacy setting failed. Please try again later.');
   }
 }
 
@@ -259,7 +259,7 @@ async function updateInteractions(req, res) {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    sendServerError(res, err, 'Saving your settings failed. Please try again later.');
+    sendError(res, err, 'Saving your settings failed. Please try again later.');
   }
 }
 
@@ -273,7 +273,7 @@ async function updateLanguage(req, res) {
     if (result.rows.length === 0) return res.status(404).send('User not found');
     res.status(200).json(result.rows[0]);
   } catch (err) {
-    sendServerError(res, err, 'Saving the language failed. Please try again later.');
+    sendError(res, err, 'Saving the language failed. Please try again later.');
   }
 }
 

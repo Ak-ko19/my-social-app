@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { mediaOfPost, mediaOfCommunity, mediaOfPage, deleteMedia } = require('../services/mediaCleanupService');
 const { getIO } = require('../sockets');
 const messageService = require('../services/messageService');
@@ -85,7 +85,7 @@ async function listReports(req, res) {
     }));
     res.json({ reports, hasMore, page });
   } catch (err) {
-    sendServerError(res, err, 'Loading reports failed. Please try again later.');
+    sendError(res, err, 'Loading reports failed. Please try again later.');
   }
 }
 
@@ -113,7 +113,7 @@ async function dismissReport(req, res) {
     });
     res.json({ ok: true });
   } catch (err) {
-    sendServerError(res, err, 'Dismissing the report failed. Please try again later.');
+    sendError(res, err, 'Dismissing the report failed. Please try again later.');
   }
 }
 
@@ -175,7 +175,7 @@ async function removeReportedContent(req, res) {
     }
     res.json({ ok: true });
   } catch (err) {
-    sendServerError(res, err, 'Removing the content failed. Please try again later.');
+    sendError(res, err, 'Removing the content failed. Please try again later.');
   }
 }
 
@@ -249,7 +249,7 @@ async function restrictUser(req, res, days) {
     }
     res.json({ ok: true });
   } catch (err) {
-    sendServerError(res, err, days === null ? 'Banning the user failed. Please try again later.' : 'Suspending the user failed. Please try again later.');
+    sendError(res, err, days === null ? 'Banning the user failed. Please try again later.' : 'Suspending the user failed. Please try again later.');
   }
 }
 
@@ -271,7 +271,7 @@ async function unbanUser(req, res) {
     if (!lifted) return res.status(404).send('That user is not banned');
     res.json({ ok: true });
   } catch (err) {
-    sendServerError(res, err, 'Unbanning the user failed. Please try again later.');
+    sendError(res, err, 'Unbanning the user failed. Please try again later.');
   }
 }
 

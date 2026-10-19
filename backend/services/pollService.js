@@ -4,6 +4,7 @@
 // counts are ever returned, and the per-option counts only to someone who
 // may see the results (they voted, it's their poll, or it has ended), so
 // the numbers can't sway a vote.
+const { HttpError } = require('../utils/httpError');
 const db = require('../db');
 const { toUnicode } = require('../utils/myanmarText');
 
@@ -13,12 +14,7 @@ const MAX_LABEL_LENGTH = 50; // poll_options.label is varchar(50)
 const DURATION_HOURS = [24, 72, 168]; // 1 day, 3 days, 1 week
 const DEFAULT_DURATION_HOURS = 24;
 
-class PollError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
+class PollError extends HttpError {}
 
 // The `poll` field of POST /posts: absent (no poll), or { options:
 // [labels], durationHours } -- a JSON string when the post is sent as a

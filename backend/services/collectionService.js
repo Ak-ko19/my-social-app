@@ -1,6 +1,7 @@
 // Day 46: saved posts in named collections (migration 054), like
 // Instagram's. Private to their owner: someone else's collection answers
 // 404, like one that doesn't exist.
+const { HttpError } = require('../utils/httpError');
 const db = require('../db');
 const { getVisiblePost } = require('./postVisibilityService');
 const { listSaved, STILL_VISIBLE_SQL } = require('./savedPostsService');
@@ -9,12 +10,7 @@ const { toUnicode } = require('../utils/myanmarText');
 const MAX_COLLECTIONS = 30;
 const MAX_NAME_LENGTH = 50;
 
-class CollectionError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
+class CollectionError extends HttpError {}
 
 // A collection name as typed: trimmed, not empty, up to 50 characters.
 function readName(raw) {

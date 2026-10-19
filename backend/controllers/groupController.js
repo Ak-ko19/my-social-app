@@ -1,5 +1,5 @@
+const { HttpError, sendError } = require('../utils/httpError');
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
 const { mediaOfConversation, deleteMedia } = require('../services/mediaCleanupService');
 const { getIO, syncRooms } = require('../sockets');
 const { toUnicode } = require('../utils/myanmarText'); // Day 43: Zawgyi -> Unicode
@@ -18,12 +18,7 @@ const { toUnicode } = require('../utils/myanmarText'); // Day 43: Zawgyi -> Unic
 const MAX_GROUP_SIZE = 50;
 const MAX_NAME_LENGTH = 100;
 
-class GroupError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
+class GroupError extends HttpError {}
 
 function cleanName(raw) {
   const name = typeof raw === 'string' ? toUnicode(raw).trim() : '';
@@ -89,11 +84,6 @@ function emitGroupUpdated(conversationId, extraUserIds = []) {
   }
 }
 
-function handle(res, err, fallback) {
-  if (err instanceof GroupError) return res.status(err.status).send(err.message);
-  return sendServerError(res, err, fallback);
-}
-
 // POST /conversations/groups { name, userIds }
 async function createGroup(req, res) {
   try {
@@ -119,7 +109,7 @@ async function createGroup(req, res) {
     emitGroupUpdated(conversationId);
     res.status(201).json({ id: conversationId, type: 'group', name, members: await getMembers(conversationId), my_role: 'admin' });
   } catch (err) {
-    handle(res, err, 'Creating the group failed. Please try again later.');
+    sendError(res, err, 'Creating the group failed. Please try again later.');
   }
 }
 
@@ -141,7 +131,7 @@ async function getConversationDetails(req, res) {
     if (!result.rows[0]) throw new GroupError(403, 'You are not a participant in this conversation');
     res.json({ ...result.rows[0], members: await getMembers(conversationId) });
   } catch (err) {
-    handle(res, err, 'Loading the conversation failed. Please try again later.');
+    sendError(res, err, 'Loading the conversation failed. Please try again later.');
   }
 }
 
@@ -175,7 +165,7 @@ async function addMembers(req, res) {
     }
     res.json({ members: await getMembers(conversationId), added: fresh });
   } catch (err) {
-    handle(res, err, 'Adding people failed. Please try again later.');
+    sendError(res, err, 'Adding people failed. Please try again later.');
   }
 }
 
@@ -218,7 +208,7 @@ async function removeMember(req, res) {
     emitGroupUpdated(conversationId, leaving ? [] : [targetId]);
     res.json({ members: await getMembers(conversationId), deleted: false });
   } catch (err) {
-    handle(res, err, 'Updating the group failed. Please try again later.');
+    sendError(res, err, 'Updating the group failed. Please try again later.');
   }
 }
 
@@ -256,7 +246,7 @@ async function setMemberRole(req, res) {
     emitGroupUpdated(conversationId);
     res.json({ members: await getMembers(conversationId) });
   } catch (err) {
-    handle(res, err, 'Updating the group failed. Please try again later.');
+    sendError(res, err, 'Updating the group failed. Please try again later.');
   }
 }
 
@@ -270,7 +260,7 @@ async function requireGroupAdmin(req, res, next) {
     if (group.role !== 'admin') throw new GroupError(403, 'Only group admins can change the group photo');
     next();
   } catch (err) {
-    handle(res, err, 'Updating the group failed. Please try again later.');
+    sendError(res, err, 'Updating the group failed. Please try again later.');
   }
 }
 
@@ -291,7 +281,7 @@ async function setGroupPhoto(req, res) {
     await replaceGroupPhoto(Number(req.params.id), url);
     res.json({ avatar_url: url });
   } catch (err) {
-    handle(res, err, 'Updating the group photo failed. Please try again later.');
+    sendError(res, err, 'Updating the group photo failed. Please try again later.');
   }
 }
 
@@ -301,7 +291,7 @@ async function removeGroupPhoto(req, res) {
     await replaceGroupPhoto(Number(req.params.id), null);
     res.json({ avatar_url: null });
   } catch (err) {
-    handle(res, err, 'Updating the group photo failed. Please try again later.');
+    sendError(res, err, 'Updating the group photo failed. Please try again later.');
   }
 }
 
@@ -316,7 +306,7 @@ async function renameGroup(req, res) {
     emitGroupUpdated(conversationId);
     res.json({ id: conversationId, name });
   } catch (err) {
-    handle(res, err, 'Renaming the group failed. Please try again later.');
+    sendError(res, err, 'Renaming the group failed. Please try again later.');
   }
 }
 

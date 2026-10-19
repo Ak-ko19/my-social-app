@@ -1,4 +1,4 @@
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const {
   listSessions,
   revokeSession,
@@ -12,7 +12,7 @@ async function getSessions(req, res) {
   try {
     res.json({ sessions: await listSessions(req.userId, req.sessionId) });
   } catch (err) {
-    sendServerError(res, err, 'Loading your sessions failed. Please try again later.');
+    sendError(res, err, 'Loading your sessions failed. Please try again later.');
   }
 }
 
@@ -26,7 +26,7 @@ async function deleteSession(req, res) {
     await disconnectSession(req.userId, sid);
     res.json({ current: sid === req.sessionId });
   } catch (err) {
-    sendServerError(res, err, 'Signing out that device failed. Please try again later.');
+    sendError(res, err, 'Signing out that device failed. Please try again later.');
   }
 }
 
@@ -38,7 +38,7 @@ async function revokeOthers(req, res) {
     await disconnectOtherSockets(req.userId, req.sessionId);
     res.json({ revoked });
   } catch (err) {
-    sendServerError(res, err, 'Signing out your other devices failed. Please try again later.');
+    sendError(res, err, 'Signing out your other devices failed. Please try again later.');
   }
 }
 
@@ -52,7 +52,7 @@ async function logout(req, res) {
     }
     res.json({ ok: true });
   } catch (err) {
-    sendServerError(res, err, 'Logout failed. Please try again later.');
+    sendError(res, err, 'Logout failed. Please try again later.');
   }
 }
 

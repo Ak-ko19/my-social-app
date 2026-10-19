@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { getVisiblePost } = require('../services/postVisibilityService');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 
 const router = express.Router();
 
@@ -103,7 +103,7 @@ router.get('/share/posts/:id', async (req, res) => {
     res.set('Cache-Control', 'public, max-age=300');
     res.send(page({ appUrl, ...(card || { title: SITE, description: null, image: null }) }));
   } catch (err) {
-    sendServerError(res, err, 'Loading the share card failed.');
+    sendError(res, err, 'Loading the share card failed.');
   }
 });
 
@@ -136,7 +136,7 @@ router.get('/share/profiles/:id', async (req, res) => {
       : null;
     sendCard(res, `${frontendUrl()}/profile/${encodeURIComponent(raw)}`, card);
   } catch (err) {
-    sendServerError(res, err, 'Loading the share card failed.');
+    sendError(res, err, 'Loading the share card failed.');
   }
 });
 
@@ -156,7 +156,7 @@ router.get('/share/pages/:id', async (req, res) => {
     }
     sendCard(res, Number.isInteger(id) && id > 0 ? `${frontendUrl()}/pages/${id}` : `${frontendUrl()}/`, card);
   } catch (err) {
-    sendServerError(res, err, 'Loading the share card failed.');
+    sendError(res, err, 'Loading the share card failed.');
   }
 });
 

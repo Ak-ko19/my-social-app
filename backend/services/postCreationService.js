@@ -3,6 +3,7 @@
 // post published later is held to the rules of that moment: still in the
 // group, still the page's owner (an account that's no longer active can't
 // reach either path: authMiddleware for requests, the scheduler for drafts).
+const { HttpError } = require('../utils/httpError');
 const db = require('../db');
 const { toUnicode } = require('../utils/myanmarText');
 const pollService = require('./pollService');
@@ -17,12 +18,7 @@ const POST_VISIBILITIES = ['public', 'followers', 'close_friends', 'only_me'];
 // Day 43: posts had no length limit (a multipart field could be 1 MB).
 const MAX_POST_LENGTH = 10000;
 
-class PostInputError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
+class PostInputError extends HttpError {}
 
 const optionalId = (raw, name) => {
   if (raw === undefined || raw === null || raw === '') return null;

@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 const { getVisiblePost } = require('../services/postVisibilityService');
 const { listSaved } = require('../services/savedPostsService');
@@ -25,7 +25,7 @@ async function bookmarkPost(req, res) {
     if (err.code === '23505') {
       return res.status(400).send('You have already bookmarked this post');
     }
-    sendServerError(res, err, 'Bookmark failed. Please try again later.');
+    sendError(res, err, 'Bookmark failed. Please try again later.');
   }
 }
 
@@ -43,7 +43,7 @@ async function unbookmarkPost(req, res) {
     }
     res.send('Post unbookmarked successfully');
   } catch (err) {
-    sendServerError(res, err, 'Unbookmark failed. Please try again later.');
+    sendError(res, err, 'Unbookmark failed. Please try again later.');
   }
 }
 
@@ -55,7 +55,7 @@ async function getBookmarks(req, res) {
     const { posts, hasMore } = await listSaved(req.userId, { limit, offset });
     res.json({ page, posts, hasMore });
   } catch (err) {
-    sendServerError(res, err, 'Fetch bookmarks failed. Please try again later.');
+    sendError(res, err, 'Fetch bookmarks failed. Please try again later.');
   }
 }
 

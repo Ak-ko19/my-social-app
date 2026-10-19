@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { toUnicode } = require('../utils/myanmarText');
 
 // Kept as an allowlist (not free text) so the reason column stays a small,
@@ -123,7 +123,7 @@ async function createReport(req, res) {
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    sendServerError(res, err, 'Report submission failed. Please try again later.');
+    sendError(res, err, 'Report submission failed. Please try again later.');
   }
 }
 

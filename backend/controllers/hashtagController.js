@@ -3,7 +3,7 @@ const { postAudienceSql } = require('../services/postVisibilityService');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 const { pollColumnSql } = require('../services/pollService');
 const { popularityScoreSql } = require('../services/popularity');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 const { normalizeTag } = require('../services/hashtagService');
 const { toUnicode } = require('../utils/myanmarText');
@@ -98,7 +98,7 @@ async function getPostsByHashtag(req, res) {
 
     res.json({ tag, sort, page, posts, hasMore });
   } catch (err) {
-    sendServerError(res, err, 'Fetch posts by hashtag failed. Please try again later.');
+    sendError(res, err, 'Fetch posts by hashtag failed. Please try again later.');
   }
 }
 

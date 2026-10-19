@@ -1,14 +1,14 @@
 // Day 47: who can message me and who can comment on my posts (migration
 // 058; Settings > Messages and comments).
 const db = require('../db');
+const { HttpError } = require('../utils/httpError');
 
 const MESSAGE_PERMISSIONS = ['everyone', 'following', 'nobody'];
 const COMMENT_PERMISSIONS = ['everyone', 'followers', 'following'];
 
-class InteractionError extends Error {
+class InteractionError extends HttpError {
   constructor(message) {
-    super(message);
-    this.status = 403;
+    super(403, message);
   }
 }
 

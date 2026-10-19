@@ -1,5 +1,5 @@
 // Day 63: Admin > Log (see services/adminLogService.js).
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const adminLog = require('../services/adminLogService');
 
 // GET /admin/log?page=N&action=<one of adminLog.ACTIONS>
@@ -12,7 +12,7 @@ async function getLog(req, res) {
   try {
     res.json(await adminLog.list({ page, action }));
   } catch (err) {
-    sendServerError(res, err, 'Loading the admin log failed. Please try again later.');
+    sendError(res, err, 'Loading the admin log failed. Please try again later.');
   }
 }
 

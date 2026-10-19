@@ -1,7 +1,7 @@
 const db = require('../db');
 const { postAudienceSql } = require('../services/postVisibilityService');
 const { pageColumnSql } = require('../services/reactionService');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 const { escapeLike } = require('../utils/escapeLike');
 const { toUnicode } = require('../utils/myanmarText');
@@ -49,7 +49,7 @@ async function searchUsers(req, res) {
     );
     res.status(200).json(result.rows);
   } catch (err) {
-    sendServerError(res, err, 'Search users failed. Please try again later.');
+    sendError(res, err, 'Search users failed. Please try again later.');
   }
 }
 
@@ -110,7 +110,7 @@ async function searchPosts(req, res) {
     const posts = hasMore ? result.rows.slice(0, limit) : result.rows;
     res.status(200).json({ page, limit, posts, hasMore });
   } catch (err) {
-    sendServerError(res, err, 'Search posts failed. Please try again later.');
+    sendError(res, err, 'Search posts failed. Please try again later.');
   }
 }
 
@@ -156,7 +156,7 @@ async function searchHashtags(req, res) {
     );
     res.status(200).json(result.rows.map((row) => ({ ...row, capped: row.post_count >= TAG_COUNT_CAP })));
   } catch (err) {
-    sendServerError(res, err, 'Search hashtags failed. Please try again later.');
+    sendError(res, err, 'Search hashtags failed. Please try again later.');
   }
 }
 

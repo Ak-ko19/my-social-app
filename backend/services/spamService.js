@@ -14,6 +14,7 @@
 // Off under the automated test suite (Jest sets NODE_ENV=test) unless
 // SPAM_CHECKS_IN_TESTS=1, like the bot checks.
 const db = require('../db');
+const { HttpError } = require('../utils/httpError');
 
 const WINDOW_MINUTES = 10;
 const MAX_POSTS = 10;
@@ -28,10 +29,9 @@ const SAME_POST = 'You just posted this. Try writing something new.';
 const SAME_COMMENT = 'You already left this comment on this post.';
 const SAME_LINK = "You've shared this link too many times in the last hour. Please try again later.";
 
-class SpamError extends Error {
+class SpamError extends HttpError {
   constructor(message) {
-    super(message);
-    this.status = 429;
+    super(429, message);
   }
 }
 

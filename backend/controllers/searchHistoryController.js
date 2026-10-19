@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { toUnicode } = require('../utils/myanmarText');
 
 // Day 42: recent searches (like Facebook/Instagram), private to their owner.
@@ -35,7 +35,7 @@ async function saveSearch(req, res) {
     );
     res.status(204).end();
   } catch (err) {
-    sendServerError(res, err, 'Saving the search failed. Please try again later.');
+    sendError(res, err, 'Saving the search failed. Please try again later.');
   }
 }
 
@@ -49,7 +49,7 @@ async function getSearchHistory(req, res) {
     );
     res.json(result.rows);
   } catch (err) {
-    sendServerError(res, err, 'Loading recent searches failed. Please try again later.');
+    sendError(res, err, 'Loading recent searches failed. Please try again later.');
   }
 }
 
@@ -67,7 +67,7 @@ async function deleteSearch(req, res) {
     }
     res.status(204).end();
   } catch (err) {
-    sendServerError(res, err, 'Removing the search failed. Please try again later.');
+    sendError(res, err, 'Removing the search failed. Please try again later.');
   }
 }
 
@@ -77,7 +77,7 @@ async function clearSearchHistory(req, res) {
     await db.query('DELETE FROM search_history WHERE user_id = $1', [req.userId]);
     res.status(204).end();
   } catch (err) {
-    sendServerError(res, err, 'Clearing recent searches failed. Please try again later.');
+    sendError(res, err, 'Clearing recent searches failed. Please try again later.');
   }
 }
 

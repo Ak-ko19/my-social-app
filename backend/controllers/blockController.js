@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 
 async function blockUser(req, res) {
@@ -38,7 +38,7 @@ async function blockUser(req, res) {
     if (err.code === '23505') {
       return res.status(400).send('You have already blocked this user');
     }
-    sendServerError(res, err, 'Block failed. Please try again later.');
+    sendError(res, err, 'Block failed. Please try again later.');
   }
 }
 
@@ -57,7 +57,7 @@ async function unblockUser(req, res) {
     }
     res.send('User unblocked successfully');
   } catch (err) {
-    sendServerError(res, err, 'Unblock failed. Please try again later.');
+    sendError(res, err, 'Unblock failed. Please try again later.');
   }
 }
 
@@ -77,7 +77,7 @@ async function getBlockedUsers(req, res) {
     const blockedUsers = hasMore ? result.rows.slice(0, limit) : result.rows;
     res.json({ page, blockedUsers, hasMore });
   } catch (err) {
-    sendServerError(res, err, 'Fetch blocked users failed. Please try again later.');
+    sendError(res, err, 'Fetch blocked users failed. Please try again later.');
   }
 }
 

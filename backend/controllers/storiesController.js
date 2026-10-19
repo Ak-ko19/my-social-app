@@ -1,6 +1,6 @@
 const db = require('../db');
 const { notMutedSql } = require('../services/muteService');
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { mediaOfStory, deleteMedia } = require('../services/mediaCleanupService');
 
 // B3 Stories. Visibility follows the Instagram model: you see your own
@@ -48,7 +48,7 @@ async function createStory(req, res) {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    sendServerError(res, err, 'Posting your story failed. Please try again later.');
+    sendError(res, err, 'Posting your story failed. Please try again later.');
   }
 }
 
@@ -105,7 +105,7 @@ async function getStoriesTray(req, res) {
 
     res.json(tray);
   } catch (err) {
-    sendServerError(res, err, 'Loading stories failed. Please try again later.');
+    sendError(res, err, 'Loading stories failed. Please try again later.');
   }
 }
 
@@ -131,7 +131,7 @@ async function markStoryViewed(req, res) {
     );
     res.status(204).end();
   } catch (err) {
-    sendServerError(res, err, 'Marking story as viewed failed. Please try again later.');
+    sendError(res, err, 'Marking story as viewed failed. Please try again later.');
   }
 }
 
@@ -153,7 +153,7 @@ async function deleteStory(req, res) {
     deleteMedia(media);
     res.status(200).send('Story deleted');
   } catch (err) {
-    sendServerError(res, err, 'Deleting story failed. Please try again later.');
+    sendError(res, err, 'Deleting story failed. Please try again later.');
   }
 }
 

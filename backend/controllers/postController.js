@@ -1,7 +1,7 @@
 const db = require('../db');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 
-const { sendServerError } = require('../utils/sendError');
+const { sendError } = require('../utils/httpError');
 const { mediaOfPost, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
 const { getVisiblePost, postAudienceSql } = require('../services/postVisibilityService');
@@ -27,8 +27,7 @@ async function createPost(req, res) {
     await spamService.checkPost(req.userId, fields.content);
     res.status(201).json(await postCreation.createPost(req.userId, fields, imageUrls));
   } catch (err) {
-    if (err instanceof postCreation.PostInputError || err instanceof spamService.SpamError) return res.status(err.status).send(err.message);
-    sendServerError(res, err, 'Create post failed. Please try again later.');
+    sendError(res, err, 'Create post failed. Please try again later.');
   }
 }
 
@@ -77,7 +76,7 @@ async function getPosts(req, res) {
       hasMore
     });
   } catch (err) {
-    sendServerError(res, err, 'Fetch posts failed. Please try again later.');
+    sendError(res, err, 'Fetch posts failed. Please try again later.');
   }
 }
 
@@ -145,7 +144,7 @@ async function getFeed(req, res) {
       hasMore
     });
   } catch (error) {
-    sendServerError(res, error, 'Loading the feed failed. Please try again later.');
+    sendError(res, error, 'Loading the feed failed. Please try again later.');
   }
 }
 
@@ -200,7 +199,7 @@ async function getPost(req, res) {
       group_locked: Boolean(visible.community_id && !visible.viewer_is_community_member)
     });
   } catch (err) {
-    sendServerError(res, err, 'Fetch post failed. Please try again later.');
+    sendError(res, err, 'Fetch post failed. Please try again later.');
   }
 }
 
@@ -247,7 +246,7 @@ async function updatePost(req, res) {
     }
     res.json(result.rows[0]);
   } catch (err) {
-    sendServerError(res, err, 'Update post failed. Please try again later.');
+    sendError(res, err, 'Update post failed. Please try again later.');
   }
 }
 
@@ -281,7 +280,7 @@ async function deletePost(req, res) {
     deleteMedia(media); // not awaited: see mediaCleanupService
     res.send('Post deleted successfully');
   } catch (err) {
-    sendServerError(res, err, 'Delete post failed. Please try again later.');
+    sendError(res, err, 'Delete post failed. Please try again later.');
   }
 }
 
@@ -302,8 +301,7 @@ async function votePoll(req, res) {
     const { created, poll } = await pollService.vote(post.id, req.userId, req.body?.optionId);
     res.status(created ? 201 : 200).json(poll);
   } catch (err) {
-    if (err instanceof pollService.PollError) return res.status(err.status).send(err.message);
-    sendServerError(res, err, 'Voting failed. Please try again later.');
+    sendError(res, err, 'Voting failed. Please try again later.');
   }
 }
 
