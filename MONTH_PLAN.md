@@ -251,7 +251,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 63 — Audit log
 - [x] Record admin actions (who removed what, when). *(Admin > Log — see Progress Log.)*
 ### Day 64–66 — End-to-end tests
-- [ ] Playwright tests for the 15 most important user journeys; run in CI.
+- [x] Playwright tests for the 15 most important user journeys; run in CI. *(journeys-core / -social / -safety, e2e/JOURNEYS.md; AUDIT_REPORT_3 A3 done too — see Progress Log.)*
 ### Day 67–68 — API documentation
 - [ ] OpenAPI spec for every endpoint; docs page for developers.
 ### Day 69–71 — Code health
@@ -2118,3 +2118,67 @@ outside analytics and no chart library.
   - Full browser run in small batches: all 60 regular suites (new:
     day63-log, 16 checks) + the 6 special-stack suites + perf 41/41 +
     A3 EN/AR (288 each) + a11y (125 page checks).
+
+### 2026-10-19 — Days 64–66: End-to-end user journeys
+The 15 most important user journeys, walked only through the UI: every
+person has their own browser, signs up with the real forms and logs in.
+The one exception is the admin, who is made with SQL, because the app has
+no screen for that. Shared helpers are in `e2e/journey-kit.cjs`. The list
+is in `e2e/JOURNEYS.md`.
+- **journeys-core (`e454e84`, 20 checks):**
+  - J1 landing page → sign up → first post on Home and on the profile;
+  - J2 log out and in, and a reload keeps you in;
+  - J3 search → follow → like and comment, and the person is notified;
+  - J4 a private account's follow request, approved;
+  - J5 a DM from a profile, live both ways.
+  - **Bug it found, fixed:** a brand-new direct chat wasn't live until a
+    reload. Sockets join their chats' rooms only when they connect.
+    `syncRooms` moved from groupController to `sockets/index.js`, and
+    creating a chat now calls it. Backend test
+    `newConversationLive.test.js` (a mutation is caught).
+- **journeys-social (`3a22ac8`, 17 checks):**
+  - J6 a group chat, live for everyone;
+  - J7 a photo post;
+  - J8 a story, opened, then marked seen;
+  - J9 a group found, joined and posted in;
+  - J10 a page's post on a follower's Home, and an event with a Going.
+  - **Better approach (rule 9):** photos are now *really* uploaded in a
+    browser test for the first time. Before, every suite intercepted the
+    request. `e2e/cloudinary-stub.cjs` answers the Cloudinary SDK's signed
+    upload and serves the file. The SDK is pointed at it with its own
+    `upload_prefix` setting (inside `CLOUDINARY_URL`), so no app code
+    changed and no account is needed. The suite fails without the stub.
+    New stack mode: `MEDIA_SUITES` / `E2E_MEDIA=1`.
+- **journeys-safety (`76f4fbf`, 21 checks):**
+  - J11 a report removed by an admin, also in the admin log;
+  - J12 block and unblock;
+  - J13 an Arabic bio reads right to left; the app in Arabic and back;
+  - J14 a new password signs the other device out;
+  - J15 delete account (password plus typed username).
+  - Refused log-ins are expected only during that one attempt
+    (`attemptLogIn {refusal}`), so there are no blanket allow-lists.
+- **AUDIT_REPORT_3 A3 (`43f6396`):** day26-a11y now runs as three parts
+  (~2 min each) and the A3 matrix as four (EN/AR × light/dark, ~4 min
+  each). Each part gets its own fresh stack, and `E2E_ONLY` takes the
+  whole suite or one part. The totals are the same, and a CI-workflow test
+  keeps the parts equal to the whole.
+- **CI (`3179c43`):** journeys-core runs on every push (smoke), and all
+  three run in the full job. ciWorkflow.test checks that JOURNEYS.md lists
+  J1..J15 and that each one has checks in the suite it names.
+- **Decision (logged):** only journeys-core is in the every-push smoke
+  job, because CI minutes are limited. The other two run on pull requests
+  to master and by hand.
+- **Follow-ups:**
+  - Nothing tells you when an admin removes your content (FB/IG do). For
+    Day 81–82 or the Day 85–87 buffer.
+  - The e2e/README suite table stops at Day 5. For Day 69–71.
+  - day27-perf now takes ~8.5 minutes, the longest suite. Split it in
+    Day 74.
+- **Tests at close:**
+  - backend 905/905.
+  - Full browser run in small batches, with the stack down between them:
+    all 60 regular suites (new: journeys-core 20, journeys-safety 21),
+    journeys-social 17 on the media stack, the 6 special-stack suites, and
+    perf 41/41.
+  - a11y (125 page checks: 59 + 59 + 7) and A3 EN/AR (288 each, in 4
+    parts) ran green in step 4 on the same app code.

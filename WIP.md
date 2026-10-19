@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 64–66 — End-to-end tests: Playwright tests for the 15 most important user journeys; run in CI.
-**Step:** Day close — full browser run in batches. Plan: 15 journeys, each only through the UI (two people = two browser contexts), in 3 suites of 5 so each stays a few minutes: journeys-core (J1 sign up via landing + first post on Home and profile; J2 log out, log in, reload keeps you in; J3 find bob in search, follow, like + comment, bob sees the notification; J4 private account: follow request, approve, posts appear; J5 DM from profile, live both ways), journeys-social (J6 group chat; J7 photo post; J8 story seen by a friend; J9 group: create, other joins + posts; J10 page + event), journeys-safety (J11 report -> admin removes; J12 block/unblock; J13 edit profile + Arabic RTL and back; J14 change password, old fails new works; J15 delete account, cannot log in). Shared e2e/journey-kit.cjs. journeys-core joins the CI smoke list. Then step 4: AUDIT_REPORT_3 A3 split a3/a11y; step 5: e2e/JOURNEYS.md + CI test that every journey suite runs in CI.
+**Day:** 67–68 — API documentation (not started).
+**Step:** —
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -136,6 +136,11 @@
 - A picked photo now shows after it is shrunk (Day 57): browser suites
   must wait for .image-picker-item before checking the composer.
 
+- Browser tests that upload photos for real: put the suite in
+  run-all.sh MEDIA_SUITES (E2E_MEDIA=1, e2e/cloudinary-stub.cjs on :3904).
+  A new user journey: a J<n> row in e2e/JOURNEYS.md and checks named
+  "J<n> ..." (ciWorkflow.test checks both).
+- day27-perf takes ~8.5 min now (Day 66): split it like a3/a11y in Day 74.
 - Follow-up (seen Day 66): when an admin removes your post/comment/message
   nothing tells you (FB/IG notify "we removed your post"). A system
   notification type (notifySystem) -- for Day 81–82 notifications upgrade
@@ -143,44 +148,3 @@
 
 - e2e/README.md suite table stops at Day 5 (+ the journeys row): finish
   it in Day 69–71 (code health: update README).
-
-## Progress (Day 64–66)
-- Step 1 journeys-core (J1–J5): suite + e2e/journey-kit.cjs written; added
-  to run-all.sh SUITES and the CI smoke list. Bug it found: a brand-new
-  direct chat wasn't live (sockets join chat rooms only on connect) --
-  fixed by moving groupController's syncRooms into sockets/index.js and
-  calling it from createConversation; tests/api/newConversationLive.test.js
-  (mutation caught). STEP DONE: journeys-core 20/20; b9-dm, b10-groups,
-  a2-walkthrough, day32-forward, day33-group-admins green; backend 886/886.
-- Step 2 journeys-social (J6–J10) PLAN: J6 group chat (rana follows sami +
-  tariq; New group -> both get live messages, names on bubbles); J7 photo
-  post (pick a photo -> really uploaded -> shows on Home for a follower);
-  J8 story (sami adds one, rana sees it in the tray, opens it, ring turns
-  seen); J9 community group (create, other finds + joins, posts, creator
-  sees it); J10 page + event (create page, follower follows it, event on
-  the page, other says Going). Real uploads: e2e/cloudinary-stub.cjs (port
-  3904) answers the SDK (CLOUDINARY_URL ?upload_prefix=, test stack only,
-  no app change) and serves the file; run-all.sh MEDIA_SUITES / e2e-up
-  E2E_MEDIA=1; e2e-down frees 3904; ciWorkflow helpers list.
-  STEP DONE: journeys-social 17/17 (and fails without the stub, so the
-  photo checks are real); journeys-core 20/20; backend 886/886.
-- Step 3 journeys-safety (J11–J15) STEP DONE (76f4fbf): report -> admin
-  removes (+ admin log), block/unblock, Arabic bio + app in Arabic and back,
-  change password (other device out, old fails), delete account (typed
-  username). 21/21, 0 console errors (kit: attemptLogIn {refusal} expects
-  a 401 only then). All 3 journey suites green together; backend 886/886.
-- Step 4 AUDIT_REPORT_3 A3 split a3/a11y PLAN: a3-visual gets A3_THEME
-  (light|dark) -> 4 parts a3-en-light ... a3-ar-dark; day26-a11y gets
-  A11Y_PART (light: EN light, dark: EN dark, ar: Arabic + keyboard). run-all
-  runs each part on its own fresh stack with its own line; E2E_ONLY takes
-  a3 / day26-a11y (all parts) or one part. Same checks, same totals (a3
-  288/lang, a11y 125). README + WIP notes updated; ciWorkflow test that
-  the parts add up to the whole.
-  STEP DONE: a11y light 59 / dark 59 / ar 7 (=125, ~2 min each); a3
-  en-light/en-dark/ar-light/ar-dark 144 each (=288/lang, ~4 min each);
-  all 0 failures; backend 888/888.
-- Step 5 e2e/JOURNEYS.md + CI test STEP DONE: doc (15 rows, run, add);
-  ciWorkflow: J1..J15 in order, each has checks in its suite (mutation
-  caught), every journeys suite in run-all + core in smoke. Backend 905/905.
-- Day close: FULL browser run in batches of <=5 (heavy alone), then the
-  Progress Log entry + tick Day 64-66.
