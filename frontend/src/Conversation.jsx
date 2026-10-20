@@ -50,6 +50,7 @@ function Conversation() {
     loadOlder,
     sendMessage,
     retrySend,
+    cancelQueued,
     sendVoiceMessage,
     retryVoiceSend,
     deleteMessage,
@@ -387,6 +388,7 @@ function Conversation() {
                 message={message}
                 isOwn={message.sender_id === userId}
                 onRetry={retrySend}
+                onCancelQueued={cancelQueued}
                 onRetryVoice={retryVoiceSend}
                 onRetryImage={retryImageSend}
                 onDelete={deleteMessage}

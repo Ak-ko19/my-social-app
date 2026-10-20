@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 72–73 — Offline + PWA polish: offline feed cache, offline message queue, install prompt, app icons.
-**Step:** 2 — offline message queue: PLAN.
+**Step:** 3 — install prompt: PLAN.
 
 Plan (have: an app-shell service worker that caches every same-origin GET
 forever under one name -- old hashed assets pile up per deploy):
@@ -32,6 +32,15 @@ forever under one name -- old hashed assets pile up per deploy):
   day8-sessions-list, b16, day2, c2 green.
   Seen: EmailVerificationBanner amber text #d97706 on #fef3c7 is ~2.9:1
   (below AA) and has no dark tokens -- fix in step 4 or Day 80.
+- Step 2 DONE: offline message queue -- a text sent offline is 'queued'
+  (clock, "Waiting for connection"; Don't send), kept per account+chat
+  (offline:outbox:, wiped at logout), restored when the chat opens, sent
+  oldest-first when online / socket connected (once per flush); a socket
+  send that times out while offline queues instead of failing. Media
+  can't be kept (files): offline they fail with Retry. Privacy section 6
+  mentions unsent messages. useConversationMessages.queue.test (4);
+  day72-offline 18. Vitest 304, bundle 223.5/225; a2, b9, day31, day43,
+  c2 green.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

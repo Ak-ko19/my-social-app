@@ -2,8 +2,9 @@
 // bob has a post). Alice opens Home online, then the device goes offline:
 // a banner says so on every screen, and Home -- reached again inside the
 // app -- shows the posts it saved, marked as such, in English and Arabic
-// (right to left). Back online, Home loads by itself. Logging out leaves no
-// saved feed on the device.
+// (right to left). Back online, Home loads by itself. In a chat, a message
+// written offline waits ("Waiting for connection"; "Don't send" takes it
+// back) and goes by itself once online. Logging out leaves nothing saved.
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('./node_modules/playwright-core');
@@ -61,6 +62,29 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
     check(`${lang}: back online, Home loads by itself and the banner goes`, state.note === 0 && state.banner === 0 && state.post > 0, JSON.stringify(state));
 
     if (lang === 'en') {
+      // A message written offline waits, then goes by itself.
+      const history = async () => (await (await fetch(`http://localhost:3000/conversations/1/messages`, { headers: { Authorization: `Bearer ${aliceToken}` } })).json()).messages.map((m) => m.content);
+      await page.goto(`${WEB}/messages/1`, { waitUntil: 'networkidle' });
+      await page.getByRole('textbox', { name: 'Write a message' }).waitFor();
+      offline = true;
+      await ctx.setOffline(true);
+      await page.locator('.offline-banner').waitFor({ timeout: 5000 });
+      await page.getByRole('textbox', { name: 'Write a message' }).fill('written on the train');
+      await page.getByRole('button', { name: 'Send', exact: true }).click();
+      await page.getByRole('img', { name: L.messages.status.queued }).waitFor({ timeout: 5000 });
+      check('chat offline: the message waits ("Waiting for connection")', !(await history()).includes('written on the train'));
+      await page.getByRole('textbox', { name: 'Write a message' }).fill('changed my mind');
+      await page.getByRole('button', { name: 'Send', exact: true }).click();
+      await page.getByRole('button', { name: L.messages.cancelQueued }).last().click();
+      check("...and Don't send takes one back", (await page.getByText('changed my mind').count()) === 0);
+      await ctx.setOffline(false);
+      await page.getByRole('img', { name: L.messages.status.queued }).waitFor({ state: 'detached', timeout: 10000 }).catch(() => {});
+      offline = false;
+      const sent = await history();
+      check('back online: it was sent, once; the other never was',
+        sent.filter((c) => c === 'written on the train').length === 1 && !sent.includes('changed my mind'), JSON.stringify(sent.slice(-3)));
+      check('nothing is left waiting on the device', await page.evaluate(() => Object.keys(localStorage).every((k) => !k.startsWith('offline:outbox:'))));
+
       check('a saved copy is on the device while logged in', await page.evaluate(() => Boolean(localStorage.getItem('offline:feed:1'))));
       await page.goto(`${WEB}/settings`, { waitUntil: 'networkidle' });
       await page.getByRole('button', { name: 'Log Out' }).click();

@@ -38,6 +38,29 @@ export function readFeed(userId) {
   return saved && Array.isArray(saved.posts) ? saved : null;
 }
 
+// Day 72: text messages written offline, waiting to be sent, per account
+// and chat: [{ clientTempId, content, replyToMessageId, replyTo, createdAt }].
+const outboxKey = (userId, conversationId) => `${PREFIX}outbox:${userId}:${conversationId}`;
+
+export function readOutbox(userId, conversationId) {
+  if (!userId || !conversationId) return [];
+  const list = read(outboxKey(userId, conversationId));
+  return Array.isArray(list) ? list.filter((m) => m && typeof m.clientTempId === 'string' && typeof m.content === 'string') : [];
+}
+
+export function saveOutbox(userId, conversationId, list) {
+  if (!userId || !conversationId) return;
+  if (list.length === 0) {
+    try {
+      localStorage.removeItem(outboxKey(userId, conversationId));
+    } catch {
+      // Storage not available: nothing was kept.
+    }
+    return;
+  }
+  write(outboxKey(userId, conversationId), list);
+}
+
 // Logout: every account's offline copies go.
 export function clearOfflineData() {
   try {

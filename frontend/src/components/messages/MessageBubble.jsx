@@ -76,6 +76,7 @@ function MessageBubble({
   senderName,
   isEditing,
   onRetry,
+  onCancelQueued,
   onRetryVoice,
   onRetryImage,
   onDelete,
@@ -94,6 +95,7 @@ function MessageBubble({
   const isVoice = message.type === 'voice';
   const isImage = message.type === 'image';
   const isSending = message.status === 'sending';
+  const isQueued = message.status === 'queued';
   const isPersisted = message.id != null && !isSending && !isFailed;
 
   // Only surfaced once an upload has actually been in flight for a second --
@@ -208,7 +210,7 @@ function MessageBubble({
           'messages-bubble',
           isOwn ? 'messages-bubble-own' : 'messages-bubble-other',
           isImage && !isDeleted ? 'messages-bubble-image' : '',
-          isSending ? 'messages-bubble-sending' : '',
+          isSending || isQueued ? 'messages-bubble-sending' : '',
           isFailed ? 'messages-bubble-failed' : ''
         ]
           .filter(Boolean)
@@ -275,6 +277,11 @@ function MessageBubble({
             onClick={() => onRetryImage(message.client_temp_id, message._imageFile, message.reply_to)}
           >
             {t('messages.photoFailed')}
+          </button>
+        )}
+        {isQueued && onCancelQueued && (
+          <button type="button" className="messages-retry-btn" onClick={() => onCancelQueued(message.client_temp_id)}>
+            {t('messages.cancelQueued')}
           </button>
         )}
         {isFailed && !isVoice && !isImage && (

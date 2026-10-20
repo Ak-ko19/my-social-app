@@ -4,6 +4,10 @@ import i18n from '../i18n';
 import { useMediaMessages } from './useMediaMessages';
 import { fetchMessages, sendMessageRest, markConversationRead, deleteMessageRest, editMessageRest, setMessageReactionRest } from '../services/messageService';
 import { STATUS_ORDER, buildReplyPreview, localKey, makeClientTempId, sortByCreatedAt, syncQuotes } from '../utils/chatMessages';
+import { readOutbox, saveOutbox } from '../utils/offlineStore';
+
+// Day 72: the browser says it has no connection right now.
+const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
 
 const SEND_TIMEOUT_MS = 5000;
 
@@ -40,6 +44,16 @@ export function useConversationMessages(conversationId, token, currentUserId) {
   // B9: messageId -> the pre-edit message while a socket edit is in flight,
   // so message_error can roll it back (same idea as pendingDeletesRef).
   const pendingEditsRef = useRef(new Map());
+  // Day 72: text written offline waits as 'queued' (kept on the device by
+  // the outbox effect below) and goes by itself when the connection is
+  // back. outboxReadyRef: this chat's saved outbox has been put back on
+  // screen (until then, saving would overwrite it with nothing).
+  // flushedRef: queued messages already handed to attemptSend in this
+  // flush, so two "you're back" signals can't send one twice.
+  const outboxReadyRef = useRef(false);
+  const flushedRef = useRef(new Set());
+  const messagesRef = useRef([]);
+  const [outboxVersion, setOutboxVersion] = useState(0);
 
   const mergeMessages = useCallback((incoming) => {
     if (!incoming.length) return;
@@ -128,19 +142,53 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     pendingTimeoutsRef.current.clear();
     pendingDeletesRef.current.clear();
     pendingEditsRef.current.clear();
+    outboxReadyRef.current = false;
+    flushedRef.current.clear();
     // Deferred by a microtask so this reset runs behind an async boundary
     // instead of synchronously inside the effect's call stack (same
     // reasoning as useFeed's loadMore -- see its comment). loadMessages()
     // below still increments requestIdRef synchronously, so any in-flight
     // fetch from the previous conversationId is invalidated immediately.
     Promise.resolve().then(() => {
-      setMessages([]);
+      // Day 72: what was written offline in this chat, still waiting.
+      setMessages(readOutbox(currentUserId, conversationIdNum).map((m) => ({
+        id: null,
+        client_temp_id: m.clientTempId,
+        conversation_id: conversationIdNum,
+        sender_id: currentUserId,
+        content: m.content,
+        status: 'queued',
+        created_at: m.createdAt,
+        edited_at: null,
+        deleted_at: null,
+        reply_to_message_id: m.replyToMessageId ?? null,
+        reply_to: m.replyTo ?? null
+      })));
+      outboxReadyRef.current = true;
+      setOutboxVersion((v) => v + 1);
       setLoading(true);
       setError(null);
       setNextCursor(null);
     });
     loadMessages({ markRead: true });
-  }, [loadMessages]);
+  }, [loadMessages, currentUserId, conversationIdNum]);
+
+  // Day 72: keep this chat's queued texts on the device (voice notes and
+  // photos are files, which can't be kept this way: offline they fail and
+  // offer Retry).
+  useEffect(() => {
+    messagesRef.current = messages;
+    if (!outboxReadyRef.current) return;
+    saveOutbox(currentUserId, conversationIdNum, messages
+      .filter((m) => m.id == null && m.status === 'queued')
+      .map((m) => ({
+        clientTempId: m.client_temp_id,
+        content: m.content,
+        replyToMessageId: m.reply_to_message_id ?? null,
+        replyTo: m.reply_to ?? null,
+        createdAt: m.created_at
+      })));
+  }, [messages, currentUserId, conversationIdNum]);
 
   // Live messages for this conversation while connected.
   useEffect(() => {
@@ -287,17 +335,30 @@ export function useConversationMessages(conversationId, token, currentUserId) {
   // socket even if the original attempt had to fall back to REST.
   const attemptSend = useCallback(
     (clientTempId, content, replyToMessageId = null) => {
-      setMessages((current) =>
-        current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, status: 'sending' } : m))
+      const setStatus = (status) => setMessages((current) =>
+        current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, status } : m))
       );
+      // Day 72: no connection -- wait for one instead of failing.
+      const queue = () => {
+        flushedRef.current.delete(clientTempId);
+        setStatus('queued');
+      };
+      if (isOffline()) {
+        queue();
+        return;
+      }
+      setStatus('sending');
 
       if (connectionState === 'connected' && socket) {
         const timeoutId = setTimeout(() => {
           pendingTimeoutsRef.current.delete(clientTempId);
+          // The connection went away meanwhile: wait for it (queued);
+          // otherwise the send failed (Retry).
+          if (isOffline()) flushedRef.current.delete(clientTempId);
           setMessages((current) =>
             current.map((m) =>
               m.client_temp_id === clientTempId && m.id == null && m.status === 'sending'
-                ? { ...m, status: 'failed' }
+                ? { ...m, status: isOffline() ? 'queued' : 'failed' }
                 : m
             )
           );
@@ -314,10 +375,13 @@ export function useConversationMessages(conversationId, token, currentUserId) {
       sendMessageRest(conversationId, content, clientTempId, token, replyToMessageId)
         .then((savedMessage) => mergeMessages([savedMessage]))
         .catch((err) => {
+          // No answer at all while offline: wait for the connection.
+          if (!err.response && isOffline()) {
+            queue();
+            return;
+          }
           console.error(err);
-          setMessages((current) =>
-            current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, status: 'failed' } : m))
-          );
+          setStatus('failed');
         });
     },
     [socket, connectionState, conversationId, token, mergeMessages]
@@ -373,6 +437,34 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     },
     [mergeMessages, buildOptimisticMessage, attemptSend]
   );
+
+  // Day 72: a queued text the person decided not to send.
+  const cancelQueued = useCallback((clientTempId) => {
+    setMessages((current) => current.filter((m) => !(m.client_temp_id === clientTempId && m.id == null && m.status === 'queued')));
+  }, []);
+
+  // Day 72: the connection is back (the browser's "online", the socket
+  // reconnecting, or the chat opening with an outbox): send what waited,
+  // oldest first. Each goes through attemptSend once per flush.
+  const flushQueued = useCallback(() => {
+    if (isOffline() || !outboxReadyRef.current) return;
+    messagesRef.current
+      .filter((m) => m.id == null && m.status === 'queued' && !flushedRef.current.has(m.client_temp_id))
+      .sort(sortByCreatedAt)
+      .forEach((m) => {
+        flushedRef.current.add(m.client_temp_id);
+        attemptSend(m.client_temp_id, m.content, m.reply_to_message_id ?? null);
+      });
+  }, [attemptSend]);
+
+  useEffect(() => {
+    window.addEventListener('online', flushQueued);
+    return () => window.removeEventListener('online', flushQueued);
+  }, [flushQueued]);
+
+  useEffect(() => {
+    if (connectionState === 'connected') flushQueued();
+  }, [connectionState, outboxVersion, flushQueued]);
 
   // Optimistic-then-reconcile, mirroring attemptSend: applies the "deleted"
   // placeholder locally first, then confirms via whichever transport is
@@ -483,6 +575,7 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     loadOlder,
     sendMessage,
     retrySend,
+    cancelQueued,
     sendVoiceMessage: media.sendVoiceMessage,
     retryVoiceSend: media.retryVoiceSend,
     deleteMessage,
