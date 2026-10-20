@@ -1,72 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSocket } from './useSocket';
 import i18n from '../i18n';
-import {
-  fetchMessages,
-  sendMessageRest,
-  markConversationRead,
-  deleteMessageRest,
-  sendVoiceMessageRest,
-  editMessageRest,
-  sendImageMessageRest, setMessageReactionRest } from '../services/messageService';
-
-// B9: a reply's quote, built locally for an optimistic message the same way
-// the server builds reply_to (see backend messageService.attachReplyPreviews)
-// so the bubble looks identical before and after the server confirms it.
-// Keeps every reply's quote in sync when the ORIGINAL is edited or deleted
-// (otherwise quotes already on screen would stay stale until a reload).
-function syncQuotes(messages, originalId, patch) {
-  return messages.map((m) =>
-    m.reply_to && m.reply_to.id === originalId ? { ...m, reply_to: { ...m.reply_to, ...patch } } : m
-  );
-}
-
-function buildReplyPreview(replyTo) {
-  if (!replyTo || replyTo.id == null) return null;
-  return {
-    id: replyTo.id,
-    sender_id: replyTo.sender_id,
-    type: replyTo.type || 'text',
-    deleted: Boolean(replyTo.deleted_at),
-    content: replyTo.deleted_at || !replyTo.content ? null : String(replyTo.content).slice(0, 120)
-  };
-}
+import { useMediaMessages } from './useMediaMessages';
+import { fetchMessages, sendMessageRest, markConversationRead, deleteMessageRest, editMessageRest, setMessageReactionRest } from '../services/messageService';
+import { STATUS_ORDER, buildReplyPreview, localKey, makeClientTempId, sortByCreatedAt, syncQuotes } from '../utils/chatMessages';
 
 const SEND_TIMEOUT_MS = 5000;
-// 'sending'/'failed' are local-only states a server message never carries;
-// they always sort as "not yet resolved", so ordering them isn't relevant --
-// only sent/delivered/read (the values message_status_update can regress
-// from being applied out of order) need a real rank here.
-const STATUS_ORDER = { sent: 0, delivered: 1, read: 2 };
-
-function makeClientTempId() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
-  return `tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-// A message is keyed by its real id once it has one, or by its clientTempId
-// while still optimistic (id === null) -- this is what lets mergeMessages
-// below reconcile "the optimistic row" with "the real row the server sent
-// back" as the same slot instead of ending up with both.
-function localKey(message) {
-  return message.id != null ? `id:${message.id}` : `tmp:${message.client_temp_id}`;
-}
-
-function sortByCreatedAt(a, b) {
-  const diff = new Date(a.created_at) - new Date(b.created_at);
-  if (diff !== 0) return diff;
-  // Stable tiebreak for same-millisecond timestamps: a still-optimistic
-  // message (no id yet) is always the newest thing at the moment it's
-  // created, so it sorts after any real, already-persisted message. Two
-  // optimistic messages can't be ordered against each other this way (no id
-  // yet for either) -- returning 0 there specifically avoids an
-  // inconsistent comparator (Array.prototype.sort is undefined behavior if
-  // comparing (a, b) and (b, a) can't both agree).
-  if (a.id == null && b.id == null) return 0;
-  if (a.id == null) return 1;
-  if (b.id == null) return -1;
-  return a.id - b.id;
-}
 
 // Owns everything the chat window needs for one open conversation: initial
 // load + mark-as-read, reverse-cursor pagination for older history,
@@ -470,116 +409,6 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     [socket, connectionState, conversationId, token, mergeMessages]
   );
 
-  const buildOptimisticVoiceMessage = useCallback(
-    (clientTempId, blob, durationSeconds, localUrl) => ({
-      id: null,
-      client_temp_id: clientTempId,
-      conversation_id: conversationIdNum,
-      sender_id: currentUserId,
-      content: null,
-      type: 'voice',
-      media_url: localUrl,
-      duration_seconds: durationSeconds ?? null,
-      status: 'sending',
-      created_at: new Date().toISOString(),
-      edited_at: null,
-      deleted_at: null,
-      // Client-only bookkeeping -- never present on a real server row, so
-      // both fields disappear on their own the moment mergeMessages swaps
-      // this optimistic object out for the real one (see attemptVoiceUpload).
-      _voiceBlob: blob, // kept so a failed upload can be retried without re-recording
-      _uploadProgress: 0 // 0-100; MessageBubble itself decides whether/when to actually show it
-    }),
-    [conversationIdNum, currentUserId]
-  );
-
-  // Voice has no socket send path (an audio Blob isn't something you emit
-  // over the socket -- see sendVoiceMessageRest), so this is always REST,
-  // unlike attemptSend's socket-first/REST-fallback split for text. Shared
-  // by sendVoiceMessage (fresh optimistic row) and retryVoiceSend (an
-  // existing 'failed' row going back to 'sending'), same relationship
-  // attemptSend has to sendMessage/retrySend.
-  //
-  // clientTempId now round-trips through the upload (see
-  // sendVoiceMessageRest) and comes back on the saved row, so the
-  // new_message broadcast this sender's own socket receives (they're in the
-  // room too, same as any text send) gets matched and deduplicated by
-  // mergeMessages exactly like a text send's ack -- this function doesn't
-  // need to race that broadcast itself, it just also calls mergeMessages
-  // with the REST response; whichever of the two arrives first evicts the
-  // optimistic row, and the other is a harmless idempotent re-merge of the
-  // same real row.
-  const attemptVoiceUpload = useCallback(
-    (clientTempId, blob, durationSeconds, localUrl) => {
-      sendVoiceMessageRest(conversationId, blob, clientTempId, token, {
-        onUploadProgress: (progressEvent) => {
-          if (!progressEvent.total) return;
-          const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-          setMessages((current) =>
-            current.map((m) =>
-              m.client_temp_id === clientTempId && m.id == null ? { ...m, _uploadProgress: percent } : m
-            )
-          );
-        }
-      })
-        .then((savedMessage) => {
-          // Real Cloudinary URL is in use now (via mergeMessages below) --
-          // the local blob: URL this bubble was playing from is no longer
-          // needed.
-          URL.revokeObjectURL(localUrl);
-          mergeMessages([savedMessage]);
-        })
-        .catch((err) => {
-          console.error(err);
-          // Deliberately NOT revoking localUrl here -- blob and URL both
-          // stay alive so the failed bubble can still play back what was
-          // recorded, and so retryVoiceSend can re-upload the same blob
-          // without asking the user to re-record.
-          setMessages((current) =>
-            current.map((m) =>
-              m.client_temp_id === clientTempId && m.id == null ? { ...m, status: 'failed', _uploadProgress: 0 } : m
-            )
-          );
-        });
-    },
-    [conversationId, token, mergeMessages]
-  );
-
-  const sendVoiceMessage = useCallback(
-    (blob, durationSeconds) => {
-      const clientTempId = makeClientTempId();
-      const localUrl = URL.createObjectURL(blob);
-      mergeMessages([buildOptimisticVoiceMessage(clientTempId, blob, durationSeconds, localUrl)]);
-      attemptVoiceUpload(clientTempId, blob, durationSeconds, localUrl);
-    },
-    [mergeMessages, buildOptimisticVoiceMessage, attemptVoiceUpload]
-  );
-
-  // Mints a NEW clientTempId rather than reusing the failed one, same
-  // reasoning as retrySend: a late-arriving response/broadcast for the
-  // original attempt must not be able to collide with the retry's own row.
-  // Reuses the SAME cached blob (from the failed bubble's _voiceBlob) --
-  // the whole point is the user never has to re-record.
-  const retryVoiceSend = useCallback(
-    (failedClientTempId, blob, durationSeconds) => {
-      setMessages((current) => {
-        const failed = current.find((m) => m.client_temp_id === failedClientTempId && m.id == null);
-        // Revoking here is safe even if this updater runs twice (React
-        // StrictMode) -- revoking an already-revoked/unknown URL is a no-op,
-        // not an error, unlike the actual upload call below which must only
-        // run once.
-        if (failed?.media_url) URL.revokeObjectURL(failed.media_url);
-        return current.filter((m) => !(m.client_temp_id === failedClientTempId && m.id == null));
-      });
-
-      const newClientTempId = makeClientTempId();
-      const localUrl = URL.createObjectURL(blob);
-      mergeMessages([buildOptimisticVoiceMessage(newClientTempId, blob, durationSeconds, localUrl)]);
-      attemptVoiceUpload(newClientTempId, blob, durationSeconds, localUrl);
-    },
-    [mergeMessages, buildOptimisticVoiceMessage, attemptVoiceUpload]
-  );
-
   // B9 edit: optimistic content + edited_at, confirmed by the room's
   // message_edited broadcast (socket) or the REST response; rolled back on
   // failure. The server enforces own-text-only and the 15-minute window.
@@ -642,77 +471,8 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     [conversationId, currentUserId, token]
   );
 
-  // B9 image send -- REST only (a file isn't a socket payload), optimistic
-  // bubble from a local blob URL, same shape as voice sends.
-  const attemptImageUpload = useCallback(
-    (clientTempId, file, localUrl, replyTo) => {
-      sendImageMessageRest(conversationId, file, clientTempId, token, {
-        replyToMessageId: replyTo ? replyTo.id : null,
-        onUploadProgress: (progressEvent) => {
-          if (!progressEvent.total) return;
-          const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-          setMessages((current) =>
-            current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, _uploadProgress: percent } : m))
-          );
-        }
-      })
-        .then((saved) => {
-          URL.revokeObjectURL(localUrl);
-          mergeMessages([saved]);
-        })
-        .catch((err) => {
-          console.error(err);
-          setMessages((current) =>
-            current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, status: 'failed', _uploadProgress: 0 } : m))
-          );
-        });
-    },
-    [conversationId, token, mergeMessages]
-  );
-
-  const buildOptimisticImage = useCallback(
-    (clientTempId, file, localUrl, replyTo) => ({
-      id: null,
-      client_temp_id: clientTempId,
-      conversation_id: conversationIdNum,
-      sender_id: currentUserId,
-      content: null,
-      type: 'image',
-      media_url: localUrl,
-      status: 'sending',
-      created_at: new Date().toISOString(),
-      edited_at: null,
-      deleted_at: null,
-      reply_to_message_id: replyTo ? replyTo.id : null,
-      reply_to: buildReplyPreview(replyTo),
-      _imageFile: file, // kept so a failed upload can be retried
-      _uploadProgress: 0
-    }),
-    [conversationIdNum, currentUserId]
-  );
-
-  const sendImageMessage = useCallback(
-    (file, replyTo = null) => {
-      if (!file) return;
-      const clientTempId = makeClientTempId();
-      const localUrl = URL.createObjectURL(file);
-      mergeMessages([buildOptimisticImage(clientTempId, file, localUrl, replyTo)]);
-      attemptImageUpload(clientTempId, file, localUrl, replyTo);
-    },
-    [mergeMessages, buildOptimisticImage, attemptImageUpload]
-  );
-
-  const retryImageSend = useCallback(
-    (failedClientTempId, file, replyTo = null) => {
-      setMessages((current) => {
-        const failed = current.find((m) => m.client_temp_id === failedClientTempId && m.id == null);
-        if (failed?.media_url) URL.revokeObjectURL(failed.media_url);
-        return current.filter((m) => !(m.client_temp_id === failedClientTempId && m.id == null));
-      });
-      sendImageMessage(file, replyTo);
-    },
-    [sendImageMessage]
-  );
+  // Voice notes and photos (REST uploads with optimistic bubbles).
+  const media = useMediaMessages({ conversationId, conversationIdNum, token, currentUserId, setMessages, mergeMessages });
 
   return {
     messages,
@@ -723,13 +483,13 @@ export function useConversationMessages(conversationId, token, currentUserId) {
     loadOlder,
     sendMessage,
     retrySend,
-    sendVoiceMessage,
-    retryVoiceSend,
+    sendVoiceMessage: media.sendVoiceMessage,
+    retryVoiceSend: media.retryVoiceSend,
     deleteMessage,
     editMessage,
     reactToMessage,
-    sendImageMessage,
-    retryImageSend,
+    sendImageMessage: media.sendImageMessage,
+    retryImageSend: media.retryImageSend,
     reload: () => loadMessages({ markRead: false })
   };
 }

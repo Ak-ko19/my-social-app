@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 69–71 — Code health: duplicated logic, large files, consistent errors, README + CLAUDE.md.
-**Step:** 7 — split useConversationMessages.js (735 lines): PLAN.
+**Step:** 8 — root README.md + CLAUDE.md: PLAN.
 
 Plan (survey: biggest file 735 lines; the real debt is duplication):
 1. utils/httpError.js: HttpError(status, message) + sendError(res, err,
@@ -58,7 +58,12 @@ Plan (survey: biggest file 735 lines; the real debt is duplication):
   (3), hook + ForwardSheet tests, b9 checks 22 chats (list is virtualized:
   counted by index). Backend 949, Vitest 286, bundle 222.6; a2, b9, b10,
   day23, day32, journeys-core/social, perf green.
-- Next: step 7 split useConversationMessages, step 8 README + CLAUDE.md.
+- Step 7 DONE: useConversationMessages 735 -> 494 lines; utils/chatMessages
+  (pure helpers, 60) + hooks/useMediaMessages (voice + photo, 133: one
+  shared upload routine and one retry, instead of two copies). Same API.
+  New tests: chatMessages (3), useMediaMessages (2). Vitest 291, lint,
+  bundle 222.6; a2, b9, b10, day31, day32 green.
+- Next: step 8 README + CLAUDE.md, then the Day close.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
