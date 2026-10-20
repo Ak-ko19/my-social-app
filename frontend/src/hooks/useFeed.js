@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchFeed } from '../services/postService';
 import i18n from '../i18n';
+import { readFeed, saveFeed } from '../utils/offlineStore';
 
 const PAGE_LIMIT = 20;
 
@@ -9,8 +10,13 @@ const PAGE_LIMIT = 20;
 // incrementing request id guards against stale responses -- if `reload` is
 // called while a `loadMore` is in flight (or two loads somehow overlap), the
 // older response is ignored instead of clobbering newer state.
-export function useFeed(token) {
+// Day 72: the first page is kept on the device (utils/offlineStore); when
+// Home can't load because the device is offline, those posts are shown
+// (savedAt says so), and the feed reloads by itself once it's back online.
+export function useFeed(token, userId) {
   const [posts, setPosts] = useState([]);
+  const [savedAt, setSavedAt] = useState(null);
+  const savedAtRef = useRef(null); // the same, for the request callbacks
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
@@ -35,16 +41,51 @@ export function useFeed(token) {
         pageRef.current = 1;
         setPosts(data.posts);
         setHasMore(Boolean(data.hasMore));
+        setSavedAt(null);
+        savedAtRef.current = null;
         setError(null);
         setLoading(false);
+        saveFeed(userId, data.posts);
       })
       .catch((err) => {
         if (requestId !== requestIdRef.current) return;
-        console.error(err);
-        setError(i18n.t('errors.loadFeed'));
+        const saved = typeof navigator !== 'undefined' && navigator.onLine === false ? readFeed(userId) : null;
+        if (saved) {
+          setPosts(saved.posts);
+          setHasMore(false);
+          setSavedAt(saved.savedAt);
+          savedAtRef.current = saved.savedAt;
+          setError(null);
+        } else if (savedAtRef.current) {
+          // Still showing the saved posts (a retry right after the
+          // connection came back can fail too): keep them on screen.
+        } else {
+          console.error(err);
+          setError(i18n.t('errors.loadFeed'));
+        }
         setLoading(false);
       });
-  }, [token]);
+  }, [token, userId]);
+
+  // Back online after showing saved posts, or after failing: load again --
+  // at once, then after 2 and 6 seconds (the "online" event can come before
+  // the network really works). A successful load ends it (savedAt and error
+  // go null, which clears the timers below).
+  useEffect(() => {
+    if (!savedAt && !error) return undefined;
+    const timers = [];
+    const retry = () => {
+      timers.forEach(clearTimeout);
+      timers.length = 0;
+      fetchInitial();
+      timers.push(setTimeout(fetchInitial, 2000), setTimeout(fetchInitial, 6000));
+    };
+    window.addEventListener('online', retry);
+    return () => {
+      window.removeEventListener('online', retry);
+      timers.forEach(clearTimeout);
+    };
+  }, [savedAt, error, fetchInitial]);
 
   useEffect(() => {
     fetchInitial();
@@ -119,6 +160,7 @@ export function useFeed(token) {
 
   return {
     posts,
+    savedAt,
     loading,
     loadingMore,
     error,

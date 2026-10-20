@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { clearOfflineData } from '../utils/offlineStore';
 
 const AUTH_CHANGE_EVENT = 'mysocialapp:auth-change';
 
@@ -55,6 +56,8 @@ export function clearLocalSession() {
   for (const key of Object.keys(localStorage)) {
     if (key.startsWith('hiddenWords:')) localStorage.removeItem(key);
   }
+  // Day 72: and what was kept to work offline (feed, unsent messages).
+  clearOfflineData();
   notifyAuthChange();
 }
 

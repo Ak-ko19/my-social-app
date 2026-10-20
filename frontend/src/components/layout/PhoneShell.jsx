@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import BottomTabBar from './BottomTabBar';
+import OfflineBanner from './OfflineBanner';
 import './layout.css';
 
 // Constrains content to a centered mobile-width column, even on a wide
@@ -23,6 +24,7 @@ function PhoneShell({ children, className, hideTabBar = false }) {
   const { t } = useTranslation();
   return (
     <div className={clsx('phone-shell', className)}>
+      <OfflineBanner />
       {/* Screens are lazy-loaded (App.jsx) -- this fallback only shows on the
           first visit to a screen, while its chunk downloads. */}
       <Suspense fallback={<p className="screen-status" role="status">{t('common.loading')}</p>}>{children}</Suspense>

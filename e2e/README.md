@@ -146,6 +146,7 @@ error. Full output goes to `out-<suite>.txt`, and screenshots to `*.png` /
 | `day60-settings` | Day 60: Settings has no dead rows (only the paused features say so) |
 | `day61-overview` | Day 61: Admin > Overview: totals, shortcuts, daily charts |
 | `day63-log` | Day 63: Admin > Log: moderation decisions as sentences |
+| `day72-offline` | Day 72: offline: the banner on every screen, Home shows its saved posts (EN/AR), reloads when back online; logout leaves nothing |
 | `journey-kit`, `cloudinary-stub` | Helpers for the journeys: shared steps, and a local stand-in for Cloudinary (`E2E_MEDIA=1`) |
 | `link-stub`, `push-stub`, `turnstile-stub`, `serve-dist`, `pg`, `legal-dates`, `golive-smoke` | Helpers: a stub website, push service and Turnstile verifier; the production build with Vercel's headers; where psql lives; the legal pages' dates; the GO LIVE API smoke |
 | `golive-rehearsal.sh` | `bash golive-rehearsal.sh [--old]`: GO LIVE rehearsal. It runs every migration from 015 on a local copy of the live (014) schema, compares the result with the dev schema, smoke-tests the new backend (and with `--old`, the live `master` backend) on it, and checks that the `.down.sql` files restore the live schema (see `../GO_LIVE_CHECKLIST.md`) |

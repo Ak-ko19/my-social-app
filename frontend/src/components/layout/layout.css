@@ -288,3 +288,19 @@
   color: var(--color-text-muted);
   text-align: center;
 }
+
+/* Day 72: the offline strip -- inverse colours, so it reads in both themes. */
+.offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-text);
+  color: var(--color-surface);
+  font-size: 13px;
+  font-weight: 600;
+}

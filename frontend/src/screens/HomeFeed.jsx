@@ -27,7 +27,7 @@ function HomeFeed() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { token } = useAuth();
+  const { token, userId } = useAuth();
   const currentUser = useCurrentUserSummary();
   const justReactivated = Boolean(location.state?.reactivated);
   const stories = useStories(token);
@@ -35,6 +35,7 @@ function HomeFeed() {
   const [openStoryGroup, setOpenStoryGroup] = useState(null);
   const {
     posts,
+    savedAt,
     loading,
     loadingMore,
     error,
@@ -44,7 +45,7 @@ function HomeFeed() {
     removePost,
     removePostsByUser,
     updatePostContent
-  } = useFeed(token);
+  } = useFeed(token, userId);
 
   useEffect(() => {
     // C3: visitors who aren't logged in get the landing page, not a bare login form.
@@ -92,6 +93,7 @@ function HomeFeed() {
       {feedState === 'loading' && <FeedSkeleton />}
       {feedState === 'error' && <FeedErrorState message={error} onRetry={reload} />}
       {feedState === 'empty' && <FeedEmptyState />}
+      {feedState === 'list' && savedAt && <p className="feed-offline-note" role="status">{t('feed.offlineSaved')}</p>}
       {feedState === 'list' && (
         <FeedList
           posts={posts}

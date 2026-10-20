@@ -182,7 +182,8 @@
     "video": "Video",
     "live": "Live",
     "audienceOnlyMe": "Only me",
-    "audienceCloseFriends": "Close friends"
+    "audienceCloseFriends": "Close friends",
+    "offlineSaved": "You're offline. These are the posts from your last visit."
   },
   "postMenu": {
     "blockFailed": "Failed to block user",
@@ -1333,7 +1334,7 @@
         },
         {
           "heading": "6. Data on your device",
-          "body": "The app keeps your login session, theme (light/dark) and language choice in your browser's local storage, and keeps a copy of the app's own files so it can open when you are offline — never your posts or messages. Your language choice (English or Arabic) is also saved to your account, so it follows you to other devices and our emails and push notifications to you use it. Logging out removes your login session from the device. We don't use advertising or tracking cookies."
+          "body": "The app keeps your login session, theme (light/dark) and language choice in your browser's local storage, and a copy of the app's own files so it can open when you are offline. So that Home still works without a connection, it also keeps the newest 20 posts of your Home feed as you last saw them, and your Hidden words list. Your language choice (English or Arabic) is also saved to your account, so it follows you to other devices and our emails and push notifications to you use it. Logging out removes all of this from the device: your login session, the saved posts and your Hidden words. We don't use advertising or tracking cookies."
         },
         {
           "heading": "7. How long we keep it",
@@ -1781,5 +1782,8 @@
     "stageTitle": "Status",
     "stage": "This is an early preview, still being built. Features and policies may change.",
     "linksLabel": "Documents and help"
+  },
+  "offline": {
+    "banner": "You're offline. Some things won't work until you're back online."
   }
 }

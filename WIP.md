@@ -1,7 +1,37 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 72–73 — Offline + PWA polish (not started).
-**Step:** —
+**Day:** 72–73 — Offline + PWA polish: offline feed cache, offline message queue, install prompt, app icons.
+**Step:** 2 — offline message queue: PLAN.
+
+Plan (have: an app-shell service worker that caches every same-origin GET
+forever under one name -- old hashed assets pile up per deploy):
+1. "You're offline" banner app-wide (EN/AR, role=status) and Home shows
+   the last feed it loaded when offline (per account, newest 20, cleared
+   on logout -- a shared phone must not keep someone else's feed),
+   marked "Saved posts -- you're offline".
+2. Offline message queue: a text sent offline waits ("Waiting for
+   connection") and goes by itself when the connection is back; kept
+   across a reload (per account and chat; cleared on logout).
+3. Install: "Install app" in the menu when the browser offers it
+   (beforeinstallprompt), an iPhone hint (Share > Add to Home Screen),
+   hidden when already installed.
+4. Icons + manifest + service-worker hygiene: manifest id/lang/shortcuts,
+   icon check (maskable safe zone), only cache the shell + /assets/ and
+   drop assets no longer in the current build.
+
+## Progress (Day 72–73)
+- Step 1 DONE: OfflineBanner (PhoneShell, every screen, role=status,
+  inverse colours) + utils/offlineStore (newest 20 Home posts per account;
+  wiped by clearLocalSession) + useOnline; useFeed shows the saved posts
+  when offline ("from your last visit" note) and reloads when back online
+  -- retries at once, 2 s, 6 s, keeping the saved posts if a retry fails
+  (the browser test proved the first try after "online" can fail).
+  Privacy Policy section 6 (EN/AR, 2026-10-20): it said "never your posts";
+  now names the saved posts and Hidden words. day72-offline (14, EN/AR).
+  Vitest 300, backend 950, bundle 223.3/225 (tight!), a2, journeys-core,
+  day8-sessions-list, b16, day2, c2 green.
+  Seen: EmailVerificationBanner amber text #d97706 on #fef3c7 is ~2.9:1
+  (below AA) and has no dark tokens -- fix in step 4 or Day 80.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
