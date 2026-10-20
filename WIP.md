@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 69–71 — Code health: duplicated logic, large files, consistent errors, README + CLAUDE.md.
-**Step:** 5 — message-history cursor precision: PLAN.
+**Step:** 6 — page the inbox (GET /conversations): PLAN.
 
 Plan (survey: biggest file 735 lines; the real debt is duplication):
 1. utils/httpError.js: HttpError(status, message) + sendError(res, err,
@@ -44,9 +44,14 @@ Plan (survey: biggest file 735 lines; the real debt is duplication):
   "View more comments" (EN/AR); b4 checks 55 comments in EN/AR. Backend
   943, Vitest 283, bundle 222.5; b4, day12, day43, day47, day58,
   journeys-core green; perf 41/41. STEP DONE.
-- NEXT (step 5): check the MESSAGE cursor -- (created_at, id) through a
-  JS Date loses microseconds: same-ms messages at a page edge may be
-  skipped. Then conversations paging, hook split, README.
+- Step 5 DONE (BUG FIXED): message history skipped messages sent in the
+  same millisecond at a page edge (proved: m2, m3 of 5 never came). The
+  cursor is now the id; the query reads that row's own (created_at, id).
+  Old cursors still work; another chat's cursor finds nothing.
+  messageCursor.test (3). Backend 946/946; a2, b9, day32, journeys-core,
+  perf green.
+- Next: step 6 inbox paging, step 7 split useConversationMessages, step 8
+  README + CLAUDE.md.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

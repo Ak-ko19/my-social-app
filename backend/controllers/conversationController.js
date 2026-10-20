@@ -240,20 +240,25 @@ async function getMessages(req, res) {
     }
 
     // Fetch one extra row (same trick as getPosts/getFeed) to know if
-    // there's another page without a separate COUNT(*).
+    // there's another page without a separate COUNT(*). Day 70: the page
+    // ends before the cursor's message, compared with that row's own stored
+    // (created_at, id) -- microseconds included, which a timestamp sent
+    // through a JS Date would lose. A cursor from another chat matches nothing.
     const result = await db.query(
       `SELECT * FROM messages
        WHERE conversation_id = $1
-         AND ($2::timestamptz IS NULL OR (created_at, id) < ($2::timestamptz, $3::int))
+         AND ($2::int IS NULL OR (created_at, id) < (
+           SELECT c.created_at, c.id FROM messages c WHERE c.id = $2 AND c.conversation_id = $1
+         ))
        ORDER BY created_at DESC, id DESC
-       LIMIT $4`,
-      [conversationId, cursor?.createdAt || null, cursor?.id || null, limit + 1]
+       LIMIT $3`,
+      [conversationId, cursor?.id ?? null, limit + 1]
     );
 
     const hasMore = result.rows.length > limit;
     const page = hasMore ? result.rows.slice(0, limit) : result.rows;
     const nextCursor = hasMore
-      ? encodeCursor({ createdAt: page[page.length - 1].created_at, id: page[page.length - 1].id })
+      ? encodeCursor({ id: page[page.length - 1].id })
       : null;
 
     // Fetched newest-first for the keyset comparison above; reverse to
