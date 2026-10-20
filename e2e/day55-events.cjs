@@ -124,7 +124,7 @@ const EXPECTED = /status of 404/;
   await bob2.getByText('The host cancelled this event.').waitFor({ timeout: 8000 }).catch(() => {});
   check('bob sees it cancelled, with no answer buttons', (await bob2.getByRole('button', { name: 'Interested', exact: true }).count()) === 0);
   await bob2.goto(`${WEB}/notifications`, { waitUntil: 'networkidle' });
-  await bob2.getByRole('button', { name: 'Open Beach clean-up' }).first().waitFor({ timeout: 8000 }).catch(() => {});
+  await bob2.getByRole('button', { name: 'Open event Beach clean-up' }).first().waitFor({ timeout: 8000 }).catch(() => {});
   check('...and was told: "alice cancelled Beach clean-up"', (await bob2.getByText(/alice cancelled Beach clean-up/).count()) === 1);
   await bob2.context().close();
 

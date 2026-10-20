@@ -42,7 +42,7 @@ describe('Activity screen', () => {
     expect(await screen.findByRole('link', { name: "You reacted Love to bob's post" })).toHaveAttribute('href', '/posts/4');
     expect(screen.getByRole('link', { name: "You liked dana's comment" })).toBeInTheDocument();
     expect(screen.getByText('“so true”')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: "Remove your reaction to bob's post" }));
+    await userEvent.click(screen.getByRole('button', { name: "Remove reaction to bob's post" }));
     expect(api.delete).toHaveBeenCalledWith('/posts/4/like', H);
     await userEvent.click(screen.getByRole('button', { name: "Unlike dana's comment" }));
     expect(api.delete).toHaveBeenCalledWith('/comments/9/like', H);

@@ -75,7 +75,7 @@ describe('Notifications: groups', () => {
   it('being let in opens the group', async () => {
     await setLanguage('en');
     showWithGroups();
-    await userEvent.click(await screen.findByRole('button', { name: 'Open Trail Runners' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Open group Trail Runners' }));
     expect(await screen.findByText('Group page')).toBeInTheDocument();
   });
 
@@ -83,7 +83,7 @@ describe('Notifications: groups', () => {
     await setLanguage('ar');
     showWithGroups();
     expect((await screen.findByText('dana', { selector: 'strong' })).parentElement).toHaveTextContent('طلب dana الانضمام إلى Night Owls');
-    expect(screen.getByRole('button', { name: 'فتح Trail Runners' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'فتح المجموعة Trail Runners' })).toBeInTheDocument();
   });
 });
 
@@ -106,7 +106,7 @@ describe('Notifications: pages', () => {
       </MemoryRouter>
     );
     expect((await screen.findByText('olga', { selector: 'strong' })).parentElement).toHaveTextContent('olga made you an admin of Corner Cafe');
-    await userEvent.click(screen.getByRole('button', { name: 'Open Corner Cafe' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open page Corner Cafe' }));
     expect(await screen.findByText('Page screen')).toBeInTheDocument();
   });
 
@@ -145,7 +145,7 @@ describe('Notifications: events', () => {
     const time = new Date(startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     expect((await screen.findByText('Picnic', { selector: 'strong' })).parentElement).toHaveTextContent(`Picnic starts at ${time}`);
     expect(screen.getByText('Book club', { selector: 'strong' }).parentElement).toHaveTextContent('olga cancelled Book club');
-    await userEvent.click(screen.getByRole('button', { name: 'Open Picnic' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open event Picnic' }));
     expect(await screen.findByText('Event screen')).toBeInTheDocument();
   });
 

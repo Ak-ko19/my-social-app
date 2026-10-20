@@ -65,7 +65,7 @@ const api = (who, method, url, body) => fetch(API + url, {
   await told.first().waitFor({ timeout: 8000 }).catch(() => {});
   check('bob is told "alice made you an admin of Corner Cafe"', (await told.first().locator('..').innerText().catch(() => '')).includes('alice made you an admin of Corner Cafe'));
   await axe(bob, 'en/light, Notifications with a page notification');
-  await bob.getByRole('button', { name: 'Open Corner Cafe' }).click();
+  await bob.getByRole('button', { name: 'Open page Corner Cafe' }).click();
   await bob.waitForURL(`${WEB}/pages/${page.id}`, { timeout: 8000 }).catch(() => {});
   await bob.getByRole('button', { name: 'Post as page' }).waitFor({ timeout: 8000 }).catch(() => {});
   check('bob sees Post as page and Edit page', (await bob.getByRole('button', { name: 'Post as page' }).count()) === 1

@@ -70,7 +70,7 @@ const api = (who, method, url, body) => fetch(API + url, {
   check("...and the liked comment, quoted", (await alice.getByRole('link', { name: "You liked bob's comment" }).count()) === 1
     && (await alice.getByText('“Taken from the pier”').count()) === 1);
   await axe(alice, 'en/light, Likes');
-  await alice.getByRole('button', { name: "Remove your reaction to bob's post" }).click();
+  await alice.getByRole('button', { name: "Remove reaction to bob's post" }).click();
   await reacted.waitFor({ state: 'detached', timeout: 8000 }).catch(() => {});
   check('Remove reaction: gone from the list and from the post', sql(`SELECT COUNT(*) FROM likes WHERE post_id = ${bobPost.id} AND user_id = 1`) === '0');
 

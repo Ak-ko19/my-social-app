@@ -548,11 +548,11 @@
     "reviewRequests": "Review requests",
     "reviewRequestsIn": "Review requests to join {{group}}",
     "openGroup": "Open group",
-    "openGroupNamed": "Open {{group}}",
+    "openGroupNamed": "Open group {{group}}",
     "openPage": "Open page",
-    "openPageNamed": "Open {{page}}",
+    "openPageNamed": "Open page {{page}}",
     "openEvent": "Open event",
-    "openEventNamed": "Open {{event}}"
+    "openEventNamed": "Open event {{event}}"
   },
   "saved": {
     "title": "Saved Posts",
@@ -583,7 +583,7 @@
     "typingOne": "{{name}} is typing…",
     "typingTwo": "{{first}} and {{second}} are typing…",
     "typingMany": "Several people are typing…",
-    "groupInfoLabel": "Group info: {{name}}, {{count}} members",
+    "groupInfoLabel": "Group info: {{name}}, {{count}} members · tap for info",
     "memberCount_one": "{{count}} member",
     "memberCount_other": "{{count}} members",
     "membersTapInfo": "{{count}} members · tap for info",
@@ -1621,7 +1621,7 @@
     "commented": "You commented on {{name}}'s post",
     "replied": "You replied on {{name}}'s post",
     "unreact": "Remove reaction",
-    "unreactLabel": "Remove your reaction to {{name}}'s post",
+    "unreactLabel": "Remove reaction to {{name}}'s post",
     "unlike": "Unlike",
     "unlikeCommentLabel": "Unlike {{name}}'s comment",
     "deleteCommentLabel": "Delete your comment on {{name}}'s post",

@@ -167,7 +167,7 @@ const GONE = /status of 404/;
   const bobInbox = await open('bob', '/notifications');
   await bobInbox.getByText(/now a member of/).waitFor({ timeout: 8000 }).catch(() => {});
   check("bob is told he's in, and Open group takes him there", (await bobInbox.getByText(/now a member of/).count()) === 1);
-  await bobInbox.getByRole('button', { name: 'Open Quiet Readers' }).click();
+  await bobInbox.getByRole('button', { name: 'Open group Quiet Readers' }).click();
   await bobInbox.waitForURL(`${WEB}/groups/${quiet.id}`, { timeout: 8000 }).catch(() => {});
   check('...on the group page', bobInbox.url() === `${WEB}/groups/${quiet.id}`);
   await bobInbox.goto(`${WEB}/settings/notifications`, { waitUntil: 'networkidle' });

@@ -42,7 +42,7 @@ describe('Muted accounts screen', () => {
     api.get.mockResolvedValue({ data: { mutedUsers: [{ id: 5, username: 'noisy' }], hasMore: false } });
     show();
     expect(await screen.findByRole('heading', { name: 'الحسابات المكتومة' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'إلغاء كتم noisy' })).toHaveTextContent('إلغاء الكتم');
+    expect(screen.getByRole('button', { name: 'إلغاء الكتم عن noisy' })).toHaveTextContent('إلغاء الكتم');
   });
 });
 
