@@ -59,7 +59,7 @@ function initSocket(httpServer) {
     // independently of whether the room-join query has completed yet.
 
     // messageService.sendMessage is the single place a message actually gets
-    // written (validated, sanitized, persisted with status='sent') -- the
+    // written (validated, persisted with status='sent') -- the
     // REST fallback (conversationController.sendMessage) calls the exact
     // same function, so the two transports can never diverge.
     socket.on('send_message', async (payload) => {

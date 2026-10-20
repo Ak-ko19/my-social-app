@@ -35,10 +35,10 @@ describe('DM extras (B9)', () => {
       const msg = (await send(a, 'helo')).body;
       const res = await edit(a, msg.id, 'hello <b>there</b>');
       expect(res.status).toBe(200);
-      expect(res.body.content).toBe('hello there'); // markup stripped, same as sends
+      expect(res.body.content).toBe('hello <b>there</b>'); // Day 75: kept as typed, same as sends
       expect(res.body.edited_at).toBeTruthy();
       const row = (await history(b)).find((m) => m.id === msg.id);
-      expect(row).toMatchObject({ content: 'hello there' });
+      expect(row).toMatchObject({ content: 'hello <b>there</b>' });
       expect(row.edited_at).toBeTruthy();
     });
 

@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 75–76 — Security round 2: re-check every route, file upload, socket event; dependency updates; CSP headers.
-**Step:** 1 — dependencies: DONE (saving). Next: 2 message text.
+**Step:** 2 — message text as typed: DONE (saving). Next: 3 routes.
 
 Plan: 1 dependencies (npm audit at every level in backend/frontend/e2e;
 sanitize-html moderate advisory GHSA-x3q4-9hxx-gx8m is open -- CI only
@@ -41,6 +41,17 @@ report violations to our own error log).
   allowed, which eats text ("if x<y and y>z" -> "if xz") and stores
   & < > as entities ("Tom &amp; Jerry" shown as typed entity). Posts and
   comments store text as typed and React escapes it.
+- Step 2: messageService.messageText (string trimmed, anything else
+  empty) replaces the sanitizer; sanitize-html and its jest mock removed
+  (no HTML sink for message text: no innerHTML, push is plain text, no
+  email carries it). Migration 071 (data only) decodes &amp; &lt; &gt; in
+  messages + message reports' snapshots; down is a no-op. Must run ONCE
+  (a re-run would decode text typed as an entity) -- checklist says so;
+  rehearsal seeds an encoded 014-era message and checks it (--old PASSED).
+  messageText.test (4), dm/dmExtras updated; b9-dm checks "Tom & Jerry <3
+  if x<y and y>z" stored and shown as typed after reload. Backend 964.
+  For step 3: check a NUL character (\u0000) in any text field -- Postgres
+  rejects it in text columns (500?).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

@@ -83,18 +83,7 @@ describe('DM (conversations + messages)', () => {
     expect(res.status).toBe(403);
   });
 
-  it('strips HTML/script content from a message before storing it', async () => {
-    const a = await registerAndLogin(app);
-    const b = await registerAndLogin(app);
-    const conv = await request(app).post('/conversations').set('Authorization', `Bearer ${a.token}`).send({ userId: b.id });
-
-    const send = await request(app)
-      .post(`/conversations/${conv.body.id}/messages`)
-      .set('Authorization', `Bearer ${a.token}`)
-      .send({ content: '<script>alert(1)</script>hello' });
-    expect(send.status).toBe(201);
-    expect(send.body.content).toBe('hello');
-  });
+  // Day 75: text is kept as typed, markup included -- messageText.test.js.
 
   it('rejects an empty message', async () => {
     const a = await registerAndLogin(app);

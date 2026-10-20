@@ -60,6 +60,17 @@ const history = async () => (await (await fetch(`${API}/conversations/1/messages
   const replyRow = (await history()).find((m) => m.content === '9am works');
   check('server: reply_to_message_id points at bob\'s message', replyRow && replyRow.reply_to_message_id === q.id);
 
+  // Day 75: text is kept as typed -- & < > and things that look like tags
+  // (it used to come back "Tom &amp; Jerry &lt;3 if xz").
+  const typed = 'Tom & Jerry <3 if x<y and y>z';
+  await page.locator('#message-composer-input').fill(typed);
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await page.waitForTimeout(1200);
+  check('server: a message with & < > is stored as typed', (await history()).some((m) => m.content === typed));
+  await page.reload({ waitUntil: 'networkidle' });
+  const shown = await bubble(page, 'Tom & Jerry').locator('.messages-bubble-text').innerText().catch(() => '');
+  check('...and shown as typed after a reload', shown === typed, shown);
+
   // 3. Edit own message inline.
   await replyBubble.getByRole('button', { name: 'Edit message' }).click();
   const editInput = page.locator('.messages-edit-form input');

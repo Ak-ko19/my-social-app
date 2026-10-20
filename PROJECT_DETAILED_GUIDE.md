@@ -548,8 +548,9 @@ built and how to re-verify it.
   `db.js`).
 - Test-only accommodations in app code: `server.js` exports `app` and only
   listens / starts Socket.io when run directly; rate limiters are no-ops
-  when `NODE_ENV=test`; `__mocks__/sanitize-html.js` replaces an ESM-only
-  dependency Jest can't load.
+  when `NODE_ENV=test`. (Until Day 75 a `__mocks__/sanitize-html.js`
+  stood in for an ESM-only dependency Jest couldn't load; messages are now
+  kept as typed and the dependency is gone.)
 - Windows gotchas that made `npm test` hang (fixed): `pg_ctl start` must
   run with `stdio: 'ignore'`, and the cluster's log file must live
   outside its data dir.

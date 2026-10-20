@@ -87,7 +87,8 @@ INSERT INTO conversations (type, user_a_id, user_b_id) VALUES ('direct', 1, 2);
 INSERT INTO conversation_participants (conversation_id, user_id) VALUES (1, 1), (1, 2);
 INSERT INTO messages (conversation_id, sender_id, type, content, media_url, duration_seconds) VALUES
   (1, 1, 'text', 'မင်္ဂလာပါ', NULL, NULL),
-  (1, 2, 'voice', NULL, 'https://res.cloudinary.com/prod/video/upload/v1/voice-messages/v1.mp3', 5);
+  (1, 2, 'voice', NULL, 'https://res.cloudinary.com/prod/video/upload/v1/voice-messages/v1.mp3', 5),
+  (1, 2, 'text', 'Tom &amp; Jerry &lt;3', NULL, NULL);
 SQL
 }
 
@@ -141,8 +142,11 @@ psql_ "$URL" -At -c "$COLS" > "$WORK/cols-migrated.txt"; psql_ "$URL" -At -c "$C
 diff -q "$WORK/cols-migrated.txt" "$WORK/cols-dev.txt" >/dev/null && ok "columns match the dev schema ($(wc -l < "$WORK/cols-dev.txt"))" || { bad "columns differ from dev schema:"; diff "$WORK/cols-migrated.txt" "$WORK/cols-dev.txt" | head -20; }
 diff -q "$WORK/cons-migrated.txt" "$WORK/cons-dev.txt" >/dev/null && ok "constraints match the dev schema ($(wc -l < "$WORK/cons-dev.txt"))" || { bad "constraints differ from dev schema:"; diff "$WORK/cons-migrated.txt" "$WORK/cons-dev.txt" | head -20; }
 diff -q "$WORK/idx-migrated.txt" "$WORK/idx-dev.txt" >/dev/null && ok "indexes match the dev schema ($(wc -l < "$WORK/idx-dev.txt"))" || { bad "indexes differ from dev schema (< migrated, > dev):"; diff "$WORK/idx-migrated.txt" "$WORK/idx-dev.txt" | head -30; }
-[ "$(psql_ "$URL" -At -c "SELECT (SELECT count(*) FROM users)||'/'||(SELECT count(*) FROM posts)||'/'||(SELECT count(*) FROM likes)||'/'||(SELECT count(*) FROM comments)||'/'||(SELECT count(*) FROM messages)")" = "3/3/3/2/2" ] \
+[ "$(psql_ "$URL" -At -c "SELECT (SELECT count(*) FROM users)||'/'||(SELECT count(*) FROM posts)||'/'||(SELECT count(*) FROM likes)||'/'||(SELECT count(*) FROM comments)||'/'||(SELECT count(*) FROM messages)")" = "3/3/3/2/3" ] \
   && ok "all 014-era rows kept" || bad "rows lost"
+# Day 75: 071 turns the old sanitizer's entities back into the text as typed.
+[ "$(psql_ "$URL" -At -c "SELECT string_agg(content, ' | ' ORDER BY id) FROM messages WHERE type = 'text'")" = "မင်္ဂလာပါ | Tom & Jerry <3" ] \
+  && ok "071: saved messages read as typed (&amp; &lt; decoded, Myanmar untouched)" || bad "071 message text"
 "$PG/dropdb.exe" -h localhost -p 55433 -U testuser --if-exists schema_dev
 
 # 5. Rollback A: down to exactly the live schema, data kept, then up again.
@@ -151,7 +155,7 @@ psql_ "$URL" -At -c "$COLS" > "$WORK/cols-down.txt"; psql_ "$URL" -At -c "$CONS"
 diff -q "$WORK/cols-down.txt" "$WORK/cols-live.txt" >/dev/null && diff -q "$WORK/cons-down.txt" "$WORK/cons-live.txt" >/dev/null \
   && diff -q "$WORK/idx-down.txt" "$WORK/idx-live.txt" >/dev/null \
   && ok "rollback A: downs restore the live schema exactly" || bad "rollback A: schema after downs differs from live"
-[ "$(psql_ "$URL" -At -c "SELECT (SELECT count(*) FROM users)||'/'||(SELECT count(*) FROM posts)||'/'||(SELECT count(*) FROM messages)")" = "3/3/2" ] \
+[ "$(psql_ "$URL" -At -c "SELECT (SELECT count(*) FROM users)||'/'||(SELECT count(*) FROM posts)||'/'||(SELECT count(*) FROM messages)")" = "3/3/3" ] \
   && ok "rollback A: data kept" || bad "rollback A: rows lost"
 run_migrations up
 

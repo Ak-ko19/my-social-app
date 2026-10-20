@@ -4,7 +4,6 @@
 // this module instead of touching the DB directly, so the two transports can
 // never drift -- fixing a bug or tightening a validation rule here fixes it
 // for both at once.
-const sanitizeHtml = require('sanitize-html');
 const { HttpError } = require('../utils/httpError');
 const db = require('../db');
 const interactionService = require('./interactionService');
@@ -66,14 +65,18 @@ class BlockedError extends HttpError {
   }
 }
 
-// Chat messages are rendered as plain text everywhere in this app -- rather
-// than trying to allow-list "safe" HTML, strip all markup entirely so
-// <script>/onerror=/etc. can never reach a client that renders it unescaped.
-// Day 43: callers then check the length on the text as typed (like the
-// composer's maxLength) and store it with Zawgyi Myanmar converted to
-// Unicode (utils/myanmarText) -- send, caption and edit, HTTP and socket.
-function sanitizeContent(raw) {
-  return sanitizeHtml(raw || '', { allowedTags: [], allowedAttributes: {} }).trim();
+// A message is kept as typed, like a post or a comment: it is text, and
+// every client shows it as text (React escapes it; push notifications are
+// plain text), so "<b>hi</b>" reads "<b>hi</b>". Day 75: it used to go
+// through an HTML sanitizer with no tags allowed, which ate ordinary text
+// ("if x<y and y>z" became "if xz") and stored & < > as &amp; &lt; &gt;
+// (shown as such); migration 071 turned those back. Anything but a string
+// (the socket takes JSON) counts as empty. Day 43: callers then check the
+// length on the text as typed (like the composer's maxLength) and store it
+// with Zawgyi Myanmar converted to Unicode (utils/myanmarText) -- send,
+// caption and edit, HTTP and socket.
+function messageText(raw) {
+  return typeof raw === 'string' ? raw.trim() : '';
 }
 
 async function isParticipant(conversationId, userId) {
@@ -174,7 +177,7 @@ async function sendMessage({ conversationId, senderId, content, clientTempId, re
     throw new MessageValidationError('Invalid conversation ID');
   }
 
-  const cleaned = sanitizeContent(content);
+  const cleaned = messageText(content);
   if (!cleaned) {
     throw new MessageValidationError('Message content cannot be empty');
   }
@@ -511,7 +514,7 @@ async function sendImageMessage({ conversationId, senderId, mediaUrl, caption, c
   if (!mediaUrl || typeof mediaUrl !== 'string') {
     throw new MessageValidationError('An image is required');
   }
-  const cleanedCaption = sanitizeContent(caption || '');
+  const cleanedCaption = messageText(caption);
   if (cleanedCaption.length > MAX_MESSAGE_LENGTH) {
     throw new MessageValidationError(`Caption must be under ${MAX_MESSAGE_LENGTH} characters`);
   }
@@ -536,7 +539,7 @@ async function editMessage({ conversationId, messageId, userId, content }) {
   if (isNaN(convId) || isNaN(msgId)) {
     throw new MessageValidationError('Invalid conversationId or messageId');
   }
-  const cleaned = sanitizeContent(content);
+  const cleaned = messageText(content);
   if (!cleaned) {
     throw new MessageValidationError('Message content cannot be empty');
   }
@@ -655,7 +658,7 @@ module.exports = {
   removeMessageAsModerator,
   isParticipant,
   getConversationType,
-  sanitizeContent,
+  messageText,
   scrubDeletedContent,
   MessageValidationError,
   NotParticipantError,
