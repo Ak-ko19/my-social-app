@@ -22,9 +22,12 @@ import { SocketProvider } from './context/SocketProvider'
 import { HiddenWordsProvider } from './context/HiddenWordsProvider'
 import ErrorBoundary from './components/common/ErrorBoundary'
 import { installGlobalErrorReporting } from './utils/errorReporter'
+import { startInstallListener } from './utils/installPrompt'
 
 // Day 10: browser errors go to the admin error log (production builds).
 installGlobalErrorReporting()
+// Day 72: the browser's install offer comes once, early (see installPrompt).
+startInstallListener()
 
 // Wait for the saved language's strings (a separate chunk for Arabic)
 // so the first paint is already in the right language.

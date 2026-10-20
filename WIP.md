@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 72–73 — Offline + PWA polish: offline feed cache, offline message queue, install prompt, app icons.
-**Step:** 3 — install prompt: PLAN.
+**Step:** 4 — icons, manifest, service-worker hygiene: PLAN.
 
 Plan (have: an app-shell service worker that caches every same-origin GET
 forever under one name -- old hashed assets pile up per deploy):
@@ -41,6 +41,12 @@ forever under one name -- old hashed assets pile up per deploy):
   mentions unsent messages. useConversationMessages.queue.test (4);
   day72-offline 18. Vitest 304, bundle 223.5/225; a2, b9, day31, day43,
   c2 green.
+- Step 3 DONE: utils/installPrompt (beforeinstallprompt kept from startup,
+  appinstalled) + useInstallApp (prompt | ios | null; hidden when
+  standalone); Menu row "Install the app" (EN/AR) and an iPhone sheet with
+  the Safari steps (sheet needed its own side padding -- seen in the
+  screenshot). useInstallApp.test (3), day72-install (6). Vitest 307,
+  bundle 223.9/225 (1.1 kB left!); b13, b14, day55, day58, c3 green.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

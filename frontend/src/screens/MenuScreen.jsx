@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Bookmark,
+  Download,
   FilePen,
   UsersRound,
   CalendarDays, Flag,
@@ -28,7 +29,8 @@ import {
   Code2,
   Star
 } from 'lucide-react';
-import { IconButton } from '../components/ui';
+import { IconButton, Modal } from '../components/ui';
+import { useInstallApp } from '../hooks/useInstallApp';
 import ProfileSummaryRow from '../components/layout/ProfileSummaryRow';
 import AppFooter from '../components/layout/AppFooter';
 import SUPER_APP_CATEGORIES from '../data/superAppCategories';
@@ -82,6 +84,9 @@ function MenuScreen() {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const currentUser = useCurrentUserSummary();
+  // Day 72: "Install the app", when this browser can (and it isn't installed).
+  const { mode: installMode, install } = useInstallApp();
+  const [iosSteps, setIosSteps] = useState(false);
 
   const filteredCategories = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -119,6 +124,18 @@ function MenuScreen() {
           list below, which is a future-roadmap directory, not where an
           already-built feature like Saved Posts belongs. */}
       <div className="menu-category-list">
+        {installMode && (
+          <button type="button" className="menu-category-row" onClick={() => (installMode === 'ios' ? setIosSteps(true) : install())}>
+            <span className="menu-category-icon-badge" style={{ background: 'var(--badge-green-bg)', color: 'var(--badge-green-fg)' }}>
+              <Download size={20} aria-hidden="true" />
+            </span>
+            <span className="menu-category-text">
+              <span className="menu-category-title">{t('menu.install')}</span>
+              <span className="menu-category-subtitle">{t('menu.installSub')}</span>
+            </span>
+            <ChevronRight size={18} className="menu-category-chevron" aria-hidden="true" />
+          </button>
+        )}
         <button type="button" className="menu-category-row" onClick={() => navigate('/saved')}>
           <span className="menu-category-icon-badge" style={{ background: 'var(--badge-indigo-bg)', color: 'var(--badge-indigo-fg)' }}>
             <Bookmark size={20} aria-hidden="true" />
@@ -208,6 +225,14 @@ function MenuScreen() {
       </div>
 
       <AppFooter />
+      <Modal open={iosSteps} onClose={() => setIosSteps(false)} title={t('menu.installIosTitle')} variant="sheet" className="menu-install-sheet">
+        <h2 className="menu-install-title">{t('menu.installIosTitle')}</h2>
+        <ol className="menu-install-steps">
+          <li>{t('menu.installIosStep1')}</li>
+          <li>{t('menu.installIosStep2')}</li>
+        </ol>
+        <button type="button" className="btn btn-primary btn-block" onClick={() => setIosSteps(false)}>{t('common.done')}</button>
+      </Modal>
     </div>
   );
 }

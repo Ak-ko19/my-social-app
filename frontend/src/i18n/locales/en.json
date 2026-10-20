@@ -1266,7 +1266,12 @@
     "drafts": "Drafts & scheduled",
     "draftsSub": "Posts you saved for later or scheduled",
     "events": "Events",
-    "eventsSub": "Plan something, see what's on"
+    "eventsSub": "Plan something, see what's on",
+    "install": "Install the app",
+    "installSub": "Opens like an app, and works offline",
+    "installIosTitle": "Add MySocialApp to your Home Screen",
+    "installIosStep1": "In Safari, tap the Share button (the square with an arrow).",
+    "installIosStep2": "Choose “Add to Home Screen”, then Add."
   },
   "legal": {
     "draftNote": "Draft — this document will be reviewed before MySocialApp's public launch.",
