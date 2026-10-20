@@ -13,6 +13,7 @@ const { globalLimiter } = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
 const { report, startMonitoring, whenIdle } = require('./services/errorLogService');
 const requestLogger = require('./middleware/requestLogger');
+const { noStoreByDefault } = require('./middleware/cacheControl');
 const healthRoutes = require('./routes/healthRoutes');
 const docsRoutes = require('./routes/docsRoutes');
 const logger = require('./utils/logger');
@@ -75,6 +76,9 @@ app.set('trust proxy', resolveTrustProxy(process.env));
 // Day 10: one structured log line per request (not under the test suite,
 // where hundreds of requests would bury the output).
 if (process.env.NODE_ENV !== 'test') app.use(requestLogger);
+// Day 74: before everything that can answer (CORS refusals, rate limits,
+// errors), so no answer is stored by the browser unless its route allows it.
+app.use(noStoreByDefault);
 
 app.use(helmet({
   // Post/avatar images used to be served locally under /uploads and needed

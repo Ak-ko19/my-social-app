@@ -53,6 +53,8 @@ const DESCRIPTION = `The MySocialApp REST API (the web app and, later, the mobil
   with \`Retry-After\` (seconds).
 - **Lists** are paginated: \`?page=&limit=\` or \`?cursor=&limit=\` (the response gives \`nextCursor\`). Bad values fall back to
   the defaults; limits are capped.
+- **Caching:** every answer is \`Cache-Control: no-store\` unless an operation says otherwise; the few shared ones that may
+  be cached send an \`ETag\` and answer \`304\` to a matching \`If-None-Match\`.
 - **Real time:** live updates (messages, typing, notifications) come over Socket.IO, documented in docs/REALTIME.md.`;
 
 // '/posts/:id/comments' -> '/posts/{id}/comments'

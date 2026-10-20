@@ -1,7 +1,19 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 74 — Performance round 2: slow queries, caching headers, image sizes, bundle splitting.
-**Step:** 2 — slow queries: Home feed by cursor: DONE (saving). Next: 3.
+**Step:** 3 — API caching headers: DONE (saving). Next: 4 image sizes.
+
+Step 3 plan: today only 7 routes set Cache-Control; every other API
+answer (feed, messages, notifications, profiles) has none, so a browser
+may keep it in its disk cache (shared computer; logout can't wipe the
+HTTP cache). FB/IG APIs send no-store. -> middleware/cacheControl.js:
+`Cache-Control: no-store` on every response by default, mounted before
+the limiter/CORS so 429s and errors get it too; routes that may be cached
+(config, push key, share cards, link previews, docs) keep overriding it.
+ETag stays on (Express default) so those answer 304 to If-None-Match.
+Tests: cacheHeaders.test (authed list, error, 429-free paths, /config
+public + ETag + 304, docs no-cache + 304, export no-store); check in the
+browser that /feed comes back no-store and /config from 304.
 
 Plan: 1 bundle (LazyMotion); 2 slow-query review (perf suite's slowest
 + EXPLAIN); 3 API caching headers (ETag / no-store for private data);
@@ -35,6 +47,15 @@ Plan: 1 bundle (LazyMotion); 2 slow-query review (perf suite's slowest
   ciWorkflow.test (e2e/README.md lists every .cjs) went red after the
   commit; fixed in the next commit. A new e2e suite = a README row, and
   re-run ciWorkflow after touching e2e/.
+- Step 3: middleware/cacheControl.js (no-store by default, mounted before
+  CORS/limits/errors); cacheable routes still override. Spec: a Caching
+  line + 304 on /config, /push/config, /openapi.json, share cards, link
+  previews (the contract check demanded it). Privacy Policy section 6
+  (EN/AR, date already 2026-10-20) says the browser doesn't store what
+  the app loads, except link previews (1 h). Real browser: every personal
+  call no-store, /config public 300 s, no errors. Backend 958, Vitest
+  313, i18n OK; b9, b4, journeys-core, day72-offline, day19-links,
+  c2-legal green.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

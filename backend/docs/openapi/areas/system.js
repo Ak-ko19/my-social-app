@@ -2,6 +2,9 @@
 // previews, share cards, web push and the machine-only cleanup.
 const { s, ref, body, json, text, html, empty, op, q } = require('../helpers');
 
+// Day 74: the answers that may be cached (everything else is no-store).
+const NOT_MODIFIED = empty('Not modified: the copy named in If-None-Match (its ETag) is still current');
+
 const SHARE_NOTE = 'Plain HTML with Open Graph / Twitter card tags for link-preview crawlers (frontend/vercel.json sends '
   + 'only crawlers here, by user agent), and an instant redirect to the app for anyone else. Only something everyone may see '
   + 'gets a real card; anything else -- private, deleted, missing -- gets the same generic card, so a link never reveals what is behind it.';
@@ -26,13 +29,13 @@ module.exports = {
     tag: 'System', auth: 'public',
     summary: 'Public settings the app needs before anyone logs in',
     description: 'Cached for 5 minutes.',
-    responses: { 200: json(ref('Config'), 'The settings') }
+    responses: { 200: json(ref('Config'), 'The settings'), 304: NOT_MODIFIED }
   }),
   'GET /openapi.json': op({
     tag: 'System', auth: 'public',
     summary: 'This API description (OpenAPI 3.1)',
     description: 'On outside production; in production only when API_DOCS=1 (else 404). Built from backend/docs/openapi.',
-    responses: { 200: json(s.object({ openapi: s.str(), info: s.object({}), paths: s.object({}) }), 'The spec'), 404: html('The docs are off (production without API_DOCS=1)') }
+    responses: { 200: json(s.object({ openapi: s.str(), info: s.object({}), paths: s.object({}) }), 'The spec'), 304: NOT_MODIFIED, 404: html('The docs are off (production without API_DOCS=1)') }
   }),
   'GET /docs': op({
     tag: 'System', auth: 'public',
@@ -69,6 +72,7 @@ module.exports = {
     responses: {
       200: json(ref('LinkPreview'), 'The preview'),
       204: empty('Nothing to show, or the page cannot or must not be fetched'),
+      304: NOT_MODIFIED,
       400: text('A valid http(s) url is required')
     }
   }),
@@ -77,27 +81,27 @@ module.exports = {
     summary: "A post's share card (HTML for link-preview crawlers)",
     description: SHARE_NOTE,
     pathParams: { id: s.str('The post id; anything else gets the generic card') },
-    responses: { 200: html('The card page') }
+    responses: { 200: html('The card page'), 304: NOT_MODIFIED }
   }),
   'GET /share/profiles/:id': op({
     tag: 'Links', auth: 'public',
     summary: "A profile's share card (HTML for link-preview crawlers)",
     description: SHARE_NOTE,
     pathParams: { id: s.str('A user id or a username') },
-    responses: { 200: html('The card page') }
+    responses: { 200: html('The card page'), 304: NOT_MODIFIED }
   }),
   'GET /share/pages/:id': op({
     tag: 'Links', auth: 'public',
     summary: "A page's share card (HTML for link-preview crawlers)",
     description: SHARE_NOTE,
     pathParams: { id: s.str('The page id; anything else gets the generic card') },
-    responses: { 200: html('The card page') }
+    responses: { 200: html('The card page'), 304: NOT_MODIFIED }
   }),
   'GET /push/config': op({
     tag: 'Push', auth: 'public',
     summary: 'Whether web push is on, and the key to subscribe with',
     description: 'Cached for 5 minutes.',
-    responses: { 200: json(ref('PushConfig'), 'The push settings') }
+    responses: { 200: json(ref('PushConfig'), 'The push settings'), 304: NOT_MODIFIED }
   }),
   'POST /push/subscribe': op({
     tag: 'Push', auth: 'user', limited: true,
