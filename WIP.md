@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 75–76 — Security round 2: re-check every route, file upload, socket event; dependency updates; CSP headers.
-**Step:** 4 — file uploads: DONE (saving). Next: 5 socket events.
+**Step:** 5 — socket events: DONE (saving). Next: 6 CSP.
 
 Plan: 1 dependencies (npm audit at every level in backend/frontend/e2e;
 sanitize-html moderate advisory GHSA-x3q4-9hxx-gx8m is open -- CI only
@@ -78,6 +78,17 @@ report violations to our own error log).
   format, HTML/SVG/PDF/empty disguised: nothing uploaded or counted);
   3 tests got real signatures. Backend 981; b2, day34, day36, day44,
   day47, day57, b3, a2, journeys-social green.
+- Step 5 (sockets): handshake auth (bans, revoked sessions) and
+  per-event participant checks were already right. Fixed:
+  message_error sent err.message for server errors (DB text could reach
+  the client) -> generic sentence; NUL over the socket was a logged
+  SERVER_ERROR -> VALIDATION. New limits: maxHttpBufferSize 100 kB (was
+  1 MB), 120 events / 10 s per socket (rest dropped), typing passed on at
+  most 1/s per chat. REALTIME.md "Limits". socketSafety.test (5, x4
+  stable). Also: check-i18n now scans message constants (const X =
+  'Sentence ...';) -- ONLY_IMAGES/ONLY_AUDIO/UNSAVABLE_TEXT were unseen
+  (mutation-checked). Backend 986; b9, day31, day32, day33, a2,
+  journeys-core/-safety, day8-sessions, day72-offline green.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

@@ -4,6 +4,7 @@ const allowedOrigins = require('../config/allowedOrigins');
 const socketAuthMiddleware = require('./socketAuth');
 const messageService = require('../services/messageService');
 const { HttpError } = require('../utils/httpError');
+const { isUnsavableText, UNSAVABLE_TEXT } = require('../utils/sendError');
 const presence = require('./presence');
 const { report } = require('../services/errorLogService');
 const logger = require('../utils/logger');
@@ -24,6 +25,26 @@ function errorCodeFor(err) {
   return (err instanceof HttpError && CODE_FOR_STATUS[err.status]) || 'SERVER_ERROR';
 }
 
+// Day 75: what message_error says. A server error's own text (a database
+// error, say) stays in the log -- the client gets the generic sentence, as
+// over HTTP (utils/sendError.js). A NUL character in the text is the
+// client's mistake, not a server error.
+function messageErrorFor(err) {
+  if (isUnsavableText(err)) return { error: UNSAVABLE_TEXT, code: 'VALIDATION' };
+  const code = errorCodeFor(err);
+  return { error: code === 'SERVER_ERROR' ? 'Something went wrong. Please try again later.' : err.message, code };
+}
+
+// Day 75: a socket may send at most MAX_EVENTS events per EVENT_WINDOW_MS;
+// the rest are dropped unanswered. The app sends far fewer (a typing ping
+// every 2.5 s, a read/delivered mark per message it receives); this only
+// stops a script flooding the server with database work. Sends also have
+// their own per-chat limit (services/rateLimiter.js).
+const EVENT_WINDOW_MS = 10 * 1000;
+const MAX_EVENTS = 120;
+// ...and "typing" at most once a second per chat, however often it comes.
+const TYPING_MIN_GAP_MS = 1000;
+
 let io = null;
 
 function initSocket(httpServer) {
@@ -41,6 +62,9 @@ function initSocket(httpServer) {
     // ping (e.g. a cron hitting the REST API) or a paid Render plan.
     pingInterval: 25000,
     pingTimeout: 60000,
+    // Day 75: the biggest thing a client sends is a 5,000-character message;
+    // the default allows 1 MB per event. Same ceiling as express.json().
+    maxHttpBufferSize: 100 * 1024,
   });
 
   io.use(socketAuthMiddleware);
@@ -51,6 +75,18 @@ function initSocket(httpServer) {
     // of a conversation room via io.in(`user_<id>`).socketsJoin/socketsLeave
     // without a reconnect.
     socket.join(`user_${socket.userId}`);
+
+    // Day 75: the event budget (EVENT_WINDOW_MS, MAX_EVENTS). An event over
+    // it never reaches a handler.
+    const eventTimes = [];
+    socket.use((packet, next) => {
+      const now = Date.now();
+      while (eventTimes.length && now - eventTimes[0] >= EVENT_WINDOW_MS) eventTimes.shift();
+      if (eventTimes.length >= MAX_EVENTS) return;
+      eventTimes.push(now);
+      next();
+    });
+    const lastTyping = new Map(); // conversationId -> when it was last passed on
 
     // Listeners are attached synchronously, before the async room-join below
     // ever awaits -- a client that emits send_message right after 'connect'
@@ -83,10 +119,9 @@ function initSocket(httpServer) {
         // reconcile the one optimistic message it's tracking by clientTempId.
         socket.emit('message_ack', { clientTempId, message });
       } catch (err) {
-        if (errorCodeFor(err) === 'SERVER_ERROR') {
-          socketFailure('send_message', socket, err);
-        }
-        socket.emit('message_error', { clientTempId, error: err.message, code: errorCodeFor(err) });
+        const { error, code } = messageErrorFor(err);
+        if (code === 'SERVER_ERROR') socketFailure('send_message', socket, err);
+        socket.emit('message_error', { clientTempId, error, code });
       }
     });
 
@@ -116,10 +151,9 @@ function initSocket(httpServer) {
           deletedAt: message.deleted_at
         });
       } catch (err) {
-        if (errorCodeFor(err) === 'SERVER_ERROR') {
-          socketFailure('delete_message', socket, err);
-        }
-        socket.emit('message_error', { messageId, error: err.message, code: errorCodeFor(err) });
+        const { error, code } = messageErrorFor(err);
+        if (code === 'SERVER_ERROR') socketFailure('delete_message', socket, err);
+        socket.emit('message_error', { messageId, error, code });
       }
     });
 
@@ -137,10 +171,9 @@ function initSocket(httpServer) {
         });
         io.to(`conv_${message.conversation_id}`).emit('message_edited', { conversationId: message.conversation_id, message });
       } catch (err) {
-        if (errorCodeFor(err) === 'SERVER_ERROR') {
-          socketFailure('edit_message', socket, err);
-        }
-        socket.emit('message_error', { messageId, error: err.message, code: errorCodeFor(err) });
+        const { error, code } = messageErrorFor(err);
+        if (code === 'SERVER_ERROR') socketFailure('edit_message', socket, err);
+        socket.emit('message_error', { messageId, error, code });
       }
     });
 
@@ -161,10 +194,9 @@ function initSocket(httpServer) {
           });
         }
       } catch (err) {
-        if (errorCodeFor(err) === 'SERVER_ERROR') {
-          socketFailure('mark_delivered', socket, err);
-        }
-        socket.emit('message_error', { error: err.message, code: errorCodeFor(err) });
+        const { error, code } = messageErrorFor(err);
+        if (code === 'SERVER_ERROR') socketFailure('mark_delivered', socket, err);
+        socket.emit('message_error', { error, code });
       }
     });
 
@@ -189,10 +221,9 @@ function initSocket(httpServer) {
           });
         }
       } catch (err) {
-        if (errorCodeFor(err) === 'SERVER_ERROR') {
-          socketFailure('mark_read', socket, err);
-        }
-        socket.emit('message_error', { error: err.message, code: errorCodeFor(err) });
+        const { error, code } = messageErrorFor(err);
+        if (code === 'SERVER_ERROR') socketFailure('mark_read', socket, err);
+        socket.emit('message_error', { error, code });
       }
     });
 
@@ -207,6 +238,9 @@ function initSocket(httpServer) {
       try {
         const conversationId = parseInt(payload?.conversationId, 10);
         if (isNaN(conversationId)) return;
+        const now = Date.now();
+        if (now - (lastTyping.get(conversationId) || 0) < TYPING_MIN_GAP_MS) return;
+        lastTyping.set(conversationId, now);
         // Same rule as every write in this file: room membership alone is
         // never trusted as authorization.
         if (!(await messageService.isParticipant(conversationId, socket.userId))) return;

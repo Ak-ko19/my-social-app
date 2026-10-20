@@ -95,7 +95,12 @@ const isDevOnly = (msg) => DEV_ONLY.has(msg) || /^[a-z]/.test(msg) || /\b[a-z]+[
     /\.status\(\d{3}\)\s*\.(?:send|json)\(\s*(?:\{\s*(?:error|message):\s*)?(['"`])((?:(?!\1)[^\\]|\\.)*)\1/g,
     /new (?!Error\()[A-Z]\w*Error\(\s*(?:\d{3},\s*)?(['"`])((?:(?!\1)[^\\]|\\.)*)\1/g,
     /\b(?:message|error):\s*(['"`])((?:(?!\1)[^\\]|\\.)*)\1/g,
-    /sendServerError\([^,]+,[^,]+,\s*(')((?:[^'\\]|\\.)*)'/g
+    /sendServerError\([^,]+,[^,]+,\s*(')((?:[^'\\]|\\.)*)'/g,
+    // Day 75: a message kept in a constant (`const ONLY_IMAGES = 'Only ...';`)
+    // and sent from there -- otherwise its Arabic could go missing unseen.
+    // A sentence: a capital, a lower-case letter and a space (not 'GET' or
+    // the app's name).
+    /\bconst [A-Z][A-Z0-9_]* = (['"])([A-Z][a-z](?=[^'"\n]* )(?:(?!\1)[^\\]|\\.)*)\1;/g
   ];
   const sources = [];
   (function walk(dir) {

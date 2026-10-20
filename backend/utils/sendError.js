@@ -19,12 +19,15 @@ function routeOf(req) {
 // That is the request's fault, not a server error: a 400, and not a row in
 // the error log (anyone could fill it with them). Every route ends up here
 // or in middleware/errorHandler.js, so this covers them all.
+// (The socket handlers send the same text; sockets/index.js.)
+const UNSAVABLE_TEXT = "This text contains a character that can't be saved.";
+
 function isUnsavableText(err) {
   return err?.code === '22021';
 }
 
 function sendUnsavableText(res) {
-  return res.status(400).send("This text contains a character that can't be saved.");
+  return res.status(400).send(UNSAVABLE_TEXT);
 }
 
 function sendServerError(res, err, publicMessage) {
@@ -35,4 +38,4 @@ function sendServerError(res, err, publicMessage) {
   res.status(500).send(publicMessage);
 }
 
-module.exports = { sendServerError, routeOf, isUnsavableText, sendUnsavableText };
+module.exports = { sendServerError, routeOf, isUnsavableText, sendUnsavableText, UNSAVABLE_TEXT };

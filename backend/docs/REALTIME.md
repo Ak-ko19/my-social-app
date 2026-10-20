@@ -37,13 +37,18 @@ const socket = io(API_URL, { auth: { token } }); // the token from POST /login
 | `typing` | `{ conversationId }` | You are typing; the others get `user_typing`. Send it again every few seconds while typing. |
 | `disconnect` | -- (Socket.IO's own) | When your last socket goes, your chats get `user_offline` and your "last seen" is saved. |
 
+**Limits.** One event may be at most 100 kB (more closes the connection).
+A socket may send 120 events in 10 seconds; events past that are dropped
+without an answer. `typing` is passed on at most once a second per chat.
+Sending messages also has its own per-chat limit (`RATE_LIMITED`).
+
 ## You receive
 
 | Event | Payload | When |
 | --- | --- | --- |
 | `new_message` | a `Message` (see `/openapi.json`) | Anyone sends in one of your chats (socket or REST: text, voice, photo, forwarded). |
 | `message_ack` | `{ clientTempId, message }` | Your `send_message` was saved; match it to your optimistic copy by `clientTempId`. |
-| `message_error` | `{ clientTempId?, messageId?, error, code }` | Your socket action failed. `code`: `VALIDATION` (fix and resend), `FORBIDDEN` (cannot be sent here), `NOT_FOUND`, `RATE_LIMITED` or `SERVER_ERROR` (try again). |
+| `message_error` | `{ clientTempId?, messageId?, error, code }` | Your socket action failed. `code`: `VALIDATION` (fix and resend), `FORBIDDEN` (cannot be sent here), `NOT_FOUND`, `RATE_LIMITED` or `SERVER_ERROR` (try again; `error` is then a general sentence -- the details stay in the server log). |
 | `message_edited` | `{ conversationId, message }` | A message was edited. |
 | `message_deleted` | `{ conversationId, messageId, deletedAt }` | A message was unsent (by its sender, or removed by an admin). |
 | `message_status_update` | `{ conversationId, messageIds, status, lastReadMessageId?, readerId? }` | Messages were delivered or read. |
