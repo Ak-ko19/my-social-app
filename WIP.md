@@ -1,7 +1,8 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 74 — Performance round 2: slow queries, caching headers, image sizes, bundle splitting.
-**Step:** 4 — image sizes: DONE (saving). Next: 5 split day27-perf.
+**Step:** 5 — day27-perf runtime: DONE (saving). Next: Day 74 close
+(full browser run in batches, Progress Log, tick the box).
 
 Step 3 plan: today only 7 routes set Cache-Control; every other API
 answer (feed, messages, notifications, profiles) has none, so a browser
@@ -66,6 +67,20 @@ Plan: 1 bundle (LazyMotion); 2 slow-query review (perf suite's slowest
   shrunk, and each transformation costs plan credits). Voice notes
   untouched. storedImageSize.test (3); backend 961, Vitest 313, lint 0;
   b2, day44, day45, day57, journeys-social green.
+- Step 5 (better than the planned split): 43 x an 11 s sleep was 8 of
+  the 8.5 min, waiting for Postgres to publish the server connection's
+  counters. PG 15+ publishes them when a connection ends: the suite now
+  waits for the app's connections to go idle, ends them (pool reconnects;
+  db.js), waits until gone, reads. 8.5 min -> ~1 min. Also flushed once
+  before the loop (set-up requests no longer leak into /feed's count).
+  Found on the way: right after seeding, index-only scans read the table
+  for every row until autovacuum set the visibility maps (Explore +11k
+  likes rows in minute 1) -- the old suite only passed by being slow.
+  Seed now ends VACUUM ANALYZE: Explore steady at ~11.2k. The cursor
+  check compares with ?page=5 (< 0.7; runs 0.28-0.43, broken cursor
+  0.99): the first-page ratio swung 0.9-2.2 with the random follows.
+  Mutations caught: dropped idx_posts_user_id (full scan, 150k rows),
+  CASE cursor (3.5x). 7 clean runs.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -144,8 +159,8 @@ Plan: 1 bundle (LazyMotion); 2 slow-query review (perf suite's slowest
   a regex /[က-႟]/ landed as literal Burmese). After writing
   such code, check with `grep -n ... | od -c`; to fix, build the
   backslash with String.fromCharCode(92) in a script.
-- Full browser run timing: day27-perf needs most of a 10-minute tool
-  call -- run it alone. Since Day 66 the A3 matrix and day26-a11y run in
+- Full browser run timing: day27-perf takes ~1 min since Day 74 (it
+  ends idle server connections instead of waiting 11 s each). Since Day 66 the A3 matrix and day26-a11y run in
   parts (E2E_ONLY="a3-en-light" ... "a3-ar-dark": ~4 min each, two per
   tool call; "day26-a11y-light"/"-dark"/"-ar": ~2 min each, all three in
   one call).
@@ -218,9 +233,8 @@ Plan: 1 bundle (LazyMotion); 2 slow-query review (perf suite's slowest
 - Check lint by its EXIT CODE (npx eslint . ; echo $?), never with | tail:
   on failure its last line is blank, like a clean run (Day 74: two lint
   errors from Day 73 went out unseen).
-- Bundle 223.9/225 kB after Day 72 -- Day 74 must make room.
+- Bundle 200.7/225 kB after Day 74 step 1.
 - EmailVerificationBanner amber text ~2.9:1 (below AA), no dark tokens.
-- day27-perf takes ~8.5 min now (Day 66): split it like a3/a11y in Day 74.
 - Follow-up (seen Day 66): when an admin removes your post/comment/message
   nothing tells you (FB/IG notify "we removed your post"). A system
   notification type (notifySystem) -- for Day 81–82 notifications upgrade

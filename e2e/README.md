@@ -118,7 +118,7 @@ error. Full output goes to `out-<suite>.txt`, and screenshots to `*.png` /
 | `day23-mute` | Day 23: the Messages notification switch, and muting one chat |
 | `day24-report-places` | Day 24: reporting groups and pages; the moderator removes one |
 | `day26-a11y` | Day 26: axe (WCAG 2.1 A + AA) on every page, light and dark, and Arabic; keyboard focus rings. In 3 parts: `day26-a11y-light`, `-dark`, `-ar` |
-| `day27-perf` | Day 27: about a million seeded rows; every main read endpoint stays fast and uses its index (run alone: ~8 min) |
+| `day27-perf` | Day 27: about a million seeded rows; every main read endpoint stays fast and uses its index (~1 min since Day 74) |
 | `day28-export` | Day 28: Download your information (the JSON file) |
 | `day30-guard` | Day 30: account-only screens send logged-out visitors to Login and back |
 | `day31-reactions` | Day 31: reacting to messages, live for both people |

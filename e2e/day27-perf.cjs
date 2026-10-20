@@ -32,6 +32,26 @@ function seqScans() {
   return Object.fromEntries(rows.split('\n').map((l) => l.split('|')).map(([t, s, n, rows]) => [t, { seq: Number(s), pages: Number(n), rows: Number(rows) }]));
 }
 
+// Day 74: a server connection publishes its counters at most once a second
+// while busy, and within 10 s once idle -- an 11 s wait per endpoint was 8
+// of this suite's 8.5 minutes. A connection that ends publishes them at
+// once (Postgres 15+). So: wait until the server's connections are idle (a
+// request may still query after its response), end them (the server's pool
+// opens a fresh one on the next query; db.js), and wait until they're gone.
+const OTHERS = "datname = current_database() AND pid <> pg_backend_pid() AND backend_type = 'client backend'";
+async function until(check, what) {
+  for (let i = 0; i < 200; i += 1) {
+    if (check()) return;
+    await sleep(50);
+  }
+  throw new Error(`timed out waiting for ${what}`);
+}
+async function publishServerCounters() {
+  await until(() => sql(`SELECT count(*) FROM pg_stat_activity WHERE ${OTHERS} AND state <> 'idle'`) === '0', 'the server to go idle');
+  const ended = sql(`SELECT string_agg(pid::text, ',') FROM (SELECT pid, pg_terminate_backend(pid) FROM pg_stat_activity WHERE ${OTHERS} AND state = 'idle') t`);
+  if (ended) await until(() => sql(`SELECT count(*) FROM pg_stat_activity WHERE pid IN (${ended})`) === '0', 'its connections to end');
+}
+
 (async () => {
   // PERF_SKIP_SEED=1: run again on the same (already seeded) database.
   if (!process.env.PERF_SKIP_SEED) {
@@ -77,6 +97,8 @@ function seqScans() {
   const feedByCursor = `/feed?cursor=${encodeURIComponent(nextCursor)}`;
   endpoints.splice(2, 0, feedByCursor);
   const rowsOf = {};
+  // The set-up requests above must not count against the first endpoint.
+  await publishServerCounters();
   for (const ep of endpoints) {
     const before = seqScans();
     const start = Date.now();
@@ -86,10 +108,8 @@ function seqScans() {
       .catch(() => ({ status: 'timeout' }));
     if (res.status === 'timeout') execSync(`${DB} -Atc "SELECT pg_cancel_backend(pid) FROM pg_stat_activity WHERE state = 'active' AND pid <> pg_backend_pid()"`);
     const ms = Date.now() - start;
-    // A server connection reports its counters at most once a second, and
-    // when idle within 10 s; wait that long so each scan is counted
-    // against the request that caused it.
-    await sleep(11000);
+    // So each scan is counted against the request that caused it.
+    await publishServerCounters();
     const after = seqScans();
     const scanned = Object.keys(after).filter((t) => after[t].pages >= BIG_PAGES && after[t].seq > (before[t]?.seq ?? 0));
     const big = Object.keys(after).filter((t) => after[t].pages >= BIG_PAGES);
@@ -100,12 +120,13 @@ function seqScans() {
       + (scanned.length ? `  -- full scan of: ${scanned.join(', ')}` : '')
       + (rowsRead > MAX_ROWS ? `  -- read over ${MAX_ROWS} rows` : ''));
   }
-  // Day 74: the cursor starts the index scan at its post, so it reads about
-  // one page's worth (1.9k rows at this seed), where page 5 walks past the
-  // first four (6.2k). A cursor that became a filter again would read as
-  // much as OFFSET.
+  // Day 74: ?page=5 walks the posts of pages 1 to 5; the cursor starts the
+  // index scan at its post and walks page 5's only -- a share of the same
+  // total (0.28-0.43 in runs so far; how many rows a page walks depends on
+  // the seed's random follows). A cursor that became a filter again reads
+  // as much as OFFSET (0.99).
   const ratio = rowsOf[feedByCursor] / rowsOf['/feed?page=5'];
-  results.push(`${ratio < 0.5 ? 'PASS' : 'FAIL'}  /feed by cursor reads under half the rows of ?page=5  -- ${rowsOf[feedByCursor]} vs ${rowsOf['/feed?page=5']}`);
+  results.push(`${ratio < 0.7 ? 'PASS' : 'FAIL'}  /feed page 5 by cursor reads well under ?page=5  -- ${rowsOf[feedByCursor]} vs ${rowsOf['/feed?page=5']} rows`);
 
   console.log(results.join('\n'));
   process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

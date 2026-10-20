@@ -80,4 +80,9 @@ SELECT r.ulo + (g % 30000), 'https://res.cloudinary.com/demo/image/upload/sample
        now() - g * interval '1 minute' + interval '24 hours'
 FROM r, generate_series(1, 5000) g;
 
-ANALYZE;
+-- Day 74: VACUUM too, not just ANALYZE: like a database that has been
+-- running a while (autovacuum), the tables' visibility maps are set, so an
+-- index-only scan doesn't read the table for every row. Without it the
+-- counts depended on whether autovacuum had got there yet (e.g. Explore
+-- read 11k extra likes rows in the first minute after seeding).
+VACUUM ANALYZE;
