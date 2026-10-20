@@ -1,13 +1,18 @@
 {
+  "id": "/",
   "name": "MySocialApp",
   "short_name": "MySocialApp",
-  "description": "A Facebook-style social media app -- feed, messaging, notifications, and more.",
+  "description": "Posts, stories, chats, groups and events with the people you follow.",
+  "lang": "en",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#f7f8fa",
   "theme_color": "#4f46e5",
   "orientation": "portrait",
+  "categories": [
+    "social"
+  ],
   "icons": [
     {
       "src": "/icon-192.png",

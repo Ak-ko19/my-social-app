@@ -1,19 +1,26 @@
-// Basic offline app-shell caching -- not a full offline-first strategy (this
-// app is fundamentally live/real-time: feed, messaging, notifications all
-// need a network connection to mean anything), just enough that the shell
-// still loads instead of showing the browser's own offline error page, and
-// that already-visited pages/assets work from cache when the network drops
-// briefly.
+// The app's offline support at the network level: the app shell opens
+// with no connection, and already-loaded files work from cache. (The data
+// -- Home's newest posts, messages written offline -- is kept by the app
+// itself; see src/utils/offlineStore.js.) The app is live by nature, so
+// everything else still needs the network.
 //
-// CACHE_NAME's version suffix is the manual "bust the old cache" switch --
-// bump it whenever the precache list below changes, so activate's cleanup
-// actually has a new name to diff against.
-const CACHE_NAME = 'mysocialapp-shell-v1';
-const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
+// Day 72: two caches.
+// - SHELL_CACHE: the app shell (index.html, manifest, icons) and the other
+//   small same-origin files, network-first, so a page opens offline.
+// - ASSETS_CACHE: the build's hashed files (/assets/...), cache-first --
+//   a hashed name never changes content -- and trimmed to the newest
+//   MAX_ASSETS, so the files of earlier deploys don't pile up forever (they
+//   did with the single cache before).
+// A version suffix is the "start over" switch: activate deletes every cache
+// that isn't one of these two (v1 was the old single cache).
+const SHELL_CACHE = 'mysocialapp-shell-v2';
+const ASSETS_CACHE = 'mysocialapp-assets-v1';
+const MAX_ASSETS = 60;
+const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
+    caches.open(SHELL_CACHE).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
   );
 });
 
@@ -21,40 +28,54 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) => key !== SHELL_CACHE && key !== ASSETS_CACHE).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
 
-// Network-first, falling back to cache -- correctness (always prefer the
-// live app/API response when online) matters more here than raw speed.
-// Only GET requests are ever cacheable; API calls to a different origin
-// (the backend) are left to the network/browser entirely, not intercepted.
+// Oldest entries first (a cache keeps insertion order).
+async function trim(cache, max) {
+  const keys = await cache.keys();
+  await Promise.all(keys.slice(0, Math.max(0, keys.length - max)).map((key) => cache.delete(key)));
+}
+
+async function cacheFirstAsset(request) {
+  const cache = await caches.open(ASSETS_CACHE);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (response.ok) {
+    await cache.put(request, response.clone());
+    await trim(cache, MAX_ASSETS);
+  }
+  return response;
+}
+
+// Network-first, falling back to the cache: correctness (the live app when
+// online) matters more than raw speed. A page load (any route of the SPA)
+// is kept as /index.html, so every route opens offline.
+async function networkFirst(request) {
+  const cache = await caches.open(SHELL_CACHE);
+  const key = request.mode === 'navigate' ? '/index.html' : request;
+  try {
+    const response = await fetch(request);
+    if (response.ok) await cache.put(key, response.clone());
+    return response;
+  } catch (err) {
+    const cached = await cache.match(key);
+    if (cached) return cached;
+    throw err;
+  }
+}
+
+// Only same-origin GETs: the API (another origin) is left to the network,
+// and so are photos (the app shows what it has when they can't load).
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
-  if (new URL(request.url).origin !== self.location.origin) return;
-
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
-        return response;
-      })
-      .catch(async () => {
-        const cached = await caches.match(request);
-        if (cached) return cached;
-        // Navigations (loading a route directly) fall back to the shell so
-        // the SPA can still boot and render its own offline-aware UI,
-        // rather than the browser's native "no internet" page.
-        if (request.mode === 'navigate') {
-          const shell = await caches.match('/index.html');
-          if (shell) return shell;
-        }
-        throw new Error('No cached response available');
-      })
-  );
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  event.respondWith(url.pathname.startsWith('/assets/') ? cacheFirstAsset(request) : networkFirst(request));
 });
 
 // Day 22: web push (backend services/pushService.js). The payload is

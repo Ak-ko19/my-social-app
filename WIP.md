@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 72–73 — Offline + PWA polish: offline feed cache, offline message queue, install prompt, app icons.
-**Step:** 4 — icons, manifest, service-worker hygiene: PLAN.
+**Step:** Day close — full browser run in batches.
 
 Plan (have: an app-shell service worker that caches every same-origin GET
 forever under one name -- old hashed assets pile up per deploy):
@@ -47,6 +47,15 @@ forever under one name -- old hashed assets pile up per deploy):
   the Safari steps (sheet needed its own side padding -- seen in the
   screenshot). useInstallApp.test (3), day72-install (6). Vitest 307,
   bundle 223.9/225 (1.1 kB left!); b13, b14, day55, day58, c3 green.
+- Step 4 DONE: the maskable icon was transparent (launchers want a full
+  tile) -> regenerated opaque by scripts/generate-maskable-icon.cjs (exact
+  brand colours); manifest id/lang/categories; sw.js: shell cache (network-
+  first, any route -> /index.html) + assets cache (cache-first, newest 60),
+  old caches deleted. pwa.test (5; rejects the old icon). day72-pwa on the
+  production build (6): offline full reload + deep link open the app.
+  Vitest 312; check:headers; day22-push, day10, day19-share, day11-
+  turnstile green.
+- Day close: full browser run, Progress Log, tick Day 72-73.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
