@@ -65,6 +65,17 @@ app.response.send = function sendPlainText(body) {
   if (typeof body === 'string' && !this.get('Content-Type')) this.type('text/plain');
   return sendResponse.call(this, body);
 };
+// Day 75: every query value is one string. Express's own parser turns a
+// repeated key (?q=a&q=b) into an array, which handlers that read text
+// don't expect (search answered 500). No route takes a list in the query,
+// so the first value is kept; prototype keys (__proto__) are ignored.
+app.set('query parser', (queryString) => {
+  const query = {};
+  for (const [key, value] of new URLSearchParams(queryString)) {
+    if (key !== '__proto__' && !Object.hasOwn(query, key)) query[key] = value;
+  }
+  return query;
+});
 // Hosts like Render tell the app which port to listen on (validated by
 // config/env.js; 0 = any free port).
 const PORT = process.env.PORT?.trim() ? Number(process.env.PORT) : 3000;

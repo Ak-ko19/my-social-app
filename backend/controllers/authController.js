@@ -4,6 +4,7 @@ const db = require('../db');
 const { sendError } = require('../utils/httpError');
 const { mediaOfUser, deleteMedia } = require('../services/mediaCleanupService');
 const { sendEmail, emailEnabled } = require('../utils/email');
+const { textOf } = require('../utils/bodyText');
 const { createSession, revokeOtherSessions, disconnectOtherSockets } = require('../services/sessionService');
 const botProtection = require('../services/botProtection');
 const { banState, liftExpiredSuspension } = require('../services/moderationService');
@@ -62,9 +63,9 @@ async function issueVerificationEmail(userId, email, language) {
 
 async function signup(req, res) {
   try {
-    const username = (req.body.username || '').trim();
-    const email = (req.body.email || '').trim();
-    const password = req.body.password || '';
+    const username = textOf(req.body.username).trim();
+    const email = textOf(req.body.email).trim();
+    const password = textOf(req.body.password);
 
     if (!username || !email || !password) {
       return res.status(400).send('Username, email, and password are all required');
@@ -141,8 +142,8 @@ async function resendVerification(req, res) {
 
 async function login(req, res) {
   try {
-    const email = (req.body.email || '').trim();
-    const password = req.body.password || '';
+    const email = textOf(req.body.email).trim();
+    const password = textOf(req.body.password);
 
     if (!email || !password) {
       return res.status(400).send('Email and password are required');
@@ -208,7 +209,7 @@ async function login(req, res) {
 
 async function forgotPassword(req, res) {
   try {
-    const email = (req.body.email || '').trim();
+    const email = textOf(req.body.email).trim();
     if (!email) {
       return res.status(400).send('Email is required');
     }
@@ -244,7 +245,7 @@ async function forgotPassword(req, res) {
 async function resetPassword(req, res) {
   try {
     const { token } = req.params;
-    const password = req.body.password || '';
+    const password = textOf(req.body.password);
 
     if (!password) {
       return res.status(400).send('New password is required');
@@ -284,8 +285,8 @@ async function resetPassword(req, res) {
 
 async function changePassword(req, res) {
   try {
-    const currentPassword = req.body.currentPassword || '';
-    const newPassword = req.body.newPassword || '';
+    const currentPassword = textOf(req.body.currentPassword);
+    const newPassword = textOf(req.body.newPassword);
 
     if (!currentPassword || !newPassword) {
       return res.status(400).send('Current and new password are required');
@@ -330,7 +331,7 @@ async function changePassword(req, res) {
 // login above) -- there's no separate "reactivate" endpoint.
 async function deactivateAccount(req, res) {
   try {
-    const password = req.body.password || '';
+    const password = textOf(req.body.password);
     if (!password) {
       return res.status(400).send('Password is required to deactivate your account');
     }
@@ -360,7 +361,7 @@ async function deactivateAccount(req, res) {
 // check here is the real server-side authorization, not just a UX step.
 async function deleteAccount(req, res) {
   try {
-    const password = req.body.password || '';
+    const password = textOf(req.body.password);
     if (!password) {
       return res.status(400).send('Password is required to delete your account');
     }

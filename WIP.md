@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 75–76 — Security round 2: re-check every route, file upload, socket event; dependency updates; CSP headers.
-**Step:** 2 — message text as typed: DONE (saving). Next: 3 routes.
+**Step:** 3 — routes and inputs: DONE (saving). Next: 4 file uploads.
 
 Plan: 1 dependencies (npm audit at every level in backend/frontend/e2e;
 sanitize-html moderate advisory GHSA-x3q4-9hxx-gx8m is open -- CI only
@@ -50,8 +50,25 @@ report violations to our own error log).
   rehearsal seeds an encoded 014-era message and checks it (--old PASSED).
   messageText.test (4), dm/dmExtras updated; b9-dm checks "Tom & Jerry <3
   if x<y and y>z" stored and shown as typed after reload. Backend 964.
-  For step 3: check a NUL character (\u0000) in any text field -- Postgres
-  rejects it in text columns (500?).
+- Step 3 (routes + inputs), each found by a sweep over the spec:
+  - authSweep.test: all 153 login-only operations refuse no token, a
+    forged token and a logged-out session (401); 11 admin ones are 404 to
+    a user; 22 optional ones treat a bad token as logged out. All held
+    (mutation: unguarded PUT /posts/:id is named).
+  - Ownership: recorded every status the suite produces (temporary
+    contract.js hook, reverted); 19 mutating :id routes never answered
+    403/404. 13 only touch the caller's own rows; the other 6 were guarded
+    but untested -> strangerRefusals.test (group roles/approvals, event
+    RSVP, chat read/reaction, follow approve).
+  - NUL (U+0000) in any text was a 500 (Postgres 22021), login/signup
+    included -> 400 "This text contains a character that can't be saved."
+    (AR added) in sendServerError + errorHandler; not in the error log.
+  - Type confusion: object/array JSON fields 500'd signup, login,
+    forgot-password, deactivate, delete, reports (utils/bodyText textOf);
+    ?q=a&q=b 500'd search (server.js query parser: one string per key,
+    __proto__ ignored). inputTypes.test sweeps every documented route.
+  Backend 977; journeys-core/-safety, day5, day11-bots, day12-report,
+  day42, day60, b7 green.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

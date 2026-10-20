@@ -14,11 +14,25 @@ function routeOf(req) {
 // the client -- raw err.message can leak internal details (query structure,
 // column names, driver errors) that are useful to an attacker and
 // meaningless to a legitimate user.
+// Day 75: Postgres refuses a NUL character (U+0000) in text ("invalid byte
+// sequence", SQLSTATE 22021) -- in a post, a message, a search, even a login.
+// That is the request's fault, not a server error: a 400, and not a row in
+// the error log (anyone could fill it with them). Every route ends up here
+// or in middleware/errorHandler.js, so this covers them all.
+function isUnsavableText(err) {
+  return err?.code === '22021';
+}
+
+function sendUnsavableText(res) {
+  return res.status(400).send("This text contains a character that can't be saved.");
+}
+
 function sendServerError(res, err, publicMessage) {
+  if (isUnsavableText(err)) return sendUnsavableText(res);
   const req = res.req;
   logger.error('request failed', { route: routeOf(req), status: 500, err });
   report(err, { source: 'api', route: routeOf(req), status: 500, userId: req && req.userId });
   res.status(500).send(publicMessage);
 }
 
-module.exports = { sendServerError, routeOf };
+module.exports = { sendServerError, routeOf, isUnsavableText, sendUnsavableText };

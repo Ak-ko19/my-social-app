@@ -7,6 +7,7 @@ const blockService = require('../services/blockService');
 const { buildExport } = require('../services/dataExportService');
 const { parseLinks, LINKS_ERROR } = require('../utils/profileLinks');
 const { toUnicode } = require('../utils/myanmarText');
+const { textOf } = require('../utils/bodyText');
 
 // Day 43: bios had no limit. Generous next to Instagram (150) or X (160),
 // so existing bios still save.
@@ -111,8 +112,8 @@ async function updateProfile(req, res) {
   // A new avatar is already on Cloudinary by the time this runs.
   const avatarUrl = req.cloudinaryResult ? req.cloudinaryResult.secure_url : null;
   try {
-    const username = (req.body.username || '').trim();
-    const email = (req.body.email || '').trim();
+    const username = textOf(req.body.username).trim();
+    const email = textOf(req.body.email).trim();
     const typedBio = req.body.bio;
     if (!username || !email) {
       return res.status(400).send('Username and email are required');

@@ -1,6 +1,6 @@
 const multer = require('multer');
 const { report } = require('../services/errorLogService');
-const { routeOf } = require('../utils/sendError');
+const { routeOf, isUnsavableText, sendUnsavableText } = require('../utils/sendError');
 const logger = require('../utils/logger');
 
 // Errors that reach Express's error handler: upload rejections from multer
@@ -47,6 +47,8 @@ function errorHandler(err, req, res, next) {
     }
     return res.status(err.status).send(err.message);
   }
+  // Day 75: a NUL character in the text (see utils/sendError.js).
+  if (isUnsavableText(err)) return sendUnsavableText(res);
   logger.error('request failed', { route: routeOf(req), status: 500, err });
   report(err, { source: 'api', route: routeOf(req), status: 500, userId: req.userId });
   return res.status(500).send('Something went wrong. Please try again later.');

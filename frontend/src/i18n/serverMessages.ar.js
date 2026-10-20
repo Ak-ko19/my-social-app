@@ -142,6 +142,7 @@ const AR = {
   'You can attach up to 10 images': 'يمكنك إرفاق 10 صور كحد أقصى',
   'Server error': 'حدث خطأ في الخادم',
   'Something went wrong. Please try again later.': 'حدث خطأ ما. يرجى المحاولة لاحقًا.',
+  "This text contains a character that can't be saved.": 'يحتوي هذا النص على حرف لا يمكن حفظه.',
   // 2026-10-07 (EN/AR only): every server message a person or an admin can
   // see is translated -- check-i18n now scans the backend for them.
   'Too many reactions. Please try again later.': 'تفاعلات كثيرة جدًا. يرجى المحاولة لاحقًا.',
