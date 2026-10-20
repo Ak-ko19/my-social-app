@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { useReducedMotion } from 'motion/react';
+import * as m from 'motion/react-m';
 import { Heart, X } from 'lucide-react';
 import clsx from 'clsx';
 import { Trans, useTranslation } from 'react-i18next';
@@ -185,7 +186,7 @@ function CommentSection({ postId, postOwnerId, comments, groupLocked = false }) 
   };
 
   return (
-    <motion.section
+    <m.section
       className="feed-comment-section"
       aria-label={t('comments.section')}
       initial={reduceMotion ? false : { opacity: 0, y: -8 }}
@@ -312,7 +313,7 @@ function CommentSection({ postId, postOwnerId, comments, groupLocked = false }) 
           label={t('report.thisComment')}
         />
       )}
-    </motion.section>
+    </m.section>
   );
 }
 

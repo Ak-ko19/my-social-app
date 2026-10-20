@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { useReducedMotion } from 'motion/react';
+import * as m from 'motion/react-m';
 import { getOptimizedImageUrl, getPlaceholderImageUrl, getSrcSet, isCloudinaryUrl } from '../../utils/cloudinaryImage';
 import { DURATION_NORMAL, EASE_STANDARD } from '../../utils/motionTokens';
 import { useTranslation } from 'react-i18next';
@@ -46,7 +47,7 @@ function ProgressiveImage({ src, alt, width = 640, sizes = COLUMN_SIZES, aspectR
       {placeholderSrc && (
         <img className="feed-progressive-image-placeholder" src={placeholderSrc} alt="" aria-hidden="true" />
       )}
-      <motion.img
+      <m.img
         className="feed-progressive-image-full"
         src={fullSrc}
         srcSet={getSrcSet(src, WIDTHS) || undefined}

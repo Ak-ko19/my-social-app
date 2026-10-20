@@ -1,4 +1,5 @@
 import { StrictMode } from 'react'
+import { LazyMotion } from 'motion/react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 // Loaded AFTER index.css deliberately: tokens.css and index.css both
@@ -29,22 +30,28 @@ installGlobalErrorReporting()
 // Day 72: the browser's install offer comes once, early (see installPrompt).
 startInstallListener()
 
+// Day 74: Motion's engine comes after the first paint (utils/motionFeatures);
+// strict: a full `motion.*` element (which would bring it back) is an error.
+const loadMotionFeatures = () => import('./utils/motionFeatures').then((mod) => mod.default)
+
 // Wait for the saved language's strings (a separate chunk for Arabic)
 // so the first paint is already in the right language.
 i18nReady.finally(() => createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ThemeProvider>
-      <SocketProvider>
-        <HiddenWordsProvider>
-          <LanguageRoot>
-            {/* Inside LanguageRoot, so the crash screen is translated and RTL. */}
-            <ErrorBoundary>
-              <App />
-            </ErrorBoundary>
-          </LanguageRoot>
-        </HiddenWordsProvider>
-      </SocketProvider>
-    </ThemeProvider>
+    <LazyMotion features={loadMotionFeatures} strict>
+      <ThemeProvider>
+        <SocketProvider>
+          <HiddenWordsProvider>
+            <LanguageRoot>
+              {/* Inside LanguageRoot, so the crash screen is translated and RTL. */}
+              <ErrorBoundary>
+                <App />
+              </ErrorBoundary>
+            </LanguageRoot>
+          </HiddenWordsProvider>
+        </SocketProvider>
+      </ThemeProvider>
+    </LazyMotion>
   </StrictMode>,
 ))
 

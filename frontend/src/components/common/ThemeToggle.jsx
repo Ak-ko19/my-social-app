@@ -1,4 +1,5 @@
-import { motion, useReducedMotion } from 'motion/react';
+import { useReducedMotion } from 'motion/react';
+import * as m from 'motion/react-m';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
@@ -47,7 +48,7 @@ function ThemeToggle() {
   const nextTheme = isDark ? 'light' : 'dark';
 
   return (
-    <motion.button
+    <m.button
       type="button"
       role="switch"
       aria-checked={isDark}
@@ -59,7 +60,7 @@ function ThemeToggle() {
       transition={{ duration: DURATION_FAST, ease: EASE_STANDARD }}
     >
       <span className="theme-switch-thumb">{isDark ? <MoonIcon /> : <SunIcon />}</span>
-    </motion.button>
+    </m.button>
   );
 }
 

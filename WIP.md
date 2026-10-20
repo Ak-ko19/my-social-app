@@ -1,7 +1,20 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 74 — Performance round 2 (not started).
-**Step:** —
+**Day:** 74 — Performance round 2: slow queries, caching headers, image sizes, bundle splitting.
+**Step:** 1 — bundle: Motion after the first paint: DONE (saving).
+
+Plan: 1 bundle (LazyMotion); 2 slow-query review (perf suite's slowest
++ EXPLAIN); 3 API caching headers (ETag / no-store for private data);
+4 image sizes (what each upload and avatar costs); 5 split day27-perf
+(8.5 min) like a3/a11y.
+
+## Progress (Day 74)
+- Step 1: framer-motion (motion 13) was 40 kB of the first download.
+  LazyMotion + m.* (8 files) + utils/motionFeatures (domAnimation, loaded
+  after first paint), strict. First download 223.9 -> 200.7 kB. Checked in
+  the browser: the features chunk loads and the sheet animates
+  (translateY 98% -> 0). Vitest 312, lint (exit 0); day58, b4, a2,
+  day60, b11 green.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

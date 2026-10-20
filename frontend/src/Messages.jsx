@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Users } from 'lucide-react';
 import { IconButton } from './components/ui';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, useReducedMotion } from 'motion/react';
+import * as m from 'motion/react-m';
 import { useAuth } from './hooks/useAuth';
 import { useConversations } from './hooks/useConversations';
 import { usePresenceEvents } from './hooks/usePresenceEvents';
@@ -67,7 +68,7 @@ function Messages() {
       <ConnectionBanner />
 
       <AnimatePresence initial={false}>
-        <motion.div
+        <m.div
           key={inboxState}
           initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -93,7 +94,7 @@ function Messages() {
               )}
             </>
           )}
-        </motion.div>
+        </m.div>
       </AnimatePresence>
       </div>
     </div>

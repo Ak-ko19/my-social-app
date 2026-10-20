@@ -1,4 +1,5 @@
-import { motion, useReducedMotion } from 'motion/react';
+import { useReducedMotion } from 'motion/react';
+import * as m from 'motion/react-m';
 import { useTranslation } from 'react-i18next';
 import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
 
@@ -12,7 +13,7 @@ function FollowButton({ follow }) {
 
   return (
     <span className="feed-follow-actions">
-      <motion.button
+      <m.button
         type="button"
         onClick={toggle}
         disabled={pending}
@@ -22,7 +23,7 @@ function FollowButton({ follow }) {
         transition={{ duration: DURATION_FAST, ease: EASE_STANDARD }}
       >
         {isFollowing ? (requested ? t('follow.requested') : t('follow.following')) : t('follow.follow')}
-      </motion.button>
+      </m.button>
       {error && (
         <span className="feed-error-text" role="alert">
           {error}

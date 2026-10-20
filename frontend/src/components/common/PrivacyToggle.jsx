@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { useReducedMotion } from 'motion/react';
+import * as m from 'motion/react-m';
 import { Lock, LockOpen } from 'lucide-react';
 import api from '../../api';
 import { useAuth } from '../../hooks/useAuth';
@@ -55,7 +56,7 @@ function PrivacyToggle() {
   if (isPrivate === null) return <span className="theme-switch" aria-hidden="true" />;
 
   return (
-    <motion.button
+    <m.button
       type="button"
       role="switch"
       aria-checked={isPrivate}
@@ -70,7 +71,7 @@ function PrivacyToggle() {
       <span className="theme-switch-thumb">
         {isPrivate ? <Lock size={12} aria-hidden="true" /> : <LockOpen size={12} aria-hidden="true" />}
       </span>
-    </motion.button>
+    </m.button>
   );
 }
 

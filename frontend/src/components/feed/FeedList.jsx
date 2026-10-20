@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, useReducedMotion } from 'motion/react';
+import * as m from 'motion/react-m';
 import PostCard from './PostCard';
 import PostCardSkeleton from './PostCardSkeleton';
 import { useTranslation } from 'react-i18next';
@@ -79,7 +80,7 @@ function FeedList({ posts, hasMore, isLoadingMore, onLoadMore, onRemovePost, onR
       </ul>
       <AnimatePresence>
         {isLoadingMore && (
-          <motion.div
+          <m.div
             key="loading-more"
             className="feed-loading-more"
             role="status"
@@ -91,7 +92,7 @@ function FeedList({ posts, hasMore, isLoadingMore, onLoadMore, onRemovePost, onR
           >
             <PostCardSkeleton />
             <span className="feed-visually-hidden">{t('feed.loadingMoreDots')}</span>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </>

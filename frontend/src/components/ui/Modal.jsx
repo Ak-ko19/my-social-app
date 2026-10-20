@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
+import * as m from 'motion/react-m';
 import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
 
 // What Tab can land on inside the dialog.
@@ -69,7 +70,7 @@ function Modal({ open, onClose, title, children, className, variant = 'center' }
   return createPortal(
     <AnimatePresence>
       {open && (
-        <motion.div
+        <m.div
           className={`ui-modal-backdrop ${variant === 'sheet' ? 'ui-modal-backdrop-sheet' : ''}`}
           role="presentation"
           onClick={onClose}
@@ -78,7 +79,7 @@ function Modal({ open, onClose, title, children, className, variant = 'center' }
           exit={{ opacity: 0 }}
           transition={{ duration: DURATION_FAST, ease: EASE_STANDARD }}
         >
-          <motion.div
+          <m.div
             ref={panelRef}
             role="dialog"
             aria-modal="true"
@@ -92,8 +93,8 @@ function Modal({ open, onClose, title, children, className, variant = 'center' }
             transition={{ duration: DURATION_FAST, ease: EASE_STANDARD }}
           >
             {children}
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>,
     document.body
