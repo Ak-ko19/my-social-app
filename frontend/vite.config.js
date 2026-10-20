@@ -1,9 +1,10 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { swPrecache } from './vite-plugins/swPrecache.js'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), swPrecache()],
   build: {
     // Day 24: fonts are always separate files, never inlined as data: URIs
     // (the CSP's font-src is 'self' only; see vercel.json).

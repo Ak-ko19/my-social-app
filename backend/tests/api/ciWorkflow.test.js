@@ -130,7 +130,7 @@ describe('CI dependency audit', () => {
     expect(job).toBeDefined();
     expect(job.strategy.matrix.dir).toEqual(['backend', 'frontend', 'e2e']);
     expect(job.defaults.run['working-directory']).toBe('${{ matrix.dir }}');
-    expect(job.steps.map((s) => s.run)).toContain('npm audit --omit=dev --audit-level=high');
+    expect(job.steps.map((s) => s.run)).toContain('npm audit --omit=dev --audit-level=moderate');
     for (const dir of job.strategy.matrix.dir) expect(fs.existsSync(path.join(ROOT, dir, 'package-lock.json'))).toBe(true);
   });
 });

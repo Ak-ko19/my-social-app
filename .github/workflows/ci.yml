@@ -58,8 +58,10 @@ jobs:
       - run: npm ci
       - run: npm test
 
-  # Day 60 (AUDIT_REPORT_3 A1): fail on a known high or critical advisory
-  # in what runs in production. Reads only the lockfiles, so no install.
+  # Day 60 (AUDIT_REPORT_3 A1): fail on a known advisory in what runs in
+  # production. Reads only the lockfiles, so no install. Day 75: moderate
+  # and up, not just high -- a "moderate" sanitize-html bypass (an XSS
+  # filter) went unseen at the high level. Dev-only tools aren't checked.
   # A new advisory upstream turns this red on its own -- that's the point:
   # fix it with `npm audit fix` in that folder.
   dependency-audit:
@@ -78,7 +80,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npm audit --omit=dev --audit-level=high
+      - run: npm audit --omit=dev --audit-level=moderate
 
   frontend:
     name: Frontend lint + build

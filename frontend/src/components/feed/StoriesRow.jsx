@@ -66,6 +66,9 @@ function StoriesRow({ tray = [], currentUser, uploading, error, onAddStory, onOp
             color={own.color}
             ring={ownGroup ? ringFor(ownGroup) : false}
             alt=""
+            // Day 75: the button's label says what it does (axe:
+            // label-content-name-mismatch on the initials as text).
+            decorative
           />
         </button>
         <button

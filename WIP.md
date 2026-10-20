@@ -1,7 +1,46 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 75–76 — Security round 2: re-check every route, file upload, socket event; dependency updates; CSP headers.
-**Step:** 0 — not started (Day 74 closed: see the Progress Log).
+**Step:** 1 — dependencies: DONE (saving). Next: 2 message text.
+
+Plan: 1 dependencies (npm audit at every level in backend/frontend/e2e;
+sanitize-html moderate advisory GHSA-x3q4-9hxx-gx8m is open -- CI only
+fails on high; safe minor/patch updates); 2 message text stored as
+typed (found in step 1, below); 3 routes (every route's auth
+matches the spec; every :id route refuses a stranger; inputs
+validated); 4 file uploads (check the file's real bytes, not the
+client's Content-Type); 5 socket events (auth, membership, validation,
+rate limits for each event in REALTIME.md); 6 CSP (API + vercel.json;
+report violations to our own error log).
+
+## Progress (Day 75)
+- Step 1: npm audit fix: sanitize-html 2.17.7 -> 2.18.1 (backend, moderate
+  XSS-filter bypass), follow-redirects 1.16.1 + source-map-js 1.2.2
+  (frontend, high -- CI's audit job was red). npm update in all three
+  (in-range minor/patch); majors left: dotenv 18, motion 14; pins kept:
+  myanmar-tools 1.1.3 (1.2.0 broken, Day 43), swagger-ui-dist (docs).
+  sprintf-js (moderate, jest's coverage tooling, dev only): the only
+  "fix" downgrades jest 30 -> 25 -- left. CI audit now --audit-level=
+  moderate (prod deps). Real sanitize-html checked by hand (jest uses a
+  mock): no tags survive XSS payloads.
+  Two regressions the updates exposed, fixed:
+  - axe-core 4.14 checks label-in-name: "Add to your story" contained
+    the initials "AL" as text. Avatar `decorative` (aria-hidden, initials
+    drawn by CSS); looks identical (b3 screenshot, A3).
+  - Vite 8.3 split Messages into its own files: offline, a deep link to
+    /messages crashed (files never cached). The worker now caches every
+    script and style of the build on install -- list written into sw.js
+    at build time (vite-plugins/swPrecache.js), so sw.js changes per
+    deploy. ~200 kB extra once per deploy; fonts still on use. Trim keeps
+    the current build + 40 others.
+  React 19.3 = +8.3 kB first download: 211.2/225 kB (accepted).
+  Backend 961, Vitest 318, lint 0, i18n, build; a11y 3 parts, A3 4
+  parts, day72-pwa 7/7, b3, b9, day31, journeys-core/-safety,
+  day72-offline, day10, day19-share green.
+- Found for step 2: messages go through sanitize-html with no tags
+  allowed, which eats text ("if x<y and y>z" -> "if xz") and stores
+  & < > as entities ("Tom &amp; Jerry" shown as typed entity). Posts and
+  comments store text as typed and React escapes it.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -154,7 +193,7 @@
 - Check lint by its EXIT CODE (npx eslint . ; echo $?), never with | tail:
   on failure its last line is blank, like a clean run (Day 74: two lint
   errors from Day 73 went out unseen).
-- Bundle 200.7/225 kB after Day 74 step 1.
+- Bundle 211.2/225 kB after Day 75 (React 19.3 +8.3 kB).
 - EmailVerificationBanner amber text ~2.9:1 (below AA), no dark tokens.
 - Follow-up (seen Day 66): when an admin removes your post/comment/message
   nothing tells you (FB/IG notify "we removed your post"). A system

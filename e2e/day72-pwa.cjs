@@ -1,7 +1,8 @@
 // Day 72: the installed-app pieces on the PRODUCTION build (run-all.sh runs
 // it on a dist stack -- the service worker only registers there). Throwaway
 // stack: alice(1) follows bob(2), bob has a post. Checks: the service worker
-// takes control and keeps only its two caches; the manifest and its icons
+// takes control and keeps only its two caches, with every script and style
+// of the build (Day 75); the manifest and its icons
 // load; and offline, a full reload still opens the app -- the banner, and
 // Home's saved posts -- as does a deep link to another screen.
 const fs = require('fs');
@@ -35,12 +36,17 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await page.reload({ waitUntil: 'networkidle' }); // now under the worker's control
   await page.getByText('Hello from bob').waitFor();
   check('the service worker controls the app', await page.evaluate(() => Boolean(navigator.serviceWorker.controller)));
+  // Day 75: the worker caches every script and style of the build when it
+  // installs (the list the build wrote into sw.js), not only the ones used.
   const caches = await page.evaluate(async () => {
     const names = await window.caches.keys();
-    const assets = names.includes('mysocialapp-assets-v1') ? (await (await window.caches.open('mysocialapp-assets-v1')).keys()).length : 0;
-    return { names: names.sort(), assets };
+    const cached = names.includes('mysocialapp-assets-v1')
+      ? (await (await window.caches.open('mysocialapp-assets-v1')).keys()).map((r) => new URL(r.url).pathname) : [];
+    const list = JSON.parse((await (await fetch('/sw.js')).text()).match(/const PRECACHE = (\[.*?\]);/)[1]);
+    return { names: names.sort(), listed: list.length, missing: list.filter((f) => !cached.includes(f)) };
   });
-  check('only its two caches, assets capped', JSON.stringify(caches.names) === JSON.stringify(['mysocialapp-assets-v1', 'mysocialapp-shell-v2']) && caches.assets > 0 && caches.assets <= 60, JSON.stringify(caches));
+  check('only its two caches', JSON.stringify(caches.names) === JSON.stringify(['mysocialapp-assets-v1', 'mysocialapp-shell-v2']), JSON.stringify(caches.names));
+  check("every script and style of the build is cached, screens not yet opened included", caches.listed > 50 && caches.missing.length === 0, `${caches.listed} listed, missing: ${caches.missing.slice(0, 3).join(', ')}`);
 
   const manifest = await page.evaluate(async () => {
     const href = document.querySelector('link[rel="manifest"]').href;
