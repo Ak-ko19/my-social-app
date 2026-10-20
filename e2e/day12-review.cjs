@@ -75,8 +75,8 @@ const signup = async (name) => {
   check('comment card offers "Remove comment"', (await card('nobody likes you').getByRole('button', { name: L.admin.removeComment }).count()) === 1);
   await card('nobody likes you').getByRole('button', { name: L.admin.removeComment }).click();
   await card('nobody likes you').waitFor({ state: 'detached', timeout: 8000 }).catch(() => {});
-  const comments = (await call('GET', '/posts/1/comments', bobToken)).json || [];
-  check('remove comment -> gone from the post', !comments.some((c) => c.content === 'nobody likes you'));
+  const comments = (await call('GET', '/posts/1/comments', bobToken)).json?.comments;
+  check('remove comment -> gone from the post', Array.isArray(comments) && !comments.some((c) => c.content === 'nobody likes you'));
 
   // 2. Remove the message: bob's open chat shows it deleted, live.
   await card('watch your back').getByRole('button', { name: L.admin.removeMessage }).click();

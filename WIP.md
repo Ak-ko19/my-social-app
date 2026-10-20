@@ -1,75 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 69–71 — Code health: duplicated logic, large files, consistent errors, README + CLAUDE.md.
-**Step:** Day close — full browser run in batches.
-
-Plan (survey: biggest file 735 lines; the real debt is duplication):
-1. utils/httpError.js: HttpError(status, message) + sendError(res, err,
-   fallback). The 19 error classes extend it (names kept); the 6 local
-   handle() helpers and the 29 instanceof chains in conversationController
-   go; sockets derive message_error codes from the status. Same statuses
-   and messages (the frontend translates messages) -- the contract check
-   proves no response changed.
-2. Block-check SQL (32 copies) -> one blockService helper.
-3. Unbounded lists from Day 68 (followers/following, comments,
-   conversations): bound them, frontend included.
-4. Split useConversationMessages.js (735 lines).
-5. Root README.md + CLAUDE.md up to date (its feature list is stale).
-
-## Progress (Day 69–71)
-- Step 1 DONE: utils/httpError (HttpError + sendError); 15 error classes
-  extend it (names kept); 4 local handle() helpers, 29+ instanceof
-  chains and 6 inner try/catch wrappers gone; every controller/route
-  catch-all is sendError; sockets read the code from the status. Only
-  override: NotEditableError 409 for reactions/forward. Chains that
-  missed a class (500 before) now answer its status. httpError.test (16,
-  incl. a guard against the old pattern). Backend 940/940, contract
-  194/194; b9-dm, day31/32/47, day49-spam green; check:i18n. -127 lines.
-- Step 2 DONE: blockService.noBlockBetweenSql(a, b) replaces 24 copied
-  two-way block checks (script parsed each, mirror verified). One-way
-  mutation caught by 11 tests in 10 files. Backend 940/940, perf 41/41,
-  journeys-safety, day47, b7, b8, day42 green.
-- Step 3 DONE: the unpaginated GET /users/:id/followers + /following are
-  removed; /connections gained q (username filter, LIKE-escaped); the
-  group-member picker pages (100) + searches on the server + Load more
-  (members.noMatches EN/AR); tests and e2e moved to /connections. Backend
-  941/941 (192 ops, all reached), Vitest 281, lint, i18n, bundle 222.2;
-  b8, b10, day33, journeys-social, perf green; AR dark 375 checked.
-  To look at later: in Arabic the new-group screen's back button sits on
-  the left (pre-existing; check what the other headers do).
-- Step 4 BUILT: GET /posts/:id/comments -> { comments, nextCursor }, oldest
-  first, cursor = last id (created_at is µs, a JS Date only ms), 50/100;
-  migration 070 idx (post_id, id) + fixture + checklist (rehearsal PASSED,
-  56 up/down, 140 indexes); useComments loadMore (dedupe) + CommentSection
-  "View more comments" (EN/AR); b4 checks 55 comments in EN/AR. Backend
-  943, Vitest 283, bundle 222.5; b4, day12, day43, day47, day58,
-  journeys-core green; perf 41/41. STEP DONE.
-- Step 5 DONE (BUG FIXED): message history skipped messages sent in the
-  same millisecond at a page edge (proved: m2, m3 of 5 never came). The
-  cursor is now the id; the query reads that row's own (created_at, id).
-  Old cursors still work; another chat's cursor finds nothing.
-  messageCursor.test (3). Backend 946/946; a2, b9, day32, journeys-core,
-  perf green.
-- Step 6 DONE: GET /conversations -> { conversations, nextCursor } (20/50),
-  page picked first (activity keyset by id in SQL), details only for the
-  page; ?q= (group name / other username), ?id= (one chat; the chat header
-  uses it instead of fetching the whole inbox). Inbox Load more; forward
-  sheet searches on the server (picks keep their names). inboxPaging.test
-  (3), hook + ForwardSheet tests, b9 checks 22 chats (list is virtualized:
-  counted by index). Backend 949, Vitest 286, bundle 222.6; a2, b9, b10,
-  day23, day32, journeys-core/social, perf green.
-- Step 7 DONE: useConversationMessages 735 -> 494 lines; utils/chatMessages
-  (pure helpers, 60) + hooks/useMediaMessages (voice + photo, 133: one
-  shared upload routine and one retry, instead of two copies). Same API.
-  New tests: chatMessages (3), useMediaMessages (2). Vitest 291, lint,
-  bundle 222.6; a2, b9, b10, day31, day32 green.
-- Step 8 DONE: root README.md (run, env names, API, tests, languages);
-  frontend/README.md (was the Vite template); e2e/README.md lists every
-  suite + helper (ciWorkflow test keeps it so); CLAUDE.md Completed
-  Features + Next Steps current (owner sections untouched); VAPID vars in
-  .env.example; two A3 outputs committed by mistake (Day 47) removed and
-  ignored. Backend 950/950.
-- Day close: full browser run in batches, Progress Log, tick Day 69-71.
+**Day:** 72–73 — Offline + PWA polish (not started).
+**Step:** —
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -208,6 +140,12 @@ Plan (survey: biggest file 735 lines; the real debt is duplication):
   run-all.sh MEDIA_SUITES (E2E_MEDIA=1, e2e/cloudinary-stub.cjs on :3904).
   A new user journey: a J<n> row in e2e/JOURNEYS.md and checks named
   "J<n> ..." (ciWorkflow.test checks both).
+- Lists are cursor-paged by id (comments, messages, inbox): never put a
+  timestamp from a JS Date in a cursor (it drops microseconds; Day 70 bug).
+  Errors: throw an HttpError subclass, end handlers with sendError.
+  Two-way block checks in SQL: blockService.noBlockBetweenSql.
+- To look at (Day 70): in Arabic the new-group screen's back button sits
+  on the left -- check the app's header convention in RTL.
 - day27-perf takes ~8.5 min now (Day 66): split it like a3/a11y in Day 74.
 - Follow-up (seen Day 66): when an admin removes your post/comment/message
   nothing tells you (FB/IG notify "we removed your post"). A system
@@ -217,6 +155,5 @@ Plan (survey: biggest file 735 lines; the real debt is duplication):
 - API (Day 68): a new or changed route updates backend/docs/openapi (the
   spec test and every API test's contract check fail otherwise); a new
   socket event goes in backend/docs/REALTIME.md. Jest on several files:
-  always --runInBand. Code-health items from documenting: unpaginated
-  followers/following, comments, conversations; ids echoed as strings in
-  follow-counts and post likes.
+  always --runInBand. Still open from Day 68: follow-counts and post likes
+  echo the id as a string (the lists are paged since Day 70).

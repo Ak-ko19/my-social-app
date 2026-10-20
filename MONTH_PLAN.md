@@ -255,7 +255,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 67–68 — API documentation
 - [x] OpenAPI spec for every endpoint; docs page for developers. *(backend/docs/openapi, GET /docs, docs/REALTIME.md; every API test's responses checked against it — see Progress Log.)*
 ### Day 69–71 — Code health
-- [ ] Remove duplicated logic, split large files, consistent error handling, update README and CLAUDE.md.
+- [x] Remove duplicated logic, split large files, consistent error handling, update README and CLAUDE.md. *(One error type, one block-check helper, bounded lists, a message-paging bug fixed, the chat hook split, README — see Progress Log.)*
 ### Day 72–73 — Offline + PWA polish
 - [ ] Offline feed cache, offline message queue, install prompt, app icons.
 ### Day 74 — Performance round 2
@@ -2233,3 +2233,65 @@ is in `e2e/JOURNEYS.md`.
   - Full browser run in small batches: all 60 regular suites, the 6
     special-stack suites, journeys-social 17, perf 41/41, a11y 125 (in 3
     parts) and A3 EN/AR (288 each, in 4 parts).
+
+### 2026-10-19/20 — Days 69–71: Code health
+The biggest file was 735 lines, so the real debt was duplication, and
+lists that grow without limit.
+- **One error type (`bca3169`):** `utils/httpError.js` has
+  `HttpError(status, message)` and `sendError()`.
+  - 15 error classes extend it, keeping their names and messages (the app
+    translates the messages).
+  - Removed: 4 local `handle()` helpers, 29 `instanceof` chains and 6
+    re-throw wrappers.
+  - Every handler now ends with `sendError`, and socket error codes are
+    read from the same status.
+  - The contract check proved no response changed. A guard test stops the
+    old pattern coming back.
+- **One block-check helper (`6a0f406`):** `noBlockBetweenSql(a, b)`
+  replaces 24 copies of the same SQL. The query plans are unchanged
+  (perf 41/41), and making the helper one-way fails 11 tests.
+- **Lists that grew without limit, now paged:**
+  - People (`3572404`): the unpaged followers/following endpoints were
+    removed. `/connections` gained a username search, and the group-member
+    picker pages and searches on the server.
+  - Comments (`4021399`): 50 at a time, with "View more comments" (EN/AR).
+    The cursor is the comment id, with index migration 070; the rehearsal
+    passed with 140 indexes.
+  - Inbox (`7bb2971`): 20 chats at a time, with Load more and `?q=` /
+    `?id=`. A chat's header no longer downloads the whole inbox, and the
+    forward sheet searches all chats.
+- **Bug found and fixed (`0c2ebd2`):** scrolling back through a chat
+  skipped messages sent in the same millisecond at a page edge. The cursor
+  sent created_at through a JS Date, which keeps milliseconds while
+  Postgres keeps microseconds. A test proved it: 2 of 5 messages never
+  arrived. The cursor is now the id, and the database compares against the
+  row's own stored values.
+- **Split (`f1c50ab`):** `useConversationMessages` went from 735 to 494
+  lines.
+  - Its pure helpers moved to `utils/chatMessages.js`.
+  - Voice and photo sends moved to `hooks/useMediaMessages.js`, where two
+    near-copied upload flows became one. The hook's API is unchanged, and
+    both new modules have tests.
+- **Docs (`ab0a71d`):**
+  - A root README: running locally, env var names, the API, tests,
+    languages.
+  - A real frontend README.
+  - e2e/README lists every suite; a test keeps it that way.
+  - CLAUDE.md's Completed Features and Next Steps are current; the owner's
+    rules are untouched.
+  - The VAPID keys are in .env.example.
+  - Two output files committed by mistake on Day 47 are removed.
+- **Better approach (rule 9):** every list was given its own cursor rather
+  than a shared timestamp cursor. Ids (or a lookup of the row's own stored
+  time) never lose precision.
+- **To look at later:** in Arabic, the new-group screen's back button sits
+  on the left. This is pre-existing; check the app's header convention.
+- **Tests at close:**
+  - backend 950/950, all 192 API operations reached by the tests; Vitest
+    291/291; lint; check:i18n 1406 keys; bundle 222.6 kB.
+  - The go-live rehearsal passed (56 migrations up and down, 140 indexes).
+  - Full browser run in small batches: all 60 regular suites, the 6
+    special-stack suites, journeys-social, perf 41/41, a11y 125 (3 parts)
+    and A3 EN/AR (288 each, 4 parts).
+  - day12-review read the old comment shape; it was fixed, and its check
+    can no longer pass on an empty list.
