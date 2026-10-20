@@ -261,7 +261,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 74 — Performance round 2
 - [x] Slow-query review, caching headers, image sizes, bundle splitting. *(Motion after first paint, Home by cursor, no-store API, 2048 px stored photos, a 1-minute perf suite — see Progress Log.)*
 ### Day 75–76 — Security round 2
-- [ ] Re-check every route, file upload, socket event; dependency updates; CSP headers.
+- [x] Re-check every route, file upload, socket event; dependency updates; CSP headers. *(Advisories patched, messages kept as typed, sweeps over every route, uploads checked by their bytes, socket limits, CSP reports — see Progress Log.)*
 ### Day 77 — Account safety
 - [ ] Login alerts in notifications (new device), suspicious login slowdown, 2FA with authenticator app (TOTP — no outside account needed).
 ### Day 78–79 — Onboarding
@@ -2403,3 +2403,66 @@ lists that grow without limit.
   - Full browser run in small batches: all 64 regular suites (new:
     day74-feed-paging 18; day27-perf 43/43 in ~1 min), the 8 special-stack
     suites, a11y 125 (3 parts) and A3 EN/AR (288 each, 4 parts).
+
+### 2026-10-21 — Days 75–76: Security round 2
+- **Dependencies (`ff59e39`):**
+  - sanitize-html had a moderate XSS-filter bypass, and the frontend's
+    follow-redirects and source-map-js high advisories had CI's audit job
+    red. All patched; in-range updates in all three folders. CI now fails
+    on moderate advisories in production dependencies (high let the
+    sanitizer's slip through).
+  - Left on purpose: dotenv 18 and motion 14 (major versions), the
+    myanmar-tools and swagger-ui-dist pins, and a dev-only jest advisory
+    whose only "fix" is a downgrade.
+  - The updates exposed two regressions. axe-core 4.14 checks "label in
+    name", and the own-story button held its initials as text (Avatar got
+    `decorative`). Vite 8.3 put Messages in files of its own, so opening it
+    offline crashed. The service worker now caches every script and style
+    of the build on install (the build writes the list into sw.js).
+  - React 19.3 adds 8.3 kB: first download 211.2 / 225 kB.
+- **Messages kept as typed (`5e1705d`):** checking the real sanitizer
+  showed it ate text ("if x<y and y>z" became "if xz") and stored & < > as
+  entities ("Tom &amp; Jerry"). Jest's stand-in hid this. Messages are now
+  kept as typed, like posts and comments; every client shows them as text.
+  Migration 071 (data only, must run once) decodes the saved ones. The
+  rehearsal checks it with the old code too.
+- **Routes and inputs (`ed6a81e`), each found by a sweep over the spec:**
+  - A NUL character in any text was a 500 on every route, login and signup
+    included, and filled Admin > Errors. It is now a clear 400 (EN/AR).
+  - A JSON field sent as an object or array crashed signup, login,
+    forgot-password, deactivate, delete and reports. A repeated query key
+    crashed search. Fields are now read as text, and each query key is one
+    string.
+  - Every login-only route refuses no, forged and logged-out tokens; admin
+    routes 404 to users; optional ones treat a bad token as logged out.
+    Recording every status the suite produced found 6 changes by id with
+    no stranger test; all were guarded, and now they are tested.
+- **Uploads (`55d6e1c`):** files were judged by the claimed type, so a
+  text file sent as image/jpeg cost a Cloudinary call and logged a 502.
+  They are now checked by their first bytes before anything is sent or
+  counted.
+- **Sockets (`b58b852`):** a server error's own text (e.g. a database
+  error) reached the client in message_error; it no longer does. New
+  limits: 100 kB per event (was 1 MB), 120 events per 10 s per socket,
+  and typing at most once a second per chat. check:i18n now also sees
+  messages kept in constants (three had slipped out of its sight).
+- **CSP (`a49ac72`):** the web app's policy now reports violations to the
+  API, and they appear in Admin > Errors. Not verified end to end:
+  Chromium's batched Reporting API delivery (nothing arrived in headless
+  Edge). Admin > Errors will show it after GO LIVE.
+- **Label in name (`5fbc11e`, `805a1c6`):** the full run caught a button
+  whose label lacked its visible words. A scan of every labelled button
+  fixed the rest (notifications' Open buttons, the group chat header, and
+  six Arabic labels).
+- **Slips:**
+  - The local production server rewrote only the CSP header, so one test
+    run sent a CSP report to the live API (404 there, nothing stored).
+    serve-dist now rewrites every header.
+  - A test once relied on migration 071 being safe to run twice; it is
+    not, and the checklist now says so.
+- **Tests at close:**
+  - Backend 989/989; Vitest 318/318; lint (exit 0); check:i18n;
+    check:headers; bundle 211.2 kB; GO LIVE rehearsal (--old) passed.
+  - Full browser run in small batches: all 64 regular suites, the 8
+    special-stack suites, a11y 125 (3 parts) and A3 EN/AR (288 each, 4
+    parts).

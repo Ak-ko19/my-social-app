@@ -1,113 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 75–76 — Security round 2: re-check every route, file upload, socket event; dependency updates; CSP headers.
-**Step:** 6 — CSP reports: DONE (saving). Next: close Days 75–76 (full
-browser run, Progress Log, tick the box).
-
-Plan: 1 dependencies (npm audit at every level in backend/frontend/e2e;
-sanitize-html moderate advisory GHSA-x3q4-9hxx-gx8m is open -- CI only
-fails on high; safe minor/patch updates); 2 message text stored as
-typed (found in step 1, below); 3 routes (every route's auth
-matches the spec; every :id route refuses a stranger; inputs
-validated); 4 file uploads (check the file's real bytes, not the
-client's Content-Type); 5 socket events (auth, membership, validation,
-rate limits for each event in REALTIME.md); 6 CSP (API + vercel.json;
-report violations to our own error log).
-
-## Progress (Day 75)
-- Step 1: npm audit fix: sanitize-html 2.17.7 -> 2.18.1 (backend, moderate
-  XSS-filter bypass), follow-redirects 1.16.1 + source-map-js 1.2.2
-  (frontend, high -- CI's audit job was red). npm update in all three
-  (in-range minor/patch); majors left: dotenv 18, motion 14; pins kept:
-  myanmar-tools 1.1.3 (1.2.0 broken, Day 43), swagger-ui-dist (docs).
-  sprintf-js (moderate, jest's coverage tooling, dev only): the only
-  "fix" downgrades jest 30 -> 25 -- left. CI audit now --audit-level=
-  moderate (prod deps). Real sanitize-html checked by hand (jest uses a
-  mock): no tags survive XSS payloads.
-  Two regressions the updates exposed, fixed:
-  - axe-core 4.14 checks label-in-name: "Add to your story" contained
-    the initials "AL" as text. Avatar `decorative` (aria-hidden, initials
-    drawn by CSS); looks identical (b3 screenshot, A3).
-  - Vite 8.3 split Messages into its own files: offline, a deep link to
-    /messages crashed (files never cached). The worker now caches every
-    script and style of the build on install -- list written into sw.js
-    at build time (vite-plugins/swPrecache.js), so sw.js changes per
-    deploy. ~200 kB extra once per deploy; fonts still on use. Trim keeps
-    the current build + 40 others.
-  React 19.3 = +8.3 kB first download: 211.2/225 kB (accepted).
-  Backend 961, Vitest 318, lint 0, i18n, build; a11y 3 parts, A3 4
-  parts, day72-pwa 7/7, b3, b9, day31, journeys-core/-safety,
-  day72-offline, day10, day19-share green.
-- Found for step 2: messages go through sanitize-html with no tags
-  allowed, which eats text ("if x<y and y>z" -> "if xz") and stores
-  & < > as entities ("Tom &amp; Jerry" shown as typed entity). Posts and
-  comments store text as typed and React escapes it.
-- Step 2: messageService.messageText (string trimmed, anything else
-  empty) replaces the sanitizer; sanitize-html and its jest mock removed
-  (no HTML sink for message text: no innerHTML, push is plain text, no
-  email carries it). Migration 071 (data only) decodes &amp; &lt; &gt; in
-  messages + message reports' snapshots; down is a no-op. Must run ONCE
-  (a re-run would decode text typed as an entity) -- checklist says so;
-  rehearsal seeds an encoded 014-era message and checks it (--old PASSED).
-  messageText.test (4), dm/dmExtras updated; b9-dm checks "Tom & Jerry <3
-  if x<y and y>z" stored and shown as typed after reload. Backend 964.
-- Step 3 (routes + inputs), each found by a sweep over the spec:
-  - authSweep.test: all 153 login-only operations refuse no token, a
-    forged token and a logged-out session (401); 11 admin ones are 404 to
-    a user; 22 optional ones treat a bad token as logged out. All held
-    (mutation: unguarded PUT /posts/:id is named).
-  - Ownership: recorded every status the suite produces (temporary
-    contract.js hook, reverted); 19 mutating :id routes never answered
-    403/404. 13 only touch the caller's own rows; the other 6 were guarded
-    but untested -> strangerRefusals.test (group roles/approvals, event
-    RSVP, chat read/reaction, follow approve).
-  - NUL (U+0000) in any text was a 500 (Postgres 22021), login/signup
-    included -> 400 "This text contains a character that can't be saved."
-    (AR added) in sendServerError + errorHandler; not in the error log.
-  - Type confusion: object/array JSON fields 500'd signup, login,
-    forgot-password, deactivate, delete, reports (utils/bodyText textOf);
-    ?q=a&q=b 500'd search (server.js query parser: one string per key,
-    __proto__ ignored). inputTypes.test sweeps every documented route.
-  Backend 977; journeys-core/-safety, day5, day11-bots, day12-report,
-  day42, day60, b7 green.
-- Step 4: uploads were judged by the client's Content-Type only; a text
-  file sent as image/jpeg reached Cloudinary, cost a call and was logged
-  as a 502. cloudinaryUpload now checks the first bytes (JPEG, PNG, GIF,
-  WebP; WebM, MP4/M4A ftyp, Ogg, MP3 ID3/frame) before the quota and the
-  upload: a 400 with the existing (translated) message; one bad photo
-  refuses the whole post. uploadSignature.test (every route, every
-  format, HTML/SVG/PDF/empty disguised: nothing uploaded or counted);
-  3 tests got real signatures. Backend 981; b2, day34, day36, day44,
-  day47, day57, b3, a2, journeys-social green.
-- Step 5 (sockets): handshake auth (bans, revoked sessions) and
-  per-event participant checks were already right. Fixed:
-  message_error sent err.message for server errors (DB text could reach
-  the client) -> generic sentence; NUL over the socket was a logged
-  SERVER_ERROR -> VALIDATION. New limits: maxHttpBufferSize 100 kB (was
-  1 MB), 120 events / 10 s per socket (rest dropped), typing passed on at
-  most 1/s per chat. REALTIME.md "Limits". socketSafety.test (5, x4
-  stable). Also: check-i18n now scans message constants (const X =
-  'Sentence ...';) -- ONLY_IMAGES/ONLY_AUDIO/UNSAVABLE_TEXT were unseen
-  (mutation-checked). Backend 986; b9, day31, day32, day33, a2,
-  journeys-core/-safety, day8-sessions, day72-offline green.
-- Step 6 (CSP): the web app's policy was already strict; what it lacked
-  was being told when it blocks something (e.g. a stale inline-script
-  hash). POST /csp-reports (clientErrorRoutes, shares the client-error
-  limit; both report-uri and Reporting API formats; keeps blocked origin
-  or inline/eval, directive, page path; skips extensions) -> Admin >
-  Errors. vercel.json: report-uri + report-to + Reporting-Endpoints;
-  check:headers checks they name the API. cspReports.test (3); day10
-  checks headers, a blocked injected script, and a report-uri POST from
-  the app stored. NOT verified end to end: Chromium's own batched
-  Reporting-API delivery (nothing arrived in 90 s in headless Edge; a
-  page-rewrite experiment was confounded) -- after GO LIVE, Admin >
-  Errors will show whether Chrome's reports arrive.
-  Slip: serve-dist only rewrote the CSP header, so the first local run's
-  Reporting-Endpoints named the PRODUCTION API and one test report (page
-  /, "inline") was sent there (old code there has no such route: 404,
-  nothing stored). serve-dist now rewrites every header value.
-  Backend 989; day10, day19-share, day72-pwa, day11-turnstile, day22-push
-  green.
+**Day:** 77 — Account safety: login alerts (new device), suspicious login slowdown, 2FA with an authenticator app (TOTP).
+**Step:** 0 — not started (Days 75–76 closed: see the Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -272,3 +166,21 @@ report violations to our own error log).
   socket event goes in backend/docs/REALTIME.md. Jest on several files:
   always --runInBand. Still open from Day 68: follow-counts and post likes
   echo the id as a string (the lists are paged since Day 70).
+
+- Days 75–76 lessons:
+  - A new e2e suite needs a row in e2e/README.md (ciWorkflow.test); re-run
+    ciWorkflow after touching e2e/.
+  - Text from a request: read it with utils/bodyText textOf(), never
+    `(req.body.x || '').trim()` (an object/array crashed it).
+    inputTypes.test and authSweep.test sweep every documented route.
+  - A user-facing message kept in a constant must be a full sentence
+    (`const X = 'Sentence ...';`) so check:i18n sees it.
+  - Buttons: an aria-label must contain the visible words, whole and in
+    order, in EN and AR (axe 4.14 label-content-name-mismatch).
+  - Uploads are checked by their first bytes: test files need a real
+    signature (PNG 89504e470d0a1a0a, JPEG ffd8ff, WebM 1a45dfa3).
+  - serve-dist rewrites the production API in every header; any new
+    header naming the API must not reach the live server from tests.
+  - Migration 071 must run once only (a re-run decodes typed "&lt;").
+  - Jest mocks a library? Check the real one by hand (sanitize-html's
+    mock hid that it ate text).
