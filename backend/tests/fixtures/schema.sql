@@ -408,6 +408,8 @@ CREATE INDEX idx_users_verification_token ON users (verification_token) WHERE ve
 CREATE INDEX idx_posts_user_id ON posts (user_id);
 CREATE INDEX idx_posts_created_at ON posts (created_at DESC);
 CREATE INDEX idx_comments_post_id_created_at ON comments (post_id, created_at);
+-- Day 70 (migration 070): a post's comments, a page at a time in id order.
+CREATE INDEX idx_comments_post_id_id ON comments (post_id, id);
 CREATE INDEX idx_notifications_user_id_created_at ON notifications (user_id, created_at DESC);
 CREATE INDEX idx_notifications_unread ON notifications (user_id) WHERE is_read = false;
 CREATE INDEX idx_notifications_post_id ON notifications (post_id);

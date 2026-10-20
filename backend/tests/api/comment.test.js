@@ -34,6 +34,44 @@ describe('comments', () => {
     expect(res.status).toBe(400);
   });
 
+  // Day 70: a page at a time.
+  it('pages through the comments with no gaps or repeats; replies come after their comment', async () => {
+    const author = await registerAndLogin(app);
+    const post = await makePost(author.token);
+    const say = (content, parentCommentId) => request(app).post(`/posts/${post.id}/comments`)
+      .set('Authorization', `Bearer ${author.token}`).send({ content, parentCommentId });
+    const first = (await say('c1')).body;
+    for (const content of ['c2', 'c3', 'c4']) await say(content);
+    await say('reply to c1', first.id);
+    await say('c5');
+
+    const seen = [];
+    let cursor = '';
+    let pages = 0;
+    do {
+      const res = await request(app).get(`/posts/${post.id}/comments?limit=2&cursor=${cursor}`);
+      expect(res.status).toBe(200);
+      expect(res.body.comments.length).toBeLessThanOrEqual(2);
+      seen.push(...res.body.comments.map((c) => c.content));
+      cursor = res.body.nextCursor;
+      pages += 1;
+    } while (cursor);
+    expect(pages).toBe(3);
+    expect(seen).toEqual(['c1', 'c2', 'c3', 'c4', 'reply to c1', 'c5']);
+
+    const all = await request(app).get(`/posts/${post.id}/comments`);
+    expect([all.body.comments.length, all.body.nextCursor]).toEqual([6, null]);
+  });
+
+  it('refuses a bad cursor; a huge limit is not an error (the server caps it at 100)', async () => {
+    const author = await registerAndLogin(app);
+    const post = await makePost(author.token);
+    for (const cursor of ['abc', '-1', '1.5']) {
+      expect([cursor, (await request(app).get(`/posts/${post.id}/comments?cursor=${cursor}`)).status]).toEqual([cursor, 400]);
+    }
+    expect((await request(app).get(`/posts/${post.id}/comments?limit=5000`)).status).toBe(200);
+  });
+
   it('lists comments oldest-first', async () => {
     const author = await registerAndLogin(app);
     const post = await makePost(author.token);
@@ -42,7 +80,7 @@ describe('comments', () => {
 
     const res = await request(app).get(`/posts/${post.id}/comments`);
     expect(res.status).toBe(200);
-    expect(res.body.map((c) => c.content)).toEqual(['first', 'second']);
+    expect(res.body.comments.map((c) => c.content)).toEqual(['first', 'second']);
   });
 
   it('rejects editing someone else\'s comment with 403', async () => {
@@ -74,7 +112,7 @@ describe('comments', () => {
     expect(res.status).toBe(200);
 
     const list = await request(app).get(`/posts/${post.id}/comments`);
-    expect(list.body).toHaveLength(0);
+    expect(list.body.comments).toHaveLength(0);
   });
 
   it('404s commenting on a post that does not exist', async () => {

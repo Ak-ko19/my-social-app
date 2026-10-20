@@ -33,8 +33,10 @@ export function unfollowUser(userId, token) {
 
 // Token required for a private account's post: GET comments applies the
 // same visibility rules as GET /posts/:id, so an anonymous request 404s.
-export function fetchComments(postId, token) {
-  return api.get(`/posts/${postId}/comments`, token ? authHeaders(token) : undefined).then((res) => res.data);
+// Day 70: oldest first, a page at a time -> { comments, nextCursor }.
+export function fetchComments(postId, token, { cursor } = {}) {
+  const config = { ...(token ? authHeaders(token) : {}), params: cursor ? { cursor } : undefined };
+  return api.get(`/posts/${postId}/comments`, config).then((res) => res.data);
 }
 
 // parentCommentId (optional, B4) makes it a reply; the server attaches

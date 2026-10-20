@@ -18,6 +18,11 @@ function makeTempId() {
 export function useComments(postId, token, currentUser) {
   const [visible, setVisible] = useState(false);
   const [comments, setComments] = useState([]);
+  // Day 70: comments come a page at a time (oldest first); nextCursor is
+  // null once they are all here.
+  const [nextCursor, setNextCursor] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(null);
 
   const [commentInput, setCommentInput] = useState('');
   const [submitPending, setSubmitPending] = useState(false);
@@ -40,8 +45,32 @@ export function useComments(postId, token, currentUser) {
 
   const load = () => {
     fetchComments(postId, token)
-      .then(setComments)
+      .then((page) => {
+        setComments(page.comments);
+        setNextCursor(page.nextCursor);
+      })
       .catch((err) => console.error(err));
+  };
+
+  // The next page, after the ones on screen. A comment already here (your
+  // own, just posted, can also come back in a later page) isn't added twice.
+  const loadMore = () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setLoadMoreError(null);
+    fetchComments(postId, token, { cursor: nextCursor })
+      .then((page) => {
+        setComments((current) => {
+          const have = new Set(current.map((c) => c.id));
+          return [...current, ...page.comments.filter((c) => !have.has(c.id))];
+        });
+        setNextCursor(page.nextCursor);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoadMoreError(serverErrorText(err, 'comments.loadMoreFailed'));
+      })
+      .finally(() => setLoadingMore(false));
   };
 
   const toggleVisible = () => {
@@ -221,6 +250,10 @@ export function useComments(postId, token, currentUser) {
 
   return {
     visible,
+    nextCursor,
+    loadMore,
+    loadingMore,
+    loadMoreError,
     removeComment,
     approve,
     actionError,

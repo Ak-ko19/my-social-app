@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 069, check the environment variables,
+database, run migrations 015 → 070, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -99,7 +99,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 069 on production
+## 3. Run migrations 015 → 070 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -146,7 +146,7 @@ rows there.)
            059_add_activity_indexes 060_add_hidden_words 061_add_community_bans \
            062_add_group_notifications 063_add_page_admins 064_add_page_notifications \
            065_add_events 066_add_event_notifications 067_add_media_uploads \
-           068_add_daily_stats 069_add_admin_actions; do
+           068_add_daily_stats 069_add_admin_actions 070_add_comments_post_id_index; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```

@@ -30,7 +30,7 @@ describe('comment replies + likes (B4)', () => {
     expect(reply.status).toBe(201);
     expect(reply.body.parent_comment_id).toBe(top.id);
 
-    const list = (await request(app).get(`/posts/${post.id}/comments`)).body;
+    const list = (await request(app).get(`/posts/${post.id}/comments`)).body.comments;
     expect(list.map((c) => [c.content, c.parent_comment_id])).toEqual([['top', null], ['a reply', top.id]]);
   });
 
@@ -85,7 +85,7 @@ describe('comment replies + likes (B4)', () => {
     const top = (await comment(alice, 'top')).body;
     await comment(bob, 'reply', top.id);
     expect((await request(app).delete(`/comments/${top.id}`).set(auth(alice))).status).toBe(200);
-    expect((await request(app).get(`/posts/${post.id}/comments`)).body).toHaveLength(0);
+    expect((await request(app).get(`/posts/${post.id}/comments`)).body.comments).toHaveLength(0);
   });
 
   it('likes and unlikes a comment (idempotent), with counts and liked_by_me', async () => {
@@ -97,9 +97,9 @@ describe('comment replies + likes (B4)', () => {
     expect(again.status).toBe(200);
     expect(again.body.likeCount).toBe(1);
 
-    const asBob = (await request(app).get(`/posts/${post.id}/comments`).set(auth(bob))).body[0];
+    const asBob = (await request(app).get(`/posts/${post.id}/comments`).set(auth(bob))).body.comments[0];
     expect(asBob).toMatchObject({ like_count: 1, liked_by_me: true });
-    const anon = (await request(app).get(`/posts/${post.id}/comments`)).body[0];
+    const anon = (await request(app).get(`/posts/${post.id}/comments`)).body.comments[0];
     expect(anon).toMatchObject({ like_count: 1, liked_by_me: false });
 
     const un = await request(app).delete(`/comments/${top.id}/like`).set(auth(bob));

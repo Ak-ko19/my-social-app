@@ -1,7 +1,7 @@
 // Day 68: the API spec -- posts and polls, drafts and scheduled posts,
 // comments, reactions, saved posts and collections, hashtags, Explore,
 // profile tabs, stories and events.
-const { s, ref, body, multipart, file, json, text, empty, op, q, pageQuery } = require('../helpers');
+const { s, ref, body, multipart, file, json, text, empty, op, q, pageQuery, cursorQuery } = require('../helpers');
 
 const BAD_POST = text('Invalid post ID');
 const POST_NOT_FOUND = text('Post not found (also when you may not see it)');
@@ -175,9 +175,15 @@ module.exports = {
   }),
   'GET /posts/:id/comments': op({
     tag: 'Comments', auth: 'optional',
-    summary: "A post's comments and replies, oldest first (all of them)",
-    description: 'Comments from people you have a block with are left out.',
-    responses: { 200: json(s.array(ref('Comment')), 'The comments'), 400: BAD_POST, 404: POST_NOT_FOUND }
+    summary: "A post's comments and replies, oldest first, a page at a time",
+    description: 'A reply is always newer than the comment it answers, so each page threads onto the ones before it. '
+      + 'Comments from people you have a block with are left out.',
+    query: cursorQuery({ defaultLimit: 50, maxLimit: 100 }),
+    responses: {
+      200: json(s.object({ comments: s.array(ref('Comment')), nextCursor: s.nullable(s.str('null: no more comments')) }), 'One page'),
+      400: text('Invalid post ID / Invalid cursor'),
+      404: POST_NOT_FOUND
+    }
   }),
   'PUT /comments/:id': op({
     tag: 'Comments', auth: 'user',

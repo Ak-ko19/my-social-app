@@ -138,7 +138,7 @@ describe('admin review: suspensions and removing comments/messages (Day 12)', ()
       await request(app).post(`/posts/${post.id}/comments`).set(auth(alice)).send({ content: 'reply', parentCommentId: comment.id });
       await request(app).post('/reports').set(auth(admin)).send({ targetType: 'comment', targetId: comment.id, reason: 'spam' });
       expect((await removeFor({ targetType: 'comment', targetId: comment.id })).status).toBe(200);
-      const left = (await request(app).get(`/posts/${post.id}/comments`).set(auth(alice))).body;
+      const left = (await request(app).get(`/posts/${post.id}/comments`).set(auth(alice))).body.comments;
       expect(left.find((c) => c.content === 'nasty')).toBeUndefined();
       expect((await request(app).get('/admin/reports').set(auth(admin))).body.reports).toHaveLength(0);
       const reviewed = (await request(app).get('/admin/reports').query({ status: 'reviewed' }).set(auth(admin))).body.reports;

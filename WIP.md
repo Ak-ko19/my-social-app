@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 69–71 — Code health: duplicated logic, large files, consistent errors, README + CLAUDE.md.
-**Step:** 4 — paginate comments: PLAN.
+**Step:** 5 — message-history cursor precision: PLAN.
 
 Plan (survey: biggest file 735 lines; the real debt is duplication):
 1. utils/httpError.js: HttpError(status, message) + sendError(res, err,
@@ -37,6 +37,16 @@ Plan (survey: biggest file 735 lines; the real debt is duplication):
   b8, b10, day33, journeys-social, perf green; AR dark 375 checked.
   To look at later: in Arabic the new-group screen's back button sits on
   the left (pre-existing; check what the other headers do).
+- Step 4 BUILT: GET /posts/:id/comments -> { comments, nextCursor }, oldest
+  first, cursor = last id (created_at is µs, a JS Date only ms), 50/100;
+  migration 070 idx (post_id, id) + fixture + checklist (rehearsal PASSED,
+  56 up/down, 140 indexes); useComments loadMore (dedupe) + CommentSection
+  "View more comments" (EN/AR); b4 checks 55 comments in EN/AR. Backend
+  943, Vitest 283, bundle 222.5; b4, day12, day43, day47, day58,
+  journeys-core green; perf 41/41. STEP DONE.
+- NEXT (step 5): check the MESSAGE cursor -- (created_at, id) through a
+  JS Date loses microseconds: same-ms messages at a page edge may be
+  skipped. Then conversations paging, hook split, README.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

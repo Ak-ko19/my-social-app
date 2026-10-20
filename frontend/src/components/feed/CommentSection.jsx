@@ -212,6 +212,14 @@ function CommentSection({ postId, postOwnerId, comments, groupLocked = false }) 
         </ul>
       )}
 
+      {/* Day 70: older comments come first; the next page follows on. */}
+      {comments.nextCursor && (
+        <button type="button" className="comment-action comment-load-more" onClick={comments.loadMore} disabled={comments.loadingMore}>
+          {comments.loadingMore ? t('common.loading') : t('comments.viewMore')}
+        </button>
+      )}
+      {comments.loadMoreError && <p className="feed-error-text" role="alert">{comments.loadMoreError}</p>}
+
       {(editError || likeError || comments.actionError) && (
         <p className="feed-error-text" role="alert">
           {editError || likeError || comments.actionError}

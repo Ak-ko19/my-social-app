@@ -13,7 +13,7 @@ describe('restrict a person (Day 47)', () => {
   const auth = (user) => ({ Authorization: `Bearer ${user.token}` });
   const post = async (user, content = 'my post') => (await request(app).post('/posts').set(auth(user)).field('content', content)).body;
   const comment = (user, p, content, extra = {}) => request(app).post(`/posts/${p.id}/comments`).set(auth(user)).send({ content, ...extra });
-  const comments = async (user, p) => (await request(app).get(`/posts/${p.id}/comments`).set(user ? auth(user) : {})).body;
+  const comments = async (user, p) => (await request(app).get(`/posts/${p.id}/comments`).set(user ? auth(user) : {})).body.comments;
   const restrict = (a, b) => request(app).post(`/users/${b.id}/restrict`).set(auth(a));
   const notes = async (user) => (await request(app).get('/notifications').set(auth(user))).body.notifications;
 

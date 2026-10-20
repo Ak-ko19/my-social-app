@@ -130,9 +130,9 @@ const api = (who, method, url, body) => fetch(API + url, {
   const held = await (await api('bob', 'POST', `/posts/${myPost.id}/comments`, { content: 'Mine, obviously' })).json();
   await api('bob', 'POST', `/posts/${myPost.id}/like`);
   check("bob's comment and like notify alice of nothing", sql("SELECT COUNT(*) FROM notifications WHERE user_id = 1") === before);
-  const publicComments = async () => (await (await fetch(`${API}/posts/${myPost.id}/comments`)).json()).map((c) => c.content);
+  const publicComments = async () => (await (await fetch(`${API}/posts/${myPost.id}/comments`)).json()).comments.map((c) => c.content);
   check('nobody else sees his comment yet', JSON.stringify(await publicComments()) === '[]');
-  const bobSees = await (await api('bob', 'GET', `/posts/${myPost.id}/comments`)).json();
+  const bobSees = (await (await api('bob', 'GET', `/posts/${myPost.id}/comments`)).json()).comments;
   check('bob sees it as an ordinary comment', bobSees.length === 1 && bobSees[0].awaiting_approval === false);
 
   const owner = await open('alice', `/posts/${myPost.id}`);

@@ -43,7 +43,7 @@ const api = (method, url, token, body) => fetch(API + url, {
   await page.waitForTimeout(700);
   const likeBtn = page.getByRole('button', { name: /bob's comment/ }).first();
   check('like: pressed with count 1', (await likeBtn.getAttribute('aria-pressed')) === 'true' && /1 like/.test(await likeBtn.getAttribute('aria-label')), await likeBtn.getAttribute('aria-label'));
-  const serverAfterLike = (await api('GET', '/posts/1/comments', aliceToken)).find((c) => c.id === bobTop.id);
+  const serverAfterLike = (await api('GET', '/posts/1/comments', aliceToken)).comments.find((c) => c.id === bobTop.id);
   check('server: liked_by_me + like_count 1', serverAfterLike.liked_by_me === true && serverAfterLike.like_count === 1);
 
   // Reply to bob.
@@ -66,7 +66,7 @@ const api = (method, url, token, body) => fetch(API + url, {
   await page.getByRole('button', { name: 'Reply', exact: true }).click();
   await page.waitForTimeout(900);
   check('reply-to-reply lands in the same thread (2 replies)', (await page.locator('.comment-replies > li').count()) === 2);
-  const server = await api('GET', '/posts/1/comments', aliceToken);
+  const server = (await api('GET', '/posts/1/comments', aliceToken)).comments;
   const replies = server.filter((c) => c.parent_comment_id === bobTop.id);
   check('server: both replies point at the top-level comment', replies.length === 2, JSON.stringify(server.map((c) => [c.content, c.parent_comment_id])));
 
@@ -81,7 +81,7 @@ const api = (method, url, token, body) => fetch(API + url, {
   // Unlike.
   await page.getByRole('button', { name: /^Unlike bob's comment/ }).click();
   await page.waitForTimeout(700);
-  check('unlike clears the like', (await api('GET', '/posts/1/comments', aliceToken)).find((c) => c.id === bobTop.id).like_count === 0);
+  check('unlike clears the like', (await api('GET', '/posts/1/comments', aliceToken)).comments.find((c) => c.id === bobTop.id).like_count === 0);
 
   // Bob's notifications: reply + comment_like.
   const bobNotes = (await api('GET', '/notifications', bobToken)).notifications.map((n) => n.type);
@@ -100,6 +100,25 @@ const api = (method, url, token, body) => fetch(API + url, {
   const hScroll = await small.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   check('375px dark: no horizontal scroll with threads open', !hScroll);
   await small.locator('.feed-comment-section').screenshot({ path: path.join(SP, 'b4-thread-dark-375.png') });
+
+  // Day 70: comments come 50 at a time; "View more comments" brings the rest.
+  const busy = await api('POST', '/posts', bobToken, { content: 'A busy post' });
+  for (let i = 1; i <= 55; i += 1) await api('POST', `/posts/${busy.id}/comments`, bobToken, { content: `note ${i}` });
+  const AR = require('../frontend/src/i18n/locales/ar.json');
+  for (const [lang, more] of [['en', 'View more comments'], ['ar', AR.comments.viewMore]]) {
+    const reader = await newPage(aliceToken, 1, 'alice', { width: 375 });
+    await reader.addInitScript((l) => localStorage.setItem('lang', l), lang);
+    await reader.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
+    const card = reader.locator('article.post-card', { hasText: 'A busy post' });
+    await card.locator('.feed-action-btn, button').filter({ hasText: lang === 'en' ? /^Comment$/ : AR.feed.comment }).first().click();
+    await reader.getByText('note 50', { exact: true }).waitFor();
+    const shown = () => reader.locator('.feed-comment-list > li').count();
+    check(`${lang}: the first 50 comments, oldest first, then "${more}"`, (await shown()) === 50
+      && (await reader.getByText('note 51', { exact: true }).count()) === 0 && (await reader.getByRole('button', { name: more }).count()) === 1);
+    await reader.getByRole('button', { name: more }).click();
+    await reader.getByText('note 55', { exact: true }).waitFor();
+    check(`${lang}: ...which brings the other 5, and goes away`, (await shown()) === 55 && (await reader.getByRole('button', { name: more }).count()) === 0);
+  }
 
   await browser.close();
   console.log(results.join('\n'));

@@ -288,7 +288,9 @@
     "likeCountOnly_two": "إعجابان",
     "likeCountOnly_few": "{{count}} إعجابات",
     "likeCountOnly_many": "{{count}} إعجابًا",
-    "likeCountOnly_other": "{{count}} إعجاب"
+    "likeCountOnly_other": "{{count}} إعجاب",
+    "viewMore": "عرض المزيد من التعليقات",
+    "loadMoreFailed": "تعذّر تحميل المزيد من التعليقات. يُرجى المحاولة مرة أخرى."
   },
   "reactions": {
     "like": "أعجبني",

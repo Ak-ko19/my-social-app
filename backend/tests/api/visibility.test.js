@@ -90,9 +90,9 @@ describe('post visibility enforcement (A6)', () => {
       await request(app).post(`/users/${troll.id}/block`).set(auth(viewer));
 
       const asViewer = await request(app).get(`/posts/${post.id}/comments`).set(auth(viewer));
-      expect(asViewer.body.map((c) => c.content)).not.toContain('troll comment');
+      expect(asViewer.body.comments.map((c) => c.content)).not.toContain('troll comment');
       const anonymous = await request(app).get(`/posts/${post.id}/comments`);
-      expect(anonymous.body.map((c) => c.content)).toContain('troll comment');
+      expect(anonymous.body.comments.map((c) => c.content)).toContain('troll comment');
     });
   });
 

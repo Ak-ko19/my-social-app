@@ -1,4 +1,5 @@
 const db = require('../db');
+const { getLimit } = require('../utils/cursorPagination');
 const { sendError } = require('../utils/httpError');
 const mentionService = require('../services/mentionService');
 const { getVisiblePost } = require('../services/postVisibilityService');
@@ -115,11 +116,19 @@ async function createComment(req, res) {
   }
 }
 
+// Day 70: GET /posts/:id/comments?cursor=&limit= -- oldest first, a page
+// at a time ({ comments, nextCursor }). A reply is always newer than the
+// comment it answers, so each page threads onto the ones before it. The
+// cursor is the last comment's id: ids are handed out as comments are
+// created, and unlike created_at they survive the trip through JSON exactly.
 async function getComments(req, res) {
   try {
     if (isNaN(req.params.id)) {
       return res.status(400).send('Invalid post ID');
     }
+    const after = req.query.cursor === undefined || req.query.cursor === '' ? 0 : Number(req.query.cursor);
+    if (!Number.isInteger(after) || after < 0) return res.status(400).send('Invalid cursor');
+    const limit = getLimit(req, { defaultLimit: 50, maxLimit: 100 });
     // Same visibility rules as GET /posts/:id -- see postVisibilityService.
     const post = await getVisiblePost(req.params.id, req.userId);
     if (!post) {
@@ -143,9 +152,13 @@ async function getComments(req, res) {
         -- Waiting for approval: seen by its author and the post's owner only.
         AND (NOT comments.awaiting_approval OR comments.user_id = $2 OR $2::int = $3::int)
         AND ($2::int IS NULL OR ${noBlockBetweenSql('$2', 'comments.user_id')})
-      ORDER BY comments.created_at ASC
-    `, [req.params.id, viewerId, post.user_id]);
-    res.json(result.rows);
+        AND comments.id > $4
+      ORDER BY comments.id ASC
+      LIMIT $5
+    `, [req.params.id, viewerId, post.user_id, after, limit + 1]);
+    const comments = result.rows.slice(0, limit);
+    const nextCursor = result.rows.length > limit ? String(comments[comments.length - 1].id) : null;
+    res.json({ comments, nextCursor });
   } catch (err) {
     sendError(res, err, 'Fetch comments failed. Please try again later.');
   }

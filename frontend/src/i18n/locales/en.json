@@ -256,7 +256,9 @@
     "deleteTextReplies": "It will be gone for everyone, with its replies.",
     "deleteFailed": "Couldn't delete the comment. Please try again.",
     "likeCountOnly_one": "{{count}} like",
-    "likeCountOnly_other": "{{count}} likes"
+    "likeCountOnly_other": "{{count}} likes",
+    "viewMore": "View more comments",
+    "loadMoreFailed": "Couldn't load more comments. Please try again."
   },
   "reactions": {
     "like": "Like",
