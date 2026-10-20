@@ -31,6 +31,10 @@ Plan: 1 bundle (LazyMotion); 2 slow-query review (perf suite's slowest
   Decision: the other post lists (Explore, hashtag, profile tabs, saved)
   keep page= for now: lighter and fine in the perf suite; revisit if a
   deep page shows up slow.
+  Slip: the backend run came before run-all.sh got the new suite, so
+  ciWorkflow.test (e2e/README.md lists every .cjs) went red after the
+  commit; fixed in the next commit. A new e2e suite = a README row, and
+  re-run ciWorkflow after touching e2e/.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
