@@ -117,6 +117,36 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await page.screenshot({ path: path.join(SP, 'day10-admin-errors-ar-dark-375.png') });
   await page.context().close();
 
+  // ---- Day 75: Content-Security-Policy violations are reported ----
+  // The production headers (vercel.json, served by serve-dist.cjs with the
+  // local API) name the API's /csp-reports. A script added at run time with
+  // no hash is blocked. Chromium sends its report later, in a batch (the
+  // Reporting API) -- not seen within 90 s in headless Edge -- so the
+  // delivery is checked the way Firefox and Safari send it (report-uri: a
+  // POST from the page's origin), which must pass CORS and be stored.
+  page = await newPage({ allow: /Content Security Policy|Refused to/ });
+  const served = await page.goto(`${WEB}/`, { waitUntil: 'networkidle' });
+  const policy = (await served.allHeaders())['content-security-policy'] || '';
+  check('CSP: reports go to the API (report-uri, report-to)', policy.includes('report-uri http://localhost:3000/csp-reports') && policy.includes('report-to csp')
+    && (await served.allHeaders())['reporting-endpoints'] === 'csp="http://localhost:3000/csp-reports"');
+  const violation = await page.evaluate(() => new Promise((resolve) => {
+    window.cspProbe = false;
+    document.addEventListener('securitypolicyviolation', (e) => resolve({ ran: window.cspProbe, directive: e.effectiveDirective, blocked: e.blockedURI, report: e.disposition }), { once: true });
+    const s = document.createElement('script');
+    s.textContent = 'window.cspProbe = true';
+    document.body.appendChild(s);
+    setTimeout(() => resolve(null), 5000);
+  }));
+  check('CSP: an injected inline script is blocked (and a violation raised)', violation && violation.ran === false && violation.blocked === 'inline' && violation.report === 'enforce', JSON.stringify(violation));
+  const posted = await page.evaluate(async (v) => (await fetch('http://localhost:3000/csp-reports', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/csp-report' },
+    body: JSON.stringify({ 'csp-report': { 'document-uri': location.href, 'effective-directive': v.directive, 'blocked-uri': v.blocked } })
+  })).status, violation || {});
+  const csp = sql("SELECT route || '|' || message FROM error_groups WHERE source = 'client' AND message LIKE 'CSP blocked%'");
+  check('CSP: a report from the app reaches the error log', posted === 204 && /^csp \/\|CSP blocked inline \(script-src-elem\)$/.test(csp), `${posted} ${csp}`);
+  await page.context().close();
+
   await browser.close();
   console.log(results.join('\n'));
   console.log('\nconsole/page errors:', errors.length);

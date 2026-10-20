@@ -1,7 +1,8 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 75–76 — Security round 2: re-check every route, file upload, socket event; dependency updates; CSP headers.
-**Step:** 5 — socket events: DONE (saving). Next: 6 CSP.
+**Step:** 6 — CSP reports: DONE (saving). Next: close Days 75–76 (full
+browser run, Progress Log, tick the box).
 
 Plan: 1 dependencies (npm audit at every level in backend/frontend/e2e;
 sanitize-html moderate advisory GHSA-x3q4-9hxx-gx8m is open -- CI only
@@ -89,6 +90,24 @@ report violations to our own error log).
   'Sentence ...';) -- ONLY_IMAGES/ONLY_AUDIO/UNSAVABLE_TEXT were unseen
   (mutation-checked). Backend 986; b9, day31, day32, day33, a2,
   journeys-core/-safety, day8-sessions, day72-offline green.
+- Step 6 (CSP): the web app's policy was already strict; what it lacked
+  was being told when it blocks something (e.g. a stale inline-script
+  hash). POST /csp-reports (clientErrorRoutes, shares the client-error
+  limit; both report-uri and Reporting API formats; keeps blocked origin
+  or inline/eval, directive, page path; skips extensions) -> Admin >
+  Errors. vercel.json: report-uri + report-to + Reporting-Endpoints;
+  check:headers checks they name the API. cspReports.test (3); day10
+  checks headers, a blocked injected script, and a report-uri POST from
+  the app stored. NOT verified end to end: Chromium's own batched
+  Reporting-API delivery (nothing arrived in 90 s in headless Edge; a
+  page-rewrite experiment was confounded) -- after GO LIVE, Admin >
+  Errors will show whether Chrome's reports arrive.
+  Slip: serve-dist only rewrote the CSP header, so the first local run's
+  Reporting-Endpoints named the PRODUCTION API and one test report (page
+  /, "inline") was sent there (old code there has no such route: 404,
+  nothing stored). serve-dist now rewrites every header value.
+  Backend 989; day10, day19-share, day72-pwa, day11-turnstile, day22-push
+  green.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

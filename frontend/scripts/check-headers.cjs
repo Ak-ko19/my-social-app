@@ -62,6 +62,13 @@ for (const origin of [api.origin, `${api.protocol === 'https:' ? 'wss' : 'ws'}:/
   if (!connect.includes(origin)) problems.push(`connect-src is missing ${origin} (from .env.production).`);
 }
 
+// 2a. Day 75: violations are reported to the API's /csp-reports (both the
+// older report-uri and the Reporting API's report-to + Reporting-Endpoints).
+const reportsAt = `${api.origin}/csp-reports`;
+if ((directives['report-uri'] || []).join(' ') !== reportsAt) problems.push(`report-uri must be ${reportsAt}.`);
+if ((directives['report-to'] || []).join(' ') !== 'csp') problems.push('report-to must be "csp".');
+if (headers['reporting-endpoints'] !== `csp="${reportsAt}"`) problems.push(`Reporting-Endpoints must be csp="${reportsAt}".`);
+
 // 2b. Day 19: rewrites to an external URL (share cards for crawlers) must go
 // to that same API, and come before the SPA catch-all or they never match.
 const rewrites = vercel.rewrites || [];

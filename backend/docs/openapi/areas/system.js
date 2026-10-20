@@ -63,6 +63,21 @@ module.exports = {
     }, { required: ['message'] }),
     responses: { 204: empty('Recorded'), 400: text('message is required') }
   }),
+  'POST /csp-reports': op({
+    tag: 'System', auth: 'public', limited: true,
+    summary: "Browsers report what the web app's Content-Security-Policy blocked",
+    description: 'Sent by browsers themselves (frontend/vercel.json: report-uri / report-to), in either format below; shown in '
+      + 'Admin > Errors. Only the blocked origin (or inline / eval), the directive and the page path are kept; reports caused by '
+      + 'browser extensions are skipped. Shares the 20-per-15-minutes limit of POST /client-errors. Always 204, also for anything that is not a report.',
+    requestBody: {
+      required: true,
+      content: {
+        'application/csp-report': { schema: s.object({ 'csp-report': s.object({}) }) },
+        'application/reports+json': { schema: s.array(s.object({ type: s.str(), body: s.object({}) })) }
+      }
+    },
+    responses: { 204: empty('Received') }
+  }),
   'GET /link-preview': op({
     tag: 'Links', auth: 'user', limited: true,
     summary: "A link's title, description and site name, for a preview card",

@@ -40,4 +40,50 @@ router.post('/client-errors', clientErrorLimiter, optionalAuth, (req, res) => {
   res.status(204).end();
 });
 
+// Day 75: Content-Security-Policy violations (frontend/vercel.json sends
+// them here), so a policy that blocks part of the live app -- say an inline
+// script whose hash went stale -- shows up in Admin > Errors instead of
+// failing silently in people's browsers. Browsers post them in two formats:
+// report-uri's { "csp-report": {...} } and the Reporting API's
+// [{ type: 'csp-violation', body: {...} }]. Only what was blocked (its
+// origin, or 'inline'/'eval'), by which directive, and the page path are
+// kept. Browser extensions trip the policy all the time; they are skipped.
+const cspBody = express.json({ type: ['application/csp-report', 'application/reports+json'], limit: '16kb' });
+const EXTENSION = /^(chrome|moz|safari(-web)?|ms-browser)-extension:/;
+
+function cspViolations(body) {
+  if (body && typeof body === 'object' && body['csp-report'] && typeof body['csp-report'] === 'object') {
+    const r = body['csp-report'];
+    return [{ directive: r['effective-directive'] || r['violated-directive'], blocked: r['blocked-uri'], page: r['document-uri'], source: r['source-file'] }];
+  }
+  if (Array.isArray(body)) {
+    return body.slice(0, 10)
+      .filter((r) => r && r.type === 'csp-violation' && r.body && typeof r.body === 'object')
+      .map((r) => ({ directive: r.body.effectiveDirective, blocked: r.body.blockedURL, page: r.body.documentURL, source: r.body.sourceFile }));
+  }
+  return [];
+}
+
+function blockedWhat(value) {
+  const raw = text(value, 500);
+  if (!raw || /^(inline|eval|wasm-eval|trusted-types-\w+)$/.test(raw)) return raw || 'inline';
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return raw.split(/[?#]/)[0].slice(0, 100);
+  }
+}
+
+router.post('/csp-reports', clientErrorLimiter, cspBody, (req, res) => {
+  for (const v of cspViolations(req.body)) {
+    if ([v.blocked, v.source].some((u) => typeof u === 'string' && EXTENSION.test(u))) continue;
+    const directive = text(v.directive, 60).replace(/[^\w-]/g, '') || 'unknown';
+    report(new Error(`CSP blocked ${blockedWhat(v.blocked)} (${directive})`), {
+      source: 'client',
+      route: `csp ${pagePath(text(v.page, 500)) || '?'}`
+    });
+  }
+  res.status(204).end();
+});
+
 module.exports = router;

@@ -37,11 +37,12 @@ const sourceToRegExp = (source) =>
   new RegExp(`^${source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replaceAll('\\(\\.\\*\\)', '(.*)')}$`);
 const headerRules = (vercel.headers || []).map((entry) => ({
   test: sourceToRegExp(entry.source),
+  // Every header that names the production API points at the local one
+  // instead (the CSP, and since Day 75 Reporting-Endpoints -- else a test
+  // run's CSP reports would go to the live server).
   headers: entry.headers.map(({ key, value }) => ({
     key,
-    value: key.toLowerCase() === 'content-security-policy'
-      ? value.replaceAll(PROD_API.origin, LOCAL_API.origin).replaceAll(wsOf(PROD_API), wsOf(LOCAL_API))
-      : value
+    value: value.replaceAll(PROD_API.origin, LOCAL_API.origin).replaceAll(wsOf(PROD_API), wsOf(LOCAL_API))
   }))
 }));
 
