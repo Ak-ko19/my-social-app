@@ -24,7 +24,9 @@ async function getNotifications(req, res) {
         notifications.page_id, pages.name AS page_name,
         -- Day 55: and event notifications name the event; the app shows its
         -- start in the viewer's own time zone.
-        notifications.event_id, events.name AS event_name, events.starts_at AS event_starts_at
+        notifications.event_id, events.name AS event_name, events.starts_at AS event_starts_at,
+        -- Day 77: a "new login" alert names the device ({ browser, os, kind }).
+        notifications.device
       FROM notifications
       JOIN users actor ON notifications.actor_id = actor.id
       LEFT JOIN posts ON notifications.post_id = posts.id

@@ -149,6 +149,7 @@ error. Full output goes to `out-<suite>.txt`, and screenshots to `*.png` /
 | `day72-offline` | Day 72: offline: the banner on every screen, Home shows its saved posts (EN/AR) and reloads when back online; a message written offline waits and goes by itself (or Don't send); logout leaves nothing |
 | `day72-install` | Day 72: "Install the app" in the Menu: the browser's own dialog when it offers one, the Safari steps on an iPhone (AR, RTL) |
 | `day72-pwa` | Day 72 (production build): the service worker takes control with only its two caches; manifest and icons load; offline, a reload and a deep link still open the app |
+| `day77-login-alert` | Day 77: a log-in from a new kind of device (an iPhone) gives a "New login" alert naming it, and "Check your devices" opens the device list (EN/light, AR/dark) |
 | `day74-feed-paging` | Day 74: Home loads later pages by the server's cursor: 45 posts (two in the same millisecond across a page break) each arrive once, newest first, in EN/light and AR/dark |
 | `journey-kit`, `cloudinary-stub` | Helpers for the journeys: shared steps, and a local stand-in for Cloudinary (`E2E_MEDIA=1`) |
 | `link-stub`, `push-stub`, `turnstile-stub`, `serve-dist`, `pg`, `legal-dates`, `golive-smoke` | Helpers: a stub website, push service and Turnstile verifier; the production build with Vercel's headers; where psql lives; the legal pages' dates; the GO LIVE API smoke |

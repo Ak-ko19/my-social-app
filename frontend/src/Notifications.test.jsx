@@ -183,3 +183,36 @@ describe('Notifications: polls ended', () => {
     expect(screen.getByText('bob', { selector: 'strong' }).parentElement).toHaveTextContent('انتهى استطلاع bob. اطّلع على النتائج.');
   });
 });
+
+// Day 77: a login on a new kind of device.
+describe('Notifications: new login', () => {
+  const show = (device) => {
+    api.get.mockResolvedValue({
+      data: { notifications: [{ ...me, id: 20, type: 'new_login', post_id: null, comment_id: null, device }] }
+    });
+    render(
+      <MemoryRouter initialEntries={['/notifications']}>
+        <Routes>
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/settings/sessions" element={<p>Sessions screen</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+  };
+
+  it('names the device and opens the list of devices', async () => {
+    await setLanguage('en');
+    show({ browser: 'Safari', os: 'iOS', kind: 'mobile' });
+    expect((await screen.findByText('New login', { selector: 'strong' })).parentElement)
+      .toHaveTextContent('New login to your account from Safari on iOS. Not you? Check your devices and change your password.');
+    await userEvent.click(screen.getByRole('button', { name: 'Check your devices' }));
+    expect(await screen.findByText('Sessions screen')).toBeInTheDocument();
+  });
+
+  it('says "unknown" for what the browser did not tell, in Arabic too', async () => {
+    await setLanguage('ar');
+    show({ browser: null, os: 'Android', kind: 'mobile' });
+    expect((await screen.findByText('تسجيل دخول جديد', { selector: 'strong' })).parentElement).toHaveTextContent('متصفح غير معروف');
+    expect(screen.getByRole('button', { name: 'راجع أجهزتك' })).toBeInTheDocument();
+  });
+});

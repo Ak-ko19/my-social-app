@@ -69,15 +69,18 @@ async function notify({ userId, actorId, type, postId = null, commentId = null, 
 // a scheduled post went up, or couldn't. The actor is you; they have no
 // setting (like Facebook's), since they tell you what happened to
 // something you made.
-const SYSTEM_TYPES = ['scheduled_post', 'scheduled_failed'];
+// Day 77: 'new_login' -- a login on a kind of device the account hasn't
+// used lately (services/loginAlertService.js); `device` is { browser, os,
+// kind }. Security alerts have no off switch in the settings.
+const SYSTEM_TYPES = ['scheduled_post', 'scheduled_failed', 'new_login'];
 
-async function notifySystem({ userId, type, postId = null }) {
+async function notifySystem({ userId, type, postId = null, device = null }) {
   if (!SYSTEM_TYPES.includes(type)) throw new Error(`Unknown system notification type: ${type}`);
   await db.query(
-    'INSERT INTO notifications (user_id, actor_id, type, post_id) VALUES ($1, $1, $2, $3)',
-    [userId, type, postId]
+    'INSERT INTO notifications (user_id, actor_id, type, post_id, device) VALUES ($1, $1, $2, $3, $4)',
+    [userId, type, postId, device]
   );
-  pushNotification({ userId, actorId: userId, type, postId });
+  pushNotification({ userId, actorId: userId, type, postId, device });
 }
 
 // { likes, comments, mentions, follows, follow_accepted, messages, groups, pages, events } -- all true when

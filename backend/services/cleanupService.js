@@ -53,6 +53,8 @@ const PREVIEWS_OLD = "fetched_at < now() - interval '30 days'";
 const UPLOADS_OLD = "created_at < now() - interval '30 days'";
 // Day 63: the admin audit log is kept for 2 years.
 const ADMIN_LOG_OLD = "created_at < now() - interval '2 years'";
+// Day 77: kinds of device not used for a login in 180 days (loginAlertService).
+const KNOWN_DEVICES_OLD = "last_seen_at < now() - interval '180 days'";
 
 // Expired stories: rows first (their views cascade), then the media of
 // exactly the rows that were deleted.
@@ -85,6 +87,7 @@ async function run({ dryRun = false } = {}) {
       linkPreviews: await countWhere('link_previews', PREVIEWS_OLD),
       uploadLedger: await countWhere('media_uploads', UPLOADS_OLD),
       adminLog: await countWhere('admin_actions', ADMIN_LOG_OLD),
+      knownDevices: await countWhere('known_devices', KNOWN_DEVICES_OLD),
       scheduledPostsDue: await scheduledPostService.countDue(),
       endedPollsWaiting: await pollEndService.countWaiting(),
       durationMs: Date.now() - started
@@ -98,12 +101,13 @@ async function run({ dryRun = false } = {}) {
   const linkPreviews = await deleteInBatches('link_previews', PREVIEWS_OLD, ROW_BATCH);
   const uploadLedger = await deleteInBatches('media_uploads', UPLOADS_OLD, ROW_BATCH);
   const adminLog = await deleteInBatches('admin_actions', ADMIN_LOG_OLD, ROW_BATCH);
+  const knownDevices = await deleteInBatches('known_devices', KNOWN_DEVICES_OLD, ROW_BATCH);
   // Day 45: a backstop for the server's own 30 s ticker (services/ticker).
   const scheduledPosts = await scheduledPostService.publishDue();
   const endedPolls = await pollEndService.notifyEnded();
   const eventReminders = await eventNotificationService.remindDue();
   return {
-    dryRun: false, stories, storyMedia, notifications, sessions, errorGroups, suspensionsLifted, linkPreviews, uploadLedger, adminLog,
+    dryRun: false, stories, storyMedia, notifications, sessions, errorGroups, suspensionsLifted, linkPreviews, uploadLedger, adminLog, knownDevices,
     scheduledPostsPublished: scheduledPosts.published, scheduledPostsFailed: scheduledPosts.failed,
     endedPollsNotified: endedPolls.polls,
     eventRemindersSent: eventReminders.events,

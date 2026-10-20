@@ -28,7 +28,9 @@ const TEXT = {
     // Day 55: the reminder goes about an hour before (the server doesn't
     // know the recipient's time zone, so no clock time here).
     event_reminder: '{event} starts in about an hour',
-    event_cancelled: '{name} cancelled {event}'
+    event_cancelled: '{name} cancelled {event}',
+    // Day 77: a login on a new kind of device ({device}: deviceText below).
+    new_login: 'New login to your account from {device}. Not you? Check your devices.'
   },
   ar: {
     like: 'أعجب {name} بمنشورك',
@@ -50,9 +52,21 @@ const TEXT = {
     group_approved: 'أصبحت عضوًا في {group}',
     page_admin: 'جعلك {name} مشرفًا على {page}',
     event_reminder: 'يبدأ {event} بعد ساعة تقريبًا',
-    event_cancelled: 'ألغى {name} {event}'
+    event_cancelled: 'ألغى {name} {event}',
+    new_login: 'تسجيل دخول جديد إلى حسابك من {device}. لست أنت؟ راجع أجهزتك.'
   }
 };
+
+// Day 77: { browser, os } (services/sessionService describeDevice) as words:
+// 'Chrome on Windows'. Browser and system names stay as they are.
+const DEVICE = {
+  en: { pattern: '{browser} on {os}', browser: 'an unknown browser', os: 'an unknown device' },
+  ar: { pattern: '{browser} على {os}', browser: 'متصفح غير معروف', os: 'جهاز غير معروف' }
+};
+function deviceText(language, device) {
+  const words = DEVICE[language] || DEVICE.en;
+  return words.pattern.replace('{browser}', device?.browser || words.browser).replace('{os}', device?.os || words.os);
+}
 
 function pushText(language, key, values) {
   const table = TEXT[language] || TEXT.en;
@@ -61,4 +75,4 @@ function pushText(language, key, values) {
   return template.replace(/\{(\w+)\}/g, (whole, name) => (values[name] !== undefined ? String(values[name]) : whole));
 }
 
-module.exports = { pushText, PUSH_TEXT: TEXT };
+module.exports = { pushText, deviceText, PUSH_TEXT: TEXT };

@@ -29,7 +29,7 @@ async function buildExport(userId) {
   const [
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
-    legacyMessages, notifications, reports, sessions, pushDevices, messageReactions, hiddenSuggestions, searches,
+    legacyMessages, notifications, reports, sessions, knownDevices, pushDevices, messageReactions, hiddenSuggestions, searches,
     pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends, hiddenWords, pagesAdmin, eventsHosted, eventResponses, uploads
   ] = await Promise.all([
     getPreferences(userId),
@@ -78,13 +78,15 @@ async function buildExport(userId) {
     rows(`SELECT s.username AS sender, r.username AS receiver, l.content, l.created_at
           FROM messages_dm_legacy l JOIN users s ON s.id = l.sender_id JOIN users r ON r.id = l.receiver_id
           WHERE l.sender_id = $1 OR l.receiver_id = $1 ORDER BY l.created_at`, [userId]),
-    rows(`SELECT n.type, a.username AS from_user, n.post_id, n.comment_id, n.community_id AS group_id, n.page_id, n.event_id, n.is_read, n.created_at
+    rows(`SELECT n.type, a.username AS from_user, n.post_id, n.comment_id, n.community_id AS group_id, n.page_id, n.event_id, n.device, n.is_read, n.created_at
           FROM notifications n JOIN users a ON a.id = n.actor_id
           WHERE n.user_id = $1 ORDER BY n.created_at`, [userId]),
     rows(`SELECT target_type, target_id, reason, details, status, created_at
           FROM reports WHERE reporter_id = $1 ORDER BY created_at`, [userId]),
     rows(`SELECT user_agent, created_at, last_seen_at, expires_at, revoked_at
           FROM sessions WHERE user_id = $1 ORDER BY created_at`, [userId]),
+    // Day 77: the kinds of device you logged in from (for new-login alerts).
+    rows(`SELECT device_key, last_seen_at FROM known_devices WHERE user_id = $1 ORDER BY last_seen_at DESC`, [userId]),
     rows(`SELECT user_agent, created_at, last_success_at FROM push_subscriptions
           WHERE user_id = $1 ORDER BY created_at`, [userId]),
     // Day 31: reactions to messages, in chats the account is still in.
@@ -212,6 +214,7 @@ async function buildExport(userId) {
     notifications,
     reports_you_made: reports,
     login_sessions: sessions,
+    known_login_devices: knownDevices,
     push_notification_devices: pushDevices
   };
 }

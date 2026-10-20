@@ -543,7 +543,8 @@
       "groupApproved": "You're now a member of <b>{{group}}</b>",
       "pageAdmin": "<b>{{name}}</b> made you an admin of <b>{{page}}</b>",
       "eventReminder": "<b>{{event}}</b> starts at {{time}}",
-      "eventCancelled": "<b>{{name}}</b> cancelled <b>{{event}}</b>"
+      "eventCancelled": "<b>{{name}}</b> cancelled <b>{{event}}</b>",
+      "newLogin": "<b>New login</b> to your account from {{device}}. Not you? Check your devices and change your password."
     },
     "reviewRequests": "Review requests",
     "reviewRequestsIn": "Review requests to join {{group}}",
@@ -552,7 +553,8 @@
     "openPage": "Open page",
     "openPageNamed": "Open page {{page}}",
     "openEvent": "Open event",
-    "openEventNamed": "Open event {{event}}"
+    "openEventNamed": "Open event {{event}}",
+    "checkDevices": "Check your devices"
   },
   "saved": {
     "title": "Saved Posts",
@@ -1349,7 +1351,7 @@
         },
         {
           "heading": "8. Security",
-          "body": "Passwords are stored hashed, connections are encrypted, and repeated login attempts are rate-limited. Your IP address is used briefly for this rate limiting and is not stored in our database. In Settings you can see the devices signed in to your account and sign them out."
+          "body": "Passwords are stored hashed, connections are encrypted, and repeated login attempts are rate-limited. Your IP address is used briefly for this rate limiting and is not stored in our database. In Settings you can see the devices signed in to your account and sign them out. When your account is logged in to from a kind of device it has not used in the last 180 days (its browser and system, for example Chrome on Windows), we tell you with a notification, a push notification if you turned them on, and an email if we can send emails. To know which kinds you use, we keep that list of browser and system names, never your IP address, for 180 days after each was last used."
         },
         {
           "heading": "9. Your choices",

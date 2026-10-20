@@ -16,7 +16,7 @@ const { notRestrictedSql } = require('./restrictService');
 const logger = require('../utils/logger');
 const { isProduction } = require('../config/runtime');
 const { isOnline } = require('../sockets/presence');
-const { pushText } = require('../config/pushText');
+const { pushText, deviceText } = require('../config/pushText');
 
 // SQL "recipient <col> hasn't turned message notifications off" (Day 23).
 // Inlined rather than imported from notificationService, which requires
@@ -167,7 +167,7 @@ function fireAndForget(task) {
 }
 
 // After a notification row was created (notificationService / mentions).
-function pushNotification({ userId, actorId, type, postId = null, commentId = null, communityId = null, pageId = null, eventId = null }) {
+function pushNotification({ userId, actorId, type, postId = null, commentId = null, communityId = null, pageId = null, eventId = null, device = null }) {
   if (!vapid()) return;
   fireAndForget(async () => {
     const actor = (await db.query('SELECT username FROM users WHERE id = $1', [actorId])).rows[0];
@@ -188,10 +188,12 @@ function pushNotification({ userId, actorId, type, postId = null, commentId = nu
       : communityId ? `/groups/${communityId}${type === 'group_request' ? '/manage' : ''}`
         : pageId ? `/pages/${pageId}`
           : eventId ? `/events/${eventId}`
-            : type === 'scheduled_failed' ? '/drafts' : '/notifications';
+            : type === 'scheduled_failed' ? '/drafts'
+              // Day 77: a new login opens the list of signed-in devices.
+              : type === 'new_login' ? '/settings/sessions' : '/notifications';
     await sendToUser(userId, (language) => ({
       title: 'MySocialApp',
-      body: pushText(language, key, { name: actor.username, group: group?.name, page: page?.name, event: event?.name }),
+      body: pushText(language, key, { name: actor.username, group: group?.name, page: page?.name, event: event?.name, device: deviceText(language, device) }),
       url,
       tag: postId ? `post-${postId}` : communityId ? `group-${communityId}-${type}` : pageId ? `page-${pageId}-${type}`
         : eventId ? `event-${eventId}-${type}` : `notify-${type}-${actorId}`

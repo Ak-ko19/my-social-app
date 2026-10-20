@@ -32,7 +32,16 @@ function notificationKey(n) {
   // Day 55: events you answered.
   if (n.type === 'event_reminder') return 'eventReminder';
   if (n.type === 'event_cancelled') return 'eventCancelled';
+  // Day 77: a login on a new kind of device.
+  if (n.type === 'new_login') return 'newLogin';
   return 'other';
+}
+
+// Day 77: a new_login alert's device ({ browser, os }) in words, as the
+// Sessions screen writes it.
+function deviceWords(device, t) {
+  if (!device) return '';
+  return t('sessions.device', { browser: device.browser || t('sessions.unknownBrowser'), os: device.os || t('sessions.unknownDevice') });
 }
 
 function Notifications() {
@@ -135,7 +144,7 @@ function Notifications() {
                   alt=""
                 />
                 <div className="card-row-body">
-                  <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username, group: n.community_name, page: n.page_name, event: n.event_name, time: n.event_starts_at ? formatDate(n.event_starts_at, 'time') : '' }} components={{ b: <strong /> }} />
+                  <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username, group: n.community_name, page: n.page_name, event: n.event_name, time: n.event_starts_at ? formatDate(n.event_starts_at, 'time') : '', device: deviceWords(n.device, t) }} components={{ b: <strong /> }} />
                   {n.post_content && <p className="card-row-quote" dir="auto">“{n.post_content}”</p>}
                   <span className="card-row-meta">{formatDate(n.created_at)}</span>
                   {/* Day 50: where a group notification leads. */}
@@ -160,6 +169,13 @@ function Notifications() {
                       <button type="button" className="btn btn-secondary btn-sm" onClick={() => navigate(`/pages/${n.page_id}`)}
                         aria-label={t('notifications.openPageNamed', { page: n.page_name })}>
                         {t('notifications.openPage')}
+                      </button>
+                    </div>
+                  )}
+                  {n.type === 'new_login' && (
+                    <div className="card-row-actions">
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => navigate('/settings/sessions')}>
+                        {t('notifications.checkDevices')}
                       </button>
                     </div>
                   )}

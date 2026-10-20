@@ -135,7 +135,7 @@ const schemas = {
     id: s.id(),
     type: s.enum(['like', 'comment_like', 'comment', 'reply', 'mention', 'follow', 'follow_request', 'follow_accepted',
       'group_request', 'group_approved', 'page_admin', 'event_reminder', 'event_cancelled', 'scheduled_post', 'scheduled_failed',
-      'poll_ended', 'poll_ended_own']),
+      'poll_ended', 'poll_ended_own', 'new_login']),
     post_id: s.nullable(s.id()),
     comment_id: s.nullable(s.id()),
     is_read: s.bool(),
@@ -146,7 +146,9 @@ const schemas = {
     post_content: s.nullable(s.str("The post's text, unless you may no longer see it")),
     community_id: s.nullable(s.id()), community_name: s.nullable(s.str()),
     page_id: s.nullable(s.id()), page_name: s.nullable(s.str()),
-    event_id: s.nullable(s.id()), event_name: s.nullable(s.str()), event_starts_at: s.nullable(s.time())
+    event_id: s.nullable(s.id()), event_name: s.nullable(s.str()), event_starts_at: s.nullable(s.time()),
+    device: s.nullable(s.object({ browser: s.nullable(s.str()), os: s.nullable(s.str()), kind: s.enum(['mobile', 'desktop']) },
+      { description: 'new_login: the kind of device that logged in (no IP address is kept)' }))
   }),
   NotificationPreferences: s.object(Object.fromEntries(
     ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events'].map((c) => [c, s.bool()])

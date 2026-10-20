@@ -1,7 +1,39 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 77 — Account safety: login alerts (new device), suspicious login slowdown, 2FA with an authenticator app (TOTP).
-**Step:** 0 — not started (Days 75–76 closed: see the Progress Log).
+**Step:** 1 — login alerts: DONE (saving). Next: 2 slowdown check.
+
+## Progress (Day 77)
+- Step 1: migration 072 (known_devices + notifications.device), services/
+  loginAlertService (after a successful login; never fails it; email not
+  awaited), notifySystem 'new_login' + push (opens /settings/sessions) +
+  email (en/ar), cleanup prunes 180-day-old devices, export includes them,
+  spec documents new_login/device. UI: "New login to your account from
+  Safari on iOS..." + "Check your devices". Privacy Policy section 8
+  (EN/AR, 2026-10-21). Checklist 015 -> 072 (counts 29/24/16 verified on
+  a fixture DB); rehearsal --old passed. loginAlerts.test (6), Vitest
+  +2, new browser suite day77-login-alert (13). Backend 995, Vitest 320;
+  journeys-core/-safety, day8 x2, c2-legal, day60, b11, a2, day5, day28
+  green.
+
+Plan: 1 login alerts (new device); 2 suspicious login slowdown -- exists
+since Day 11 (per-account 1-8 s waits, parallel cap, per-IP limit):
+verify it's tested, extend only if a gap shows; 3 2FA with an
+authenticator app (TOTP, RFC 6238 on node crypto; enroll with QR +
+manual key, confirm code, recovery codes, login second step, disable).
+
+Step 1 plan: no IPs are stored (Privacy Policy), so a "device" = what the
+Sessions screen shows: browser + OS + phone/desktop (describeDevice).
+Sessions are deleted a day after logout, so migration 072 adds
+known_devices (user_id, device_key, last_seen_at; 180 days, pruned by
+the cleanup job) and notifications.device jsonb (the alert keeps its
+wording). After a successful login: if the account has known devices
+and not this one -> notifySystem 'new_login' (always on: security), a
+push, an email when a provider is set (emailText en/ar); then record the
+device. First device ever: no alert. UI: "New login on Chrome · Windows"
++ "Check your devices" -> Settings > Sessions; EN/AR. Privacy Policy:
+the kept device kinds (180 days). Tests: first login none, same device
+none, new device one (+push, +email), after 180 days alerts again.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

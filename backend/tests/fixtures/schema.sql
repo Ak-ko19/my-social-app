@@ -700,3 +700,14 @@ CREATE TABLE admin_actions (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_admin_actions_created ON admin_actions (created_at DESC, id DESC);
+
+-- Day 77 (migration 072): "New login" alerts -- the kinds of device each
+-- account logged in from (180 days), and the alert's own copy of one.
+CREATE TABLE known_devices (
+  user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  device_key varchar(100) NOT NULL,
+  last_seen_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, device_key)
+);
+CREATE INDEX idx_known_devices_last_seen ON known_devices (last_seen_at);
+ALTER TABLE notifications ADD COLUMN device jsonb;

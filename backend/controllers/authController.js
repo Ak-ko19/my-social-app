@@ -5,6 +5,7 @@ const { sendError } = require('../utils/httpError');
 const { mediaOfUser, deleteMedia } = require('../services/mediaCleanupService');
 const { sendEmail, emailEnabled } = require('../utils/email');
 const { textOf } = require('../utils/bodyText');
+const loginAlerts = require('../services/loginAlertService');
 const { createSession, revokeOtherSessions, disconnectOtherSockets } = require('../services/sessionService');
 const botProtection = require('../services/botProtection');
 const { banState, liftExpiredSuspension } = require('../services/moderationService');
@@ -192,6 +193,8 @@ async function login(req, res) {
 
     // Day 8: a session per login, so this device can later be signed out.
     const { token } = await createSession(user.id, req);
+    // Day 77: tell the owner about a login on a new kind of device.
+    await loginAlerts.afterLogin(user.id, req.headers['user-agent']);
     res.status(200).json({
       token,
       id: user.id,
