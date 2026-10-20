@@ -4,9 +4,10 @@ function authHeaders(token) {
   return { headers: { Authorization: `Bearer ${token}` } };
 }
 
-export function fetchFeed(token, { page = 1, limit = 20 } = {}) {
+// Day 74: pass the previous page's nextCursor for the next page.
+export function fetchFeed(token, { cursor = null, limit = 20 } = {}) {
   return api
-    .get('/feed', { ...authHeaders(token), params: { page, limit } })
+    .get('/feed', { ...authHeaders(token), params: { limit, ...(cursor && { cursor }) } })
     .then((res) => res.data);
 }
 

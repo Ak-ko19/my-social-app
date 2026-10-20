@@ -22,7 +22,7 @@ export function useFeed(token, userId) {
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(false);
 
-  const pageRef = useRef(1);
+  const cursorRef = useRef(null); // the server's nextCursor for the next page
   const requestIdRef = useRef(0);
   const loadingMoreRef = useRef(false);
 
@@ -35,10 +35,10 @@ export function useFeed(token, userId) {
     if (!token) return;
     const requestId = ++requestIdRef.current;
 
-    fetchFeed(token, { page: 1, limit: PAGE_LIMIT })
+    fetchFeed(token, { limit: PAGE_LIMIT })
       .then((data) => {
         if (requestId !== requestIdRef.current) return;
-        pageRef.current = 1;
+        cursorRef.current = data.nextCursor;
         setPosts(data.posts);
         setHasMore(Boolean(data.hasMore));
         setSavedAt(null);
@@ -104,7 +104,7 @@ export function useFeed(token, userId) {
     if (!token || loadingMoreRef.current || !hasMore) return;
     loadingMoreRef.current = true;
     const requestId = ++requestIdRef.current;
-    const nextPage = pageRef.current + 1;
+    const cursor = cursorRef.current;
 
     // This is triggered from FeedList's scroll-position effect. Deferring
     // the "start loading" state update by one microtask keeps every
@@ -113,16 +113,14 @@ export function useFeed(token, userId) {
     Promise.resolve()
       .then(() => {
         setLoadingMore(true);
-        return fetchFeed(token, { page: nextPage, limit: PAGE_LIMIT });
+        return fetchFeed(token, { cursor, limit: PAGE_LIMIT });
       })
       .then((data) => {
         if (requestId !== requestIdRef.current) return;
-        pageRef.current = nextPage;
+        cursorRef.current = data.nextCursor;
         setPosts((current) => {
-          // Offset pagination can overlap if the underlying feed changed
-          // between page requests -- de-dupe defensively rather than
-          // switching to cursor pagination, which would be a bigger API
-          // change than this step calls for.
+          // Day 74: the cursor never overlaps pages, but a post can still
+          // arrive twice (e.g. one just posted) -- de-dupe defensively.
           const existingIds = new Set(current.map((post) => post.id));
           const newPosts = data.posts.filter((post) => !existingIds.has(post.id));
           return [...current, ...newPosts];

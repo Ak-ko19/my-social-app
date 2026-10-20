@@ -5,6 +5,7 @@ const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../servic
 const { sendError } = require('../utils/httpError');
 const { mediaOfPost, deleteMedia } = require('../services/mediaCleanupService');
 const { getPagination } = require('../utils/pagination');
+const { encodeCursor, decodeCursor } = require('../utils/cursorPagination');
 const { getVisiblePost, postAudienceSql } = require('../services/postVisibilityService');
 const hashtagService = require('../services/hashtagService');
 const { toUnicode } = require('../utils/myanmarText');
@@ -81,6 +82,15 @@ async function getFeed(req, res) {
   try {
     const userId = req.userId;
     const { page, limit, offset } = getPagination(req, { defaultLimit: 10, maxLimit: 50 });
+    // Day 74: ?cursor= (the nextCursor of the page before) resumes right
+    // after that page's last post -- a deep page then reads only its own
+    // rows, where ?page= (still accepted) has to walk past every earlier one.
+    let cursor;
+    try {
+      cursor = decodeCursor(req.query.cursor);
+    } catch (err) {
+      return res.status(400).send('Invalid cursor');
+    }
 
     // like_count/liked_by_me/is_following are correlated subqueries rather
     // than a JOIN+GROUP BY -- simpler to keep correct alongside SELECT
@@ -117,6 +127,19 @@ async function getFeed(req, res) {
       AND NOT users.is_deactivated
       -- Day 47: not from people you muted (your own posts are never muted).
       AND ${notMutedSql('$1', 'posts.user_id', 'posts.page_id')}
+      -- Day 74: after the cursor's post, by its own stored (created_at, id),
+      -- microseconds included. Kept a plain row comparison so Postgres
+      -- starts the created_at index scan right there (wrapped in a CASE it
+      -- became a filter, walking every newer post like OFFSET). If that post
+      -- was deleted meanwhile, the next one by id marks the place (ids grow
+      -- with time; at worst a post the client already has comes again, and
+      -- it de-dupes). None newer at all: every post left is older.
+      AND ($4::int IS NULL OR (posts.created_at, posts.id) < (
+        SELECT b.created_at, b.id FROM (
+          (SELECT c.created_at, c.id FROM posts c WHERE c.id >= $4 ORDER BY c.id LIMIT 1)
+          UNION ALL SELECT 'infinity', 0
+        ) b ORDER BY b.created_at LIMIT 1
+      ))
       -- id breaks created_at ties (e.g. rows from one transaction) so pages
       -- never overlap or skip a post.
       ORDER BY posts.created_at DESC, posts.id DESC
@@ -125,7 +148,7 @@ async function getFeed(req, res) {
 
     // Same "fetch one extra row" trick as getPosts -- avoids a separate
     // COUNT(*) just to know whether another page exists.
-    const result = await db.query(feedQuery, [userId, limit + 1, offset]);
+    const result = await db.query(feedQuery, [userId, limit + 1, cursor ? 0 : offset, cursor?.id ?? null]);
 
     const hasMore = result.rows.length > limit;
     const posts = hasMore ? result.rows.slice(0, limit) : result.rows;
@@ -134,7 +157,8 @@ async function getFeed(req, res) {
       page,
       limit,
       posts,
-      hasMore
+      hasMore,
+      nextCursor: hasMore ? encodeCursor({ id: posts[posts.length - 1].id }) : null
     });
   } catch (error) {
     sendError(res, error, 'Loading the feed failed. Please try again later.');

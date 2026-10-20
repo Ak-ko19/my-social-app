@@ -71,6 +71,12 @@ function seqScans() {
   // running server already has, so what's measured is a normal visit.
   sql('UPDATE users SET is_admin = true WHERE id = 1');
   await fetch(`${API}/admin/overview?days=90`, { headers: auth });
+  // Day 74: the same fifth page as /feed?page=5, reached the way Home now
+  // does -- by the cursor after the first 40 posts (no OFFSET).
+  const { nextCursor } = await (await fetch(`${API}/feed?limit=40`, { headers: auth })).json();
+  const feedByCursor = `/feed?cursor=${encodeURIComponent(nextCursor)}`;
+  endpoints.splice(2, 0, feedByCursor);
+  const rowsOf = {};
   for (const ep of endpoints) {
     const before = seqScans();
     const start = Date.now();
@@ -88,11 +94,18 @@ function seqScans() {
     const scanned = Object.keys(after).filter((t) => after[t].pages >= BIG_PAGES && after[t].seq > (before[t]?.seq ?? 0));
     const big = Object.keys(after).filter((t) => after[t].pages >= BIG_PAGES);
     const rowsRead = big.reduce((sum, t) => sum + after[t].rows - (before[t]?.rows ?? 0), 0);
+    rowsOf[ep] = rowsRead;
     const status = res.status !== 200 || scanned.length || rowsRead > MAX_ROWS ? 'FAIL' : 'PASS';
     results.push(`${status}  ${ep.padEnd(38)} ${String(res.status)} ${String(ms).padStart(5)} ms ${String(rowsRead).padStart(7)} rows`
       + (scanned.length ? `  -- full scan of: ${scanned.join(', ')}` : '')
       + (rowsRead > MAX_ROWS ? `  -- read over ${MAX_ROWS} rows` : ''));
   }
+  // Day 74: the cursor starts the index scan at its post, so it reads about
+  // one page's worth (1.9k rows at this seed), where page 5 walks past the
+  // first four (6.2k). A cursor that became a filter again would read as
+  // much as OFFSET.
+  const ratio = rowsOf[feedByCursor] / rowsOf['/feed?page=5'];
+  results.push(`${ratio < 0.5 ? 'PASS' : 'FAIL'}  /feed by cursor reads under half the rows of ?page=5  -- ${rowsOf[feedByCursor]} vs ${rowsOf['/feed?page=5']}`);
 
   console.log(results.join('\n'));
   process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

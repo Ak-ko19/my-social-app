@@ -144,6 +144,74 @@ describe('posts + feed', () => {
       expect(seen).toEqual([...ids].reverse());
     });
 
+    // Day 74: the cursor pages the feed without OFFSET.
+    describe('with ?cursor=', () => {
+      const walk = async (token, limit) => {
+        const seen = [];
+        let cursor = null;
+        for (let n = 0; n < 10; n += 1) {
+          const res = await request(app).get('/feed').query({ limit, ...(cursor && { cursor }) }).set('Authorization', `Bearer ${token}`);
+          expect(res.status).toBe(200);
+          seen.push(...res.body.posts.map((p) => p.id));
+          cursor = res.body.nextCursor;
+          expect(Boolean(cursor)).toBe(res.body.hasMore);
+          if (!cursor) break;
+        }
+        return seen;
+      };
+
+      it('walks own + followed posts, newest first, without duplicates or gaps', async () => {
+        const viewer = await registerAndLogin(app);
+        const followed = await registerAndLogin(app);
+        await request(app).post(`/users/${followed.id}/follow`).set('Authorization', `Bearer ${viewer.token}`);
+        const created = [];
+        for (let i = 0; i < 5; i += 1) created.push((await createPost(app, (i % 2 ? followed : viewer).token, `c ${i}`)).id);
+        expect(await walk(viewer.token, 2)).toEqual(created.reverse());
+      });
+
+      it('keeps every post that shares a timestamp down to the microsecond', async () => {
+        const viewer = await registerAndLogin(app);
+        const ids = [];
+        for (let i = 0; i < 4; i += 1) ids.push((await createPost(app, viewer.token, `same time ${i}`)).id);
+        // Same millisecond, different microseconds -- a JS Date would merge them.
+        await pool.query(`UPDATE posts SET created_at = '2026-01-01 12:00:00.123'::timestamp + (id % 2) * interval '1 microsecond'
+          WHERE id = ANY($1)`, [ids]);
+        const seen = await walk(viewer.token, 1);
+        expect([...seen].sort()).toEqual([...ids].sort());
+        expect(seen).toHaveLength(4);
+      });
+
+      it('still finds its place when the post the cursor names was deleted', async () => {
+        const viewer = await registerAndLogin(app);
+        const ids = [];
+        for (let i = 0; i < 4; i += 1) ids.push((await createPost(app, viewer.token, `d ${i}`)).id);
+        const first = (await request(app).get('/feed?limit=2').set('Authorization', `Bearer ${viewer.token}`)).body;
+        expect(first.posts.map((p) => p.id)).toEqual([ids[3], ids[2]]);
+        await request(app).delete(`/posts/${ids[2]}`).set('Authorization', `Bearer ${viewer.token}`);
+        const next = await request(app).get('/feed').query({ limit: 2, cursor: first.nextCursor }).set('Authorization', `Bearer ${viewer.token}`);
+        expect(next.body.posts.map((p) => p.id)).toEqual([ids[1], ids[0]]);
+        expect(next.body).toMatchObject({ hasMore: false, nextCursor: null });
+      });
+
+      it('still finds its place when the deleted post was the newest of all', async () => {
+        const viewer = await registerAndLogin(app);
+        const ids = [];
+        for (let i = 0; i < 3; i += 1) ids.push((await createPost(app, viewer.token, `n ${i}`)).id);
+        const first = (await request(app).get('/feed?limit=1').set('Authorization', `Bearer ${viewer.token}`)).body;
+        expect(first.posts.map((p) => p.id)).toEqual([ids[2]]);
+        await request(app).delete(`/posts/${ids[2]}`).set('Authorization', `Bearer ${viewer.token}`);
+        const next = await request(app).get('/feed').query({ limit: 2, cursor: first.nextCursor }).set('Authorization', `Bearer ${viewer.token}`);
+        expect(next.body.posts.map((p) => p.id)).toEqual([ids[1], ids[0]]);
+      });
+
+      it('refuses a cursor it cannot read', async () => {
+        const viewer = await registerAndLogin(app);
+        const res = await request(app).get('/feed?cursor=not-a-cursor').set('Authorization', `Bearer ${viewer.token}`);
+        expect(res.status).toBe(400);
+        expect(res.text).toBe('Invalid cursor');
+      });
+    });
+
     it("leaves the viewer's own page and group posts to their usual rules", async () => {
       const owner = await registerAndLogin(app);
       const page = (await request(app).post('/pages').set('Authorization', `Bearer ${owner.token}`)

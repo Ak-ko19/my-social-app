@@ -53,9 +53,12 @@ module.exports = {
   'GET /feed': op({
     tag: 'Posts', auth: 'user',
     summary: 'Home: posts from you, people and pages you follow, and your groups',
-    description: 'Muted people are left out.',
-    query: pageQuery({ defaultLimit: 10, maxLimit: 50 }),
-    responses: { 200: json(s.object({ page: s.int(), limit: s.int(), posts: s.array(ref('Post')), hasMore: s.bool() }), 'One page') }
+    description: 'Muted people are left out. Pass nextCursor back for the next page (faster than page, which still works).',
+    query: { ...pageQuery({ defaultLimit: 10, maxLimit: 50 }), cursor: cursorQuery().cursor },
+    responses: {
+      200: json(s.object({ page: s.int(), limit: s.int(), posts: s.array(ref('Post')), hasMore: s.bool(), nextCursor: s.nullable(s.str('null: no more posts')) }), 'One page'),
+      400: text('Invalid cursor')
+    }
   }),
   'GET /posts/:id': op({
     tag: 'Posts', auth: 'optional',

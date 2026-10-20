@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 74 — Performance round 2: slow queries, caching headers, image sizes, bundle splitting.
-**Step:** 1 — bundle: Motion after the first paint: DONE (saving).
+**Step:** 2 — slow queries: Home feed by cursor: DONE (saving). Next: 3.
 
 Plan: 1 bundle (LazyMotion); 2 slow-query review (perf suite's slowest
 + EXPLAIN); 3 API caching headers (ETag / no-store for private data);
@@ -15,6 +15,22 @@ Plan: 1 bundle (LazyMotion); 2 slow-query review (perf suite's slowest
   the browser: the features chunk loads and the sheet animates
   (translateY 98% -> 0). Vitest 312, lint (exit 0); day58, b4, a2,
   day60, b11 green.
+- Step 2: Home paged by OFFSET, so page N walked past every earlier post
+  (page 20 of 50: 198 ms). GET /feed now returns nextCursor and takes
+  ?cursor= (page= still works); useFeed sends it. First draft wrapped the
+  cursor in CASE (deleted-post fallback) -- EXPLAIN showed it as a
+  Filter, 6030 rows removed, no better than OFFSET. Rewritten as a plain
+  row comparison against an InitPlan -> Index Cond on created_at: page
+  20 198 -> 14 ms; perf seed page 5 reads 1450 rows vs 6282 (new perf
+  check: cursor < half of ?page=5). Deleted cursor post: next post by id
+  marks the place (+ an 'infinity' row when none is newer; both tested,
+  mutation-checked). New browser suite day74-feed-paging (45 posts, a
+  same-millisecond pair across the page break, EN/light + AR/dark) 18/18.
+  Backend 955, Vitest 313, lint 0; day72-offline, day2, journeys-core,
+  day23, day20 green; perf 43/43.
+  Decision: the other post lists (Explore, hashtag, profile tabs, saved)
+  keep page= for now: lighter and fine in the perf suite; revisit if a
+  deep page shows up slow.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
