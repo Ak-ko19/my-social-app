@@ -1,61 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 72–73 — Offline + PWA polish: offline feed cache, offline message queue, install prompt, app icons.
-**Step:** Day close — full browser run in batches.
-
-Plan (have: an app-shell service worker that caches every same-origin GET
-forever under one name -- old hashed assets pile up per deploy):
-1. "You're offline" banner app-wide (EN/AR, role=status) and Home shows
-   the last feed it loaded when offline (per account, newest 20, cleared
-   on logout -- a shared phone must not keep someone else's feed),
-   marked "Saved posts -- you're offline".
-2. Offline message queue: a text sent offline waits ("Waiting for
-   connection") and goes by itself when the connection is back; kept
-   across a reload (per account and chat; cleared on logout).
-3. Install: "Install app" in the menu when the browser offers it
-   (beforeinstallprompt), an iPhone hint (Share > Add to Home Screen),
-   hidden when already installed.
-4. Icons + manifest + service-worker hygiene: manifest id/lang/shortcuts,
-   icon check (maskable safe zone), only cache the shell + /assets/ and
-   drop assets no longer in the current build.
-
-## Progress (Day 72–73)
-- Step 1 DONE: OfflineBanner (PhoneShell, every screen, role=status,
-  inverse colours) + utils/offlineStore (newest 20 Home posts per account;
-  wiped by clearLocalSession) + useOnline; useFeed shows the saved posts
-  when offline ("from your last visit" note) and reloads when back online
-  -- retries at once, 2 s, 6 s, keeping the saved posts if a retry fails
-  (the browser test proved the first try after "online" can fail).
-  Privacy Policy section 6 (EN/AR, 2026-10-20): it said "never your posts";
-  now names the saved posts and Hidden words. day72-offline (14, EN/AR).
-  Vitest 300, backend 950, bundle 223.3/225 (tight!), a2, journeys-core,
-  day8-sessions-list, b16, day2, c2 green.
-  Seen: EmailVerificationBanner amber text #d97706 on #fef3c7 is ~2.9:1
-  (below AA) and has no dark tokens -- fix in step 4 or Day 80.
-- Step 2 DONE: offline message queue -- a text sent offline is 'queued'
-  (clock, "Waiting for connection"; Don't send), kept per account+chat
-  (offline:outbox:, wiped at logout), restored when the chat opens, sent
-  oldest-first when online / socket connected (once per flush); a socket
-  send that times out while offline queues instead of failing. Media
-  can't be kept (files): offline they fail with Retry. Privacy section 6
-  mentions unsent messages. useConversationMessages.queue.test (4);
-  day72-offline 18. Vitest 304, bundle 223.5/225; a2, b9, day31, day43,
-  c2 green.
-- Step 3 DONE: utils/installPrompt (beforeinstallprompt kept from startup,
-  appinstalled) + useInstallApp (prompt | ios | null; hidden when
-  standalone); Menu row "Install the app" (EN/AR) and an iPhone sheet with
-  the Safari steps (sheet needed its own side padding -- seen in the
-  screenshot). useInstallApp.test (3), day72-install (6). Vitest 307,
-  bundle 223.9/225 (1.1 kB left!); b13, b14, day55, day58, c3 green.
-- Step 4 DONE: the maskable icon was transparent (launchers want a full
-  tile) -> regenerated opaque by scripts/generate-maskable-icon.cjs (exact
-  brand colours); manifest id/lang/categories; sw.js: shell cache (network-
-  first, any route -> /index.html) + assets cache (cache-first, newest 60),
-  old caches deleted. pwa.test (5; rejects the old icon). day72-pwa on the
-  production build (6): offline full reload + deep link open the app.
-  Vitest 312; check:headers; day22-push, day10, day19-share, day11-
-  turnstile green.
-- Day close: full browser run, Progress Log, tick Day 72-73.
+**Day:** 74 — Performance round 2 (not started).
+**Step:** —
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -200,6 +146,13 @@ forever under one name -- old hashed assets pile up per deploy):
   Two-way block checks in SQL: blockService.noBlockBetweenSql.
 - To look at (Day 70): in Arabic the new-group screen's back button sits
   on the left -- check the app's header convention in RTL.
+- Offline (Day 72): data kept on the device goes through utils/offlineStore
+  (keys offline:*, wiped by clearLocalSession) and the Privacy Policy
+  section 6 must say so. Browser suites that go offline: ignore console
+  errors only while offline (the first request after "online" can fail).
+  The service worker only runs on the production build (DIST_SUITES).
+- Bundle 223.9/225 kB after Day 72 -- Day 74 must make room.
+- EmailVerificationBanner amber text ~2.9:1 (below AA), no dark tokens.
 - day27-perf takes ~8.5 min now (Day 66): split it like a3/a11y in Day 74.
 - Follow-up (seen Day 66): when an admin removes your post/comment/message
   nothing tells you (FB/IG notify "we removed your post"). A system

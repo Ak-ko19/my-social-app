@@ -257,7 +257,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 69–71 — Code health
 - [x] Remove duplicated logic, split large files, consistent error handling, update README and CLAUDE.md. *(One error type, one block-check helper, bounded lists, a message-paging bug fixed, the chat hook split, README — see Progress Log.)*
 ### Day 72–73 — Offline + PWA polish
-- [ ] Offline feed cache, offline message queue, install prompt, app icons.
+- [x] Offline feed cache, offline message queue, install prompt, app icons. *(Offline banner + saved Home, a message queue, "Install the app", an opaque maskable icon, a tidy service worker — see Progress Log.)*
 ### Day 74 — Performance round 2
 - [ ] Slow-query review, caching headers, image sizes, bundle splitting.
 ### Day 75–76 — Security round 2
@@ -2295,3 +2295,58 @@ lists that grow without limit.
     and A3 EN/AR (288 each, 4 parts).
   - day12-review read the old comment shape; it was fixed, and its check
     can no longer pass on an empty list.
+
+### 2026-10-20 — Days 72–73: Offline + PWA polish
+- **Offline banner and Home (`1f15498`):**
+  - A "You're offline" strip shows on every screen (EN/AR, inverse colours
+    for both themes).
+  - Home keeps its newest 20 posts on the device, per account. Offline, it
+    shows them ("from your last visit"). Back online it reloads by itself:
+    at once, then after 2 and 6 seconds, and a failed try keeps the saved
+    posts. The browser test showed that the first request after the
+    browser's "online" event can still fail.
+  - Logging out wipes every offline copy, because a shared phone must not
+    keep someone else's feed.
+  - The Privacy Policy (section 6, EN/AR, 2026-10-20) used to say the
+    device "never" keeps your posts; it now says exactly what is kept.
+- **Offline message queue (`71557a9`):**
+  - A text sent with no connection waits, with a clock, "Waiting for
+    connection" and a "Don't send" button.
+  - It is kept per account and chat, so it survives a reload, and it is
+    sent once, oldest first, when the connection or the socket comes back.
+  - A socket send that times out because the connection dropped waits
+    instead of failing.
+  - Voice notes and photos are files the device can't keep this way;
+    offline they still fail and offer Retry.
+- **Install (`646c412`):** the browser's install offer is kept from
+  startup, and "Install the app" in the Menu opens the browser's own
+  dialog. iPhones and iPads get Safari's Share > Add to Home Screen steps
+  in a sheet. The row is hidden once the app is installed.
+- **Icons, manifest, service worker (`4dd9e64`):**
+  - The maskable icon had a transparent background (launchers expect a
+    full tile). It is regenerated opaque by
+    `scripts/generate-maskable-icon.cjs`, and pwa.test rejects the old one.
+  - The manifest gains id, lang and categories.
+  - The service worker kept every same-origin file in one cache forever.
+    It now has a shell cache (network-first; any route opens offline) and
+    an assets cache (cache-first, newest 60 files); other caches are
+    deleted.
+  - On the production build (day72-pwa), offline, a full reload and a
+    deep link still open the app with Home's saved posts.
+- **Decision (logged):** offline data lives in localStorage in the app,
+  not in the service worker. The API is another origin, and the app
+  already knows the account (which data to keep, and when to wipe it).
+  Photos aren't cached offline: browsers store cross-origin images as
+  opaque responses, which use a lot of storage.
+- **Seen, for later:**
+  - The email-verification banner's amber text (#d97706 on #fef3c7) is
+    about 2.9:1, below AA, and has no dark-mode colours. For Day 80
+    (empty/error states) or Day 75.
+  - The bundle is at 223.9 / 225 kB. For Day 74 (performance round 2).
+- **Tests at close:**
+  - Vitest 312/312; backend 950/950; lint; check:i18n 1415 keys;
+    check:headers; bundle 223.9 kB.
+  - Full browser run in small batches: all 62 regular suites (new:
+    day72-offline 18, day72-install 6), the 7 special-stack suites (new:
+    day72-pwa 6), journeys-social, perf 41/41, a11y 125 (3 parts) and A3
+    EN/AR (288 each, 4 parts).
