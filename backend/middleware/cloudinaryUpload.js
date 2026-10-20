@@ -74,6 +74,26 @@ const uploadAudio = multer({
 // Day 57: the person's daily upload budget is checked first (nothing is
 // sent to Cloudinary when it's used up) and each stored file is recorded.
 const ledgerKind = (resourceType) => (resourceType === 'video' ? 'audio' : 'image');
+
+// Day 74: the app never shows a photo bigger than 2048 px, and the web app
+// shrinks anything bigger or over 1 MB before sending it
+// (frontend/src/utils/compressImage.js). A client that doesn't -- a failed
+// decode in the browser, a future mobile app, a script -- would otherwise
+// store its full-size original (up to 5 MB) on the free Cloudinary plan.
+// Above 1 MB, Cloudinary is asked to scale the photo down to fit 2048 px as
+// it stores it (c_limit: never up; a GIF stays animated). Below, nothing is
+// asked: those are already shrunk, and each stored transformation counts
+// against the plan's credits.
+const STORED_MAX_SIDE = 2048;
+const CAP_ABOVE_BYTES = 1024 * 1024;
+
+function imageUploadOptions(folder, file) {
+  const options = { folder, resource_type: 'image' };
+  if (file.size > CAP_ABOVE_BYTES) {
+    options.transformation = [{ width: STORED_MAX_SIDE, height: STORED_MAX_SIDE, crop: 'limit' }];
+  }
+  return options;
+}
 const storedSize = (result, file) => ({ bytes: Number.isFinite(result?.bytes) ? result.bytes : file.size });
 
 function uploadToCloudinary(folder = 'mysocialapp', resourceType = 'image', format) {
@@ -85,7 +105,7 @@ function uploadToCloudinary(folder = 'mysocialapp', resourceType = 'image', form
       return next(err);
     }
 
-    const uploadOptions = { folder, resource_type: resourceType };
+    const uploadOptions = resourceType === 'image' ? imageUploadOptions(folder, req.file) : { folder, resource_type: resourceType };
     if (format) uploadOptions.format = format;
 
     const stream = cloudinary.uploader.upload_stream(uploadOptions, (err, result) => {
@@ -143,7 +163,7 @@ function uploadManyToCloudinary(folder = 'mysocialapp') {
       return next(err);
     }
     const settled = await Promise.allSettled(
-      files.map((file) => uploadBufferToCloudinary(file.buffer, { folder, resource_type: 'image' }))
+      files.map((file) => uploadBufferToCloudinary(file.buffer, imageUploadOptions(folder, file)))
     );
     const failed = settled.find((s) => s.status === 'rejected');
     if (failed) {

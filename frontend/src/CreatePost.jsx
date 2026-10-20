@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import api, { resolveImageUrl } from './api';
+import { getOptimizedImageUrl } from './utils/cloudinaryImage';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CalendarClock, ChevronLeft, FileText, Globe, ImagePlus, ListChecks, Lock, Plus, Star, Users, X } from 'lucide-react';
 import { IconButton } from './components/ui';
@@ -382,7 +383,8 @@ function CreatePost() {
           <ul className="image-picker-grid" aria-label={t('compose.selectedImages')}>
             {keptMedia.map((url, i) => (
               <li key={url} className="image-picker-item">
-                <img src={resolveImageUrl(url)} alt={t('compose.selectedImage', { n: i + 1 })} />
+                {/* Day 74: a ~90px tile -- not the full-size stored photo. */}
+                <img src={getOptimizedImageUrl(resolveImageUrl(url), 300)} alt={t('compose.selectedImage', { n: i + 1 })} decoding="async" />
                 <button
                   type="button"
                   className="image-picker-remove"

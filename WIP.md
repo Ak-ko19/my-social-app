@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 74 — Performance round 2: slow queries, caching headers, image sizes, bundle splitting.
-**Step:** 3 — API caching headers: DONE (saving). Next: 4 image sizes.
+**Step:** 4 — image sizes: DONE (saving). Next: 5 split day27-perf.
 
 Step 3 plan: today only 7 routes set Cache-Control; every other API
 answer (feed, messages, notifications, profiles) has none, so a browser
@@ -56,6 +56,16 @@ Plan: 1 bundle (LazyMotion); 2 slow-query review (perf suite's slowest
   call no-store, /config public 300 s, no errors. Backend 958, Vitest
   313, i18n OK; b9, b4, journeys-core, day72-offline, day19-links,
   c2-legal green.
+- Step 4 (audit): every displayed image already goes through
+  utils/cloudinaryImage (Day 27) except the composer's kept-photo tiles
+  (a draft's photos loaded full size into ~90px tiles) -> w_300, checked
+  in the browser (f_auto,q_auto,w_300,c_limit). All 7 image upload routes
+  shrink in the browser (Day 57), but the server stored whatever came (up
+  to 5 MB): now a file over 1 MB is stored scaled to fit 2048 px
+  (Cloudinary incoming c_limit); under 1 MB nothing is asked (already
+  shrunk, and each transformation costs plan credits). Voice notes
+  untouched. storedImageSize.test (3); backend 961, Vitest 313, lint 0;
+  b2, day44, day45, day57, journeys-social green.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
