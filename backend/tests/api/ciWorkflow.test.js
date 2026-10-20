@@ -70,6 +70,16 @@ describe('CI browser jobs', () => {
   });
 });
 
+// Day 71: e2e/README.md names every suite and helper file (its table fell
+// behind once, from Day 5 to Day 66).
+describe('e2e/README.md', () => {
+  it('lists every .cjs file in e2e/', () => {
+    const readme = read('e2e/README.md');
+    const files = fs.readdirSync(path.join(ROOT, 'e2e')).filter((f) => f.endsWith('.cjs')).map((f) => f.replace(/\.cjs$/, ''));
+    expect(files.filter((name) => !readme.includes(`\`${name}\``))).toEqual([]);
+  });
+});
+
 // Days 64–66: the 15 user journeys (e2e/JOURNEYS.md) all run in CI, and
 // each one the doc lists really has checks in the suite it names.
 describe('user journeys', () => {

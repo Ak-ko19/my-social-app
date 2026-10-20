@@ -30,34 +30,28 @@ No investor deadline pressure — building thoroughly, roughly a month timeline
 rather than rushing.
 
 ## Completed Features
+(Updated Day 71. Details: PROJECT_DETAILED_GUIDE.md and MONTH_PLAN.md's
+Progress Log; how to run and test everything: README.md.)
 
-### Backend (all built and tested via Thunder Client)
-- Backend setup (Express server)
-- Database + tables (users, posts, comments, likes, follows)
-- Signup route
-- Login + JWT authentication (chosen over a simpler user_id-only approach for security)
-- Profile route (GET /profile/:id)
-- Post CRUD (create/get all/get one/edit/delete, with owner-check)
-- News feed pagination (?page=/?limit= on GET /posts)
-- Like/Comment feature (6 routes)
-- Follow system (5 routes)
-- Personalized feed (GET /feed, filtered by follows table)
-- Edit Profile: added `bio` column to users table; built GET /profile/me
-  and PUT /profile endpoints
-- 18 edge-case tests passing (duplicate signup, missing fields, wrong
-  password, invalid/non-existent ID, permission violations, etc.)
-
-### Frontend (all built and tested, vertical-slice order)
-- React project setup (Vite + React + JavaScript)
-- Feed page (Feed.jsx, fetches/displays /feed)
-- Signup/Login UI (JWT stored in localStorage, react-router-dom routes)
-- Post creation UI (CreatePost.jsx)
-- Like/Comment/Follow UI (buttons + comment section in Feed.jsx)
-- Edit Profile UI (EditProfile.jsx — edit username, email, bio; linked from
-  Feed page via App.jsx/Feed.jsx routes)
-
-Full end-to-end flow verified in-browser: signup → login → view feed →
-create post → like/unlike → comment → follow/unfollow → edit profile.
+- **Accounts:** signup / login (JWT sessions you can see and sign out),
+  email verification and password reset (Brevo or SMTP; off without a
+  provider), change password, deactivate, delete, download your data, bot
+  protection (honeypot, form timing, optional Turnstile), rate limits.
+- **Social:** posts with photos, polls, audiences (public / followers /
+  close friends / only me), drafts and scheduled posts, hashtags and
+  mentions, reactions, threaded comments (paged), saved collections,
+  stories, follows and follow requests (private accounts), friends, people
+  you may know, Explore, ranked search, profiles (links, cover, pinned post).
+- **Chat:** direct and group chats over Socket.IO (live, typing, presence,
+  read receipts), voice notes, photos, replies, edits, unsend, reactions,
+  forwarding; paged inbox and history.
+- **Groups, pages, events;** notifications (per-type settings, web push).
+- **Safety:** block, mute, restrict, hidden words, reports, spam checks;
+  admin screen (reports, bans and suspensions, error log, storage, overview,
+  audit log).
+- **Quality:** EN/AR with full RTL, light/dark, PWA, accessibility (axe),
+  performance (indexes, bundle budget), API reference (GET /docs) checked
+  against every API test, 15 user journeys in the browser suites, CI.
 
 ## Working Style — IMPORTANT
 - Build ONE feature at a time: a full vertical slice (backend route +
@@ -82,25 +76,11 @@ The owner is busy and wants no questions.
 - A usage limit or the owner can stop you anytime. Commit small WIP
   checkpoints often and keep ROADMAP.md notes current.
 
-## Next Steps (in order)
-Steps 1–6 below (input validation, forgot-password, comment edit, .env
-secrets) are done — see the "Production-Readiness Audit" and "12-Feature
-Production Batch" sections of PROJECT_DETAILED_GUIDE.md for what's actually
-been built since this list was last updated (image upload, notifications,
-DM/messaging with Socket.io + voice messages, search, dark mode, block/
-report/bookmark/hashtags/mentions/private-accounts/account-management/
-email-verification/rate-limiting/PWA are all live). This file's own
-"Completed Features" list above predates most of that — trust
-PROJECT_DETAILED_GUIDE.md over it.
-
-1. Deploy (hosting) — the only step left. Deliberately saved for last per
-   the working-style rule below, now that everything else is done.
-2. (Optional) Refactor backend from single-file-per-concern into
-   routes/controllers/middleware/models — mostly already the shape (see
-   backend/), revisit only if it's still worth doing once deploy is live.
-3. Real email delivery (Nodemailer/SendGrid/etc.) to replace the
-   console-logged verification/reset links — swap the one function in
-   backend/utils/email.js.
+## Next Steps
+The work follows MONTH_PLAN.md, one checkbox step at a time (WIP.md shows
+where it stands). Going live (hosting, production database, real email,
+push keys) needs the owner: GO_LIVE_CHECKLIST.md and LATER.md list exactly
+what to do; every feature works without those accounts until then.
 
 ## Long-Term Vision (reference only, not active development)
 A 52-category "Super App" master list was sketched as a long-term dream

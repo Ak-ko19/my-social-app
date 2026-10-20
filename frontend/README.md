@@ -1,16 +1,23 @@
-# React + Vite
+# MySocialApp -- web app
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite. How to run the whole app, and what everything is: the
+[README at the top of the repo](../README.md).
 
-Currently, two official plugins are available:
+```bash
+npm install
+cp .env.example .env   # VITE_API_URL: the backend, e.g. http://localhost:3000
+npm run dev            # http://localhost:5173
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Command | What it does |
+| --- | --- |
+| `npm test` | Component tests (Vitest + Testing Library) |
+| `npm run lint` | ESLint |
+| `npm run check:i18n` | Every string in English and Arabic, no untranslated UI text, logical (RTL-safe) CSS |
+| `npm run build` then `npm run check:bundle` | The production build, and the first-download size budget |
+| `npm run check:headers` | `vercel.json`'s security headers (CSP and the rest), against a build |
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Where things are: screens in `src/screens/` (and a few top-level ones in
+`src/`), components in `src/components/<area>/`, data hooks in
+`src/hooks/`, API calls in `src/services/`, translations in
+`src/i18n/locales/` (UI languages: English and Arabic).

@@ -81,7 +81,22 @@ error. Full output goes to `out-<suite>.txt`, and screenshots to `*.png` /
 | `journeys-core`, `journeys-social`, `journeys-safety` | The 15 most important user journeys, only through the UI -- see [JOURNEYS.md](JOURNEYS.md) |
 | `a2-walkthrough` | The main user journey from signup to logout |
 | `a3-visual` | Every route × 375/390/430 px × light/dark (`A3_LANG=en\|ar`, `A3_THEME=light\|dark`) |
-| `b1-reactions` … `b16-rtl` | One suite per roadmap feature (B1–B16) |
+| `b1-reactions` | B1: reactions on posts |
+| `b2-media` | B2: posts with several photos (carousel), and picking photos in the composer |
+| `b3-stories` | B3: the stories tray and viewer |
+| `b4-comments` | B4: comment replies and likes; comments 50 at a time with "View more comments" (EN/AR) |
+| `b5-audience` | B5: who can see a post (public / followers) |
+| `b6-tabs` | B6: profile tabs (posts, photos, tagged) |
+| `b7-explore` | B7: Explore: trending hashtags and popular posts |
+| `b8-pymk` | B8: People you may know |
+| `b9-dm` | B9: chat extras (replies, edits, photos with retry); the inbox 20 chats at a time |
+| `b10-groups` | B10: group chats: create, rename, add and remove people, leave |
+| `b11-settings` | B11: notification settings |
+| `b12-admin` | B12: admin moderation |
+| `b13-groups` | B13: groups (communities): create, private join requests, posting |
+| `b14-pages` | B14: pages: create, follow, post as the page |
+| `b15-lang` | B15: switching the language (English / Arabic) |
+| `b16-rtl` | B16: Arabic right to left, end to end |
 | `c1-seed` | The world created by `npm run seed:demo` (needs the seed first) |
 | `c2-legal` | Terms and Privacy pages |
 | `c3-landing` | The public landing page |
@@ -91,6 +106,48 @@ error. Full output goes to `out-<suite>.txt`, and screenshots to `*.png` /
 | `day8-sessions` | Day 8: changing the password in Settings signs out the other devices (sent to login), keeps this one signed in; a mistyped password no longer logs you out (EN, AR RTL) |
 | `day8-sessions-list` | Day 8: Settings → Where you're logged in: lists devices, logs one or all others out, and Log Out ends the session on the server (EN, AR RTL incl. word order) |
 | `day10-errors` | Day 10 (production build only, run by run-all on a dist stack): a render crash shows a translated "Something went wrong" screen instead of a blank page, is reported, grouped with a count, and can be read and resolved in Admin → Errors (EN, AR RTL) |
+| `day11-bots` | Day 11 (bot checks on): honeypot, form timing and login slow-down stop scripts; real people sign up and log in |
+| `day11-turnstile` | Day 11 (Turnstile on, production build): the human check on signup and forgot-password, CSP included |
+| `day12-report` | Day 12: reporting comments and messages, and what the moderator sees |
+| `day12-review` | Day 12: Admin > Reports: removing a comment and a message (live), suspending an account |
+| `day16-language` | Day 16: the app language is saved on the account and follows you to other devices |
+| `day19-links` | Day 19: links are clickable; the first gets a preview card (posts and messages) |
+| `day19-share` | Day 19 (production build): share cards for link-preview crawlers, and the redirect for people |
+| `day20-only-me` | Day 20: "only me" posts stay with their author |
+| `day22-push` | Day 22 (production build, stub push service): turning web push on and receiving a notification |
+| `day23-mute` | Day 23: the Messages notification switch, and muting one chat |
+| `day24-report-places` | Day 24: reporting groups and pages; the moderator removes one |
+| `day26-a11y` | Day 26: axe (WCAG 2.1 A + AA) on every page, light and dark, and Arabic; keyboard focus rings. In 3 parts: `day26-a11y-light`, `-dark`, `-ar` |
+| `day27-perf` | Day 27: about a million seeded rows; every main read endpoint stays fast and uses its index (run alone: ~8 min) |
+| `day28-export` | Day 28: Download your information (the JSON file) |
+| `day30-guard` | Day 30: account-only screens send logged-out visitors to Login and back |
+| `day31-reactions` | Day 31: reacting to messages, live for both people |
+| `day32-forward` | Day 32: forwarding a message to several chats (server-side chat search) |
+| `day33-group-admins` | Day 33: group chat admins |
+| `day34-group-photo` | Day 34: a group chat's photo (and an upload failure shown properly) |
+| `day36-profile`, `day36-cover`, `day36-pinned` | Day 36: profile links and joined date; cover photo; pinned post |
+| `day37-friends` | Day 37: friends (mutual follows) and the connections lists |
+| `day39-pymk` | Day 39: hiding a "People you may know" suggestion |
+| `day40-hashtag-top` | Day 40: a hashtag page's Top / Recent tabs |
+| `day42-search` | Day 42: ranked search: people, hashtags, posts |
+| `day43-zawgyi` | Day 43: Burmese typed in Zawgyi is stored and shown as Unicode |
+| `day44-polls` | Day 44: poll posts: building, voting, results |
+| `day45-drafts` | Day 45: drafts and scheduled posts |
+| `day46-collections` | Day 46: saved collections |
+| `day47-privacy` | Day 47: mute, restrict (comments wait for approval), close friends, who may message / comment |
+| `day48-activity` | Day 48: your activity log |
+| `day49-hidden-words` | Day 49: Hidden words: warn and hide |
+| `day49-spam` | Day 49 (spam checks on): the same post again, posting too fast |
+| `day50-group-bans` | Day 50: group moderation: remove and ban |
+| `day53-page-admins` | Day 53: page admins |
+| `day55-events` | Day 55: events: create, Discover, Going / Interested, cancel |
+| `day57-storage` | Day 57: photos are shrunk in the browser before upload; the daily upload budget |
+| `day58-open-states` | Day 58: axe and keyboard checks on open dialogs, menus, sheets and pickers |
+| `day60-settings` | Day 60: Settings has no dead rows (only the paused features say so) |
+| `day61-overview` | Day 61: Admin > Overview: totals, shortcuts, daily charts |
+| `day63-log` | Day 63: Admin > Log: moderation decisions as sentences |
+| `journey-kit`, `cloudinary-stub` | Helpers for the journeys: shared steps, and a local stand-in for Cloudinary (`E2E_MEDIA=1`) |
+| `link-stub`, `push-stub`, `turnstile-stub`, `serve-dist`, `pg`, `legal-dates`, `golive-smoke` | Helpers: a stub website, push service and Turnstile verifier; the production build with Vercel's headers; where psql lives; the legal pages' dates; the GO LIVE API smoke |
 | `golive-rehearsal.sh` | `bash golive-rehearsal.sh [--old]`: GO LIVE rehearsal. It runs every migration from 015 on a local copy of the live (014) schema, compares the result with the dev schema, smoke-tests the new backend (and with `--old`, the live `master` backend) on it, and checks that the `.down.sql` files restore the live schema (see `../GO_LIVE_CHECKLIST.md`) |
 | `pixel-compare` | `node pixel-compare.cjs <baselineDir> <currentDir>`: pixel diff of two sets of A3 screenshots |
 

@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 69–71 — Code health: duplicated logic, large files, consistent errors, README + CLAUDE.md.
-**Step:** 8 — root README.md + CLAUDE.md: PLAN.
+**Step:** Day close — full browser run in batches.
 
 Plan (survey: biggest file 735 lines; the real debt is duplication):
 1. utils/httpError.js: HttpError(status, message) + sendError(res, err,
@@ -63,7 +63,13 @@ Plan (survey: biggest file 735 lines; the real debt is duplication):
   shared upload routine and one retry, instead of two copies). Same API.
   New tests: chatMessages (3), useMediaMessages (2). Vitest 291, lint,
   bundle 222.6; a2, b9, b10, day31, day32 green.
-- Next: step 8 README + CLAUDE.md, then the Day close.
+- Step 8 DONE: root README.md (run, env names, API, tests, languages);
+  frontend/README.md (was the Vite template); e2e/README.md lists every
+  suite + helper (ciWorkflow test keeps it so); CLAUDE.md Completed
+  Features + Next Steps current (owner sections untouched); VAPID vars in
+  .env.example; two A3 outputs committed by mistake (Day 47) removed and
+  ignored. Backend 950/950.
+- Day close: full browser run in batches, Progress Log, tick Day 69-71.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -214,5 +220,3 @@ Plan (survey: biggest file 735 lines; the real debt is duplication):
   always --runInBand. Code-health items from documenting: unpaginated
   followers/following, comments, conversations; ids echoed as strings in
   follow-counts and post likes.
-- e2e/README.md suite table stops at Day 5 (+ the journeys row): finish
-  it in Day 69–71 (code health: update README).
