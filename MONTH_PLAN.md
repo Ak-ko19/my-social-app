@@ -259,7 +259,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 72–73 — Offline + PWA polish
 - [x] Offline feed cache, offline message queue, install prompt, app icons. *(Offline banner + saved Home, a message queue, "Install the app", an opaque maskable icon, a tidy service worker — see Progress Log.)*
 ### Day 74 — Performance round 2
-- [ ] Slow-query review, caching headers, image sizes, bundle splitting.
+- [x] Slow-query review, caching headers, image sizes, bundle splitting. *(Motion after first paint, Home by cursor, no-store API, 2048 px stored photos, a 1-minute perf suite — see Progress Log.)*
 ### Day 75–76 — Security round 2
 - [ ] Re-check every route, file upload, socket event; dependency updates; CSP headers.
 ### Day 77 — Account safety
@@ -2350,3 +2350,56 @@ lists that grow without limit.
     day72-offline 18, day72-install 6), the 7 special-stack suites (new:
     day72-pwa 6), journeys-social, perf 41/41, a11y 125 (3 parts) and A3
     EN/AR (288 each, 4 parts).
+
+### 2026-10-20 — Day 74: Performance round 2
+- **Lint first (`2a9710b`):** two lint errors from Day 73 had gone out
+  unseen, because the check read the last line of output instead of the
+  exit code. Fixed, and the rule is in WIP's notes.
+- **Bundle (`2806cac`):** the animation library was 40 kB of the first
+  download. It now loads its engine after the first paint (LazyMotion,
+  strict). First download 223.9 -> 200.7 kB of the 225 kB budget.
+- **Slow queries: Home by cursor (`27d8730`, `97a4e14`):**
+  - Home paged by OFFSET, so page N read past every earlier post (page 20
+    of 50 per page: 198 ms). GET /feed now returns nextCursor and takes
+    ?cursor= (page= still works), and Home uses it: 14 ms for that page.
+  - The first draft wrapped the cursor in a CASE (to handle a deleted
+    cursor post). EXPLAIN showed Postgres then used it only as a filter,
+    no faster than OFFSET. It is now a plain row comparison, which starts
+    the index scan at the cursor. If the cursor's post was deleted, the
+    next post by id marks the place.
+  - New browser suite day74-feed-paging: 45 posts, two written in the
+    same millisecond across a page break, EN/light and AR/dark.
+  - Decision: Explore, hashtag, profile tabs and saved posts keep page=
+    for now; they are lighter and fine in the perf suite.
+- **Caching headers (`d8fef9a`):** API answers had no Cache-Control, so a
+  browser could keep feeds, messages and notifications in its disk cache,
+  where logout can't reach them. Every answer is now no-store unless its
+  route allows caching (/config, the push key, share cards, docs, link
+  previews), and those keep ETags and answer 304. The spec documents it.
+  The Privacy Policy (section 6, EN/AR) says so.
+- **Image sizes (`a5913a2`):**
+  - Audit: every displayed image already asks Cloudinary for its size,
+    except a draft's photos in the composer, which loaded full size into
+    ~90 px tiles; they are now 300 px.
+  - The browser shrinks photos before upload, but the server stored
+    whatever arrived (up to 5 MB). A photo over 1 MB is now stored scaled
+    to fit 2048 px. Smaller ones are left alone, because they are already
+    shrunk and each Cloudinary transformation costs plan credits.
+- **Perf suite: 8.5 min -> 1 min (`d9ec056`), instead of the planned
+  split:**
+  - Most of the time was an 11 s sleep per endpoint, waiting for Postgres
+    to publish the server's scan counters. The suite now ends the app's
+    idle connections, which publishes them at once (the pool reconnects).
+  - This exposed a hidden dependency: right after seeding, the counts
+    depended on whether autovacuum had run. The old suite passed only
+    because it was slow. The seed now ends with VACUUM ANALYZE.
+  - Mutation checks: a dropped index and the CASE cursor both fail it.
+- **Slip:** step 2's commit left ciWorkflow.test red for one commit (a new
+  e2e suite needs a README row; the backend run came before it). Fixed in
+  the next commit, and the rule is in WIP's notes.
+- **Tests at close:**
+  - Vitest 313/313; backend 961/961; lint (exit 0); check:i18n 1415 keys;
+    check:headers; bundle 200.8 kB.
+  - Full browser run in small batches: all 64 regular suites (new:
+    day74-feed-paging 18; day27-perf 43/43 in ~1 min), the 8 special-stack
+    suites, a11y 125 (3 parts) and A3 EN/AR (288 each, 4 parts).
