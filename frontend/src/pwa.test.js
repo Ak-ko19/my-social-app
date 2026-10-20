@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
+import { Buffer } from 'node:buffer';
+import { fileURLToPath } from 'node:url';
 
 // Day 72: the installable app's files -- manifest, icons, service worker.
-const ROOT = path.resolve(__dirname, '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pub = (file) => path.join(ROOT, 'public', file.replace(/^\//, ''));
 const manifest = JSON.parse(fs.readFileSync(pub('manifest.webmanifest'), 'utf8'));
 

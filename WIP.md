@@ -151,6 +151,9 @@
   section 6 must say so. Browser suites that go offline: ignore console
   errors only while offline (the first request after "online" can fail).
   The service worker only runs on the production build (DIST_SUITES).
+- Check lint by its EXIT CODE (npx eslint . ; echo $?), never with | tail:
+  on failure its last line is blank, like a clean run (Day 74: two lint
+  errors from Day 73 went out unseen).
 - Bundle 223.9/225 kB after Day 72 -- Day 74 must make room.
 - EmailVerificationBanner amber text ~2.9:1 (below AA), no dark tokens.
 - day27-perf takes ~8.5 min now (Day 66): split it like a3/a11y in Day 74.
