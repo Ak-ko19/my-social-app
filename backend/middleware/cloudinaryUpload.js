@@ -18,16 +18,46 @@ function deleteIfRefused(res, urls) {
 const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const ALLOWED_AUDIO_MIME_TYPES = ['audio/webm', 'audio/mp4', 'audio/ogg', 'audio/mpeg'];
 
+const ONLY_IMAGES = 'Only JPEG, PNG, GIF, and WEBP images are allowed';
+const ONLY_AUDIO = 'Only WEBM, MP4, OGG, and MPEG audio files are allowed';
+
+// Day 75: the file filters below go by the Content-Type the client claims;
+// this looks at the file itself -- its first bytes, which every one of these
+// formats begins with. A text file sent as "image/jpeg" used to reach
+// Cloudinary, cost an upload call, fail there and be logged as a server
+// error (502). Now it's a 400 before anything is sent or counted.
+const startsWith = (buffer, bytes, at = 0) => buffer.length >= at + bytes.length
+  && bytes.every((byte, i) => buffer[at + i] === byte);
+const ascii = (text) => [...text].map((c) => c.charCodeAt(0));
+
+function isImageFile(buffer) {
+  return startsWith(buffer, [0xff, 0xd8, 0xff]) // JPEG
+    || startsWith(buffer, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]) // PNG
+    || startsWith(buffer, ascii('GIF87a')) || startsWith(buffer, ascii('GIF89a'))
+    || (startsWith(buffer, ascii('RIFF')) && startsWith(buffer, ascii('WEBP'), 8));
+}
+
+function isAudioFile(buffer) {
+  return startsWith(buffer, [0x1a, 0x45, 0xdf, 0xa3]) // WebM (Matroska)
+    || startsWith(buffer, ascii('ftyp'), 4) // MP4 / M4A (Safari's recordings)
+    || startsWith(buffer, ascii('OggS'))
+    || startsWith(buffer, ascii('ID3')) // MP3 with a tag
+    || (buffer.length >= 2 && buffer[0] === 0xff && (buffer[1] & 0xe0) === 0xe0); // MP3 frame
+}
+
+const looksRight = (resourceType, buffer) => (resourceType === 'video' ? isAudioFile(buffer) : isImageFile(buffer));
+const wrongKind = (resourceType) => clientError(resourceType === 'video' ? ONLY_AUDIO : ONLY_IMAGES);
+
 function imageFileFilter(req, file, cb) {
   if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
-    return cb(clientError('Only JPEG, PNG, GIF, and WEBP images are allowed'));
+    return cb(clientError(ONLY_IMAGES));
   }
   cb(null, true);
 }
 
 function audioFileFilter(req, file, cb) {
   if (!ALLOWED_AUDIO_MIME_TYPES.includes(file.mimetype)) {
-    return cb(clientError('Only WEBM, MP4, OGG, and MPEG audio files are allowed'));
+    return cb(clientError(ONLY_AUDIO));
   }
   cb(null, true);
 }
@@ -99,6 +129,7 @@ const storedSize = (result, file) => ({ bytes: Number.isFinite(result?.bytes) ? 
 function uploadToCloudinary(folder = 'mysocialapp', resourceType = 'image', format) {
   return async (req, res, next) => {
     if (!req.file) return next();
+    if (!looksRight(resourceType, req.file.buffer)) return next(wrongKind(resourceType));
     try {
       await uploadQuota.checkQuota(req.userId, [req.file]);
     } catch (err) {
@@ -157,6 +188,7 @@ function uploadBufferToCloudinary(buffer, options) {
 function uploadManyToCloudinary(folder = 'mysocialapp') {
   return async (req, res, next) => {
     const files = req.postImageFiles || [];
+    if (!files.every((file) => isImageFile(file.buffer))) return next(wrongKind('image'));
     try {
       await uploadQuota.checkQuota(req.userId, files);
     } catch (err) {

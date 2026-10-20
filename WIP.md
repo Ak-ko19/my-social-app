@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 75–76 — Security round 2: re-check every route, file upload, socket event; dependency updates; CSP headers.
-**Step:** 3 — routes and inputs: DONE (saving). Next: 4 file uploads.
+**Step:** 4 — file uploads: DONE (saving). Next: 5 socket events.
 
 Plan: 1 dependencies (npm audit at every level in backend/frontend/e2e;
 sanitize-html moderate advisory GHSA-x3q4-9hxx-gx8m is open -- CI only
@@ -69,6 +69,15 @@ report violations to our own error log).
     __proto__ ignored). inputTypes.test sweeps every documented route.
   Backend 977; journeys-core/-safety, day5, day11-bots, day12-report,
   day42, day60, b7 green.
+- Step 4: uploads were judged by the client's Content-Type only; a text
+  file sent as image/jpeg reached Cloudinary, cost a call and was logged
+  as a 502. cloudinaryUpload now checks the first bytes (JPEG, PNG, GIF,
+  WebP; WebM, MP4/M4A ftyp, Ogg, MP3 ID3/frame) before the quota and the
+  upload: a 400 with the existing (translated) message; one bad photo
+  refuses the whole post. uploadSignature.test (every route, every
+  format, HTML/SVG/PDF/empty disguised: nothing uploaded or counted);
+  3 tests got real signatures. Backend 981; b2, day34, day36, day44,
+  day47, day57, b3, a2, journeys-social green.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

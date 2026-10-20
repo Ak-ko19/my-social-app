@@ -69,7 +69,7 @@ describe('API operations no other test reached', () => {
       const bob = await registerAndLogin(app);
       const outsider = await registerAndLogin(app);
       const conv = (await request(app).post('/conversations').set(auth(alice)).send({ userId: bob.id })).body;
-      const audio = Buffer.from('fake webm audio');
+      const audio = Buffer.concat([Buffer.from('1a45dfa3', 'hex'), Buffer.from('fake webm audio')]); // a WebM start
 
       const sent = await request(app).post(`/conversations/${conv.id}/messages/voice`).set(auth(alice))
         .attach('audio', audio, { filename: 'note.webm', contentType: 'audio/webm' })

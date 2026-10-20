@@ -9,8 +9,15 @@ describe('stored image size (middleware/cloudinaryUpload.js)', () => {
   beforeEach(reset);
   const cloudinary = require('../../config/cloudinary');
   const CAP = [{ width: 2048, height: 2048, crop: 'limit' }];
-  const big = Buffer.alloc(1024 * 1024 + 1, 1);
-  const small = Buffer.alloc(1024 * 1024, 1);
+  // Files that start like a JPEG (the server checks; Day 75) / a WebM.
+  const sized = (bytes, signature) => {
+    const buffer = Buffer.alloc(bytes, 1);
+    Buffer.from(signature, 'hex').copy(buffer);
+    return buffer;
+  };
+  const big = sized(1024 * 1024 + 1, 'ffd8ffe0');
+  const small = sized(1024 * 1024, 'ffd8ffe0');
+  const bigVoice = sized(1024 * 1024 + 1, '1a45dfa3');
   const jpeg = (name) => ({ filename: name, contentType: 'image/jpeg' });
   const auth = (u) => ({ Authorization: `Bearer ${u.token}` });
 
@@ -44,7 +51,7 @@ describe('stored image size (middleware/cloudinaryUpload.js)', () => {
     const bob = await registerAndLogin(app);
     const conv = (await request(app).post('/conversations').set(auth(alice)).send({ userId: bob.id })).body;
     const sent = await request(app).post(`/conversations/${conv.id}/messages/voice`).set(auth(alice))
-      .attach('audio', big, { filename: 'note.webm', contentType: 'audio/webm' });
+      .attach('audio', bigVoice, { filename: 'note.webm', contentType: 'audio/webm' });
     expect(sent.status).toBe(201);
     expect(sentOptions()).toEqual([{ folder: 'voice-messages', resource_type: 'video', format: 'mp3' }]);
   });

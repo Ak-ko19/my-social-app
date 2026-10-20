@@ -44,7 +44,7 @@ describe('message text is kept as typed', () => {
 
   it("as a photo's caption", async () => {
     const res = await request(app).post(`/conversations/${conv.id}/messages/image`).set(auth(a))
-      .attach('image', Buffer.from('fake image'), { filename: 'p.jpg', contentType: 'image/jpeg' })
+      .attach('image', Buffer.from('ffd8ffe0', 'hex'), { filename: 'p.jpg', contentType: 'image/jpeg' })
       .field('caption', 'Before & after <3');
     expect(res.status).toBe(201);
     expect(res.body.content).toBe('Before & after <3');
