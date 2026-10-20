@@ -36,7 +36,7 @@ describe('group photo (Day 34)', () => {
     expect(res.status).toBe(200);
     expect(res.body.avatar_url).toMatch(/^https:\/\/res\.cloudinary\.com\/test\/image\/upload\/v\d+\/group-photos\//);
     expect((await request(app).get(`/conversations/${group.id}`).set(auth(member))).body.avatar_url).toBe(res.body.avatar_url);
-    const inbox = (await request(app).get('/conversations').set(auth(member))).body;
+    const inbox = (await request(app).get('/conversations').set(auth(member))).body.conversations;
     expect(inbox.find((c) => c.conversation_id === group.id).avatar_url).toBe(res.body.avatar_url);
   });
 

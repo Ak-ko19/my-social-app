@@ -129,6 +129,34 @@ const history = async () => (await (await fetch(`${API}/conversations/1/messages
   check('375px dark: no horizontal scroll', !(await small.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)));
   await small.screenshot({ path: path.join(SP, 'b9-thread-dark-375.png') });
 
+  // 9. Day 70: the inbox comes 20 chats at a time. alice opens 21 more chats
+  // (22 with bob's); the oldest is "inbox0".
+  const json = { 'Content-Type': 'application/json' };
+  for (let i = 0; i < 21; i += 1) {
+    const name = `inbox${i}`;
+    await fetch(`${API}/signup`, { method: 'POST', headers: json, body: JSON.stringify({ username: name, email: `${name}@example.com`, password: 'a-fine-password-123' }) });
+    const them = await (await fetch(`${API}/login`, { method: 'POST', headers: json, body: JSON.stringify({ email: `${name}@example.com`, password: 'a-fine-password-123' }) })).json();
+    const conv = await (await fetch(`${API}/conversations`, { method: 'POST', headers: { ...json, Authorization: `Bearer ${them.token}` }, body: JSON.stringify({ userId: 1 }) })).json();
+    await fetch(`${API}/conversations/${conv.id}/messages`, { method: 'POST', headers: { ...json, Authorization: `Bearer ${them.token}` }, body: JSON.stringify({ content: `hello from ${name}` }) });
+  }
+  const inboxPage = await newPage({ width: 375 });
+  await inboxPage.goto('http://localhost:5173/messages', { waitUntil: 'networkidle' });
+  // The list is virtualized (only rows near the screen exist): count by the
+  // last row's index once scrolled to the bottom.
+  const lastIndex = async () => {
+    await inboxPage.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await inboxPage.waitForTimeout(400);
+    return inboxPage.evaluate(() => Math.max(...[...document.querySelectorAll('.messages-list-item')].map((li) => Number(li.dataset.index))));
+  };
+  await inboxPage.getByText('hello from inbox20').waitFor();
+  const firstLast = await lastIndex();
+  const moreButtons = await inboxPage.getByRole('button', { name: 'Load more' }).count();
+  check('inbox: the 20 most recent chats, then "Load more"', firstLast === 19 && moreButtons === 1, `last=${firstLast} buttons=${moreButtons}`);
+  await inboxPage.getByRole('button', { name: 'Load more' }).click();
+  await inboxPage.getByText('hello from inbox0').waitFor();
+  const secondLast = await lastIndex();
+  check('inbox: ...the other 2, and the button goes', secondLast === 21 && (await inboxPage.getByRole('button', { name: 'Load more' }).count()) === 0, `last=${secondLast}`);
+
   await browser.close();
   console.log(results.join('\n'));
   console.log('\nconsole/page errors:', errors.length);

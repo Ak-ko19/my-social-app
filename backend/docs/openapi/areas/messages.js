@@ -23,8 +23,18 @@ const GROUP_REFUSED = (action) => ({
 module.exports = {
   'GET /conversations': op({
     tag: 'Messages', auth: 'user',
-    summary: 'Your chats (direct and group), most recent activity first',
-    responses: { 200: json(s.array(ref('ConversationSummary')), 'All of them') }
+    summary: 'Your chats (direct and group), most recent activity first, a page at a time',
+    description: 'A chat with no messages yet counts from when it was made. `id` answers just that one chat (same shape).',
+    query: {
+      ...cursorQuery({ defaultLimit: 20, maxLimit: 50 }),
+      q: q(s.str("Only chats whose name (a group's, or the other person's username) contains this")),
+      id: q(s.id('Just this chat'))
+    },
+    responses: {
+      200: json(s.object({ conversations: s.array(ref('ConversationSummary')), nextCursor: s.nullable(s.str('null: no more chats')) }), 'One page'),
+      400: text('Invalid cursor / Invalid conversation ID'),
+      404: text('Conversation not found (with id: not one of yours)')
+    }
   }),
   'POST /conversations': op({
     tag: 'Messages', auth: 'user',

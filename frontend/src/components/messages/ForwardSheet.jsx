@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Avatar, Modal } from '../ui';
 import { resolveImageUrl } from '../../api';
@@ -10,7 +10,10 @@ import { serverErrorText } from '../../utils/serverError';
 // all sent -> onDone(count) and close; some refused -> stay open, name
 // them, and untick the ones that went. The parent mounts it fresh for each
 // message (so no state carries over between forwards).
+// Day 70: it lists your most recent chats; typing searches all of them on
+// the server. Picks stay picked (and named) while a search hides them.
 export const MAX_FORWARD_TARGETS = 5;
+const SEARCH_DELAY_MS = 250;
 
 function ForwardSheet({ open, onClose, token, onSend, onDone }) {
   const { t } = useTranslation();
@@ -20,24 +23,34 @@ function ForwardSheet({ open, onClose, token, onSend, onDone }) {
   const [picked, setPicked] = useState([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  // Every chat shown so far, by id -> name (for the "couldn't send to ..." line).
+  const names = useRef(new Map());
 
   useEffect(() => {
     if (!open) return undefined;
     let cancelled = false;
-    fetchConversations(token)
-      .then((list) => { if (!cancelled) setChats(list); })
-      .catch((err) => {
-        console.error(err);
-        if (!cancelled) setLoadError(t('messages.forwardLoadFailed'));
-      });
-    return () => { cancelled = true; };
-  }, [open, token, t]);
+    const q = query.trim();
+    const timer = setTimeout(() => {
+      fetchConversations(token, { q })
+        .then(({ conversations }) => {
+          if (cancelled) return;
+          conversations.forEach((c) => names.current.set(c.conversation_id, c.username));
+          setChats(conversations);
+          setLoadError('');
+        })
+        .catch((err) => {
+          console.error(err);
+          if (!cancelled) setLoadError(t('messages.forwardLoadFailed'));
+        });
+    }, q ? SEARCH_DELAY_MS : 0);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [open, token, query, t]);
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase();
-    return (chats || []).filter((c) => !q || (c.username || '').toLocaleLowerCase().includes(q));
-  }, [chats, query]);
-  const nameOf = (id) => chats?.find((c) => c.conversation_id === id)?.username || '';
+  const visible = chats || [];
+  const nameOf = (id) => names.current.get(id) || '';
   const full = picked.length >= MAX_FORWARD_TARGETS;
 
   const toggle = (id) => setPicked((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]));

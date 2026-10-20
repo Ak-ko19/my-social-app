@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 69–71 — Code health: duplicated logic, large files, consistent errors, README + CLAUDE.md.
-**Step:** 6 — page the inbox (GET /conversations): PLAN.
+**Step:** 7 — split useConversationMessages.js (735 lines): PLAN.
 
 Plan (survey: biggest file 735 lines; the real debt is duplication):
 1. utils/httpError.js: HttpError(status, message) + sendError(res, err,
@@ -50,8 +50,15 @@ Plan (survey: biggest file 735 lines; the real debt is duplication):
   Old cursors still work; another chat's cursor finds nothing.
   messageCursor.test (3). Backend 946/946; a2, b9, day32, journeys-core,
   perf green.
-- Next: step 6 inbox paging, step 7 split useConversationMessages, step 8
-  README + CLAUDE.md.
+- Step 6 DONE: GET /conversations -> { conversations, nextCursor } (20/50),
+  page picked first (activity keyset by id in SQL), details only for the
+  page; ?q= (group name / other username), ?id= (one chat; the chat header
+  uses it instead of fetching the whole inbox). Inbox Load more; forward
+  sheet searches on the server (picks keep their names). inboxPaging.test
+  (3), hook + ForwardSheet tests, b9 checks 22 chats (list is virtualized:
+  counted by index). Backend 949, Vitest 286, bundle 222.6; a2, b9, b10,
+  day23, day32, journeys-core/social, perf green.
+- Next: step 7 split useConversationMessages, step 8 README + CLAUDE.md.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

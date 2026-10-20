@@ -14,9 +14,12 @@ export function fetchMessages(conversationId, token, { cursor, limit = 20 } = {}
 }
 
 // One row per conversation: other participant's info, last message preview,
-// and unread count -- already sorted most-recent-first by the backend.
-export function fetchConversations(token) {
-  return api.get('/conversations', authHeaders(token)).then((res) => res.data);
+// and unread count -- most recent first. Day 70: a page at a time ->
+// { conversations, nextCursor }; q: by name; id: just that chat.
+export function fetchConversations(token, { cursor, q, id } = {}) {
+  return api
+    .get('/conversations', { ...authHeaders(token), params: { cursor, q: q || undefined, id } })
+    .then((res) => res.data);
 }
 
 // Finds or creates the direct conversation with `userId` -- the backend is

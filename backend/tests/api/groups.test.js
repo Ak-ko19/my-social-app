@@ -99,8 +99,8 @@ describe('group chat (B10)', () => {
       const history = await request(app).get(`/conversations/${g.id}/messages`).set(auth(owner));
       expect(history.body.messages.every((m) => m.status === 'sent')).toBe(true);
 
-      const inboxM1 = (await request(app).get('/conversations').set(auth(m1))).body.find((c) => c.conversation_id === g.id);
-      const inboxM2 = (await request(app).get('/conversations').set(auth(m2))).body.find((c) => c.conversation_id === g.id);
+      const inboxM1 = (await request(app).get('/conversations').set(auth(m1))).body.conversations.find((c) => c.conversation_id === g.id);
+      const inboxM2 = (await request(app).get('/conversations').set(auth(m2))).body.conversations.find((c) => c.conversation_id === g.id);
       expect(inboxM1.unread_count).toBe(0);
       expect(inboxM2.unread_count).toBe(2);
     });
@@ -108,9 +108,9 @@ describe('group chat (B10)', () => {
     it('inbox lists groups with name, member count and a sender-prefixed preview', async () => {
       const g = (await createGroup(owner, 'Crew', [m1.id, m2.id])).body;
       await say(m1, g.id, 'lunch?');
-      const row = (await request(app).get('/conversations').set(auth(m2))).body.find((c) => c.conversation_id === g.id);
+      const row = (await request(app).get('/conversations').set(auth(m2))).body.conversations.find((c) => c.conversation_id === g.id);
       expect(row).toMatchObject({ type: 'group', name: 'Crew', username: 'Crew', member_count: 3, last_message: `${m1.username}: lunch?` });
-      const own = (await request(app).get('/conversations').set(auth(m1))).body.find((c) => c.conversation_id === g.id);
+      const own = (await request(app).get('/conversations').set(auth(m1))).body.conversations.find((c) => c.conversation_id === g.id);
       expect(own.last_message).toBe('You: lunch?');
     });
   });

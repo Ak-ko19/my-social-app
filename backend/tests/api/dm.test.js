@@ -181,7 +181,7 @@ describe('DM (conversations + messages)', () => {
     await request(app).put(`/conversations/${conv.body.id}/read`).set('Authorization', `Bearer ${b.token}`);
 
     const list = await request(app).get('/conversations').set('Authorization', `Bearer ${b.token}`);
-    const entry = list.body.find((c) => c.conversation_id === conv.body.id);
+    const entry = list.body.conversations.find((c) => c.conversation_id === conv.body.id);
     expect(entry.unread_count).toBe(0);
   });
 });

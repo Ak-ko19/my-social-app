@@ -2,17 +2,64 @@ const db = require('../db');
 const interactionService = require('../services/interactionService');
 const { sendError } = require('../utils/httpError');
 const logger = require('../utils/logger');
+const { escapeLike } = require('../utils/escapeLike');
 const { encodeCursor, decodeCursor, getLimit } = require('../utils/cursorPagination');
 const messageService = require('../services/messageService');
 const blockService = require('../services/blockService');
 const { getIO, syncRooms } = require('../sockets');
 const presence = require('../sockets/presence');
 
+// Day 70: GET /conversations?cursor=&limit=&q= -- your chats, most recent
+// activity first, a page at a time ({ conversations, nextCursor }); q keeps
+// only chats whose name (a group's, or the other person's username)
+// contains it. ?id= answers just that one chat, in the same shape (a chat's
+// header uses it). The page is picked first -- each chat's last activity,
+// keyset by conversation id, compared in SQL so no timestamp goes through a
+// JS Date -- and the details below are read for those chats only.
+const INBOX_PAGE_SQL = `
+  WITH mine AS (
+    SELECT c.id, COALESCE(lm.created_at, c.created_at) AS activity_at,
+      CASE WHEN c.type = 'group' THEN c.name ELSE (
+        SELECT u.username FROM conversation_participants o JOIN users u ON u.id = o.user_id
+        WHERE o.conversation_id = c.id AND o.user_id <> $1 LIMIT 1
+      ) END AS name
+    FROM conversation_participants cp
+    JOIN conversations c ON c.id = cp.conversation_id
+    LEFT JOIN LATERAL (
+      SELECT m.created_at FROM messages m WHERE m.conversation_id = c.id
+      ORDER BY m.created_at DESC, m.id DESC LIMIT 1
+    ) lm ON true
+    WHERE cp.user_id = $1
+  )
+  SELECT id FROM mine
+  WHERE ($2::int IS NULL OR (activity_at, id) < (SELECT activity_at, id FROM mine WHERE id = $2))
+    AND ($3 = '' OR name ILIKE '%' || $3 || '%')
+  ORDER BY activity_at DESC, id DESC
+  LIMIT $4`;
+
 async function getConversations(req, res) {
   try {
-    // Assumes exactly 2 participants per conversation (type = 'direct' --
-    // the only kind this app creates today). Listing group conversations
-    // will need a different shape once groups are actually built.
+    let ids;
+    let nextCursor = null;
+    if (req.query.id !== undefined) {
+      const one = Number(req.query.id);
+      if (!Number.isInteger(one) || one < 1) return res.status(400).send('Invalid conversation ID');
+      ids = [one];
+    } else {
+      const limit = getLimit(req, { defaultLimit: 20, maxLimit: 50 });
+      let cursor;
+      try {
+        cursor = decodeCursor(req.query.cursor);
+      } catch (err) {
+        return res.status(400).send('Invalid cursor');
+      }
+      const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
+      const page = await db.query(INBOX_PAGE_SQL, [req.userId, cursor?.id ?? null, escapeLike(q), limit + 1]);
+      ids = page.rows.slice(0, limit).map((r) => r.id);
+      if (page.rows.length > limit) nextCursor = encodeCursor({ id: ids[ids.length - 1] });
+    }
+
+    // Direct chats: exactly 2 participants (type = 'direct').
     const result = await db.query(`
       SELECT
         c.id AS conversation_id,
@@ -61,9 +108,8 @@ async function getConversations(req, res) {
           -- idx_messages_conversation_id instead of the whole conversation.
           AND m.id > COALESCE(cp.last_read_message_id, 0)
       ) unread ON true
-      WHERE cp.user_id = $1
-      ORDER BY COALESCE(lm.created_at, c.created_at) DESC
-    `, [req.userId]);
+      WHERE cp.user_id = $1 AND c.id = ANY($2::int[])
+    `, [req.userId, ids]);
 
     // Presence is in-memory/per-process (see sockets/presence.js), not a
     // DB column, so it's annotated onto each row here rather than joined
@@ -118,14 +164,15 @@ async function getConversations(req, res) {
           -- idx_messages_conversation_id instead of the whole conversation.
           AND m.id > COALESCE(cp.last_read_message_id, 0)
       ) unread ON true
-      WHERE cp.user_id = $1
-    `, [req.userId]);
+      WHERE cp.user_id = $1 AND c.id = ANY($2::int[])
+    `, [req.userId, ids]);
 
-    const all = [...rows, ...groups.rows.map((g) => ({ ...g, is_online: false }))];
-    // Most recent activity first (a conversation with no messages yet sorts
-    // by when it was created), same order the direct-only query used.
-    all.sort((x, y) => new Date(y.activity_at) - new Date(x.activity_at));
-    res.json(all);
+    // In the page's order (most recent activity first; a chat with no
+    // messages yet by when it was created).
+    const byId = new Map([...rows, ...groups.rows.map((g) => ({ ...g, is_online: false }))].map((c) => [c.conversation_id, c]));
+    const conversations = ids.map((id) => byId.get(id)).filter(Boolean);
+    if (req.query.id !== undefined && conversations.length === 0) return res.status(404).send('Conversation not found');
+    res.json({ conversations, nextCursor });
   } catch (err) {
     sendError(res, err, 'Fetch conversations failed. Please try again later.');
   }

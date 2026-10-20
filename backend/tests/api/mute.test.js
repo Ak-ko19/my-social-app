@@ -93,11 +93,10 @@ describe('message notification settings and muting (Day 23)', () => {
 
   it('the inbox and the chat details say whether it is muted (for you)', async () => {
     await mute(alice, 'always');
-    const aliceInbox = (await request(app).get('/conversations').set(auth(alice))).body;
-    const bobInbox = (await request(app).get('/conversations').set(auth(bob))).body;
-    const list = (b) => (Array.isArray(b) ? b : b.conversations);
-    expect(list(aliceInbox).find((c) => c.conversation_id === conv.id).muted).toBe(true);
-    expect(list(bobInbox).find((c) => c.conversation_id === conv.id).muted).toBe(false);
+    const aliceInbox = (await request(app).get('/conversations').set(auth(alice))).body.conversations;
+    const bobInbox = (await request(app).get('/conversations').set(auth(bob))).body.conversations;
+    expect(aliceInbox.find((c) => c.conversation_id === conv.id).muted).toBe(true);
+    expect(bobInbox.find((c) => c.conversation_id === conv.id).muted).toBe(false);
     expect((await request(app).get(`/conversations/${conv.id}`).set(auth(alice))).body).toMatchObject({ muted: true, muted_until: null });
   });
 
@@ -107,9 +106,8 @@ describe('message notification settings and muting (Day 23)', () => {
     await request(app).post(`/conversations/${group.id}/messages`).set(auth(bob)).send({ content: 'plan' });
     await push().whenIdle();
     expect(sent).toHaveLength(0);
-    const inbox = (await request(app).get('/conversations').set(auth(alice))).body;
-    const list = Array.isArray(inbox) ? inbox : inbox.conversations;
-    expect(list.find((c) => c.conversation_id === group.id).muted).toBe(true);
+    const inbox = (await request(app).get('/conversations').set(auth(alice))).body.conversations;
+    expect(inbox.find((c) => c.conversation_id === group.id).muted).toBe(true);
   });
 
   it('only people in the chat; only the known durations', async () => {

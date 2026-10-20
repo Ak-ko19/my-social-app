@@ -60,6 +60,9 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await sheet.getByRole('checkbox', { name: 'carol' }).waitFor({ timeout: 8000 });
   check('the sheet lists your chats (DM and group)', (await sheet.getByRole('checkbox', { name: 'carol' }).count()) === 1 && (await sheet.getByRole('checkbox', { name: 'Hikers' }).count()) === 1);
   await sheet.getByRole('searchbox', { name: 'Search chats' }).fill('hik');
+  // Day 70: the search runs on the server (all your chats, not just the
+  // first page), so wait for its answer.
+  await sheet.getByRole('checkbox', { name: 'carol' }).waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
   check('search narrows the list', (await sheet.getByRole('checkbox').count()) === 1);
   await sheet.getByRole('checkbox', { name: 'Hikers' }).check();
   await sheet.getByRole('searchbox', { name: 'Search chats' }).fill('');

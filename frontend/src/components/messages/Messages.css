@@ -1263,3 +1263,10 @@
   opacity: 0.7;
   cursor: progress;
 }
+
+/* Day 70: the inbox comes a page at a time. */
+.messages-load-more {
+  display: flex;
+  justify-content: center;
+  padding: 12px 16px 20px;
+}

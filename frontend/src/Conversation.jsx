@@ -176,10 +176,9 @@ function Conversation() {
   // sitting in state during the render right after conversationId changes.
   useEffect(() => {
     if (headerInfo?.conversation_id === Number(conversationId) || !token) return;
-    fetchConversations(token)
-      .then((rows) => {
-        const match = rows.find((c) => c.conversation_id === Number(conversationId));
-        if (match) setHeaderInfo(match);
+    fetchConversations(token, { id: Number(conversationId) })
+      .then(({ conversations }) => {
+        if (conversations[0]) setHeaderInfo(conversations[0]);
       })
       .catch((err) => console.error(err));
   }, [headerInfo, token, conversationId]);

@@ -8,8 +8,13 @@ vi.mock('../../services/messageService', () => ({ fetchConversations: vi.fn() })
 
 const CHATS = [1, 2, 3, 4, 5, 6].map((n) => ({ conversation_id: n, username: n === 6 ? 'Tea club' : `friend${n}`, avatar_url: null, type: n === 6 ? 'group' : 'direct' }));
 
+// The server filters by name (Day 70); this stands in for it.
 beforeEach(() => {
-  fetchConversations.mockResolvedValue(CHATS);
+  fetchConversations.mockReset();
+  fetchConversations.mockImplementation(async (token, { q } = {}) => ({
+    conversations: CHATS.filter((c) => !q || c.username.toLowerCase().includes(q.toLowerCase())),
+    nextCursor: null
+  }));
 });
 
 function renderSheet(onSend = vi.fn()) {
@@ -20,13 +25,25 @@ function renderSheet(onSend = vi.fn()) {
 }
 
 describe('ForwardSheet', () => {
-  it('lists your chats and filters them by name', async () => {
+  it('lists your chats and searches them by name on the server', async () => {
     renderSheet();
     await screen.findByRole('checkbox', { name: 'friend1' });
     expect(screen.getAllByRole('checkbox')).toHaveLength(6);
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search chats' }), { target: { value: 'TEA' } });
-    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+    await waitFor(() => expect(screen.getAllByRole('checkbox')).toHaveLength(1));
     expect(screen.getByRole('checkbox', { name: 'Tea club' })).toBeInTheDocument();
+    expect(fetchConversations).toHaveBeenLastCalledWith('tok', { q: 'TEA' });
+  });
+
+  it('a pick stays picked (and named) while a search hides it', async () => {
+    const onSend = vi.fn().mockResolvedValue({ forwarded: [], failed: [{ conversationId: 1, status: 403, error: 'no' }] });
+    renderSheet(onSend);
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'friend1' }));
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search chats' }), { target: { value: 'tea' } });
+    await waitFor(() => expect(screen.queryByRole('checkbox', { name: 'friend1' })).toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('friend1');
+    expect(onSend).toHaveBeenCalledWith([1]);
   });
 
   it('Send is off until a chat is picked, and at 5 the rest are disabled', async () => {

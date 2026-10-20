@@ -19,7 +19,7 @@ function Messages() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { token, userId } = useAuth();
-  const { conversations, loading, error, reload } = useConversations(token, userId);
+  const { conversations, loading, error, reload, nextCursor, loadMore, loadingMore } = useConversations(token, userId);
   const { isOnline } = usePresenceEvents();
   const reduceMotion = useReducedMotion();
 
@@ -78,11 +78,20 @@ function Messages() {
           {inboxState === 'error' && <ConversationListErrorState message={error} onRetry={reload} />}
           {inboxState === 'empty' && <ConversationListEmptyState />}
           {inboxState === 'list' && (
-            <ConversationList
-              conversations={conversations}
-              onlineUserIds={onlineUserIds}
-              onOpenConversation={openConversation}
-            />
+            <>
+              <ConversationList
+                conversations={conversations}
+                onlineUserIds={onlineUserIds}
+                onOpenConversation={openConversation}
+              />
+              {nextCursor && (
+                <div className="messages-load-more">
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={loadMore} disabled={loadingMore}>
+                    {loadingMore ? t('common.loading') : t('common.loadMore')}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </motion.div>
       </AnimatePresence>

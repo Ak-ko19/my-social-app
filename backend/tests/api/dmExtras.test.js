@@ -107,7 +107,7 @@ describe('DM extras (B9)', () => {
 
       const row = (await history(b)).find((m) => m.id === res.body.id);
       expect(row.type).toBe('image');
-      const inbox = (await request(app).get('/conversations').set(auth(b))).body;
+      const inbox = (await request(app).get('/conversations').set(auth(b))).body.conversations;
       expect(inbox.find((c) => c.conversation_id === conv.id).last_message).toBe('Photo: look');
     });
 
@@ -127,7 +127,7 @@ describe('DM extras (B9)', () => {
         "INSERT INTO messages (conversation_id, sender_id, type, media_url, duration_seconds) VALUES ($1, $2, 'voice', 'https://res.cloudinary.com/test/v.mp3', 7) RETURNING id",
         [conv.id, a.id]
       )).rows[0];
-      const inboxBefore = (await request(app).get('/conversations').set(auth(b))).body;
+      const inboxBefore = (await request(app).get('/conversations').set(auth(b))).body.conversations;
       expect(inboxBefore.find((c) => c.conversation_id === conv.id).last_message).toBe('Voice message');
 
       const del = await request(app).delete(`/conversations/${conv.id}/messages/${voice.id}`).set(auth(a));

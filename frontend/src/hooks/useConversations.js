@@ -21,6 +21,9 @@ export function useConversations(token, currentUserId) {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Day 70: chats come a page at a time; nextCursor is null at the end.
+  const [nextCursor, setNextCursor] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const requestIdRef = useRef(0);
   const hasConnectedOnceRef = useRef(false);
@@ -32,7 +35,8 @@ export function useConversations(token, currentUserId) {
     fetchConversations(token)
       .then((data) => {
         if (requestId !== requestIdRef.current) return;
-        setConversations(data);
+        setConversations(data.conversations);
+        setNextCursor(data.nextCursor);
         setError(null);
       })
       .catch((err) => {
@@ -119,5 +123,27 @@ export function useConversations(token, currentUserId) {
     return () => socket.off('message_deleted', handleMessageDeleted);
   }, [socket]);
 
-  return { conversations, loading, error, reload: load };
+  // The next page, after the chats on screen (a chat that moved up since is
+  // not listed twice). A reload starts over from the first page.
+  const loadMore = useCallback(() => {
+    if (!nextCursor || loadingMore) return;
+    const requestId = requestIdRef.current;
+    setLoadingMore(true);
+    fetchConversations(token, { cursor: nextCursor })
+      .then((data) => {
+        if (requestId !== requestIdRef.current) return;
+        setConversations((current) => {
+          const have = new Set(current.map((c) => c.conversation_id));
+          return [...current, ...data.conversations.filter((c) => !have.has(c.conversation_id))];
+        });
+        setNextCursor(data.nextCursor);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError(i18n.t('errors.loadConversations'));
+      })
+      .finally(() => setLoadingMore(false));
+  }, [token, nextCursor, loadingMore]);
+
+  return { conversations, loading, error, reload: load, nextCursor, loadMore, loadingMore };
 }
