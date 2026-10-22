@@ -99,6 +99,13 @@ describe('Two-factor authentication screen', () => {
     expect(screen.getByText('Off')).toBeInTheDocument();
   });
 
+  it('after a login with a recovery code, says what to do if the phone is lost', async () => {
+    api.get.mockResolvedValue({ data: { ...ON, recoveryCodesLeft: 4 } });
+    render(<MemoryRouter initialEntries={[{ pathname: '/settings/two-factor', state: { recoveryCodeLogin: 4 } }]}><TwoFactorScreen /></MemoryRouter>);
+    expect(await screen.findByRole('status')).toHaveTextContent('You logged in with a recovery code. If you lost your phone');
+    expect(screen.getByText('4 unused recovery codes left.')).toBeInTheDocument();
+  });
+
   it('a failed load can be retried', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     api.get.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ data: OFF });

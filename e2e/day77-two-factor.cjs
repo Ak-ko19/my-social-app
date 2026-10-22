@@ -1,8 +1,10 @@
 // Day 77: two-factor authentication. A new account turns it on in Settings
 // the way a person would -- password, the QR code and its key, a code
 // worked out from that key (as the phone's app does), the recovery codes
-// -- and turns it off again: with a code from the app in EN/light, with a
-// recovery code in AR/dark (RTL). Throwaway stack from e2e-up.sh.
+// -- logs in on another browser through the real form (password, then
+// the code), and turns it off again. EN/light: logs in with an app code,
+// turns off with a recovery code; AR/dark (RTL): the other way round.
+// Throwaway stack from e2e-up.sh.
 const path = require('path');
 const { chromium } = require('./node_modules/playwright-core');
 const totp = require('../backend/utils/totp');
@@ -31,7 +33,7 @@ async function signup(name) {
   const dana = await signup('dana2fa');
   const browser = await chromium.launch({ channel: 'msedge', headless: true });
 
-  for (const c of [{ lang: 'en', theme: 'light', width: 390, L: EN, off: 'app' }, { lang: 'ar', theme: 'dark', width: 375, L: AR, off: 'recovery' }]) {
+  for (const c of [{ lang: 'en', theme: 'light', width: 390, L: EN, login: 'app', off: 'recovery' }, { lang: 'ar', theme: 'dark', width: 375, L: AR, login: 'recovery', off: 'app' }]) {
     const tag = `${c.lang}/${c.theme}/${c.width}px`;
     const T = c.L.twoFactor;
     const ctx = await browser.newContext({ viewport: { width: c.width, height: 844 } });
@@ -92,6 +94,35 @@ async function signup(name) {
     await page.getByRole('button', { name: T.savedThem, exact: true }).click();
     check(`${tag}: then the screen says On`, await shows(page.getByText(T.on, { exact: true })));
 
+    // Log in on another browser through the real form: password, then the code.
+    const other = await browser.newContext({ viewport: { width: c.width, height: 844 } });
+    await other.addInitScript(([lang, theme]) => { localStorage.setItem('lang', lang); localStorage.setItem('theme', theme); }, [c.lang, c.theme]);
+    const lp = await other.newPage();
+    lp.on('console', (m) => { if (m.type() === 'error') errors.push(`${tag} login: ${m.text()}`); });
+    lp.on('pageerror', (e) => errors.push(`${tag} login: ${e.message}`));
+    await lp.goto(`${WEB}/login`, { waitUntil: 'networkidle' });
+    await lp.getByLabel(c.L.auth.email, { exact: true }).fill('dana2fa@example.com');
+    await lp.getByLabel(c.L.auth.password, { exact: true }).fill(PASSWORD);
+    await lp.getByRole('button', { name: c.L.auth.logIn, exact: true }).click();
+    check(`${tag}: the password leads to the code step`, await shows(lp.getByRole('heading', { name: c.L.auth.twoFactorTitle })));
+    check(`${tag}: ...with no session yet`, !(await lp.evaluate(() => localStorage.getItem('token'))));
+    check(`${tag}: no horizontal scroll (code step)`, await lp.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1));
+    await lp.screenshot({ path: path.join(SP, `day77-two-factor-login-${c.lang}-${c.theme}-${c.width}.png`) });
+    if (c.login === 'recovery') {
+      await lp.getByRole('button', { name: c.L.auth.useRecoveryCode, exact: true }).click();
+      await lp.getByLabel(c.L.auth.recoveryCodeLabel, { exact: true }).fill(codes[1]);
+    } else {
+      // The step after the one that turned it on (a code works once).
+      await lp.getByLabel(c.L.auth.codeLabel, { exact: true }).fill(totp.codeAt(key, Date.now() + 30000));
+    }
+    await lp.getByRole('button', { name: c.L.auth.verify, exact: true }).click();
+    await lp.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 15000 }).catch(() => {});
+    check(`${tag}: logged in with ${c.login === 'app' ? 'a code from the app' : 'a recovery code'}`, !!(await lp.evaluate(() => localStorage.getItem('token'))), lp.url());
+    if (c.login === 'recovery') {
+      check(`${tag}: ...and sent to Two-factor with a notice`, lp.url().endsWith('/settings/two-factor') && await shows(lp.getByText(T.recoveryLogin)), lp.url());
+    }
+    await other.close();
+
     // Turn it off again.
     await page.getByRole('button', { name: T.turnOff, exact: true }).click();
     await page.getByLabel(T.password, { exact: true }).fill(PASSWORD);
@@ -99,7 +130,7 @@ async function signup(name) {
       await page.getByRole('button', { name: T.useRecovery, exact: true }).click();
       await page.getByLabel(T.recoveryLabel, { exact: true }).fill(codes[0]);
     } else {
-      // The step after the one that turned it on (a code works once).
+      // The step after the one that turned it on (the login used a recovery code).
       await page.getByLabel(T.codeLabel, { exact: true }).fill(totp.codeAt(key, Date.now() + 30000));
     }
     await page.locator('form').getByRole('button', { name: T.turnOff, exact: true }).click();

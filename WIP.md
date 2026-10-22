@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 77 — Account safety: login alerts (new device), suspicious login slowdown, 2FA with an authenticator app (TOTP).
-**Step:** 5 — Settings > Two-factor screen: DONE (committed). Next: 6 the login code step (UI).
+**Step:** 6 — login code step (UI): DONE (committed). Next: Day close (full browser run in batches, Progress Log).
 
 2FA plan (FB/IG: authenticator app, QR + key, recovery codes, a second
 login step): steps 3 backend TOTP (utils/totp.js: RFC 6238, HMAC-SHA1,
@@ -19,6 +19,17 @@ wrong codes slowed like passwords (botProtection per account) + limiter;
 5 Settings > Two-factor screen (set up with QR, codes, turn off); 6 the
 login code step (and "use a recovery code"). Secret stored as is (no new
 key allowed); LATER: encrypt with a key the owner sets.
+
+Step 6 (DONE: Vitest 330, lint, build, bundle 212.5, headers, i18n; e2e day77-two-factor 37, journeys-core, day77-login-alert, day8, day16, day11-bots green). Plan was: Login.jsx -- twoFactorRequired ->
+the same card turns into "Enter your code" (6-digit input, numeric,
+one-time-code autofill, ltr, autofocus), "Use a recovery code instead"
+switch, Verify, "Back to log in". POST /login/2fa via api; success runs
+the same finish as a password login (shared function). Expired challenge
+-> back to the password step with the message. A recovery-code login
+goes to Settings > Two-factor with a notice: "You logged in with a
+recovery code; N left" + what to do if the phone is lost. EN/AR. Tests:
+Login.test (+code step, recovery, expired), e2e day77-two-factor gets a
+real login through the form (EN + AR).
 
 Step 5 (DONE: Vitest 325, lint 0, build, headers, bundle 212.3, i18n; e2e day77-two-factor 28, a11y x3, day30-guard, c2-legal, b11, day60 green; ciWorkflow 30). Plan was:
 - Row "Two-factor authentication" (KeyRound) under Account, after

@@ -249,6 +249,27 @@ textarea.form-input {
   font-size: 13px;
 }
 
+/* Day 77: links that act on the page (the login's code step). */
+.auth-link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.auth-inline-link.auth-link-btn {
+  font-size: 13px;
+}
+
+/* The login code: digits spaced out, left to right in Arabic too. */
+.auth-code-input {
+  font-size: 18px;
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
 /* ---------- Cards / list rows (Notifications, Search results) ---------- */
 .card-list {
   list-style: none;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ShieldCheck, ShieldOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { IconButton } from '../components/ui';
@@ -32,6 +32,8 @@ function TwoFactorScreen() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { token, username } = useAuth();
+  // Day 77: arrived from a login with a recovery code (Login.jsx).
+  const recoveryCodeLogin = useLocation().state?.recoveryCodeLogin !== undefined;
   const [status, setStatus] = useState(null); // null while loading
   const [loadError, setLoadError] = useState('');
   // 'idle' | 'password' (before setup) | 'scan' | 'codes' | 'turnOff' | 'newCodes'
@@ -210,6 +212,9 @@ function TwoFactorScreen() {
             </span>
           </div>
           <p className="two-factor-text">{t('twoFactor.intro')}</p>
+          {recoveryCodeLogin && status.enabled && stage === 'idle' && (
+            <p className="two-factor-warning" role="status">{t('twoFactor.recoveryLogin')}</p>
+          )}
           {notice && <p className="two-factor-success" role="status">{notice}</p>}
         </section>
       )}
