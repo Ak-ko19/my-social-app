@@ -34,6 +34,18 @@ export async function setCoverPhoto(file, token) {
   return api.put('/profile/cover', form, authHeaders(token)).then((res) => res.data);
 }
 
+// Day 78: the profile photo alone (the first-run steps) -> { avatar_url }.
+export async function setProfilePhoto(file, token) {
+  const form = new FormData();
+  form.append('avatar', await compressImage(file));
+  return api.put('/profile/avatar', form, authHeaders(token)).then((res) => res.data);
+}
+
+// Day 78: the first-run steps are finished or skipped -> { onboarded_at }.
+export function finishOnboarding(token) {
+  return api.post('/profile/onboarding/done', {}, authHeaders(token)).then((res) => res.data);
+}
+
 export function removeCoverPhoto(token) {
   return api.delete('/profile/cover', authHeaders(token)).then((res) => res.data);
 }

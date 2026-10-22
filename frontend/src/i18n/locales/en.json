@@ -1427,6 +1427,22 @@
     "previewMsgIn": "Hiking this weekend? 🥾",
     "previewMsgOut": "I’m in!"
   },
+  "onboarding": {
+    "progress": "Step {{step}} of {{total}}",
+    "skipAll": "Skip",
+    "next": "Next",
+    "finish": "Get started",
+    "welcome": "Welcome, {{username}}!",
+    "languageText": "Let's set up a few things. First, which language do you want to use the app in? You can change it any time in Settings.",
+    "photoTitle": "Add a profile photo",
+    "photoText": "A photo helps your friends recognise you. You can change it later on your profile.",
+    "photoAlt": "Your profile photo",
+    "choosePhoto": "Choose a photo",
+    "changePhoto": "Choose another photo",
+    "uploading": "Uploading…",
+    "photoSaved": "Photo saved.",
+    "photoFailed": "Couldn't save the photo. Please try again."
+  },
   "twoFactor": {
     "title": "Two-factor authentication",
     "on": "On",

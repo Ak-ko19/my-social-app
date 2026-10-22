@@ -108,6 +108,14 @@ describe('Login with two-factor authentication', () => {
     expect(localStorage.getItem('token')).toBe('tok');
   });
 
+  it("a new account's first login opens the first-run steps (Day 78)", async () => {
+    await toCodeStep();
+    api.post.mockResolvedValueOnce({ data: { ...SESSION, needsOnboarding: true } });
+    await userEvent.type(screen.getByLabelText('6-digit code'), '123456');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    expect(await screen.findByTestId('where')).toHaveTextContent('/get-started');
+  });
+
   it('a recovery code instead, then Settings > Two-factor with a notice', async () => {
     await toCodeStep();
     await userEvent.click(screen.getByRole('button', { name: 'Use a recovery code instead' }));

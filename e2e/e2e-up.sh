@@ -70,6 +70,11 @@ for u in alice bob; do curl -s -X POST localhost:3000/signup -H 'Content-Type: a
 tok() { curl -s -X POST localhost:3000/login -H 'Content-Type: application/json' -d "{\"email\":\"$1@example.com\",\"password\":\"a-fine-password-123\"}" | node -pe "JSON.parse(require('fs').readFileSync(0)).token"; }
 tok alice > "$SP/alice.token"; tok bob > "$SP/bob.token"
 BT=$(cat "$SP/bob.token")
+# Day 78: the seed accounts are past the first-run steps (day78-onboarding
+# signs up its own new account to see them).
+for f in alice.token bob.token; do
+  curl -s -X POST localhost:3000/profile/onboarding/done -H "Authorization: Bearer $(cat "$SP/$f")" >/dev/null
+done
 curl -s -X POST localhost:3000/conversations -H "Authorization: Bearer $BT" -H 'Content-Type: application/json' -d '{"userId":1}' >/dev/null
 curl -s -X POST localhost:3000/posts -H "Authorization: Bearer $BT" -F 'content=Hello from bob #welcome' >/dev/null
 curl -s -X POST localhost:3000/users/2/follow -H "Authorization: Bearer $(cat "$SP/alice.token")" >/dev/null || true

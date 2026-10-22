@@ -1,8 +1,8 @@
 // Day 64: the core user journeys, only through the UI (headless Edge,
 // throwaway stack; nora, omar and pia sign up here with the real forms,
 // each in their own browser).
-//  J1 New here: the landing page -> sign up -> log in -> a first post, on
-//     Home and on their profile.
+//  J1 New here: the landing page -> sign up -> log in -> the first-run
+//     steps (skipped) -> a first post, on Home and on their profile.
 //  J2 Log out and back in; a reload keeps you in (and out).
 //  J3 Find someone and follow them: search -> profile -> Follow; their
 //     post is on your Home; like and comment; they're notified.
@@ -30,7 +30,11 @@ const { check } = run;
   await signUp(nora);
   check('J1 signing up sends you to log in', /\/login/.test(nora.url()));
   await logIn(nora);
-  check('J1 logging in opens Home', nora.url() === `${WEB}/`);
+  // Day 78: a new account's first login opens the first-run steps.
+  check('J1 the first login opens Get started', nora.url() === `${WEB}/get-started`, nora.url());
+  await nora.getByRole('button', { name: 'Skip', exact: true }).click();
+  await nora.waitForURL(`${WEB}/`, { timeout: 15000 }).catch(() => {});
+  check('J1 ...and Skip opens Home', nora.url() === `${WEB}/`, nora.url());
   await post(nora, 'Hello, I am new here #firstpost');
   const onHome = await until(async () => (await nora.getByText('Hello, I am new here').count()) > 0);
   check('J1 the first post is on Home', onHome);

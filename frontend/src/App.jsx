@@ -29,6 +29,7 @@ const HiddenWordsScreen = lazy(() => import('./screens/HiddenWordsScreen'));
 const ActivityScreen = lazy(() => import('./screens/ActivityScreen'));
 const SessionsScreen = lazy(() => import('./screens/SessionsScreen'));
 const TwoFactorScreen = lazy(() => import('./screens/TwoFactorScreen'));
+const OnboardingScreen = lazy(() => import('./screens/OnboardingScreen'));
 const SavedPostsScreen = lazy(() => import('./screens/SavedPostsScreen'));
 const DraftsScreen = lazy(() => import('./screens/DraftsScreen'));
 const CollectionScreen = lazy(() => import('./screens/CollectionScreen'));
@@ -188,6 +189,7 @@ function App() {
         <Route path="/settings/interactions" element={authOnly(<PhoneShell><InteractionsScreen /></PhoneShell>)} />
         <Route path="/settings/hidden-words" element={authOnly(<PhoneShell><HiddenWordsScreen /></PhoneShell>)} />
         <Route path="/settings/two-factor" element={authOnly(<PhoneShell><TwoFactorScreen /></PhoneShell>)} />
+        <Route path="/get-started" element={authOnly(<PhoneShell hideTabBar><OnboardingScreen /></PhoneShell>)} />
         {/* Day 48: your activity log. */}
         <Route path="/activity" element={authOnly(<PhoneShell><ActivityScreen /></PhoneShell>)} />
         {/* Day 46: one saved collection. */}

@@ -70,6 +70,8 @@ function Login() {
     // Day 77: a recovery code was used -- the phone may be lost, so show
     // what's left and how to set the app up again.
     else if (data.recoveryCodesLeft !== undefined) navigate('/settings/two-factor', { state: { recoveryCodeLogin: data.recoveryCodesLeft } });
+    // Day 78: a new account's first login opens the first-run steps.
+    else if (data.needsOnboarding) navigate('/get-started', { replace: true });
     else navigate(returnTo, { replace: true });
   };
 

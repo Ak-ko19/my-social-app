@@ -13,7 +13,7 @@ table below has checks in the suite it names.
 
 | # | Journey | Suite | What it proves |
 | --- | --- | --- | --- |
-| J1 | New here | `journeys-core` | Landing page → sign up → log in → a first post, on Home and on the profile |
+| J1 | New here | `journeys-core` | Landing page → sign up → log in → the first-run steps (skipped) → a first post, on Home and on the profile |
 | J2 | Log out and back in | `journeys-core` | Logged out, an account page sends you to log in and back afterwards; a reload keeps you in |
 | J3 | Follow someone | `journeys-core` | Search → profile → Follow; their post is on your Home; like and comment; they are notified of all three |
 | J4 | A private account | `journeys-core` | Follow becomes a request; posts stay hidden until it is approved in Settings |

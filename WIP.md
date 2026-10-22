@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 78–79 — Onboarding: first-run steps (profile photo, follow suggestions, language choice, tour).
-**Step:** 1 — onboarding backend: DONE (committed; backend 1019, rehearsal --old with the 074 check, counts 30/31/16). Next: 2 UI part 1 (seed users must be marked done in e2e-up.sh).
+**Step:** 2 — UI part 1: DONE (committed; Vitest 336, gates green, every regular + special browser suite green incl. day78-onboarding 19, a11y 61/61/7). Next: 3 people to follow + tour.
 
 Plan (FB/IG first run: photo, people to follow, then the app; ours adds
 language and a 4-card tour). Shown once, after the FIRST login of a new

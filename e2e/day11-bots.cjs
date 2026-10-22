@@ -77,8 +77,9 @@ const RELOAD_T = { en: RELOAD, ar: 'يرجى إعادة تحميل الصفحة 
     await page.locator('input[type=email]').fill(`${name}@example.com`);
     await page.locator('input[type=password]').fill('a-fine-password-123');
     await page.locator('form button[type=submit]').click();
-    await page.waitForURL(`${WEB}/`, { timeout: 8000 }).catch(() => {});
-    check(`${label}: and then logs in`, page.url() === `${WEB}/`,
+    // Day 78: a new account's first login opens the first-run steps.
+    await page.waitForURL(`${WEB}/get-started`, { timeout: 8000 }).catch(() => {});
+    check(`${label}: and then logs in`, page.url() === `${WEB}/get-started`,
       `${page.url()} ${await page.locator('.form-error').innerText().catch(() => '')}`);
     await page.context().close();
   }
