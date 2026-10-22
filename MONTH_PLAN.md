@@ -263,7 +263,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 75–76 — Security round 2
 - [x] Re-check every route, file upload, socket event; dependency updates; CSP headers. *(Advisories patched, messages kept as typed, sweeps over every route, uploads checked by their bytes, socket limits, CSP reports — see Progress Log.)*
 ### Day 77 — Account safety
-- [ ] Login alerts in notifications (new device), suspicious login slowdown, 2FA with authenticator app (TOTP — no outside account needed).
+- [x] Login alerts in notifications (new device), suspicious login slowdown, 2FA with authenticator app (TOTP — no outside account needed). *(New-device alerts, the Day 11 slowdown verified, 2FA with QR setup, recovery codes and a login code step — see Progress Log.)*
 ### Day 78–79 — Onboarding
 - [ ] First-run steps: profile photo, follow suggestions, language choice, tour.
 ### Day 80 — Empty/error states
@@ -2466,3 +2466,52 @@ lists that grow without limit.
   - Full browser run in small batches: all 64 regular suites, the 8
     special-stack suites, a11y 125 (3 parts) and A3 EN/AR (288 each, 4
     parts).
+
+### 2026-10-21/22 — Day 77: Account safety
+- **Login alerts (`044ebfc`):** a login from a kind of device the account
+  hasn't used in 180 days (browser + system + phone/desktop, as the
+  Sessions screen shows it -- no IP addresses are kept) tells the owner:
+  a notification naming the device with "Check your devices", a push, and
+  an email (EN/AR) when email is set up. An account's first device is
+  just remembered. Migration 072 (known_devices, pruned by the cleanup
+  job, in the data export; notifications.device). Privacy Policy s8.
+- **Suspicious login slowdown:** already built on Day 11 (per-account
+  1-8 s waits, a cap on parallel attempts, the per-IP limiter) and tested
+  (botProtection.test, e2e day11-bots). Verified, no code.
+- **Two-factor authentication with an authenticator app** (TOTP, RFC
+  6238 on node's crypto, checked against the RFC test vectors; no
+  outside service):
+  - API (`e9297da`): set up with a QR code (an SVG built on the server,
+    so the web app needs no QR library; npm qrcode 1.5.4) or the key typed
+    in, confirm with a first code, 10 one-time recovery codes (only their
+    sha256 is kept). Turning off needs the password and a code or a
+    recovery code; new codes need the password. Emails (EN/AR) when it is
+    turned on or off. Migration 073.
+  - Guessing: each code works once (a used 30-second step is refused, even
+    by two racing requests), and more than 10 wrong codes in 15 minutes
+    lock codes out until the window ends. Better than the plan's
+    in-memory throttle: the count is kept in the users row, so every
+    server instance shares it and a restart doesn't reset it.
+  - Login (`7b1c0fe`): a right password on an account with 2FA answers
+    with a 5-minute challenge, not a session; POST /login/2fa finishes it.
+    The challenge is signed with a key derived for that purpose only (a
+    session token can't be used as one, nor the other way round) and ends
+    if the password changes or 2FA is turned off. Bans are checked at
+    both steps; reactivation and the new-login alert wait for the code.
+  - Settings > Two-factor authentication (`0bcc641`) and the login's
+    "Enter your code" step (`5d24b2a`), EN/AR with RTL (keys and codes
+    stay left to right), light/dark. A recovery-code login opens the
+    Two-factor screen with what to do if the phone is lost.
+  - Not done: the key is stored as it is. Encrypting it needs a key the
+    owner sets and keeps (rotating JWT_SECRET must not lock people out),
+    so it waits for the scaling work after funding.
+- **Tests at close:**
+  - Backend 1013/1013 (new: loginAlerts 6, twoFactor 11, twoFactorLogin
+    7); Vitest 330/330; lint (exit 0); check:i18n; check:headers; bundle
+    212.5 / 225 kB; GO LIVE rehearsal (--old) passed with 072 and 073;
+    the checklist's counts (30/30/16) checked on a fixture DB.
+  - Full browser run in small batches: all 65 regular suites (new:
+    day77-login-alert 13, day77-two-factor 37 -- it works out real codes
+    from the key the screen shows and logs in through the form), the 8
+    special-stack suites, day27-perf, a11y (3 parts, 0 serious/critical)
+    and A3 EN/AR (147 page checks in each of 4 parts, 0 failures).

@@ -30,13 +30,15 @@ No investor deadline pressure — building thoroughly, roughly a month timeline
 rather than rushing.
 
 ## Completed Features
-(Updated Day 71. Details: PROJECT_DETAILED_GUIDE.md and MONTH_PLAN.md's
+(Updated Day 77. Details: PROJECT_DETAILED_GUIDE.md and MONTH_PLAN.md's
 Progress Log; how to run and test everything: README.md.)
 
 - **Accounts:** signup / login (JWT sessions you can see and sign out),
   email verification and password reset (Brevo or SMTP; off without a
   provider), change password, deactivate, delete, download your data, bot
-  protection (honeypot, form timing, optional Turnstile), rate limits.
+  protection (honeypot, form timing, optional Turnstile), rate limits,
+  "new login" alerts for a new kind of device, two-factor authentication
+  with an authenticator app (QR setup, recovery codes, a login code step).
 - **Social:** posts with photos, polls, audiences (public / followers /
   close friends / only me), drafts and scheduled posts, hashtags and
   mentions, reactions, threaded comments (paged), saved collections,

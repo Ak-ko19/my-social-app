@@ -1,137 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 77 — Account safety: login alerts (new device), suspicious login slowdown, 2FA with an authenticator app (TOTP).
-**Step:** 6 — login code step (UI): DONE (committed). Next: Day close (full browser run in batches, Progress Log).
-
-2FA plan (FB/IG: authenticator app, QR + key, recovery codes, a second
-login step): steps 3 backend TOTP (utils/totp.js: RFC 6238, HMAC-SHA1,
-30 s, 6 digits, +-1 step, a used step never accepted twice) + migration
-073 (users.totp_secret / totp_pending_secret / totp_enabled_at /
-totp_last_step; recovery_codes(user_id, code_hash sha256, used_at)) +
-API: GET /2fa, POST /2fa/setup {password} -> {secret, otpauthUrl, qr
-(SVG data URL, built on the server: npm qrcode, no frontend bundle)},
-POST /2fa/enable {code} -> 10 recovery codes (shown once), POST
-/2fa/disable {password, code|recoveryCode}, POST /2fa/recovery-codes
-{password}; 4 login: right password + 2FA on -> {twoFactorRequired,
-challengeToken (JWT, 5 min, purpose totp, no session)}; POST
-/login/2fa {challengeToken, code|recoveryCode} -> session + login alert;
-wrong codes slowed like passwords (botProtection per account) + limiter;
-5 Settings > Two-factor screen (set up with QR, codes, turn off); 6 the
-login code step (and "use a recovery code"). Secret stored as is (no new
-key allowed); LATER: encrypt with a key the owner sets.
-
-Step 6 (DONE: Vitest 330, lint, build, bundle 212.5, headers, i18n; e2e day77-two-factor 37, journeys-core, day77-login-alert, day8, day16, day11-bots green). Plan was: Login.jsx -- twoFactorRequired ->
-the same card turns into "Enter your code" (6-digit input, numeric,
-one-time-code autofill, ltr, autofocus), "Use a recovery code instead"
-switch, Verify, "Back to log in". POST /login/2fa via api; success runs
-the same finish as a password login (shared function). Expired challenge
--> back to the password step with the message. A recovery-code login
-goes to Settings > Two-factor with a notice: "You logged in with a
-recovery code; N left" + what to do if the phone is lost. EN/AR. Tests:
-Login.test (+code step, recovery, expired), e2e day77-two-factor gets a
-real login through the form (EN + AR).
-
-Step 5 (DONE: Vitest 325, lint 0, build, headers, bundle 212.3, i18n; e2e day77-two-factor 28, a11y x3, day30-guard, c2-legal, b11, day60 green; ciWorkflow 30). Plan was:
-- Row "Two-factor authentication" (KeyRound) under Account, after
-  Password and security -> /settings/two-factor (authOnly + day30-guard
-  GUARDED). screens/TwoFactorScreen.jsx + .css, services/twoFactorService.js.
-- Off: what it is + "Set up" -> password -> QR (img alt) + "Can't scan?
-  Enter this key" (groups of 4, dir=ltr, Copy) -> 6-digit code input
-  (inputMode numeric, autocomplete one-time-code) -> Turn on -> recovery
-  codes shown once (ltr monospace list, Copy all, Download .txt, "I saved
-  them" -> Done). Cancel at any point (setup stays unfinished = off).
-- On: "On since <date>", N recovery codes left (warning when <= 3), "Get
-  new recovery codes" (password), "Turn off" (password + code, or "Use a
-  recovery code" switch) behind a danger button.
-- Loading skeleton, error + retry, pending/disabled buttons, server
-  messages via serverErrorText (AR exist). EN/AR keys, RTL logical CSS,
-  dark tokens. Privacy Policy s8: the key + hashed recovery codes are kept
-  while 2FA is on (EN/AR, date 2026-10-22).
-- Tests: Vitest for the screen (off -> setup -> codes; on -> turn off);
-  browser suite day77-two-factor (set up with a real TOTP from the key,
-  codes, turn off; AR + dark screenshot check, mobile width).
-
-Step 4 (DONE: backend 1013 incl. twoFactorLogin.test (7); e2e day8 x2, journeys-core, day77-login-alert, day11-bots green). Plan was:
-- POST /login: right password -> throttle cleared, ban/suspension
-  answered as now (the password is proven); then if 2FA is on: 200
-  { twoFactorRequired: true, challengeToken } -- no session, no alert, no
-  reactivation yet. Everything after (lift expired suspension, reactivate,
-  session, login alert, body) moves to finishLogin(), shared with:
-- POST /login/2fa { challengeToken, code | recoveryCode }: token = JWT
-  signed with a key DERIVED from JWT_SECRET (label "2fa challenge v1"),
-  purpose '2fa', 5 min, carries a fingerprint of the password hash (a
-  password change in between kills it). Can never pass as a session token
-  (different key: test it as a Bearer -> 401). Bad/expired token -> 400
-  "Your login has expired. Please log in again." Ban re-checked. 2FA off
-  meanwhile -> same expired message. Codes via checkSecondFactor (once
-  only, 10 wrong / 15 min per account in the DB). Recovery code used ->
-  body adds recoveryCodesLeft (UI warns when low). Limiter: its own,
-  per IP, 10 failures / 15 min.
-- Spec: POST /login 200 = oneOf LoginResult | TwoFactorChallenge; new
-  route documented. api.js already treats /login* 401s as non-logout.
-
-Step 3 refinements (PLAN, 2026-10-22):
-- Wrong codes: counted IN THE DB (users.totp_failures + totp_failures_since,
-  atomic UPDATE) so it holds across instances/restarts: 10 wrong codes in
-  15 min -> 429 until the window ends (6 digits x3 steps: ~0.3%/day at
-  most for someone who already has the password). Applies to enable,
-  disable and (step 4) the login step. Success resets it.
-- A used step is refused (UPDATE ... WHERE totp_last_step < step: two
-  parallel requests can't both use one code). Recovery codes: one atomic
-  UPDATE ... used_at IS NULL; 10 codes "xxxxx-xxxxx" (50 bits), sha256.
-- Setup again before enabling replaces the pending secret; setup when on
-  -> 409. Turning on/off emails the owner (security change, en/ar) when
-  email is set up. The secret never leaves the server after setup and is
-  never in the export (export: enabled_at + recovery codes left).
-- Routes /2fa, /2fa/setup, /2fa/enable, /2fa/disable, /2fa/recovery-codes
-  (auth + accountActionLimiter), new controllers/twoFactorController.js +
-  services/twoFactorService.js; spec in areas/auth.js; AR server messages.
-
-## Progress (Day 77)
-- Step 1: migration 072 (known_devices + notifications.device), services/
-  loginAlertService (after a successful login; never fails it; email not
-  awaited), notifySystem 'new_login' + push (opens /settings/sessions) +
-  email (en/ar), cleanup prunes 180-day-old devices, export includes them,
-  spec documents new_login/device. UI: "New login to your account from
-  Safari on iOS..." + "Check your devices". Privacy Policy section 8
-  (EN/AR, 2026-10-21). Checklist 015 -> 072 (counts 29/24/16 verified on
-  a fixture DB); rehearsal --old passed. loginAlerts.test (6), Vitest
-  +2, new browser suite day77-login-alert (13). Backend 995, Vitest 320;
-  journeys-core/-safety, day8 x2, c2-legal, day60, b11, a2, day5, day28
-  green.
-- Step 2: the slowdown exists and is tested (botProtection.test: 1-8 s
-  per-account waits, forgetting, parallel cap, HTTP; e2e day11-bots).
-  Ticked as verified, no code. (In-memory per instance: noted already
-  for the Redis-after-funding item.)
-- Step 3 (DONE; backend 1006, rehearsal --old passed, checklist counts 30/30/16 on a fixture DB): utils/totp.js (RFC 4226/6238 vectors pass),
-  migration 073 (+ fixture, testDb, checklist 30/30/16), services/
-  twoFactorService + controllers/twoFactorController + routes/
-  twoFactorRoutes (mounted after sessionRoutes), npm qrcode 1.5.4 (exact),
-  emails twoFactorOn/Off (en/ar), spec (tag Two-factor, 3 schemas), AR
-  server messages, export profile.two_factor_enabled_at,
-  tests/api/twoFactor.test.js (11 pass). For step 5: Privacy Policy
-  line (key + hashed recovery codes kept while 2FA is on); CSP img-src
-  must allow the data: SVG QR. For the Day's log: the key is stored
-  unencrypted (encrypting needs a key the owner sets -- note in log).
-
-Plan: 1 login alerts (new device); 2 suspicious login slowdown -- exists
-since Day 11 (per-account 1-8 s waits, parallel cap, per-IP limit):
-verify it's tested, extend only if a gap shows; 3 2FA with an
-authenticator app (TOTP, RFC 6238 on node crypto; enroll with QR +
-manual key, confirm code, recovery codes, login second step, disable).
-
-Step 1 plan: no IPs are stored (Privacy Policy), so a "device" = what the
-Sessions screen shows: browser + OS + phone/desktop (describeDevice).
-Sessions are deleted a day after logout, so migration 072 adds
-known_devices (user_id, device_key, last_seen_at; 180 days, pruned by
-the cleanup job) and notifications.device jsonb (the alert keeps its
-wording). After a successful login: if the account has known devices
-and not this one -> notifySystem 'new_login' (always on: security), a
-push, an email when a provider is set (emailText en/ar); then record the
-device. First device ever: no alert. UI: "New login on Chrome · Windows"
-+ "Check your devices" -> Settings > Sessions; EN/AR. Privacy Policy:
-the kept device kinds (180 days). Tests: first login none, same device
-none, new device one (+push, +email), after 180 days alerts again.
+**Day:** 78–79 — Onboarding: first-run steps (profile photo, follow suggestions, language choice, tour).
+**Step:** 0 — not started (Day 77 closed: see the Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -314,3 +184,16 @@ none, new device one (+push, +email), after 180 days alerts again.
   - Migration 071 must run once only (a re-run decodes typed "&lt;").
   - Jest mocks a library? Check the real one by hand (sanitize-html's
     mock hid that it ate text).
+
+- Day 77 lessons:
+  - setupTestApp() closes the DB pool after its describe: ONE per test
+    file (a second describe in the same file fails with "Cannot use a
+    pool after calling end").
+  - Browser checks right after a heading appears can race the data load:
+    wait for the element (locator.waitFor), never isVisible() at once.
+  - Letter-spacing on an input also spaces its placeholder: in Arabic it
+    breaks joined letters -- reset it on ::placeholder.
+  - A 2FA account in a test: a code works once and only +-30 s is
+    accepted, so alternate an app code and a recovery code between steps.
+  - Login answers can be { twoFactorRequired, challengeToken } now: any
+    new client of POST /login must handle it (Login.jsx finishLogin).
