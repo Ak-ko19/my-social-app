@@ -15,6 +15,7 @@
 // (LATER.md). It is only ever sent back during setup.
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const QRCode = require('qrcode');
 const db = require('../db');
 const logger = require('../utils/logger');
@@ -246,7 +247,51 @@ async function regenerateRecoveryCodes(userId) {
   }
 }
 
+// ---- The login's second step ----
+// A right password on an account with 2FA on gets a short-lived challenge
+// token instead of a session. It is signed with a key of its own, derived
+// from JWT_SECRET with a purpose label, so it can never pass for a session
+// token (or the other way round). It carries a fingerprint of the password
+// hash: a password change in the meantime ends it.
+const CHALLENGE_TTL_SECONDS = 5 * 60;
+const LOGIN_EXPIRED = 'Your login has expired. Please log in again.';
+
+function challengeKey() {
+  return crypto.createHmac('sha256', process.env.JWT_SECRET || '').update('mysocialapp 2fa challenge v1').digest();
+}
+const passwordFingerprint = (passwordHash) => crypto.createHash('sha256').update(passwordHash).digest('base64url').slice(0, 16);
+
+function issueChallenge(user) {
+  return jwt.sign({ uid: user.id, pf: passwordFingerprint(user.password), purpose: '2fa' }, challengeKey(), {
+    expiresIn: CHALLENGE_TTL_SECONDS
+  });
+}
+
+// The user row the challenge is for, if it is still good: signed, not
+// expired, same password, 2FA still on. Throws 400 otherwise.
+async function readChallenge(token) {
+  let claims;
+  try {
+    claims = jwt.verify(String(token || ''), challengeKey(), { algorithms: ['HS256'] });
+  } catch {
+    throw new TwoFactorError(400, LOGIN_EXPIRED);
+  }
+  if (claims.purpose !== '2fa' || !Number.isInteger(claims.uid)) throw new TwoFactorError(400, LOGIN_EXPIRED);
+  const user = (await db.query('SELECT * FROM users WHERE id = $1', [claims.uid])).rows[0];
+  if (!user || !user.totp_enabled_at || passwordFingerprint(user.password) !== claims.pf) {
+    throw new TwoFactorError(400, LOGIN_EXPIRED);
+  }
+  return user;
+}
+
+async function recoveryCodesLeft(userId) {
+  return (await db.query('SELECT count(*)::int AS n FROM recovery_codes WHERE user_id = $1 AND used_at IS NULL', [userId])).rows[0].n;
+}
+
 module.exports = {
+  issueChallenge,
+  readChallenge,
+  recoveryCodesLeft,
   checkPassword,
   status,
   startSetup,

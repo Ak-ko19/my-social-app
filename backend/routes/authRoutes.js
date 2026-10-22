@@ -4,6 +4,7 @@ const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 const {
   loginLimiter,
+  twoFactorLoginLimiter,
   signupLimiter,
   forgotPasswordLimiter,
   resetPasswordLimiter,
@@ -20,6 +21,7 @@ const { turnstileGuard } = require('../services/turnstile');
 router.get('/form-token', sendFormToken);
 router.post('/signup', signupLimiter, signupDailyLimiter, formGuard(SIGNUP_MIN_MS), turnstileGuard, authController.signup);
 router.post('/login', loginLimiter, formGuard(null), authController.login);
+router.post('/login/2fa', twoFactorLoginLimiter, authController.loginSecondStep);
 router.post(
   '/forgot-password',
   forgotPasswordLimiter,

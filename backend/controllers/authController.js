@@ -6,6 +6,7 @@ const { mediaOfUser, deleteMedia } = require('../services/mediaCleanupService');
 const { sendEmail, emailEnabled } = require('../utils/email');
 const { textOf } = require('../utils/bodyText');
 const loginAlerts = require('../services/loginAlertService');
+const twoFactor = require('../services/twoFactorService');
 const { createSession, revokeOtherSessions, disconnectOtherSockets } = require('../services/sessionService');
 const botProtection = require('../services/botProtection');
 const { banState, liftExpiredSuspension } = require('../services/moderationService');
@@ -166,45 +167,84 @@ async function login(req, res) {
     }
     botProtection.recordLoginSuccess(email);
 
-    // B12: checked BEFORE the auto-reactivation below -- a ban also sets
-    // is_deactivated, and logging in must not undo it.
-    // Day 12: a suspension says until when; one that has run out is lifted
-    // here (which also reactivates the account).
-    const ban = banState(user);
-    if (ban === 'banned') {
-      return res.status(403).send('This account has been banned');
+    if (refuseBanned(user, res)) return;
+    // Day 77: with two-factor authentication on, the password alone opens
+    // nothing: the app asks for a code and sends it to POST /login/2fa
+    // with this short-lived token.
+    if (user.totp_enabled_at) {
+      return res.status(200).json({ twoFactorRequired: true, challengeToken: twoFactor.issueChallenge(user) });
     }
-    if (ban === 'suspended') {
-      return res.status(403).json({ message: 'This account is suspended', until: user.banned_until });
-    }
-    if (user.banned_at && (await liftExpiredSuspension(user.id))) {
-      user.is_deactivated = false;
-    }
+    await finishLogin(user, req, res);
+  } catch (err) {
+    sendError(res, err, 'Login failed. Please try again later.');
+  }
+}
 
-    // A deactivated account reactivates the moment its owner successfully
-    // logs back in -- that's the entire "how do I undo a deactivation" flow
-    // (no separate reactivate endpoint), so this only runs after the
-    // password has already been verified above.
-    let reactivated = false;
-    if (user.is_deactivated) {
-      await db.query('UPDATE users SET is_deactivated = false, deactivated_at = NULL WHERE id = $1', [user.id]);
-      reactivated = true;
-    }
+// B12: checked BEFORE the auto-reactivation in finishLogin -- a ban also
+// sets is_deactivated, and logging in must not undo it.
+// Day 12: a suspension says until when. true = answered (refused).
+function refuseBanned(user, res) {
+  const ban = banState(user);
+  if (ban === 'banned') {
+    res.status(403).send('This account has been banned');
+    return true;
+  }
+  if (ban === 'suspended') {
+    res.status(403).json({ message: 'This account is suspended', until: user.banned_until });
+    return true;
+  }
+  return false;
+}
 
-    // Day 8: a session per login, so this device can later be signed out.
-    const { token } = await createSession(user.id, req);
-    // Day 77: tell the owner about a login on a new kind of device.
-    await loginAlerts.afterLogin(user.id, req.headers['user-agent']);
-    res.status(200).json({
-      token,
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      reactivated,
-      emailVerified: user.email_verified,
-      // Day 16: the account's app language (null = never chosen).
-      language: user.language
+// Everything after the account is proven (password, and the code when
+// 2FA is on): a new session and the login answer.
+async function finishLogin(user, req, res, extra = {}) {
+  // Day 12: a suspension that has run out is lifted here (which also
+  // reactivates the account).
+  if (user.banned_at && (await liftExpiredSuspension(user.id))) {
+    user.is_deactivated = false;
+  }
+
+  // A deactivated account reactivates the moment its owner successfully
+  // logs back in -- that's the entire "how do I undo a deactivation" flow
+  // (no separate reactivate endpoint), so this only runs once the login
+  // has been proven.
+  let reactivated = false;
+  if (user.is_deactivated) {
+    await db.query('UPDATE users SET is_deactivated = false, deactivated_at = NULL WHERE id = $1', [user.id]);
+    reactivated = true;
+  }
+
+  // Day 8: a session per login, so this device can later be signed out.
+  const { token } = await createSession(user.id, req);
+  // Day 77: tell the owner about a login on a new kind of device.
+  await loginAlerts.afterLogin(user.id, req.headers['user-agent']);
+  res.status(200).json({
+    token,
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    reactivated,
+    emailVerified: user.email_verified,
+    // Day 16: the account's app language (null = never chosen).
+    language: user.language,
+    ...extra
+  });
+}
+
+// Day 77: the login's second step -- a code from the authenticator app,
+// or a recovery code, for the challenge POST /login handed out.
+async function loginSecondStep(req, res) {
+  try {
+    const user = await twoFactor.readChallenge(textOf(req.body.challengeToken));
+    if (refuseBanned(user, res)) return;
+    const used = await twoFactor.checkSecondFactor(user.id, {
+      code: textOf(req.body.code).trim(),
+      recoveryCode: textOf(req.body.recoveryCode).trim()
     });
+    // A recovery code means the phone may be gone: say how many are left.
+    const extra = used === 'recovery' ? { recoveryCodesLeft: await twoFactor.recoveryCodesLeft(user.id) } : {};
+    await finishLogin(user, req, res, extra);
   } catch (err) {
     sendError(res, err, 'Login failed. Please try again later.');
   }
@@ -393,6 +433,7 @@ async function deleteAccount(req, res) {
 module.exports = {
   signup,
   login,
+  loginSecondStep,
   forgotPassword,
   resetPassword,
   changePassword,

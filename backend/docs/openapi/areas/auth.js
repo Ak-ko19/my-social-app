@@ -36,14 +36,15 @@ module.exports = {
     tag: 'Auth', auth: 'public', limited: true,
     summary: 'Log in: a token for a new session',
     description: 'Logging in to a deactivated account reactivates it. After several wrong passwords for one email, further attempts '
-      + 'are slowed and then refused for a while (429).',
+      + 'are slowed and then refused for a while (429). With two-factor authentication on, a right password answers with a '
+      + 'challenge instead of a session: send it with a code to POST /login/2fa.',
     requestBody: body({
       email: s.str(),
       password: s.str(),
       website: BOT_FIELDS.website
     }, { required: ['email', 'password'] }),
     responses: {
-      200: json(ref('LoginResult'), 'Logged in'),
+      200: json({ oneOf: [ref('LoginResult'), ref('TwoFactorChallenge')] }, 'Logged in, or (2FA on) a code is needed next'),
       400: text('Email and password are required (or the honeypot was filled)'),
       401: text('Invalid email or password'),
       403: {
@@ -53,6 +54,29 @@ module.exports = {
           'application/json': { schema: ref('Suspended') }
         }
       }
+    }
+  }),
+  'POST /login/2fa': op({
+    tag: 'Auth', auth: 'public', limited: true,
+    summary: "Log in, step two: the authenticator app's code (or a recovery code)",
+    description: 'Finishes a login that POST /login answered with twoFactorRequired. The challenge is good for 5 minutes and ends '
+      + `if the password changes or 2FA is turned off. Each code works once; ${TWO_FACTOR_ATTEMPTS}`,
+    requestBody: body({
+      challengeToken: s.str('From POST /login'),
+      code: TOTP_CODE,
+      recoveryCode: RECOVERY_CODE
+    }, { required: ['challengeToken'] }),
+    responses: {
+      200: json(ref('LoginResult'), 'Logged in (after a recovery code, with recoveryCodesLeft)'),
+      400: text('Your login has expired. Please log in again. / no code / a wrong or used code'),
+      403: {
+        description: 'Banned (text), or suspended (JSON with the end time)',
+        content: {
+          'text/plain': { schema: { type: 'string' } },
+          'application/json': { schema: ref('Suspended') }
+        }
+      },
+      429: text('Too many wrong codes, or too many attempts from this network')
     }
   }),
   'POST /forgot-password': op({

@@ -113,6 +113,18 @@ const loginLimiter = createLimiter({
   skipSuccessfulRequests: true
 });
 
+// Day 77: the login's second step (a code from the authenticator app).
+// Only someone who already has the password gets here; wrong codes are
+// also capped per account (services/twoFactorService.js). A little looser
+// than loginLimiter: mistyping a 6-digit code is easy.
+const twoFactorLoginLimiter = createLimiter({
+  keyBy: 'ip',
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many login attempts. Please try again in 15 minutes.',
+  skipSuccessfulRequests: true
+});
+
 // Mass-account-creation / abuse surface. Day 11: tightened from 10/hour to
 // 5/hour, plus a daily cap so a script can't just pace itself at 5 an hour
 // around the clock. Failed attempts count too (a bot probing names).
@@ -228,6 +240,7 @@ module.exports = {
   globalLimiter,
   linkPreviewLimiter,
   loginLimiter,
+  twoFactorLoginLimiter,
   signupLimiter,
   signupDailyLimiter,
   forgotPasswordLimiter,

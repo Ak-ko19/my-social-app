@@ -29,6 +29,7 @@ const AR = {
   'That code is not right. Check that the time on your phone is correct and try again.': 'هذا الرمز غير صحيح. تأكّد من صحة الوقت على هاتفك ثم حاول مرة أخرى.',
   'That code was already used. Wait for the next one in your app.': 'سبق استخدام هذا الرمز. انتظر الرمز التالي في تطبيقك.',
   'That recovery code is not right, or it was already used.': 'رمز الاسترداد هذا غير صحيح، أو سبق استخدامه.',
+  'Your login has expired. Please log in again.': 'انتهت صلاحية تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى.',
   'Too many wrong codes. Please wait 15 minutes and try again.': 'رموز خاطئة كثيرة جدًا. يرجى الانتظار 15 دقيقة ثم المحاولة مرة أخرى.',
   'Could not load two-factor authentication. Please try again later.': 'تعذّر تحميل إعدادات المصادقة الثنائية. يرجى المحاولة لاحقًا.',
   'Could not set up two-factor authentication. Please try again later.': 'تعذّر ضبط المصادقة الثنائية. يرجى المحاولة لاحقًا.',

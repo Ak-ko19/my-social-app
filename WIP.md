@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 77 — Account safety: login alerts (new device), suspicious login slowdown, 2FA with an authenticator app (TOTP).
-**Step:** 3 — 2FA backend: DONE (committed). Next: 4 the login code step (backend).
+**Step:** 4 — login code step (backend): DONE (committed). Next: 5 Settings > Two-factor screen.
 
 2FA plan (FB/IG: authenticator app, QR + key, recovery codes, a second
 login step): steps 3 backend TOTP (utils/totp.js: RFC 6238, HMAC-SHA1,
@@ -19,6 +19,25 @@ wrong codes slowed like passwords (botProtection per account) + limiter;
 5 Settings > Two-factor screen (set up with QR, codes, turn off); 6 the
 login code step (and "use a recovery code"). Secret stored as is (no new
 key allowed); LATER: encrypt with a key the owner sets.
+
+Step 4 (DONE: backend 1013 incl. twoFactorLogin.test (7); e2e day8 x2, journeys-core, day77-login-alert, day11-bots green). Plan was:
+- POST /login: right password -> throttle cleared, ban/suspension
+  answered as now (the password is proven); then if 2FA is on: 200
+  { twoFactorRequired: true, challengeToken } -- no session, no alert, no
+  reactivation yet. Everything after (lift expired suspension, reactivate,
+  session, login alert, body) moves to finishLogin(), shared with:
+- POST /login/2fa { challengeToken, code | recoveryCode }: token = JWT
+  signed with a key DERIVED from JWT_SECRET (label "2fa challenge v1"),
+  purpose '2fa', 5 min, carries a fingerprint of the password hash (a
+  password change in between kills it). Can never pass as a session token
+  (different key: test it as a Bearer -> 401). Bad/expired token -> 400
+  "Your login has expired. Please log in again." Ban re-checked. 2FA off
+  meanwhile -> same expired message. Codes via checkSecondFactor (once
+  only, 10 wrong / 15 min per account in the DB). Recovery code used ->
+  body adds recoveryCodesLeft (UI warns when low). Limiter: its own,
+  per IP, 10 failures / 15 min.
+- Spec: POST /login 200 = oneOf LoginResult | TwoFactorChallenge; new
+  route documented. api.js already treats /login* 401s as non-logout.
 
 Step 3 refinements (PLAN, 2026-10-22):
 - Wrong codes: counted IN THE DB (users.totp_failures + totp_failures_since,

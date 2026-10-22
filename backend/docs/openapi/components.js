@@ -62,7 +62,12 @@ const schemas = {
     email: s.str(),
     reactivated: s.bool('true: the account was deactivated and this login reactivated it'),
     emailVerified: s.bool(),
-    language: s.nullable(s.enum(['en', 'ar'], "The account's app language (null: never chosen)"))
+    language: s.nullable(s.enum(['en', 'ar'], "The account's app language (null: never chosen)")),
+    recoveryCodesLeft: s.int('Only after logging in with a recovery code: how many unused ones are left')
+  }, { optional: ['recoveryCodesLeft'] }),
+  TwoFactorChallenge: s.object({
+    twoFactorRequired: s.bool('Always true: send a code to POST /login/2fa'),
+    challengeToken: s.str('For POST /login/2fa; good for 5 minutes, and for nothing else')
   }),
   Suspended: s.object({ message: s.str(), until: s.time('When the suspension ends') }),
   TwoFactorStatus: s.object({
