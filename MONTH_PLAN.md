@@ -265,7 +265,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 77 — Account safety
 - [x] Login alerts in notifications (new device), suspicious login slowdown, 2FA with authenticator app (TOTP — no outside account needed). *(New-device alerts, the Day 11 slowdown verified, 2FA with QR setup, recovery codes and a login code step — see Progress Log.)*
 ### Day 78–79 — Onboarding
-- [ ] First-run steps: profile photo, follow suggestions, language choice, tour.
+- [x] First-run steps: profile photo, follow suggestions, language choice, tour. *("Get started" after a new account's first login: language, photo, people to follow, a tour; skippable, shown once — see Progress Log.)*
 ### Day 80 — Empty/error states
 - [ ] Friendly screens for every empty list, error, and offline case, in 3 languages.
 ### Day 81–82 — Notifications center upgrade
@@ -2515,3 +2515,45 @@ lists that grow without limit.
     from the key the screen shows and logs in through the form), the 8
     special-stack suites, day27-perf, a11y (3 parts, 0 serious/critical)
     and A3 EN/AR (147 page checks in each of 4 parts, 0 failures).
+
+### 2026-10-22 — Days 78–79: Onboarding
+- **What a new account sees (Facebook/Instagram-style first run):** after
+  its first login (after the code step when 2FA is on), "Get started"
+  opens: four quick cards with progress dots, no tab bar, Back, and
+  "Skip" from anywhere.
+  1. Welcome by name + the app language (switches at once, saved on the
+     account).
+  2. A profile photo, uploaded on its own and shown.
+  3. People to follow: friends of friends, or the most-followed accounts
+     for a brand-new one; Follow works in place; with nobody to suggest
+     it says where to find people later.
+  4. A short tour of where things are (Home and "What's on your mind?",
+     Search, Messages, the Menu), with the app's own icons.
+  "Get started" opens Home, already showing the posts of whoever was
+  followed. Finishing or skipping is saved, so the next login goes
+  straight Home; if saving fails the person still gets in.
+- **API (`8574ddf`):** migration 074 (users.onboarded_at; existing
+  accounts are marked done as of their creation, so only new sign-ups see
+  the steps -- the GO LIVE rehearsal checks it). needsOnboarding in the
+  login answer, onboarded_at in GET /profile/me and the export, POST
+  /profile/onboarding/done. Better than reusing PUT /profile for the
+  photo: that saves every field at once and would wipe the bio, so PUT
+  /profile/avatar sets the photo alone.
+- **UI:** `b9b2942` (language, photo, the Login redirect), `f068c77`
+  (people, tour).
+- **Found on the way:** suggestions said "Popular · 1 followers" (Explore
+  too); the reason now has plural forms, every Arabic form included.
+- **Tests changed on purpose:** J1 and day11-bots now expect a new
+  account's first login to open the steps; the browser seed accounts are
+  marked done. day53-page-admins counted the admin list before it loaded
+  (flaky once in the full run); it now waits for it.
+- **Tests at close:**
+  - Backend 1019/1019 (new: onboarding 6); Vitest 338/338; lint (exit 0);
+    check:i18n; check:headers; bundle 213.0 / 225 kB; GO LIVE rehearsal
+    (--old) passed with the 074 check; checklist counts (30/31/16) on a
+    fixture DB.
+  - Full browser run in small batches: all 65 regular suites, the 9
+    special-stack suites (new: day78-onboarding 30, on the media stack
+    with a real photo upload), day27-perf, a11y (3 parts, 0
+    serious/critical) and A3 EN/AR (150 page checks in each of 4 parts,
+    0 failures).

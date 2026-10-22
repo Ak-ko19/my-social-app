@@ -1,25 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 78–79 — Onboarding: first-run steps (profile photo, follow suggestions, language choice, tour).
-**Step:** 3 — people to follow + tour: DONE (committed; Vitest 338, gates, day78-onboarding 30, b8/day39-pymk, a11y green). Next: Day close (full browser run, Progress Log).
-
-Plan (FB/IG first run: photo, people to follow, then the app; ours adds
-language and a 4-card tour). Shown once, after the FIRST login of a new
-account; every step can be skipped; "Skip" anywhere ends it.
-1. Backend: migration 074 users.onboarded_at (existing accounts backfilled
-   = created_at, so nobody old sees it; NULL = new). Login result and GET
-   /profile/me say needsOnboarding. POST /profile/onboarding/done
-   (idempotent). PUT /profile/avatar: the photo only (PUT /profile replaces
-   every field -- leaving bio out would wipe it). Spec, AR messages,
-   export (onboarded_at), checklist + rehearsal, tests.
-2. UI part 1: /get-started (authOnly): progress dots, Skip; card 1
-   language (EN/AR, saves to the account), card 2 profile photo (picker,
-   shrink like EditProfile, preview, upload). Login -> /get-started when
-   needsOnboarding (after 2FA too; reactivation/recovery notices win).
-3. UI part 2: card 3 people to follow (suggestions, popular fallback,
-   follow/requested buttons), card 4 tour (Home, Create, Messages,
-   Explore/Notifications), Done -> POST done -> Home. e2e day78-onboarding
-   (EN/light + AR/dark), a11y + A3 + guard lists. Then the Day close.
+**Day:** 80 — Empty/error states: friendly screens for every empty list, error, and offline case (EN/AR).
+**Step:** 0 — not started (Days 78–79 closed: see the Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -215,3 +197,14 @@ account; every step can be skipped; "Skip" anywhere ends it.
     accepted, so alternate an app code and a recovery code between steps.
   - Login answers can be { twoFactorRequired, challengeToken } now: any
     new client of POST /login must handle it (Login.jsx finishLogin).
+
+- Days 78-79 lessons:
+  - A NEW account's first login opens /get-started (needsOnboarding).
+    Browser suites that sign up and log in through the form must expect
+    it (or Skip); the e2e seed marks alice and bob done.
+  - Screenshots right after a card/screen change catch the entrance
+    animation (faded, offset in RTL): wait ~700 ms before judging them.
+  - An i18n string with {{count}} needs plural forms (_one/_other in EN,
+    all six in AR) -- "1 followers" slipped through on Day 39.
+  - A non-component export from a .jsx file trips react-refresh: put
+    shared helpers in utils/.

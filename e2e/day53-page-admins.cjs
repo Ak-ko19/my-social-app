@@ -84,6 +84,9 @@ const api = (who, method, url, body) => fetch(API + url, {
   await bob.keyboard.press('Escape');
   await bob.getByRole('button', { name: 'Edit page' }).click();
   await bob.getByRole('heading', { name: 'Admins' }).waitFor({ timeout: 8000 }).catch(() => {});
+  // The admin list (and its Leave button) loads after the heading (Day 78:
+  // counting at once was flaky).
+  await bob.getByRole('button', { name: 'Leave' }).waitFor({ timeout: 8000 }).catch(() => {});
   check('Edit page for an admin: no Delete page, no adding admins, a Leave button',
     (await bob.getByRole('button', { name: 'Delete page' }).count()) === 0 && (await bob.getByLabel('Add an admin by username').count()) === 0
     && (await bob.getByRole('button', { name: 'Leave' }).count()) === 1);
