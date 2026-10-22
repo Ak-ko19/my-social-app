@@ -1,0 +1,233 @@
+.two-factor-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.two-factor-header-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.two-factor-section {
+  text-align: start;
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.two-factor-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.two-factor-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: 15px;
+  color: var(--color-text-muted);
+}
+
+.two-factor-status-on {
+  color: var(--color-success);
+}
+
+.two-factor-status strong {
+  color: var(--color-text);
+}
+
+.two-factor-muted {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.two-factor-step {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.two-factor-text,
+.two-factor-warning {
+  margin: 0 0 var(--space-3);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.two-factor-form .two-factor-text {
+  margin: 0;
+}
+
+.two-factor-warning {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.two-factor-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+
+/* Codes read left to right in Arabic too (dir="ltr" on the input). */
+.two-factor-code-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 18px;
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
+/* Spacing is for the digits: it would break up joined Arabic letters. */
+.two-factor-code-input::placeholder {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  letter-spacing: normal;
+}
+
+/* White behind the code in both themes: phone cameras read dark-on-light. */
+.two-factor-qr {
+  align-self: center;
+  width: 200px;
+  height: 200px;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: #fff;
+}
+
+.two-factor-key-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.two-factor-key {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  overflow-wrap: anywhere;
+}
+
+.two-factor-codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: var(--space-3) var(--space-3) var(--space-3) calc(var(--space-3) + 2ch);
+  border-radius: var(--radius-sm);
+  background: var(--color-subtle-bg);
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.two-factor-codes code {
+  color: var(--color-text);
+  font-size: 15px;
+}
+
+.two-factor-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.two-factor-btn {
+  width: 100%;
+  padding: var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.two-factor-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.two-factor-btn-primary {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.two-factor-btn-secondary {
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+}
+
+.two-factor-btn-danger {
+  background: var(--color-accent-3);
+  color: #fff;
+}
+
+.two-factor-link-btn {
+  align-self: flex-start;
+  padding: var(--space-1) 0;
+  border: none;
+  background: none;
+  color: var(--color-accent-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.two-factor-error {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-accent-3);
+}
+
+.two-factor-success {
+  margin: 0 0 var(--space-2);
+  font-size: 13px;
+  color: var(--color-success);
+}
+
+/* Loading: the same static shapes + gentle pulse as the feed skeleton. */
+.two-factor-skeleton {
+  display: block;
+  height: 12px;
+  width: 60%;
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+  animation: two-factor-pulse var(--duration-slow) ease-in-out infinite alternate;
+}
+
+.two-factor-skeleton-short {
+  width: 35%;
+}
+
+@keyframes two-factor-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .two-factor-skeleton {
+    animation: none;
+  }
+}

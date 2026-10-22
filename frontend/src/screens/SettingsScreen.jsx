@@ -8,6 +8,7 @@ import {
   LogOut,
   User,
   ShieldCheck,
+  KeyRound,
   ShieldAlert,
   Bell,
   BellRing,
@@ -62,6 +63,8 @@ const SETTINGS_SECTIONS = [
     rows: [
       { key: 'personal-info', icon: User, to: '/edit-profile' },
       { key: 'security', icon: ShieldCheck, to: '/settings/account' },
+      // Day 77: a code from an authenticator app at login.
+      { key: 'two-factor', icon: KeyRound, to: '/settings/two-factor' },
       // Day 8: devices signed in to this account.
       { key: 'sessions', icon: MonitorSmartphone, to: '/settings/sessions' },
       // Day 48: your likes, comments and searches.
