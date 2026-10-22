@@ -20,6 +20,7 @@ const TAGS = [
   { name: 'Auth', description: 'Sign up, log in, passwords, email verification' },
   { name: 'Account', description: 'Your account: password, deactivate, delete' },
   { name: 'Sessions', description: "Where you're logged in; logging out" },
+  { name: 'Two-factor', description: 'Two-factor authentication with an authenticator app; recovery codes' },
   { name: 'Links', description: 'Link previews and share cards' },
   { name: 'Push', description: 'Web push notifications' },
   { name: 'Profiles', description: 'Profiles and their settings' },

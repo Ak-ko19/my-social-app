@@ -65,6 +65,19 @@ const schemas = {
     language: s.nullable(s.enum(['en', 'ar'], "The account's app language (null: never chosen)"))
   }),
   Suspended: s.object({ message: s.str(), until: s.time('When the suspension ends') }),
+  TwoFactorStatus: s.object({
+    enabled: s.bool(),
+    enabledAt: s.nullable(s.time('When it was turned on')),
+    recoveryCodesLeft: s.int('Unused recovery codes (0 when off)')
+  }),
+  TwoFactorSetup: s.object({
+    secret: s.str('The key (base32), for typing into the app by hand'),
+    otpauthUrl: s.str('The otpauth://totp/ link the QR code holds'),
+    qr: s.str('The QR code as an SVG data URL (data:image/svg+xml;base64,...)')
+  }),
+  RecoveryCodes: s.object({
+    recoveryCodes: s.array(s.str(), 'One-time codes ("abcde-fghij"); shown only this once, so keep them safe')
+  }),
   PasswordChanged: s.object({
     message: s.str(),
     token: s.str('Only for a token from before sessions existed: a fresh token for this device')

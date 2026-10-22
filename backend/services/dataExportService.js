@@ -2,10 +2,10 @@
 // or owns, as one JSON document (like Facebook's and Instagram's exports).
 //
 // What it never contains: secrets (password hash, reset and verification
-// tokens, session ids, push endpoints and keys), other people's private
-// fields (their email, settings), who blocked or reported this account,
-// and conversations this account isn't in. Other people appear by
-// username only.
+// tokens, session ids, push endpoints and keys, the two-factor key and
+// recovery codes), other people's private fields (their email, settings),
+// who blocked or reported this account, and conversations this account
+// isn't in. Other people appear by username only.
 //
 // One query per section (no per-row lookups), all filtered by the
 // account's own id. Sizes are bounded by what one person creates.
@@ -20,7 +20,7 @@ async function rows(sql, params) {
 
 async function buildExport(userId) {
   const [profile] = await rows(
-    `SELECT id, username, email, bio, links, avatar_url, cover_url, pinned_post_id, is_private, language, message_permission, comment_permission, hidden_words_mode, email_verified, created_at
+    `SELECT id, username, email, bio, links, avatar_url, cover_url, pinned_post_id, is_private, language, message_permission, comment_permission, hidden_words_mode, email_verified, totp_enabled_at AS two_factor_enabled_at, created_at
      FROM users WHERE id = $1`,
     [userId]
   );

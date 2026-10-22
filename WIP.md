@@ -1,7 +1,41 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 77 — Account safety: login alerts (new device), suspicious login slowdown, 2FA with an authenticator app (TOTP).
-**Step:** 1 — login alerts: DONE (saving). Next: 2 slowdown check.
+**Step:** 3 — 2FA backend: DONE (committed). Next: 4 the login code step (backend).
+
+2FA plan (FB/IG: authenticator app, QR + key, recovery codes, a second
+login step): steps 3 backend TOTP (utils/totp.js: RFC 6238, HMAC-SHA1,
+30 s, 6 digits, +-1 step, a used step never accepted twice) + migration
+073 (users.totp_secret / totp_pending_secret / totp_enabled_at /
+totp_last_step; recovery_codes(user_id, code_hash sha256, used_at)) +
+API: GET /2fa, POST /2fa/setup {password} -> {secret, otpauthUrl, qr
+(SVG data URL, built on the server: npm qrcode, no frontend bundle)},
+POST /2fa/enable {code} -> 10 recovery codes (shown once), POST
+/2fa/disable {password, code|recoveryCode}, POST /2fa/recovery-codes
+{password}; 4 login: right password + 2FA on -> {twoFactorRequired,
+challengeToken (JWT, 5 min, purpose totp, no session)}; POST
+/login/2fa {challengeToken, code|recoveryCode} -> session + login alert;
+wrong codes slowed like passwords (botProtection per account) + limiter;
+5 Settings > Two-factor screen (set up with QR, codes, turn off); 6 the
+login code step (and "use a recovery code"). Secret stored as is (no new
+key allowed); LATER: encrypt with a key the owner sets.
+
+Step 3 refinements (PLAN, 2026-10-22):
+- Wrong codes: counted IN THE DB (users.totp_failures + totp_failures_since,
+  atomic UPDATE) so it holds across instances/restarts: 10 wrong codes in
+  15 min -> 429 until the window ends (6 digits x3 steps: ~0.3%/day at
+  most for someone who already has the password). Applies to enable,
+  disable and (step 4) the login step. Success resets it.
+- A used step is refused (UPDATE ... WHERE totp_last_step < step: two
+  parallel requests can't both use one code). Recovery codes: one atomic
+  UPDATE ... used_at IS NULL; 10 codes "xxxxx-xxxxx" (50 bits), sha256.
+- Setup again before enabling replaces the pending secret; setup when on
+  -> 409. Turning on/off emails the owner (security change, en/ar) when
+  email is set up. The secret never leaves the server after setup and is
+  never in the export (export: enabled_at + recovery codes left).
+- Routes /2fa, /2fa/setup, /2fa/enable, /2fa/disable, /2fa/recovery-codes
+  (auth + accountActionLimiter), new controllers/twoFactorController.js +
+  services/twoFactorService.js; spec in areas/auth.js; AR server messages.
 
 ## Progress (Day 77)
 - Step 1: migration 072 (known_devices + notifications.device), services/
@@ -15,6 +49,20 @@
   +2, new browser suite day77-login-alert (13). Backend 995, Vitest 320;
   journeys-core/-safety, day8 x2, c2-legal, day60, b11, a2, day5, day28
   green.
+- Step 2: the slowdown exists and is tested (botProtection.test: 1-8 s
+  per-account waits, forgetting, parallel cap, HTTP; e2e day11-bots).
+  Ticked as verified, no code. (In-memory per instance: noted already
+  for the Redis-after-funding item.)
+- Step 3 (DONE; backend 1006, rehearsal --old passed, checklist counts 30/30/16 on a fixture DB): utils/totp.js (RFC 4226/6238 vectors pass),
+  migration 073 (+ fixture, testDb, checklist 30/30/16), services/
+  twoFactorService + controllers/twoFactorController + routes/
+  twoFactorRoutes (mounted after sessionRoutes), npm qrcode 1.5.4 (exact),
+  emails twoFactorOn/Off (en/ar), spec (tag Two-factor, 3 schemas), AR
+  server messages, export profile.two_factor_enabled_at,
+  tests/api/twoFactor.test.js (11 pass). For step 5: Privacy Policy
+  line (key + hashed recovery codes kept while 2FA is on); CSP img-src
+  must allow the data: SVG QR. For the Day's log: the key is stored
+  unencrypted (encrypting needs a key the owner sets -- note in log).
 
 Plan: 1 login alerts (new device); 2 suspicious login slowdown -- exists
 since Day 11 (per-account 1-8 s waits, parallel cap, per-IP limit):

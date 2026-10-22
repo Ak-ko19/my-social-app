@@ -711,3 +711,19 @@ CREATE TABLE known_devices (
 );
 CREATE INDEX idx_known_devices_last_seen ON known_devices (last_seen_at);
 ALTER TABLE notifications ADD COLUMN device jsonb;
+
+-- Day 77 (migration 073): two-factor authentication (authenticator app).
+ALTER TABLE users ADD COLUMN totp_secret varchar(64);
+ALTER TABLE users ADD COLUMN totp_pending_secret varchar(64);
+ALTER TABLE users ADD COLUMN totp_enabled_at timestamptz;
+ALTER TABLE users ADD COLUMN totp_last_step bigint;
+ALTER TABLE users ADD COLUMN totp_failures integer NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN totp_failures_since timestamptz;
+CREATE TABLE recovery_codes (
+  id SERIAL PRIMARY KEY,
+  user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  code_hash char(64) NOT NULL,
+  used_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, code_hash)
+);

@@ -9,6 +9,10 @@ const BOT_FIELDS = {
   website: s.str('A honeypot: leave it out or empty -- a filled one is refused')
 };
 const PASSWORD_ONLY = body({ password: s.str('Your current password') }, { required: ['password'] });
+// Day 77: two-factor authentication.
+const TOTP_CODE = s.str('The 6-digit code the authenticator app shows now (spaces are fine)');
+const RECOVERY_CODE = s.str('One of the recovery codes ("abcde-fghij"), instead of a code from the app; each works once');
+const TWO_FACTOR_ATTEMPTS = 'after more than 10 wrong codes in 15 minutes, codes are refused (429) until the 15 minutes are up.';
 
 module.exports = {
   'POST /signup': op({
@@ -143,6 +147,64 @@ module.exports = {
     responses: {
       200: json(s.object({ current: s.bool('true: it was this session, so this token no longer works') }), 'Signed out'),
       404: text('Session not found')
+    }
+  }),
+  'GET /2fa': op({
+    tag: 'Two-factor', auth: 'user',
+    summary: 'Whether two-factor authentication is on',
+    responses: { 200: json(ref('TwoFactorStatus'), 'Status'), 404: text('User not found') }
+  }),
+  'POST /2fa/setup': op({
+    tag: 'Two-factor', auth: 'user', limited: true,
+    summary: 'Start setting up an authenticator app: a new key and its QR code',
+    description: 'Nothing is turned on yet: POST /2fa/enable with a code from the app finishes it. Starting again replaces the '
+      + 'unfinished key. The key is only ever sent here.',
+    requestBody: PASSWORD_ONLY,
+    responses: {
+      200: json(ref('TwoFactorSetup'), 'Scan the QR code, or type the key into the app'),
+      400: text('Password is required.'),
+      403: text('Incorrect password'),
+      409: text('Two-factor authentication is already on.')
+    }
+  }),
+  'POST /2fa/enable': op({
+    tag: 'Two-factor', auth: 'user', limited: true,
+    summary: 'Turn two-factor authentication on with a code from the app',
+    description: 'Answers with 10 one-time recovery codes, shown this once. An email tells the owner (when email is on); '
+      + `${TWO_FACTOR_ATTEMPTS}`,
+    requestBody: body({ code: TOTP_CODE }, { required: ['code'] }),
+    responses: {
+      200: json(ref('RecoveryCodes'), 'On'),
+      400: text('No code / a wrong code / Set up two-factor authentication first.'),
+      409: text('Two-factor authentication is already on.'),
+      429: text('Too many wrong codes, or too many attempts')
+    }
+  }),
+  'POST /2fa/disable': op({
+    tag: 'Two-factor', auth: 'user', limited: true,
+    summary: 'Turn two-factor authentication off',
+    description: 'Needs the password and a code from the app or a recovery code. The recovery codes are deleted. An email tells '
+      + `the owner (when email is on); ${TWO_FACTOR_ATTEMPTS}`,
+    requestBody: body({
+      password: s.str('Your current password'),
+      code: TOTP_CODE,
+      recoveryCode: RECOVERY_CODE
+    }, { required: ['password'] }),
+    responses: {
+      200: json(ref('Ok'), 'Off'),
+      400: text('Password is required / no code / a wrong or used code / Two-factor authentication is off.'),
+      403: text('Incorrect password'),
+      429: text('Too many wrong codes, or too many attempts')
+    }
+  }),
+  'POST /2fa/recovery-codes': op({
+    tag: 'Two-factor', auth: 'user', limited: true,
+    summary: 'New recovery codes (the old ones stop working)',
+    requestBody: PASSWORD_ONLY,
+    responses: {
+      200: json(ref('RecoveryCodes'), 'New codes, shown this once'),
+      400: text('Password is required. / Two-factor authentication is off.'),
+      403: text('Incorrect password')
     }
   }),
   'POST /logout': op({
