@@ -147,6 +147,9 @@ diff -q "$WORK/idx-migrated.txt" "$WORK/idx-dev.txt" >/dev/null && ok "indexes m
 # Day 75: 071 turns the old sanitizer's entities back into the text as typed.
 [ "$(psql_ "$URL" -At -c "SELECT string_agg(content, ' | ' ORDER BY id) FROM messages WHERE type = 'text'")" = "မင်္ဂလာပါ | Tom & Jerry <3" ] \
   && ok "071: saved messages read as typed (&amp; &lt; decoded, Myanmar untouched)" || bad "071 message text"
+# Day 78: 074 marks every existing account as past the first-run steps.
+[ "$(psql_ "$URL" -At -c "SELECT count(*) FROM users WHERE onboarded_at IS NULL")" = "0" ] \
+  && ok "074: existing accounts skip the first-run steps" || bad "074 onboarded_at"
 "$PG/dropdb.exe" -h localhost -p 55433 -U testuser --if-exists schema_dev
 
 # 5. Rollback A: down to exactly the live schema, data kept, then up again.

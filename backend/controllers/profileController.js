@@ -18,7 +18,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function getMyProfile(req, res) {
   try {
-    const result = await db.query('SELECT id, username, email, bio, links, avatar_url, cover_url, is_private, email_verified, is_admin, language, message_permission, comment_permission, created_at FROM users WHERE id = $1', [req.userId]);
+    const result = await db.query('SELECT id, username, email, bio, links, avatar_url, cover_url, is_private, email_verified, is_admin, language, message_permission, comment_permission, onboarded_at, created_at FROM users WHERE id = $1', [req.userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).send('User not found');
@@ -181,6 +181,38 @@ async function setCover(req, res) {
   }
 }
 
+// Day 78: PUT /profile/avatar -- the profile photo alone (the first-run
+// steps). PUT /profile saves every field at once, so a form without the
+// bio would wipe it.
+async function setAvatar(req, res) {
+  try {
+    if (!req.cloudinaryResult) return res.status(400).send('Choose a photo');
+    const url = req.cloudinaryResult.secure_url;
+    const previous = (await db.query('SELECT avatar_url FROM users WHERE id = $1', [req.userId])).rows[0]?.avatar_url;
+    await db.query('UPDATE users SET avatar_url = $1 WHERE id = $2', [url, req.userId]);
+    if (previous && previous !== url) deleteMedia([previous]);
+    res.json({ avatar_url: url });
+  } catch (err) {
+    sendError(res, err, 'Updating the profile photo failed. Please try again later.');
+  }
+}
+
+// Day 78: POST /profile/onboarding/done -- the first-run steps were
+// finished or skipped; they aren't shown again. Repeating it keeps the
+// first time.
+async function finishOnboarding(req, res) {
+  try {
+    const result = await db.query(
+      'UPDATE users SET onboarded_at = COALESCE(onboarded_at, now()) WHERE id = $1 RETURNING onboarded_at',
+      [req.userId]
+    );
+    if (result.rows.length === 0) return res.status(404).send('User not found');
+    res.json({ onboarded_at: result.rows[0].onboarded_at });
+  } catch (err) {
+    sendError(res, err, 'Saving failed. Please try again later.');
+  }
+}
+
 async function removeCover(req, res) {
   try {
     await replaceCover(req.userId, null);
@@ -278,4 +310,4 @@ async function updateLanguage(req, res) {
   }
 }
 
-module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, exportMyData, setCover, removeCover, pinPost, unpinPost, updateInteractions };
+module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, exportMyData, setCover, removeCover, setAvatar, finishOnboarding, pinPost, unpinPost, updateInteractions };

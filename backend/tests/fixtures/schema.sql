@@ -727,3 +727,6 @@ CREATE TABLE recovery_codes (
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (user_id, code_hash)
 );
+
+-- Day 78 (migration 074): first-run steps (NULL = not done yet).
+ALTER TABLE users ADD COLUMN onboarded_at timestamptz;

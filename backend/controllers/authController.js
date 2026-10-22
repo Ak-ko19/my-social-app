@@ -228,6 +228,8 @@ async function finishLogin(user, req, res, extra = {}) {
     emailVerified: user.email_verified,
     // Day 16: the account's app language (null = never chosen).
     language: user.language,
+    // Day 78: a new account sees the first-run steps once.
+    needsOnboarding: user.onboarded_at === null,
     ...extra
   });
 }

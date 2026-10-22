@@ -63,6 +63,7 @@ const schemas = {
     reactivated: s.bool('true: the account was deactivated and this login reactivated it'),
     emailVerified: s.bool(),
     language: s.nullable(s.enum(['en', 'ar'], "The account's app language (null: never chosen)")),
+    needsOnboarding: s.bool('true: a new account that has not seen the first-run steps yet'),
     recoveryCodesLeft: s.int('Only after logging in with a recovery code: how many unused ones are left')
   }, { optional: ['recoveryCodesLeft'] }),
   TwoFactorChallenge: s.object({
@@ -133,6 +134,7 @@ const schemas = {
     language: s.nullable(s.enum(['en', 'ar'])),
     message_permission: s.enum(['everyone', 'following', 'nobody'], 'Who may start a chat with you'),
     comment_permission: s.enum(['everyone', 'followers', 'following'], 'Who may comment on your posts'),
+    onboarded_at: s.nullable(s.time('When the first-run steps were finished or skipped (null: not yet)')),
     created_at: s.time()
   }, { description: 'Your own account, as only you see it' }),
   UpdatedProfile: s.object({

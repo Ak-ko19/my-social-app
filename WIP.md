@@ -1,7 +1,25 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 78–79 — Onboarding: first-run steps (profile photo, follow suggestions, language choice, tour).
-**Step:** 0 — not started (Day 77 closed: see the Progress Log).
+**Step:** 1 — onboarding backend: DONE (committed; backend 1019, rehearsal --old with the 074 check, counts 30/31/16). Next: 2 UI part 1 (seed users must be marked done in e2e-up.sh).
+
+Plan (FB/IG first run: photo, people to follow, then the app; ours adds
+language and a 4-card tour). Shown once, after the FIRST login of a new
+account; every step can be skipped; "Skip" anywhere ends it.
+1. Backend: migration 074 users.onboarded_at (existing accounts backfilled
+   = created_at, so nobody old sees it; NULL = new). Login result and GET
+   /profile/me say needsOnboarding. POST /profile/onboarding/done
+   (idempotent). PUT /profile/avatar: the photo only (PUT /profile replaces
+   every field -- leaving bio out would wipe it). Spec, AR messages,
+   export (onboarded_at), checklist + rehearsal, tests.
+2. UI part 1: /get-started (authOnly): progress dots, Skip; card 1
+   language (EN/AR, saves to the account), card 2 profile photo (picker,
+   shrink like EditProfile, preview, upload). Login -> /get-started when
+   needsOnboarding (after 2FA too; reactivation/recovery notices win).
+3. UI part 2: card 3 people to follow (suggestions, popular fallback,
+   follow/requested buttons), card 4 tour (Home, Create, Messages,
+   Explore/Notifications), Done -> POST done -> Home. e2e day78-onboarding
+   (EN/light + AR/dark), a11y + A3 + guard lists. Then the Day close.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

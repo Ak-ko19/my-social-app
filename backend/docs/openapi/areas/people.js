@@ -63,6 +63,19 @@ module.exports = {
     requestBody: multipart({ cover: file('The photo') }, { required: ['cover'] }),
     responses: { 200: json(s.object({ cover_url: s.str() }), 'Saved'), 400: text('Choose a photo, or a refused file') }
   }),
+  'PUT /profile/avatar': op({
+    tag: 'Profiles', auth: 'user', upload: true,
+    summary: 'Set your profile photo (and nothing else)',
+    description: 'Used by the first-run steps. PUT /profile saves every field at once; this changes only the photo.',
+    requestBody: multipart({ avatar: file('The photo') }, { required: ['avatar'] }),
+    responses: { 200: json(s.object({ avatar_url: s.str() }), 'Saved'), 400: text('Choose a photo, or a refused file') }
+  }),
+  'POST /profile/onboarding/done': op({
+    tag: 'Profiles', auth: 'user',
+    summary: 'The first-run steps are finished or skipped',
+    description: 'They are not shown again. Repeating it keeps the first time.',
+    responses: { 200: json(s.object({ onboarded_at: s.time() }), 'Done'), 404: USER_NOT_FOUND }
+  }),
   'DELETE /profile/cover': op({
     tag: 'Profiles', auth: 'user',
     summary: 'Remove your cover photo',
