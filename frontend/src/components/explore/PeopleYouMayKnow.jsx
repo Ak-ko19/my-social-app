@@ -9,19 +9,7 @@ import { serverErrorText } from '../../utils/serverError';
 import { resolveImageUrl } from '../../api';
 import './Explore.css';
 import { useTranslation } from 'react-i18next';
-import i18n from '../../i18n';
-
-// Why this person is suggested, in plain words.
-function reasonText(s) {
-  if (s.reason === 'follows_you') return i18n.t('explore.reason.followsYou');
-  if (s.reason === 'popular') return s.follower_count ? i18n.t('explore.reason.popular', { count: s.follower_count }) : i18n.t('explore.reason.newHere');
-  const [first, second] = s.mutual_sample || [];
-  const others = s.mutual_count - (s.mutual_sample?.length || 0);
-  if (!first) return i18n.t('explore.reason.mutual', { count: s.mutual_count });
-  if (second && others <= 0) return i18n.t('explore.reason.followedByTwo', { first, second });
-  if (others > 0) return i18n.t('explore.reason.followedByOthers', { first, count: others + (second ? 1 : 0) });
-  return i18n.t('explore.reason.followedBy', { first });
-}
+import { reasonText } from '../../utils/suggestionReason';
 
 function SuggestionCard({ s, token, onHide }) {
   const { t } = useTranslation();

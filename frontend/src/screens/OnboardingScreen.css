@@ -92,6 +92,117 @@
   color: var(--color-success);
 }
 
+.onboarding-people,
+.onboarding-tour {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onboarding-person {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.onboarding-person-text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.onboarding-person-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.onboarding-person-reason {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.onboarding-empty {
+  margin: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-subtle-bg);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.onboarding-tour-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-subtle-bg);
+}
+
+.onboarding-tour-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  color: var(--color-accent-text);
+}
+
+.onboarding-tour-name {
+  display: block;
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.onboarding-tour-text {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+/* Loading: the same static shapes + gentle pulse as the feed skeleton. */
+.onboarding-skeleton {
+  display: block;
+  background: var(--color-border);
+  animation: onboarding-pulse var(--duration-slow) ease-in-out infinite alternate;
+}
+
+.onboarding-skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.onboarding-skeleton-line {
+  width: 50%;
+  height: 12px;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes onboarding-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
 .onboarding-footer {
   display: flex;
   flex-direction: column;
@@ -116,5 +227,9 @@
 
   .onboarding-dot {
     transition: none;
+  }
+
+  .onboarding-skeleton {
+    animation: none;
   }
 }

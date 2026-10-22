@@ -485,7 +485,8 @@
     "pymk": "People you may know",
     "reason": {
       "followsYou": "Follows you",
-      "popular": "Popular · {{count}} followers",
+      "popular_one": "Popular · {{count}} follower",
+      "popular_other": "Popular · {{count}} followers",
       "newHere": "New to MySocialApp",
       "mutual": "{{count}} mutual",
       "followedByTwo": "Followed by {{first}} and {{second}}",
@@ -1441,7 +1442,17 @@
     "changePhoto": "Choose another photo",
     "uploading": "Uploading…",
     "photoSaved": "Photo saved.",
-    "photoFailed": "Couldn't save the photo. Please try again."
+    "photoFailed": "Couldn't save the photo. Please try again.",
+    "peopleTitle": "Find people to follow",
+    "peopleText": "Follow a few people to fill your Home with their posts. You can find more any time in Search.",
+    "peopleEmpty": "No suggestions yet. Once you follow someone, you'll see people they follow here and in Explore.",
+    "tourTitle": "Where to find things",
+    "tour": {
+      "home": { "name": "Home", "text": "Posts from people you follow. Tap \"What's on your mind?\" at the top to share a post, photos or a poll." },
+      "search": { "name": "Search", "text": "Find people, posts and #hashtags." },
+      "messages": { "name": "Messages", "text": "Chat one to one or in groups, with photos and voice notes." },
+      "menu": { "name": "Menu", "text": "Groups, pages, events, and the posts you saved." }
+    }
   },
   "twoFactor": {
     "title": "Two-factor authentication",

@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 78–79 — Onboarding: first-run steps (profile photo, follow suggestions, language choice, tour).
-**Step:** 2 — UI part 1: DONE (committed; Vitest 336, gates green, every regular + special browser suite green incl. day78-onboarding 19, a11y 61/61/7). Next: 3 people to follow + tour.
+**Step:** 3 — people to follow + tour: DONE (committed; Vitest 338, gates, day78-onboarding 30, b8/day39-pymk, a11y green). Next: Day close (full browser run, Progress Log).
 
 Plan (FB/IG first run: photo, people to follow, then the app; ours adds
 language and a 4-card tour). Shown once, after the FIRST login of a new

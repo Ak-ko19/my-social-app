@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Check } from 'lucide-react';
+import { Check, Home, Search, MessageSquare, Menu } from 'lucide-react';
 import { Avatar } from '../components/ui';
+import FollowButton from '../components/feed/FollowButton';
+import { useFollowToggle } from '../hooks/useFollowToggle';
+import { fetchSuggestions } from '../services/suggestionService';
+import { reasonText } from '../utils/suggestionReason';
 import { LANGUAGES } from '../i18n';
 import { useAuth } from '../hooks/useAuth';
 import { chooseLanguage } from '../utils/languageChoice';
@@ -16,7 +20,72 @@ import './OnboardingScreen.css';
 // Like Facebook's and Instagram's: a few quick cards, each one optional,
 // "Skip" ends them at any point. Finishing or skipping tells the server,
 // so they aren't shown again.
-const STEPS = ['language', 'photo'];
+const STEPS = ['language', 'photo', 'people', 'tour'];
+
+// The tour: where the main things are, with the icons the app uses.
+const TOUR = [
+  { key: 'home', icon: Home },
+  { key: 'search', icon: Search },
+  { key: 'messages', icon: MessageSquare },
+  { key: 'menu', icon: Menu }
+];
+
+// One suggested person; following happens in place (the hook is the one
+// People you may know uses). No profile link: the steps stay on screen.
+function SuggestionRow({ s, token }) {
+  const follow = useFollowToggle(s.id, false, token);
+  return (
+    <li className="onboarding-person">
+      <Avatar size={48} src={resolveImageUrl(s.avatar_url)} initials={(s.username || '?').slice(0, 2).toUpperCase()} decorative />
+      <span className="onboarding-person-text">
+        <span className="onboarding-person-name">{s.username}</span>
+        <span className="onboarding-person-reason">{reasonText(s)}</span>
+      </span>
+      <FollowButton follow={follow} />
+    </li>
+  );
+}
+
+// Card 3: people to follow -- friends of friends, or the most-followed
+// public accounts for a brand-new account (backend suggestionsController).
+function PeopleCard({ token }) {
+  const { t } = useTranslation();
+  const [people, setPeople] = useState(null); // null while loading
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSuggestions(token)
+      .then((list) => { if (!cancelled) setPeople(list); })
+      .catch((err) => {
+        console.error(err);
+        if (!cancelled) setPeople([]);
+      });
+    return () => { cancelled = true; };
+  }, [token]);
+
+  return (
+    <>
+      <h1 className="onboarding-title">{t('onboarding.peopleTitle')}</h1>
+      <p className="onboarding-text">{t('onboarding.peopleText')}</p>
+      {!people && (
+        <ul className="onboarding-people" aria-busy="true" aria-label={t('common.loading')}>
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="onboarding-person" aria-hidden="true">
+              <span className="onboarding-skeleton onboarding-skeleton-avatar" />
+              <span className="onboarding-skeleton onboarding-skeleton-line" />
+            </li>
+          ))}
+        </ul>
+      )}
+      {people && people.length === 0 && <p className="onboarding-empty">{t('onboarding.peopleEmpty')}</p>}
+      {people && people.length > 0 && (
+        <ul className="onboarding-people" aria-label={t('onboarding.peopleTitle')}>
+          {people.map((p) => <SuggestionRow key={p.id} s={p} token={token} />)}
+        </ul>
+      )}
+    </>
+  );
+}
 
 function OnboardingScreen() {
   const navigate = useNavigate();
@@ -118,6 +187,24 @@ function OnboardingScreen() {
               {photoUrl && <p className="onboarding-saved" role="status">{t('onboarding.photoSaved')}</p>}
               {photoError && <p className="form-error" role="alert">{photoError}</p>}
             </div>
+          </>
+        )}
+        {step === 'people' && <PeopleCard token={token} />}
+
+        {step === 'tour' && (
+          <>
+            <h1 className="onboarding-title">{t('onboarding.tourTitle')}</h1>
+            <ul className="onboarding-tour">
+              {TOUR.map(({ key, icon: Icon }) => (
+                <li key={key} className="onboarding-tour-item">
+                  <span className="onboarding-tour-icon" aria-hidden="true"><Icon size={22} /></span>
+                  <span>
+                    <strong className="onboarding-tour-name">{t(`onboarding.tour.${key}.name`)}</strong>
+                    <span className="onboarding-tour-text">{t(`onboarding.tour.${key}.text`)}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           </>
         )}
       </main>

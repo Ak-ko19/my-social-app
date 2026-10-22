@@ -1,8 +1,8 @@
 // Day 78: the first-run steps. A new account signs up and logs in through
 // the real forms and lands on "Get started": language, a profile photo
 // (uploaded for real to the Cloudinary stand-in), then Home -- and the
-// next login goes straight Home. In Arabic (dark, RTL) the steps are
-// skipped from the first card. The seed accounts never see them.
+// next login goes straight Home. In Arabic (dark, RTL) the cards are
+// walked to the tour and skipped from there. The seed accounts never see them.
 // Media stack (E2E_MEDIA=1, run-all.sh MEDIA_SUITES).
 const path = require('path');
 const { chromium } = require('./node_modules/playwright-core');
@@ -61,7 +61,7 @@ async function logInWithForm(page, L, name) {
     await logInWithForm(page, EN, 'nora78');
     check('en: the first login opens Get started', page.url().endsWith('/get-started'), page.url());
     check('en: it welcomes by name', await shows(page.getByRole('heading', { name: T.welcome.replace('{{username}}', 'nora78') })));
-    check('en: step 1 of 2', await shows(page.getByRole('list', { name: T.progress.replace('{{step}}', '1').replace('{{total}}', '2') })));
+    check('en: step 1 of 4', await shows(page.getByRole('list', { name: T.progress.replace('{{step}}', '1').replace('{{total}}', '4') })));
     check('en: no tab bar on the steps', (await page.locator('.bottom-tab-bar').count()) === 0);
     check('en: no horizontal scroll', await noSideScroll(page));
     await page.waitForTimeout(700); // the card's entrance animation
@@ -78,9 +78,28 @@ async function logInWithForm(page, L, name) {
 
     const token = await page.evaluate(() => localStorage.getItem('token'));
     check('en: the account has the photo', Boolean((await me(token)).avatar_url));
+    // Card 3: people to follow (a new account: the most-followed accounts).
+    await page.getByRole('button', { name: T.next, exact: true }).click();
+    const people = page.getByRole('list', { name: T.peopleTitle });
+    check('en: card 3 suggests people', await shows(people));
+    const bobRow = people.locator('li', { hasText: 'bob' });
+    check('en: ...bob among them', await shows(bobRow));
+    await bobRow.getByRole('button', { name: /^Follow/ }).click();
+    check('en: following happens in place', await shows(bobRow.getByRole('button', { name: /^Following|^Unfollow/ })));
+    check('en: no horizontal scroll (people)', await noSideScroll(page));
+    await page.waitForTimeout(700); // the card's entrance animation
+    await page.screenshot({ path: path.join(SP, 'day78-onboarding-people-en-light-390.png') });
+
+    // Card 4: the tour.
+    await page.getByRole('button', { name: T.next, exact: true }).click();
+    check('en: card 4 is the tour', await shows(page.getByRole('heading', { name: T.tourTitle })));
+    check('en: ...naming Home, Search, Messages and Menu', (await page.locator('.onboarding-tour-item').count()) === 4);
+    await page.waitForTimeout(700);
+    await page.screenshot({ path: path.join(SP, 'day78-onboarding-tour-en-light-390.png') });
     await page.getByRole('button', { name: T.finish, exact: true }).click();
     await page.waitForURL((u) => u.pathname === '/', { timeout: 10000 }).catch(() => {});
     check('en: "Get started" opens Home', new URL(page.url()).pathname === '/', page.url());
+    check("en: ...with bob's post on it", await shows(page.getByText('Hello from bob')));
     check('en: the server knows the steps are done', Boolean((await me(token)).onboarded_at));
     await ctx.close();
 
@@ -91,7 +110,7 @@ async function logInWithForm(page, L, name) {
     await again.ctx.close();
   }
 
-  // AR / dark / 375 px: the steps in Arabic, skipped from card 1.
+  // AR / dark / 375 px: the steps in Arabic, skipped from the tour.
   {
     const T = AR.onboarding;
     await fetch(`${API}/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'omar78', email: 'omar78@example.com', password: PASSWORD }) });
@@ -104,9 +123,17 @@ async function logInWithForm(page, L, name) {
     await page.waitForTimeout(700); // the card's entrance animation
     await page.screenshot({ path: path.join(SP, 'day78-onboarding-language-ar-dark-375.png') });
     const token = await page.evaluate(() => localStorage.getItem('token'));
+    // Through to the tour (card 3 is two cards on, the tour one more), then Skip.
+    for (const [clicks, card, title] of [[2, 'people', T.peopleTitle], [1, 'tour', T.tourTitle]]) {
+      for (let i = 0; i < clicks; i++) await page.getByRole('button', { name: T.next, exact: true }).click();
+      check(`ar: the ${card} card in Arabic`, await shows(page.getByRole('heading', { name: title })));
+      check(`ar: no horizontal scroll (${card})`, await noSideScroll(page));
+      await page.waitForTimeout(700); // the card's entrance animation
+      await page.screenshot({ path: path.join(SP, `day78-onboarding-${card}-ar-dark-375.png`) });
+    }
     await page.getByRole('button', { name: T.skipAll, exact: true }).click();
     await page.waitForURL((u) => u.pathname === '/', { timeout: 10000 }).catch(() => {});
-    check('ar: Skip opens Home', new URL(page.url()).pathname === '/', page.url());
+    check('ar: Skip (on the tour) opens Home', new URL(page.url()).pathname === '/', page.url());
     check('ar: skipping counts as done', Boolean((await me(token)).onboarded_at));
     await ctx.close();
   }

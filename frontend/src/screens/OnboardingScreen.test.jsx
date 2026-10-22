@@ -16,6 +16,7 @@ beforeEach(async () => {
   for (const fn of Object.values(api)) fn.mockReset();
   api.post.mockResolvedValue({ data: { onboarded_at: '2026-10-22T12:00:00Z' } });
   api.put.mockResolvedValue({ data: {} });
+  api.get.mockResolvedValue({ data: [] });
   await setLanguage('en');
 });
 afterEach(() => vi.restoreAllMocks());
@@ -34,7 +35,7 @@ describe('Onboarding', () => {
   it('welcomes by name, and choosing Arabic switches the app and saves it on the account', async () => {
     show();
     expect(screen.getByRole('heading', { name: 'Welcome, newbie!' })).toBeInTheDocument();
-    expect(screen.getByRole('list', { name: 'Step 1 of 2' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Step 1 of 4' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('radio', { name: 'العربية' }));
     expect(await screen.findByRole('button', { name: 'التالي' })).toBeInTheDocument();
     expect(i18n.language).toBe('ar');
@@ -60,6 +61,8 @@ describe('Onboarding', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     await userEvent.upload(container.querySelector('input[type=file]'), new File(['x'], 'x.png', { type: 'image/png' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Choose a photo');
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     await userEvent.click(screen.getByRole('button', { name: 'Get started' }));
     expect(await screen.findByText('Home screen')).toBeInTheDocument();
   });
@@ -69,10 +72,43 @@ describe('Onboarding', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     await userEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getByRole('heading', { name: 'Welcome, newbie!' })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    for (let i = 0; i < 3; i++) await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     await userEvent.click(screen.getByRole('button', { name: 'Get started' }));
     expect(api.post).toHaveBeenCalledWith('/profile/onboarding/done', {}, H);
     expect(await screen.findByText('Home screen')).toBeInTheDocument();
+  });
+
+  it('suggests people to follow, and following happens in place', async () => {
+    api.get.mockResolvedValue({ data: [
+      { id: 2, username: 'bob', avatar_url: null, reason: 'popular', follower_count: 1 },
+      { id: 3, username: 'cara', avatar_url: null, reason: 'popular', follower_count: 0 }
+    ] });
+    api.post.mockResolvedValue({ data: { status: 'accepted' } });
+    show();
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByRole('heading', { name: 'Find people to follow' })).toBeInTheDocument();
+    const list = await screen.findByRole('list', { name: 'Find people to follow' });
+    expect(list.querySelectorAll('li')).toHaveLength(2);
+    expect(screen.getByText('bob')).toBeInTheDocument();
+    expect(screen.getByText('Popular · 1 follower')).toBeInTheDocument(); // one, not "1 followers"
+    expect(screen.getByText('New to MySocialApp')).toBeInTheDocument();
+    expect(api.get).toHaveBeenCalledWith('/users/suggestions', H);
+    const [followBob] = screen.getAllByRole('button', { name: /^Follow/ });
+    await userEvent.click(followBob);
+    expect(api.post).toHaveBeenCalledWith('/users/2/follow', {}, H);
+  });
+
+  it('with nobody to suggest it says where to find people; then the tour', async () => {
+    show();
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(await screen.findByText(/No suggestions yet./)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByRole('heading', { name: 'Where to find things' })).toBeInTheDocument();
+    for (const name of ['Home', 'Search', 'Messages', 'Menu']) expect(screen.getByText(name)).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Step 4 of 4' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Get started' })).toBeInTheDocument();
   });
 
   it('Skip ends the steps from anywhere, and a failed save still lets you in', async () => {
