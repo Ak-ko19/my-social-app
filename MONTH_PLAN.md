@@ -269,7 +269,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 80 — Empty/error states
 - [x] Friendly screens for every empty list, error, and offline case, in 3 languages. *(EN/AR since 2026-10-07. A bilingual audit of 35 screens found and fixed an offline crash and five dishonest or dead-end error states — see Progress Log.)*
 ### Day 81–82 — Notifications center upgrade
-- [ ] Group similar notifications ("5 people liked your post"), mark all read, filters.
+- [x] Group similar notifications ("5 people liked your post"), mark all read, filters. *(Grouped rows, tabs, paging, live badge, rows that open their target, and "We removed your post" notices — see Progress Log.)*
 ### Day 83–84 — Memories / "On this day"
 - [ ] Show your posts from past years on the same date.
 ### Day 85–87 — Buffer: fix everything left in AUDIT_REPORT_3.md
@@ -2594,3 +2594,43 @@ lists that grow without limit.
     special-stack suites, day80-states (146 checks in each language),
     day27-perf, a11y (3 parts, 0 serious/critical) and A3 EN/AR (150
     page checks in each of 4 parts, 0 failures).
+
+### 2026-10-24/25 — Days 81–82: Notifications center upgrade
+- **Found first:** "mark all read" existed; the list showed only the
+  newest 20 (no Load more), rows opened nothing, and nothing was live
+  (the badge changed only when a screen opened).
+- **Grouped, filtered, paged (`19d65b1`):** likes and comments on the same
+  post, likes of the same comment, and new followers on the same day are
+  one row ("Cal, Ben and 1 other liked your post": count, people, the
+  newest three). A group is read only when all of it is; reading one
+  reads the group. ?filter=unread|mentions|follows, cursor paging.
+  Better than grouping everything a person ever got: the list covers the
+  newest 1,000 notifications, so a busy account costs the same as a quiet
+  one (1,044 rows read at the perf seed, was 3,376), and migration 075's
+  (user_id, type, created_at) index lets the tabs read only their kinds
+  (1 row, was 3,334).
+- **Live:** 'notification_new' / 'notifications_read' carry the unread
+  count; Home's bell and the Settings badge follow at once, and an open
+  list offers "New notifications · Show" instead of moving under your
+  finger (useSocketEvent).
+- **The screen (`d7e748d`):** grouped sentences with two stacked faces
+  (EN/AR, all six Arabic plural forms), All / Unread / Mentions / Follows
+  tabs, Load more, and every row opens what it is about and reads it.
+  The unread bar on cards marked the left edge in Arabic too; now the
+  start edge.
+- **"We removed your post" (`b12a2ba`, follow-up from Day 66):** when an
+  admin removes reported content, its owner is told what, why (the
+  report's reason) and its first 100 characters, with "Read the rules";
+  after the removal commits, no off switch, a neutral push line. Migration
+  076 (notifications.details); Privacy Policy updated (2026-10-25).
+- **Flakes fixed:** day53-page-admins counted the admin list before it
+  loaded (twice, different checks).
+- **Tests at close:**
+  - Backend 1031/1031 (new: notificationGroups 8, contentRemovedNotice
+    4); Vitest 359/359; lint (exit 0); check:i18n; check:headers; bundle
+    214.6 / 225 kB; GO LIVE rehearsal (--old) passed with 075 and 076;
+    checklist counts 30/32/17 on a fixture DB.
+  - Full browser run in small batches: all 66 regular suites (new:
+    day81-notifications 32), the 9 special-stack suites, day80-states (146
+    each language), day27-perf (45), a11y (3 parts, 0 serious/critical)
+    and A3 EN/AR (150 page checks in each of 4 parts, 0 failures).

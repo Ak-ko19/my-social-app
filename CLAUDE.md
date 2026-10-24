@@ -30,7 +30,7 @@ No investor deadline pressure — building thoroughly, roughly a month timeline
 rather than rushing.
 
 ## Completed Features
-(Updated Day 79. Details: PROJECT_DETAILED_GUIDE.md and MONTH_PLAN.md's
+(Updated Day 82. Details: PROJECT_DETAILED_GUIDE.md and MONTH_PLAN.md's
 Progress Log; how to run and test everything: README.md.)
 
 - **Accounts:** signup / login (JWT sessions you can see and sign out),
@@ -48,7 +48,8 @@ Progress Log; how to run and test everything: README.md.)
 - **Chat:** direct and group chats over Socket.IO (live, typing, presence,
   read receipts), voice notes, photos, replies, edits, unsend, reactions,
   forwarding; paged inbox and history.
-- **Groups, pages, events;** notifications (per-type settings, web push).
+- **Groups, pages, events;** notifications (grouped like Facebook's, tabs,
+  live badge, per-type settings, web push, "we removed your post").
 - **Safety:** block, mute, restrict, hidden words, reports, spam checks;
   admin screen (reports, bans and suspensions, error log, storage, overview,
   audit log).

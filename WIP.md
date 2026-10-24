@@ -1,37 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 81–82 — Notifications center upgrade: group similar notifications ("5 people liked your post"), mark all read, filters.
-**Step:** 3 — "we removed your post" notifications: DONE (committed; backend 1031, Vitest 359, rehearsal with 076, counts 30/32/17, day81-notifications 32, moderation suites). Next: Day close.
-
-Found: "mark all read" exists. Missing: grouping, filters, and the list
-shows only the newest 20 (offset paging, no Load more); nothing live (the
-badge updates only when a screen opens).
-Plan (FB/IG):
-1. Backend: GET /notifications groups like (per post), comment (per
-   post), comment_like (per comment), follow (per UTC day): one row with
-   count, distinct actor count, the 3 latest actors, read only if all are
-   read, ordered by its newest notification. ?filter=all|unread|mentions
-   (mention, reply, comment)|follows (follow, follow_request,
-   follow_accepted); cursor = the group's newest id (?before=), 20 per
-   page, nextCursor. PUT /notifications/:id/read marks its whole group.
-   Live: socket 'notification_new' { unreadCount } to the recipient on
-   every new notification (notify + notifySystem); REALTIME.md. Bounded:
-   90-day retention, idx (user_id, created_at); check with day27-perf.
-2. Frontend: "alice, bob and 3 others liked your post" (EN/AR plurals),
-   stacked avatars, filter tabs, Load more, tap marks the group read,
-   live badge + list refresh.
-3. "We removed your post/comment" (admin removal from Reports) as a
-   system notification (follow-up from Day 66), with the reason.
-   Step 3 plan: migration 076 notifications.details jsonb (what a
-   notification is about when the thing itself is gone). notifySystem
-   'content_removed' { kind: post|comment|message|community|page, reason
-   (the acted-on report's), excerpt (<= 100 chars of the report's
-   snapshot) } to reports.target_owner_id, AFTER the removal commits (no
-   post_id: the post is gone). Push text en/ar (opens Notifications).
-   UI: "We removed your post. Reason: Spam." + the excerpt + "Read the
-   rules" (/terms). Export + spec + Privacy Policy line (the excerpt is
-   kept with the notification, 90 days).
-4. e2e day81-notifications (EN/light + AR/dark), Day close.
+**Day:** 83–84 — Memories / "On this day": show your posts from past years on the same date.
+**Step:** 0 — not started (Days 81–82 closed: see the Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -253,3 +223,13 @@ Plan (FB/IG):
   - A new data screen: add its route to e2e/day80-states.cjs ROUTES.
   - day80-states runs as two parts (day80-states-en / -ar, ~6 min each):
     run them as their own batch.
+
+- Days 81-82 notes:
+  - Notifications are GROUPED server-side (notificationController
+    GROUP_KEY_SQL): a test that counts notification rows must expect a
+    group (count/actor_count). Marking one read marks its group.
+  - New notification kind about something deleted: put what it needs in
+    notifications.details (never a post_id to a deleted post).
+  - Live events for a user: io.to(`user_${id}`) with a LITERAL event name
+    (realtimeDoc.test reads them), documented in docs/REALTIME.md; the
+    app listens with hooks/useSocketEvent.
