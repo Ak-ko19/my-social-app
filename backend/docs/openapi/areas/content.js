@@ -369,6 +369,25 @@ module.exports = {
     query: pageQuery({ defaultLimit: 10, maxLimit: 30 }),
     responses: { 200: postPage('currentPage') }
   }),
+  'GET /memories': op({
+    tag: 'Posts', auth: 'user',
+    summary: 'Memories: your posts from this day in earlier years',
+    description: 'Days 83-84. Your own profile posts (not in groups or as a page), whatever their audience, made on the same month '
+      + 'and day in an earlier year -- read in your time zone. A Feb 29 post comes back on Feb 28 in years without one. At most 100.',
+    query: {
+      tz: q(s.str('Your time zone (IANA name, e.g. Europe/London); default UTC')),
+      date: q(s.str('Today, YYYY-MM-DD; default today in tz'))
+    },
+    responses: {
+      200: json(s.object({
+        date: s.str('The day used (YYYY-MM-DD)'),
+        memories: s.array(s.object({
+          yearsAgo: s.int(), year: s.int(), posts: s.array(ref('Post'))
+        }), 'One entry per earlier year that has posts, the most recent year first')
+      }), 'Your memories'),
+      400: text('An unknown time zone or a date that is not YYYY-MM-DD')
+    }
+  }),
   'GET /users/:id/posts': op({
     tag: 'Posts', auth: 'optional',
     summary: "A profile's posts, photos, or posts they are tagged in",

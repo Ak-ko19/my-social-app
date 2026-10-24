@@ -77,6 +77,8 @@ async function publishServerCounters() {
     '/bookmarks', '/stories', '/blocked-users',
     // Day 48: the activity log.
     '/activity/likes', '/activity/comments',
+    // Days 83-84: memories (one person's posts on this day in earlier years).
+    '/memories?tz=UTC', `/memories?tz=Asia/Tokyo&date=2026-02-28`,
     // Search is a substring match (ILIKE '%q%'): served by the pg_trgm
     // indexes (002). A word that matches nothing is the worst case.
     '/search/posts?q=shwedagon', '/search/posts?q=mohinga', '/search/posts?q=perf', '/search/posts?q=sunset%20shwedagon', '/search/users?q=perf12', '/search/users?q=zawgyi', '/search/hashtags?q=t1', '/search/hashtags?q=perf',

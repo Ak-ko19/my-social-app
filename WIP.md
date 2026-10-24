@@ -1,7 +1,24 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 83–84 — Memories / "On this day": show your posts from past years on the same date.
-**Step:** 0 — not started (Days 81–82 closed: see the Progress Log).
+**Step:** 1 — backend GET /memories: DONE (committed; backend 1037, perf 47). Next: 2 the Memories screen + Home card.
+
+Plan (Facebook's Memories): your own posts made on today's date in past
+years, in YOUR time zone.
+1. Backend GET /memories?tz=<IANA>&date=YYYY-MM-DD (date optional: today
+   in tz): your posts (profile posts: not page/group ones) whose local
+   date has today's month/day and an earlier year; Feb 29 posts show on
+   Feb 28 in a non-leap year. Same post shape as the profile list (media,
+   polls, reactions, page columns) -> { date, memories: [{ yearsAgo,
+   year, posts }] } newest year first. tz checked with Intl (and a
+   Postgres refusal -> 400). Bounded: one person's posts
+   (idx_posts_user_id); perf suite entry.
+2. UI: "On this day" card on Home when there are memories (hide for
+   today), /memories screen ("1 year ago", "3 years ago"), Menu entry,
+   EN/AR, empty state ("No memories today"), e2e day83-memories.
+3. Daily "You have memories from N years ago" notification (ticker job,
+   once a day per person, UTC date) with an off switch (new preference
+   category 'memories', migration) + push text. Then the Days' close.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
