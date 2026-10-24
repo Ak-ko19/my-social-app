@@ -730,3 +730,6 @@ CREATE TABLE recovery_codes (
 
 -- Day 78 (migration 074): first-run steps (NULL = not done yet).
 ALTER TABLE users ADD COLUMN onboarded_at timestamptz;
+
+-- Day 81 (migration 075): the Notifications tabs read only their kinds.
+CREATE INDEX idx_notifications_user_type_created ON notifications (user_id, type, created_at DESC);

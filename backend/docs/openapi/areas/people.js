@@ -1,7 +1,7 @@
 // Day 67: the API spec -- profiles, following and friends, blocking,
 // muting, restricting, close friends, suggestions, search, notifications,
 // hidden words and your activity.
-const { s, ref, body, multipart, file, json, text, empty, op, q, pageQuery } = require('../helpers');
+const { s, ref, body, multipart, file, json, text, empty, op, q, pageQuery, cursorQuery } = require('../helpers');
 
 const BAD_ID = text('Invalid user ID');
 const NOTIFICATION_CATEGORIES = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events'];
@@ -339,9 +339,18 @@ module.exports = {
   // ---- Notifications ----
   'GET /notifications': op({
     tag: 'Notifications', auth: 'user',
-    summary: 'Your notifications, newest first',
-    query: pageQuery({ defaultLimit: 20, maxLimit: 50 }),
-    responses: { 200: json(s.object({ page: s.int(), limit: s.int(), notifications: s.array(ref('Notification')) }), 'One page') }
+    summary: 'Your notifications, newest first, grouped',
+    description: 'Day 81: likes and comments on the same post, likes of the same comment, and new followers on the same day come '
+      + 'as one row with count, actor_count and the newest actors ("Alice, Bob and 3 others liked your post"). Ordered by '
+      + 'the newest notification in each row; pass nextCursor back for older ones. Covers your newest 1,000 notifications.',
+    query: {
+      filter: q(s.enum(['all', 'unread', 'mentions', 'follows'], 'unread: rows with something unread; mentions: mentions, replies and comments; follows: follows, follow requests and accepted requests (default all)')),
+      ...cursorQuery({ defaultLimit: 20, maxLimit: 50 })
+    },
+    responses: {
+      200: json(s.object({ notifications: s.array(ref('Notification')), nextCursor: s.nullable(s.str('null: no older notifications')) }), 'One page'),
+      400: text('An unknown filter, or an invalid cursor')
+    }
   }),
   'GET /notifications/unread-count': op({
     tag: 'Notifications', auth: 'user',
@@ -355,9 +364,9 @@ module.exports = {
   }),
   'PUT /notifications/:id/read': op({
     tag: 'Notifications', auth: 'user',
-    summary: 'Mark one notification read',
+    summary: 'Mark one notification read (with its whole group)',
     responses: {
-      200: json(s.object({ id: s.id(), is_read: { const: true } }, { description: 'The notification (stored fields)' }), 'Marked'),
+      200: json(s.object({ id: s.id(), is_read: { const: true }, marked: s.int('How many notifications were marked (its group)') }), 'Marked'),
       400: text('Invalid notification ID'),
       404: text('Notification not found')
     }

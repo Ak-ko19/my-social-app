@@ -72,7 +72,7 @@ async function publishServerCounters() {
     '/users/1/connections?type=friends', '/users/1/connections?type=followers', '/users/1/connections?type=following',
     // Day 69: the group-member picker's search.
     '/users/1/connections?type=following&q=perf', `/users/${perfUser}/mutual-friends`,
-    '/notifications', '/notifications/unread-count', '/conversations', `/conversations/${conv}`,
+    '/notifications', '/notifications?filter=unread', '/notifications?filter=mentions', '/notifications/unread-count', '/conversations', `/conversations/${conv}`,
     `/conversations/${conv}/messages`, '/explore/posts', '/explore/hashtags', '/hashtags/perf/posts', '/hashtags/perf/posts?sort=top', '/hashtags/mingalar/posts',
     '/bookmarks', '/stories', '/blocked-users',
     // Day 48: the activity log.

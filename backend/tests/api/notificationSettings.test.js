@@ -95,6 +95,8 @@ describe('notification settings (B11)', () => {
     await setPrefs(me, { likes: true });
     await request(app).delete(`/posts/${myPost.id}/like`).set(auth(other));
     await request(app).post(`/posts/${myPost.id}/like`).set(auth(other));
-    expect(await types(me)).toEqual(['like', 'like']);
+    // Both likes are kept; since Day 81 they show as one row (same post).
+    const [likes] = (await request(app).get('/notifications').set(auth(me))).body.notifications;
+    expect(likes).toMatchObject({ type: 'like', count: 2 });
   });
 });

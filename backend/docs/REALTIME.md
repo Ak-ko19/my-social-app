@@ -57,6 +57,8 @@ Sending messages also has its own per-chat limit (`RATE_LIMITED`).
 | `user_online` | `{ userId }` | Someone in one of your chats came online. |
 | `user_offline` | `{ userId }` | ...and went offline. |
 | `group_updated` | `{ conversationId }` | A group's name, photo, members or admins changed (or you were added or removed): fetch `GET /conversations/{id}` again. |
+| `notification_new` | `{ unreadCount }` | Day 81: you have a new notification (the same rules as the list: your settings, restrictions). Update the badge; an open list fetches `GET /notifications` again. |
+| `notifications_read` | `{ unreadCount }` | Day 81: some of your notifications were marked read (on any of your devices): update the badge. |
 
 Missed events (offline, a dropped connection) are not replayed: after a
 reconnect the app fetches the chat list and the open chat again.

@@ -53,7 +53,11 @@ describe('API operations no other test reached', () => {
       expect((await request(app).put(`/notifications/${first.id}/read`).set(auth(bob))).status).toBe(404); // not bob's
       const read = await request(app).put(`/notifications/${first.id}/read`).set(auth(alice));
       expect(read.status).toBe(200);
-      expect(read.body).toMatchObject({ id: first.id, is_read: true });
+      // Day 81: both follows are one row (same day), so both are read.
+      expect(read.body).toMatchObject({ id: first.id, is_read: true, marked: 2 });
+      expect(await count()).toBe(0);
+      await request(app).delete(`/users/${alice.id}/follow`).set(auth(carol));
+      await request(app).post(`/users/${alice.id}/follow`).set(auth(carol));
       expect(await count()).toBe(1);
 
       expect((await request(app).put('/notifications/abc/read').set(auth(alice))).status).toBe(400);

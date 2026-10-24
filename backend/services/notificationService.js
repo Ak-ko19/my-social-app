@@ -4,6 +4,31 @@
 const db = require('../db');
 const { pushNotification } = require('./pushService');
 const { notRestrictedSql } = require('./restrictService');
+const logger = require('../utils/logger');
+
+// Day 81: tells the user's open apps at once, with the new unread count:
+// 'notification_new' (the badge and an open Notifications screen update
+// without a reload) or 'notifications_read' (another tab read some). Best
+// effort: no socket server (API tests, scripts) or a failed count just
+// means no live update.
+async function announce(userId, { read = false } = {}) {
+  try {
+    // Lazy: sockets/ requires services that require this module.
+    const { getIO } = require('../sockets');
+    let io;
+    try {
+      io = getIO();
+    } catch {
+      return;
+    }
+    const unread = await db.query('SELECT count(*)::int AS n FROM notifications WHERE user_id = $1 AND is_read = false', [userId]);
+    const payload = { unreadCount: unread.rows[0].n };
+    if (read) io.to(`user_${userId}`).emit('notifications_read', payload);
+    else io.to(`user_${userId}`).emit('notification_new', payload);
+  } catch (err) {
+    logger.error('notification announce failed', { userId, err });
+  }
+}
 
 // Notification type -> the setting (column) that controls it. Column names
 // come only from this map, never from input, so interpolating them into
@@ -62,7 +87,10 @@ async function notify({ userId, actorId, type, postId = null, commentId = null, 
   );
   // Day 22: a push to their devices too -- only when the notification was
   // actually created (so the same settings apply).
-  if (result.rowCount > 0) pushNotification({ userId, actorId, type, postId, commentId, communityId, pageId, eventId });
+  if (result.rowCount > 0) {
+    pushNotification({ userId, actorId, type, postId, commentId, communityId, pageId, eventId });
+    announce(userId);
+  }
 }
 
 // Day 45: notifications about your OWN content that nobody else caused --
@@ -81,6 +109,7 @@ async function notifySystem({ userId, type, postId = null, device = null }) {
     [userId, type, postId, device]
   );
   pushNotification({ userId, actorId: userId, type, postId, device });
+  announce(userId);
 }
 
 // { likes, comments, mentions, follows, follow_accepted, messages, groups, pages, events } -- all true when
@@ -108,4 +137,4 @@ async function updatePreferences(userId, changes) {
   return next;
 }
 
-module.exports = { notify, notifySystem, SYSTEM_TYPES, getPreferences, updatePreferences, allowedSql, CATEGORIES, CATEGORY_BY_TYPE };
+module.exports = { notify, notifySystem, announce, SYSTEM_TYPES, getPreferences, updatePreferences, allowedSql, CATEGORIES, CATEGORY_BY_TYPE };

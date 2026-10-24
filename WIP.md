@@ -1,7 +1,28 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 81–82 — Notifications center upgrade: group similar notifications ("5 people liked your post"), mark all read, filters.
-**Step:** 0 — not started (Day 80 closed: see the Progress Log).
+**Step:** 1 — backend: DONE (committed; backend 1027, perf 45 incl. 3 notification lists, rehearsal with 075, counts 30/31/17). Next: 2 the Notifications screen.
+
+Found: "mark all read" exists. Missing: grouping, filters, and the list
+shows only the newest 20 (offset paging, no Load more); nothing live (the
+badge updates only when a screen opens).
+Plan (FB/IG):
+1. Backend: GET /notifications groups like (per post), comment (per
+   post), comment_like (per comment), follow (per UTC day): one row with
+   count, distinct actor count, the 3 latest actors, read only if all are
+   read, ordered by its newest notification. ?filter=all|unread|mentions
+   (mention, reply, comment)|follows (follow, follow_request,
+   follow_accepted); cursor = the group's newest id (?before=), 20 per
+   page, nextCursor. PUT /notifications/:id/read marks its whole group.
+   Live: socket 'notification_new' { unreadCount } to the recipient on
+   every new notification (notify + notifySystem); REALTIME.md. Bounded:
+   90-day retention, idx (user_id, created_at); check with day27-perf.
+2. Frontend: "alice, bob and 3 others liked your post" (EN/AR plurals),
+   stacked avatars, filter tabs, Load more, tap marks the group read,
+   live badge + list refresh.
+3. "We removed your post/comment" (admin removal from Reports) as a
+   system notification (follow-up from Day 66), with the reason.
+4. e2e day81-notifications (EN/light + AR/dark), Day close.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

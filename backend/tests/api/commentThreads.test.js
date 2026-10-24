@@ -57,8 +57,9 @@ describe('comment replies + likes (B4)', () => {
     const aliceNotes = await notesOf(alice);
     expect(aliceNotes.map((n) => n.type)).toEqual(['reply']);
     const authorNotes = await notesOf(author);
-    // alice's top-level comment + bob's reply
-    expect(authorNotes.filter((n) => n.type === 'comment')).toHaveLength(2);
+    // alice's top-level comment + bob's reply -- one row since Day 81
+    // (comments on the same post are grouped).
+    expect(authorNotes.filter((n) => n.type === 'comment')).toEqual([expect.objectContaining({ count: 2, actor_count: 2 })]);
   });
 
   it('the post owner replied to gets one "reply" notification, not also "comment"', async () => {

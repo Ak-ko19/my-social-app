@@ -56,6 +56,8 @@ const api = (who, method, url, body) => fetch(API + url, {
   await alice.getByLabel('Add an admin by username').fill('@BOB');
   await alice.getByRole('button', { name: 'Add', exact: true }).click();
   await alice.getByText('bob is now an admin.').waitFor({ timeout: 8000 }).catch(() => {});
+  // The list reloads after the notice (Day 81: counting at once raced).
+  await alice.getByRole('button', { name: 'Remove bob as an admin' }).waitFor({ timeout: 8000 }).catch(() => {});
   check('...adds bob by username', (await alice.getByRole('button', { name: 'Remove bob as an admin' }).count()) === 1);
   await axe(alice, 'en/light, Edit page with Admins');
 
