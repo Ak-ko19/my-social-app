@@ -5,6 +5,7 @@ const { getIO } = require('../sockets');
 const messageService = require('../services/messageService');
 const logger = require('../utils/logger');
 const adminLog = require('../services/adminLogService');
+const notificationService = require('../services/notificationService');
 
 const { inTransaction } = adminLog;
 
@@ -162,6 +163,16 @@ async function removeReportedContent(req, res) {
       return message;
     });
     deleteMedia(media);
+    // Day 82: the owner is told what was removed and why (only now that the
+    // removal has committed). The excerpt comes from the report's own copy:
+    // the thing itself is gone.
+    if (report.target_owner_id && report.target_owner_id !== req.userId) {
+      notificationService.notifySystem({
+        userId: report.target_owner_id,
+        type: 'content_removed',
+        details: { kind: report.target_type, reason: report.reason, excerpt: report.target_snapshot ? [...report.target_snapshot].slice(0, 100).join('') : null }
+      }).catch((err) => logger.error('content removed notice failed', { reportId: report.id, err }));
+    }
     if (removed) {
       try {
         getIO().to(`conv_${removed.conversation_id}`).emit('message_deleted', {

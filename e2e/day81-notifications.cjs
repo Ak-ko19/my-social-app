@@ -3,9 +3,11 @@
 // ("..., ... and 1 other liked your post"), one for the follows, and the
 // mention; the tabs show their kinds; a new like while the list is open is
 // offered ("New notifications") and the badge on Home follows it live;
-// tapping the likes opens the post and reads the row. EN/light 390 px and
+// tapping the likes opens the post and reads the row; a post an admin
+// removes is explained ("We removed your post... Reason: Spam"). EN/light 390 px and
 // AR/dark 375 px (RTL). Throwaway stack from e2e-up.sh.
 const path = require('path');
+const { execSync } = require('child_process');
 const { chromium } = require('./node_modules/playwright-core');
 const EN = require('../frontend/src/i18n/locales/en.json');
 const AR = require('../frontend/src/i18n/locales/ar.json');
@@ -19,6 +21,8 @@ const errors = [];
 const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  -- ' + extra : ''}`);
 const shows = (locator, timeout = 10000) => locator.waitFor({ timeout }).then(() => true, () => false);
 const json = { 'Content-Type': 'application/json' };
+const { PSQL } = require('./pg.cjs');
+const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysocialapp_e2e -At -c "${q}"`).toString().trim();
 // Polls until fn() is true (a tab's list replaces the last one a moment later).
 async function until(fn, ms = 8000) {
   for (const end = Date.now() + ms; Date.now() < end; await new Promise((r) => setTimeout(r, 100))) if (await fn()) return true;
@@ -114,6 +118,21 @@ const follow = (user, target) => fetch(`${API}/users/${target.id}/follow`, { met
     // 7 unread before: the three likes are read, the rest (2 follows, the
     // mention, the new like) are not.
     check(`${tag}: ...and reads all three likes`, unread.unreadCount === 4, JSON.stringify(unread));
+
+    // Day 82: an admin removes nina's reported post; she is told what and why.
+    const bad = await post(nina, 'Cheap pills, buy now');
+    await fetch(`${API}/reports`, { method: 'POST', headers: { ...as(dee), ...json }, body: JSON.stringify({ targetType: 'post', targetId: bad.id, reason: 'spam' }) });
+    sql(`UPDATE users SET is_admin = true WHERE id = ${ana.id}`);
+    const reportId = sql(`SELECT id FROM reports WHERE target_type = 'post' AND target_id = ${bad.id}`);
+    await fetch(`${API}/admin/reports/${reportId}/remove-content`, { method: 'POST', headers: as(ana) });
+    await page.goto(`${WEB}/notifications`, { waitUntil: 'networkidle' });
+    const removedLine = c.L.notifications.types.contentRemoved.replace(/<\/?b>/g, '')
+      .replace('{{kind}}', c.L.notifications.removedKinds.post).replace('{{reason}}', c.L.report.reasons.spam);
+    check(`${tag}: a removed post is explained`, await shows(page.locator('.notif-sentence', { hasText: removedLine })));
+    check(`${tag}: ...quoting it`, await shows(page.getByText('“Cheap pills, buy now”')));
+    await page.getByRole('button', { name: c.L.notifications.readRules, exact: true }).click();
+    await page.waitForURL((u) => u.pathname === '/terms', { timeout: 8000 }).catch(() => {});
+    check(`${tag}: ...with the rules a tap away`, page.url().endsWith('/terms'), page.url());
     await ctx.close();
   }
   await browser.close();

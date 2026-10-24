@@ -320,3 +320,37 @@ describe('Notifications: center', () => {
     expect(screen.queryByRole('button', { name: 'New notifications · Show' })).toBeNull();
   });
 });
+
+// Day 82: an admin removed something of yours.
+describe('Notifications: content removed', () => {
+  const removed = { ...me, id: 50, type: 'content_removed', post_id: null, comment_id: null, post_content: null, count: 1, actor_count: 1, actors: [], details: { kind: 'comment', reason: 'harassment', excerpt: 'you are awful' } };
+  const showRemoved = () => {
+    api.get.mockResolvedValue({ data: { notifications: [removed], nextCursor: null } });
+    render(
+      <MemoryRouter initialEntries={['/notifications']}>
+        <Routes>
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/terms" element={<p>Terms screen</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+  };
+
+  it('says what was removed and why, quotes it, and links to the rules', async () => {
+    await setLanguage('en');
+    showRemoved();
+    const line = await screen.findByText((_, el) => Boolean(el?.classList?.contains('notif-sentence')
+      && el.textContent === 'We removed your comment because it went against our rules. Reason: Harassment or bullying.'));
+    expect(line).toBeInTheDocument();
+    expect(screen.getByText('“you are awful”')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Read the rules' }));
+    expect(await screen.findByText('Terms screen')).toBeInTheDocument();
+  });
+
+  it('...in Arabic', async () => {
+    await setLanguage('ar');
+    showRemoved();
+    expect(await screen.findByText((_, el) => Boolean(el?.classList?.contains('notif-sentence') && el.textContent.startsWith('أزلنا تعليقك لمخالفة قواعدنا. السبب: ')))).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'اقرأ القواعد' })).toBeInTheDocument();
+  });
+});

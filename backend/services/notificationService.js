@@ -100,15 +100,18 @@ async function notify({ userId, actorId, type, postId = null, commentId = null, 
 // Day 77: 'new_login' -- a login on a kind of device the account hasn't
 // used lately (services/loginAlertService.js); `device` is { browser, os,
 // kind }. Security alerts have no off switch in the settings.
-const SYSTEM_TYPES = ['scheduled_post', 'scheduled_failed', 'new_login'];
+// Day 82: 'content_removed' -- an admin removed something of yours after a
+// report (adminController); `details` is { kind, reason, excerpt }, since
+// the thing itself is gone. No off switch either: you should know.
+const SYSTEM_TYPES = ['scheduled_post', 'scheduled_failed', 'new_login', 'content_removed'];
 
-async function notifySystem({ userId, type, postId = null, device = null }) {
+async function notifySystem({ userId, type, postId = null, device = null, details = null }) {
   if (!SYSTEM_TYPES.includes(type)) throw new Error(`Unknown system notification type: ${type}`);
   await db.query(
-    'INSERT INTO notifications (user_id, actor_id, type, post_id, device) VALUES ($1, $1, $2, $3, $4)',
-    [userId, type, postId, device]
+    'INSERT INTO notifications (user_id, actor_id, type, post_id, device, details) VALUES ($1, $1, $2, $3, $4, $5)',
+    [userId, type, postId, device, details]
   );
-  pushNotification({ userId, actorId: userId, type, postId, device });
+  pushNotification({ userId, actorId: userId, type, postId, device, details });
   announce(userId);
 }
 

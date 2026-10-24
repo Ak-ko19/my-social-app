@@ -84,7 +84,9 @@ async function getNotifications(req, res) {
         -- start in the viewer's own time zone.
         notifications.event_id, events.name AS event_name, events.starts_at AS event_starts_at,
         -- Day 77: a "new login" alert names the device ({ browser, os, kind }).
-        notifications.device
+        notifications.device,
+        -- Day 82: removed content -- { kind, reason, excerpt }.
+        notifications.details
       FROM page
       JOIN notifications ON notifications.id = page.id
       JOIN users actor ON notifications.actor_id = actor.id

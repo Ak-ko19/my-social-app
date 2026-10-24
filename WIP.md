@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 81–82 — Notifications center upgrade: group similar notifications ("5 people liked your post"), mark all read, filters.
-**Step:** 2 — the Notifications screen: DONE (committed; Vitest 357, gates, day81-notifications 26 x2, a11y, day80-states-en, 8 related suites). Next: 3 "we removed your post" notifications.
+**Step:** 3 — "we removed your post" notifications: DONE (committed; backend 1031, Vitest 359, rehearsal with 076, counts 30/32/17, day81-notifications 32, moderation suites). Next: Day close.
 
 Found: "mark all read" exists. Missing: grouping, filters, and the list
 shows only the newest 20 (offset paging, no Load more); nothing live (the
@@ -22,6 +22,15 @@ Plan (FB/IG):
    live badge + list refresh.
 3. "We removed your post/comment" (admin removal from Reports) as a
    system notification (follow-up from Day 66), with the reason.
+   Step 3 plan: migration 076 notifications.details jsonb (what a
+   notification is about when the thing itself is gone). notifySystem
+   'content_removed' { kind: post|comment|message|community|page, reason
+   (the acted-on report's), excerpt (<= 100 chars of the report's
+   snapshot) } to reports.target_owner_id, AFTER the removal commits (no
+   post_id: the post is gone). Push text en/ar (opens Notifications).
+   UI: "We removed your post. Reason: Spam." + the excerpt + "Read the
+   rules" (/terms). Export + spec + Privacy Policy line (the excerpt is
+   kept with the notification, 90 days).
 4. e2e day81-notifications (EN/light + AR/dark), Day close.
 
 ## Carry-over notes

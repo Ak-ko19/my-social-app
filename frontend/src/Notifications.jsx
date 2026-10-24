@@ -39,6 +39,8 @@ function notificationKey(n) {
   if (n.type === 'event_cancelled') return 'eventCancelled';
   // Day 77: a login on a new kind of device.
   if (n.type === 'new_login') return 'newLogin';
+  // Day 82: an admin removed something of yours after a report.
+  if (n.type === 'content_removed') return 'contentRemoved';
   return 'other';
 }
 
@@ -51,6 +53,12 @@ const GROUPED = { like: 'like', comment: 'comment', comment_like: 'commentLike',
 function deviceWords(device, t) {
   if (!device) return '';
   return t('sessions.device', { browser: device.browser || t('sessions.unknownBrowser'), os: device.os || t('sessions.unknownDevice') });
+}
+
+// Day 82: what was removed and why, in words (content_removed).
+function removedWords(details, t) {
+  if (!details) return {};
+  return { kind: t(`notifications.removedKinds.${details.kind}`), reason: t(`report.reasons.${details.reason}`) };
 }
 
 // Day 81: where tapping a notification takes you (null: nowhere -- its own
@@ -100,7 +108,7 @@ function Sentence({ n, t }) {
     );
   }
   return (
-    <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username, group: n.community_name, page: n.page_name, event: n.event_name, time: n.event_starts_at ? formatDate(n.event_starts_at, 'time') : '', device: deviceWords(n.device, t) }} components={{ b: <strong /> }} />
+    <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username, group: n.community_name, page: n.page_name, event: n.event_name, time: n.event_starts_at ? formatDate(n.event_starts_at, 'time') : '', device: deviceWords(n.device, t), ...removedWords(n.details, t) }} components={{ b: <strong /> }} />
   );
 }
 
@@ -281,6 +289,7 @@ function Notifications() {
                   <span className="notif-text">
                     <span className="notif-sentence"><Sentence n={n} t={t} /></span>
                     {n.post_content && <span className="card-row-quote" dir="auto">“{n.post_content}”</span>}
+                    {n.details?.excerpt && <span className="card-row-quote" dir="auto">“{n.details.excerpt}”</span>}
                     <span className="card-row-meta">{formatDate(n.created_at)}</span>
                   </span>
                 </>
@@ -315,6 +324,13 @@ function Notifications() {
                         <button type="button" className="btn btn-secondary btn-sm" onClick={() => { open(n); navigate(`/pages/${n.page_id}`); }}
                           aria-label={t('notifications.openPageNamed', { page: n.page_name })}>
                           {t('notifications.openPage')}
+                        </button>
+                      </div>
+                    )}
+                    {n.type === 'content_removed' && (
+                      <div className="card-row-actions">
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => { open(n); navigate('/terms'); }}>
+                          {t('notifications.readRules')}
                         </button>
                       </div>
                     )}
