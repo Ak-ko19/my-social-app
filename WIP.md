@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 83–84 — Memories / "On this day": show your posts from past years on the same date.
-**Step:** 1 — backend GET /memories: DONE (committed; backend 1037, perf 47). Next: 2 the Memories screen + Home card.
+**Step:** 2 — Memories screen + Home card: DONE (committed; Vitest 366, gates, day83-memories 22, a11y 62, day80-states-en 150, Home suites). Next: 3 the daily memories notification.
 
 Plan (Facebook's Memories): your own posts made on today's date in past
 years, in YOUR time zone.

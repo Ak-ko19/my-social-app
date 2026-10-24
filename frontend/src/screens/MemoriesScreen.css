@@ -1,0 +1,46 @@
+/* Days 83-84: Memories. */
+.memories-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.memories-header-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* Start-aligned: the shell centres text by default. */
+.memories-intro,
+.memories-year-title,
+.memories-empty {
+  text-align: start;
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-3);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.memories-year-title {
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-2);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.memories-year-number {
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.memories-posts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

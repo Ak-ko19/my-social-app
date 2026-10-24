@@ -56,6 +56,8 @@ export function clearLocalSession() {
   for (const key of Object.keys(localStorage)) {
     if (key.startsWith('hiddenWords:')) localStorage.removeItem(key);
   }
+  // Days 83-84: "On this day" hidden for today.
+  localStorage.removeItem('memoriesHidden');
   // Day 72: and what was kept to work offline (feed, unsent messages).
   clearOfflineData();
   notifyAuthChange();

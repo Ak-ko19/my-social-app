@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Bookmark,
+  CalendarHeart,
   Download,
   FilePen,
   UsersRound,
@@ -143,6 +144,17 @@ function MenuScreen() {
           <span className="menu-category-text">
             <span className="menu-category-title">{t('menu.saved')}</span>
             <span className="menu-category-subtitle">{t('menu.savedSub')}</span>
+          </span>
+          <ChevronRight size={18} className="menu-category-chevron" aria-hidden="true" />
+        </button>
+        {/* Days 83-84 */}
+        <button type="button" className="menu-category-row" onClick={() => navigate('/memories')}>
+          <span className="menu-category-icon-badge" style={{ background: 'var(--badge-pink-bg)', color: 'var(--badge-pink-fg)' }}>
+            <CalendarHeart size={20} aria-hidden="true" />
+          </span>
+          <span className="menu-category-text">
+            <span className="menu-category-title">{t('menu.memories')}</span>
+            <span className="menu-category-subtitle">{t('menu.memoriesSub')}</span>
           </span>
           <ChevronRight size={18} className="menu-category-chevron" aria-hidden="true" />
         </button>

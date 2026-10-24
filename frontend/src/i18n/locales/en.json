@@ -1317,6 +1317,8 @@
     },
     "drafts": "Drafts & scheduled",
     "draftsSub": "Posts you saved for later or scheduled",
+    "memories": "Memories",
+    "memoriesSub": "Your posts from this day in earlier years",
     "events": "Events",
     "eventsSub": "Plan something, see what's on",
     "install": "Install the app",
@@ -1465,6 +1467,19 @@
     "footerLanguage": "Language",
     "previewMsgIn": "Hiking this weekend? 🥾",
     "previewMsgOut": "I’m in!"
+  },
+  "memories": {
+    "title": "Memories",
+    "intro": "Your posts from {{date}} in earlier years. Only you can see this.",
+    "empty": "No memories today. What you share now will come back here on this day next year.",
+    "loadFailed": "Couldn't load your memories.",
+    "yearsAgo_one": "{{count}} year ago",
+    "yearsAgo_other": "{{count}} years ago",
+    "cardTitle": "On this day",
+    "cardText_one": "You have memories from {{count}} year ago.",
+    "cardText_other": "You have memories from {{count}} years ago.",
+    "open": "See your memories",
+    "hideToday": "Hide for today"
   },
   "onboarding": {
     "progress": "Step {{step}} of {{total}}",

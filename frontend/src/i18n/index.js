@@ -93,11 +93,13 @@ export const i18nReady = setLanguage(startLanguage).catch((err) => {
 // shown elsewhere in the UI.
 // style: 'datetime' (default) | 'date' | 'long' | 'time' (hh:mm) |
 // 'monthYear' (Day 36: "March 2026", e.g. when someone joined) |
-// 'longTime' (Day 12: a long date plus hh:mm).
+// 'longTime' (Day 12: a long date plus hh:mm) | 'dayMonth' (Day 83:
+// "October 25", for a calendar day given as YYYY-MM-DD at noon UTC).
 const INTL_OPTIONS = {
   long: { dateStyle: 'long' },
   monthYear: { year: 'numeric', month: 'long' },
-  time: { hour: '2-digit', minute: '2-digit' }
+  time: { hour: '2-digit', minute: '2-digit' },
+  dayMonth: { day: 'numeric', month: 'long', timeZone: 'UTC' }
 };
 
 export function formatDate(value, style = 'datetime') {
@@ -110,6 +112,7 @@ export function formatDate(value, style = 'datetime') {
   if (style === 'date') return d.toLocaleDateString(locale);
   if (style === 'long') return d.toLocaleDateString(locale, INTL_OPTIONS.long);
   if (style === 'monthYear') return d.toLocaleDateString(locale, INTL_OPTIONS.monthYear);
+  if (style === 'dayMonth') return d.toLocaleDateString(locale, INTL_OPTIONS.dayMonth);
   if (style === 'time') return d.toLocaleTimeString(locale || [], INTL_OPTIONS.time);
   return d.toLocaleString(locale);
 }

@@ -27,7 +27,7 @@ const ROUTES = [
   '/profile/me', '/profile/2', '/profile/2/connections?tab=followers', '/profile/2/connections?tab=following',
   '/settings/sessions', '/settings/blocked-users', '/settings/follow-requests', '/settings/muted', '/settings/restricted',
   '/settings/close-friends', '/settings/hidden-words', '/settings/notifications', '/settings/interactions', '/settings/two-factor',
-  '/posts/1', '/groups/1', '/pages/1', '/events/1', '/messages/1'
+  '/posts/1', '/groups/1', '/pages/1', '/events/1', '/messages/1', '/memories'
 ];
 
 const results = [];

@@ -12,6 +12,7 @@ import EmailVerificationBanner from '../components/common/EmailVerificationBanne
 import { useCurrentUserSummary } from '../hooks/useCurrentUserSummary';
 import { useStories } from '../hooks/useStories';
 import StoriesRow from '../components/feed/StoriesRow';
+import MemoriesCard from '../components/feed/MemoriesCard';
 import StoryViewer from '../components/feed/StoryViewer';
 // Self-imported here (not just relying on Feed.jsx having already loaded
 // it elsewhere in the bundle) since this is the first place FeedList/
@@ -90,6 +91,8 @@ function HomeFeed() {
         />
       )}
       <PostComposer currentUser={currentUser} />
+      {/* Days 83-84: "On this day", when there are memories today. */}
+      <MemoriesCard token={token} userId={userId} />
       {feedState === 'loading' && <FeedSkeleton />}
       {feedState === 'error' && <FeedErrorState message={error} onRetry={reload} />}
       {feedState === 'empty' && <FeedEmptyState />}
