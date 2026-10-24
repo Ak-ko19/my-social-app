@@ -41,6 +41,12 @@ body {
   transform-origin: right center;
 }
 
+/* Day 81: the unread bar marks the start edge (a box-shadow has no
+   logical form). */
+[dir='rtl'] .card-row-highlight {
+  box-shadow: inset -3px 0 0 var(--color-accent), var(--shadow-card);
+}
+
 /* Arabic script needs a little more line height than Latin. */
 :lang(ar) body {
   line-height: 1.6;

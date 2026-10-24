@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import api from './api';
 import Notifications from './Notifications';
 import { setLanguage } from './i18n';
+import SocketContext from './context/SocketContext';
 
 vi.mock('./api', () => ({ default: { get: vi.fn(), put: vi.fn() }, resolveImageUrl: (url) => url }));
 
@@ -12,6 +13,8 @@ const me = { actor_id: 1, actor_username: 'alice', actor_avatar_url: null, is_re
 
 beforeEach(() => {
   localStorage.setItem('token', 'tok');
+  // Day 81: opening a notification marks it read.
+  api.put.mockResolvedValue({ data: { is_read: true } });
   api.get.mockResolvedValue({
     data: {
       notifications: [
@@ -214,5 +217,106 @@ describe('Notifications: new login', () => {
     show({ browser: null, os: 'Android', kind: 'mobile' });
     expect((await screen.findByText('تسجيل دخول جديد', { selector: 'strong' })).parentElement).toHaveTextContent('متصفح غير معروف');
     expect(screen.getByRole('button', { name: 'راجع أجهزتك' })).toBeInTheDocument();
+  });
+});
+
+// Day 81: the notifications center -- grouped rows, tabs, paging, links and
+// live news.
+describe('Notifications: center', () => {
+  const person = (id, username) => ({ id, username, avatar_url: null });
+  const like = (overrides) => ({ ...me, id: 30, type: 'like', post_id: 5, comment_id: null, post_content: 'My trip', count: 1, actor_count: 1, actors: [person(1, 'alice')], ...overrides });
+  const page = (notifications, nextCursor = null) => ({ data: { notifications, nextCursor } });
+  const where = () => screen.getByTestId('where').textContent;
+  // A whole sentence (names are in <strong>, so plain text matching can't see it).
+  const sentence = (re) => (_, el) => Boolean(el?.classList?.contains('notif-sentence') && re.test(el.textContent));
+  const showCenter = (path = '/notifications', socket = null) => render(
+    <SocketContext.Provider value={socket ? { socket, connectionState: 'connected' } : null}>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/posts/:id" element={<p data-testid="where">post page</p>} />
+          <Route path="/profile/:id/connections" element={<p data-testid="where">followers page</p>} />
+        </Routes>
+      </MemoryRouter>
+    </SocketContext.Provider>
+  );
+
+  beforeEach(async () => {
+    await setLanguage('en');
+    localStorage.setItem('userId', '7');
+    api.get.mockReset();
+  });
+
+  it('a group names two people and counts the rest (one / many)', async () => {
+    api.get.mockResolvedValue(page([
+      like({ id: 33, count: 3, actor_count: 3, actors: [person(3, 'cara'), person(2, 'bob'), person(1, 'alice')] }),
+      like({ id: 32, post_id: 6, count: 2, actor_count: 2, actors: [person(2, 'bob'), person(1, 'alice')] }),
+      { ...me, id: 31, type: 'follow', post_id: null, comment_id: null, post_content: null, count: 6, actor_count: 6, actors: [person(9, 'zed'), person(8, 'yan'), person(4, 'dan')] }
+    ]));
+    showCenter();
+    expect(await screen.findByText(sentence(/cara, bob and 1 other liked your post/))).toBeInTheDocument();
+    expect(screen.getByText(sentence(/bob and alice liked your post/))).toBeInTheDocument();
+    expect(screen.getByText(sentence(/zed, yan and 4 others started following you/))).toBeInTheDocument();
+  });
+
+  it('...and in Arabic', async () => {
+    await setLanguage('ar');
+    api.get.mockResolvedValue(page([like({ count: 5, actor_count: 5, actors: [person(3, 'cara'), person(2, 'bob')] })]));
+    showCenter();
+    expect(await screen.findByText(sentence(/أعجب cara وbob و3 أشخاص آخرين بمنشورك/))).toBeInTheDocument();
+  });
+
+  it('tapping opens what it is about and reads it', async () => {
+    api.get.mockResolvedValue(page([like({})]));
+    api.put.mockResolvedValue({ data: { is_read: true, marked: 1 } });
+    showCenter();
+    await userEvent.click(await screen.findByRole('link', { name: /alice liked your post/ }));
+    expect(api.put).toHaveBeenCalledWith('/notifications/30/read', {}, { headers: { Authorization: 'Bearer tok' } });
+    expect(await screen.findByText('post page')).toBeInTheDocument();
+  });
+
+  it('a group of new followers opens your followers', async () => {
+    api.get.mockResolvedValue(page([{ ...me, id: 31, type: 'follow', post_id: null, comment_id: null, post_content: null, count: 2, actor_count: 2, actors: [person(9, 'zed'), person(8, 'yan')] }]));
+    showCenter();
+    await userEvent.click(await screen.findByRole('link', { name: /zed and yan started following you/ }));
+    expect(await screen.findByText('followers page')).toBeInTheDocument();
+    expect(where()).toBe('followers page');
+  });
+
+  it('tabs ask the server for their kind, and say when there is nothing', async () => {
+    api.get.mockResolvedValue(page([like({})]));
+    showCenter();
+    await screen.findByText(sentence(/alice liked your post/));
+    api.get.mockResolvedValue(page([]));
+    await userEvent.click(screen.getByRole('tab', { name: 'Unread' }));
+    expect(api.get).toHaveBeenLastCalledWith('/notifications', expect.objectContaining({ params: { filter: 'unread' } }));
+    expect(await screen.findByText("You're all caught up.")).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Unread' })).toHaveAttribute('aria-selected', 'true');
+    await userEvent.click(screen.getByRole('tab', { name: 'Follows' }));
+    expect(await screen.findByText('No new followers or follow requests yet.')).toBeInTheDocument();
+  });
+
+  it('Load more brings older ones, once each', async () => {
+    api.get.mockResolvedValueOnce(page([like({ id: 40 })], 'CUR')).mockResolvedValueOnce(page([like({ id: 40 }), like({ id: 39, post_id: 9, actors: [person(5, 'eve')], actor_username: 'eve' })]));
+    showCenter();
+    await userEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    expect(api.get).toHaveBeenLastCalledWith('/notifications', expect.objectContaining({ params: { filter: 'all', cursor: 'CUR' } }));
+    expect(await screen.findByText(sentence(/eve liked your post/))).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+  });
+
+  it('something new while the list is open: offered, not pushed in', async () => {
+    const handlers = {};
+    const socket = { on: (event, fn) => { handlers[event] = fn; }, off: () => {} };
+    api.get.mockResolvedValue(page([like({})]));
+    showCenter('/notifications', socket);
+    await screen.findByText(sentence(/alice liked your post/));
+    await act(async () => handlers.notification_new({ unreadCount: 2 }));
+    const pill = screen.getByRole('button', { name: 'New notifications · Show' });
+    api.get.mockResolvedValue(page([like({ id: 41, actors: [person(6, 'fay')], actor_username: 'fay' }), like({})]));
+    await userEvent.click(pill);
+    expect(await screen.findByText(sentence(/fay liked your post/))).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New notifications · Show' })).toBeNull();
   });
 });

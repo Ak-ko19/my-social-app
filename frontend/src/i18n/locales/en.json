@@ -538,6 +538,32 @@
     "loading": "Loading notifications…",
     "empty": "No notifications yet.",
     "markRead": "Mark as read",
+    "filters": "Show",
+    "filter": {
+      "all": "All",
+      "unread": "Unread",
+      "mentions": "Mentions",
+      "follows": "Follows"
+    },
+    "emptyUnread": "You're all caught up.",
+    "emptyMentions": "No mentions, replies or comments yet.",
+    "emptyFollows": "No new followers or follow requests yet.",
+    "showNew": "New notifications · Show",
+    "loadMoreFailed": "Couldn't load older notifications. Please try again.",
+    "grouped": {
+      "likeTwo": "<b>{{name}}</b> and <b>{{name2}}</b> liked your post",
+      "likeMany_one": "<b>{{name}}</b>, <b>{{name2}}</b> and {{count}} other liked your post",
+      "likeMany_other": "<b>{{name}}</b>, <b>{{name2}}</b> and {{count}} others liked your post",
+      "commentTwo": "<b>{{name}}</b> and <b>{{name2}}</b> commented on your post",
+      "commentMany_one": "<b>{{name}}</b>, <b>{{name2}}</b> and {{count}} other commented on your post",
+      "commentMany_other": "<b>{{name}}</b>, <b>{{name2}}</b> and {{count}} others commented on your post",
+      "commentLikeTwo": "<b>{{name}}</b> and <b>{{name2}}</b> liked your comment",
+      "commentLikeMany_one": "<b>{{name}}</b>, <b>{{name2}}</b> and {{count}} other liked your comment",
+      "commentLikeMany_other": "<b>{{name}}</b>, <b>{{name2}}</b> and {{count}} others liked your comment",
+      "followTwo": "<b>{{name}}</b> and <b>{{name2}}</b> started following you",
+      "followMany_one": "<b>{{name}}</b>, <b>{{name2}}</b> and {{count}} other started following you",
+      "followMany_other": "<b>{{name}}</b>, <b>{{name2}}</b> and {{count}} others started following you"
+    },
     "types": {
       "like": "<b>{{name}}</b> liked your post",
       "comment": "<b>{{name}}</b> commented on your post",

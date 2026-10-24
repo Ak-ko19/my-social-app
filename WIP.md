@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 81–82 — Notifications center upgrade: group similar notifications ("5 people liked your post"), mark all read, filters.
-**Step:** 1 — backend: DONE (committed; backend 1027, perf 45 incl. 3 notification lists, rehearsal with 075, counts 30/31/17). Next: 2 the Notifications screen.
+**Step:** 2 — the Notifications screen: DONE (committed; Vitest 357, gates, day81-notifications 26 x2, a11y, day80-states-en, 8 related suites). Next: 3 "we removed your post" notifications.
 
 Found: "mark all read" exists. Missing: grouping, filters, and the list
 shows only the newest 20 (offset paging, no Load more); nothing live (the
