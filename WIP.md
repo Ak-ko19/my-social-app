@@ -1,7 +1,30 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 80 — Empty/error states: friendly screens for every empty list, error, and offline case (EN/AR).
-**Step:** 0 — not started (Days 78–79 closed: see the Progress Log).
+**Step:** 1 — screens that cannot load offline: DONE (committed; Vitest 343, gates, every browser suite + a11y + A3 green). Next: 2 the specific gaps (items 2-6); the audit file waits in the scratchpad (day80-states.cjs) until it passes.
+
+Day 80 audit (e2e/day80-states.cjs, STATES_REPORT=1: a new account opens
+35 data routes empty / with every API read failing / offline in-app).
+Empty: every screen says something sensible. Gaps found:
+1. OFFLINE: opening almost any screen in the app while offline shows the
+   generic crash page ("Something went wrong") -- its lazy-loaded code
+   can't download (no service worker in dev; in production the same on a
+   first visit, before the worker installs, or after a deploy renamed the
+   files). Fix: one lazy loader for screens; a failed load shows "You're
+   offline -- this screen opens once you're back online" (or, online, "a
+   new version is out" -> reload once) with Try again, and goes on by
+   itself when the connection is back. Audit: offline also with the
+   screen's code already loaded (its own data errors).
+2. /search and /explore: a failed trending load says "Nothing trending
+   yet" (wrong): say it failed, with Try again.
+3. Connections lists: error without a Try again button.
+4. /messages/<id> you're not in: "no longer in this conversation" AND a
+   failed-load error AND the composer: show only the first.
+5. /pages/<id> missing: "not available" + a pointless Try again -> back
+   to Pages. /events/<id> error says "Couldn't load events." -> the event.
+6. Errors caused by being offline should say so (shared error state:
+   "You're offline..." when navigator.onLine is false).
+Steps: 1 = item 1; 2 = items 2-6; 3 = audit strict in EN + AR, Day close.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -208,3 +231,9 @@
     all six in AR) -- "1 followers" slipped through on Day 39.
   - A non-component export from a .jsx file trips react-refresh: put
     shared helpers in utils/.
+
+- Day 80 lesson: never start a long run with `&` inside a foreground
+  Bash call -- it outlives an interruption and its e2e-down.sh kills the
+  next run's database ("Connection refused" on 55433). Use
+  run_in_background, and after an interruption look for leftover
+  run-all/fullrun processes first.

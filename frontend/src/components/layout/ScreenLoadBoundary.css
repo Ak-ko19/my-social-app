@@ -1,0 +1,25 @@
+/* Day 80: a screen whose code couldn't be downloaded (offline, or a new
+   version went live). */
+.screen-load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.screen-load-error-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.screen-load-error-text {
+  max-width: 32ch;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}

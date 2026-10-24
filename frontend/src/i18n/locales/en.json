@@ -1877,5 +1877,12 @@
   },
   "offline": {
     "banner": "You're offline. Some things won't work until you're back online."
+  },
+  "screenLoad": {
+    "offlineTitle": "You're offline",
+    "offlineText": "This screen will open as soon as you're back online.",
+    "updatedTitle": "A new version is ready",
+    "updatedText": "The app was updated while you had it open. Reload to keep going.",
+    "reload": "Reload"
   }
 }
