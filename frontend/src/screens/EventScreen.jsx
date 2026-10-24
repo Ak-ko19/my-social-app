@@ -137,7 +137,7 @@ function EventScreen() {
       <div className="screen-enter">
         {header}
         <FeedErrorState
-          message={loadError === 'gone' ? t('events.gone') : t('events.loadFailed')}
+          message={loadError === 'gone' ? t('events.gone') : t('events.eventLoadFailed')}
           onRetry={loadError === 'gone' ? undefined : () => { setLoadError(''); setReloadKey((k) => k + 1); }}
         />
       </div>

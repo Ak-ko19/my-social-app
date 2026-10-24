@@ -2,11 +2,13 @@ import { Link } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
 import './Explore.css';
 import { useTranslation } from 'react-i18next';
+import FeedErrorState from '../feed/FeedErrorState';
 
 // Trending hashtag chips (B7) -- shared by the Explore screen and the
 // Search screen's "before you search" state. Renders nothing until loaded,
-// and an honest empty line when nothing is trending this week.
-function TrendingHashtags({ tags, loaded, title: titleProp }) {
+// and an honest empty line when nothing is trending this week. Day 80: a
+// failed load says so (with Try again) instead of "nothing trending".
+function TrendingHashtags({ tags, loaded, failed = false, onRetry, title: titleProp }) {
   const { t } = useTranslation();
   const title = titleProp || t('explore.trending');
   if (!loaded) return null;
@@ -15,7 +17,9 @@ function TrendingHashtags({ tags, loaded, title: titleProp }) {
       <h2 className="section-heading trending-heading">
         <TrendingUp size={14} aria-hidden="true" /> {title}
       </h2>
-      {tags.length === 0 ? (
+      {failed ? (
+        <FeedErrorState message={t('explore.trendingFailed')} onRetry={onRetry} />
+      ) : tags.length === 0 ? (
         <p className="trending-empty">{t('explore.trendingEmpty')}</p>
       ) : (
         <ul className="trending-chips">

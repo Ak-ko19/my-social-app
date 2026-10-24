@@ -7,6 +7,7 @@ import FollowButton from '../components/follow/FollowButton';
 import { useAuth } from '../hooks/useAuth';
 import { fetchConnections, fetchProfile } from '../services/profileService';
 import { resolveImageUrl } from '../api';
+import FeedErrorState from '../components/feed/FeedErrorState';
 import { arrowStep } from '../utils/direction';
 import '../components/profile/ProfileTabs.css';
 import './ConnectionsScreen.css';
@@ -29,7 +30,9 @@ function ConnectionsScreen() {
   const [owner, setOwner] = useState(null);
   const [list, setList] = useState({ key: null, users: [], page: 1, hasMore: false, status: 'loading' });
   const [loadingMore, setLoadingMore] = useState(false);
-  const key = `${id}:${active}`;
+  // Day 80: Try again after a failed load.
+  const [attempt, setAttempt] = useState(0);
+  const key = `${id}:${active}:${attempt}`;
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +52,8 @@ function ConnectionsScreen() {
       });
     return () => { cancelled = true; };
   }, [id, active, token, key]);
+
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   const loadMore = useCallback(() => {
     setLoadingMore(true);
@@ -93,7 +98,7 @@ function ConnectionsScreen() {
   } else if (list.status === 'missing') {
     panel = <p className="connections-status">{t('profile.notFound')}</p>;
   } else if (list.status === 'error') {
-    panel = <p className="connections-status" role="alert">{t('connections.loadFailed')}</p>;
+    panel = <FeedErrorState message={t('connections.loadFailed')} onRetry={retry} />;
   } else if (list.users.length === 0) {
     panel = <p className="connections-status">{t(`connections.empty.${active}`)}</p>;
   } else {

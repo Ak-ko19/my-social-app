@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useSocket } from './hooks/useSocket';
 import { useConversationMessages } from './hooks/useConversationMessages';
@@ -139,8 +139,13 @@ function Conversation() {
       .catch((err) => {
         // 403 = you were removed from (or left) this group meanwhile -- an
         // expected state, shown as a notice rather than logged as an error.
+        // Day 80: 404 = there's no such conversation (any more).
         if (err.response?.status === 403) {
           setDetailsError(t('messages.noLongerMember'));
+          return;
+        }
+        if (err.response?.status === 404) {
+          setDetailsError(t('messages.conversationMissing'));
           return;
         }
         console.error(err);
@@ -355,19 +360,22 @@ function Conversation() {
             ]}
       />
 
+      {/* Day 80: not in it (or it's gone): only this, and the way back --
+          no failed-load error, no thread, no composer. */}
       {detailsError && (
-        <p className="form-error conversation-notice" role="alert">
-          {detailsError}
-        </p>
+        <div className="conversation-notice" role="alert">
+          <p className="form-error">{detailsError}</p>
+          <Link to="/messages" className="screen-link">{t('messages.backToMessages')}</Link>
+        </div>
       )}
 
       <ConnectionBanner />
 
-      {loading && <MessageThreadSkeleton />}
+      {!detailsError && loading && <MessageThreadSkeleton />}
 
-      {!loading && error && <ConversationListErrorState message={error} onRetry={reload} />}
+      {!detailsError && !loading && error && <ConversationListErrorState message={error} onRetry={reload} />}
 
-      {!loading && !error && (
+      {!detailsError && !loading && !error && (
         <div className="messages-thread" ref={containerRef} onScroll={handleScroll}>
           {loadingOlder && (
             <div className="messages-load-older" role="status" aria-label={t('messages.loadingOlder')}>
@@ -420,15 +428,17 @@ function Conversation() {
         </p>
       )}
 
-      <MessageComposer
-        onSend={handleSend}
-        onSendVoice={handleSendVoice}
-        onSendImage={handleSendImage}
-        onTyping={handleTyping}
-        replyTo={replyTo}
-        replyToLabel={replyTo ? replyAuthorLabel(replyTo.sender_id) : ''}
-        onCancelReply={() => setReplyTo(null)}
-      />
+      {!detailsError && (
+        <MessageComposer
+          onSend={handleSend}
+          onSendVoice={handleSendVoice}
+          onSendImage={handleSendImage}
+          onTyping={handleTyping}
+          replyTo={replyTo}
+          replyToLabel={replyTo ? replyAuthorLabel(replyTo.sender_id) : ''}
+          onCancelReply={() => setReplyTo(null)}
+        />
+      )}
       {forwardStatus && (
         <p className="messages-forward-status" role="status">{forwardStatus}</p>
       )}

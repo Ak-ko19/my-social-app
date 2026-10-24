@@ -53,7 +53,7 @@ function ExploreScreen() {
       </header>
       <div className="screen-body explore-body">
         <PeopleYouMayKnow token={token} />
-        <TrendingHashtags tags={trending.tags} loaded={trending.loaded} />
+        <TrendingHashtags tags={trending.tags} loaded={trending.loaded} failed={trending.failed} onRetry={trending.retry} />
         <h2 className="section-heading">{t('explore.popular')}</h2>
       </div>
       <div className="explore-posts">{postsSection}</div>

@@ -394,6 +394,7 @@
     "postComment": "Failed to post comment",
     "updateComment": "Failed to update comment",
     "commentLike": "Could not update the like",
+    "offlineRetry": "You're offline. This will load as soon as you're back online.",
     "loadMessages": "Failed to load messages",
     "loadConversations": "Failed to load conversations",
     "loadPopular": "Failed to load popular posts",
@@ -480,6 +481,7 @@
     "popular": "Popular this week",
     "trending": "Trending this week",
     "trendingEmpty": "Nothing trending yet this week.",
+    "trendingFailed": "Couldn't load what's trending.",
     "postCount_one": "{{count}} post",
     "postCount_other": "{{count}} posts",
     "pymk": "People you may know",
@@ -589,6 +591,7 @@
     "title": "Messages",
     "newGroup": "New group",
     "backToMessages": "Back to Messages",
+    "conversationMissing": "This conversation doesn't exist any more.",
     "noLongerMember": "You're no longer in this conversation.",
     "you": "You",
     "someone": "Someone",
@@ -1758,6 +1761,7 @@
       "discover": "Discover"
     },
     "loadFailed": "Couldn't load events.",
+    "eventLoadFailed": "Couldn't load this event.",
     "empty": {
       "mine": "Nothing coming up. Events you host or answer show up here.",
       "discover": "No upcoming events to show yet."

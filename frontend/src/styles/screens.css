@@ -723,7 +723,15 @@ textarea.form-input {
 /* Conversation: inline notice under the header (e.g. removed from a group). */
 .conversation-notice {
   flex-shrink: 0;
-  padding: var(--space-2) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.conversation-notice .form-error {
+  margin: 0;
 }
 
 /* ---------- Small helper text under a form/control ---------- */

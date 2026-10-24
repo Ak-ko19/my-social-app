@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 80 — Empty/error states: friendly screens for every empty list, error, and offline case (EN/AR).
-**Step:** 1 — screens that cannot load offline: DONE (committed; Vitest 343, gates, every browser suite + a11y + A3 green). Next: 2 the specific gaps (items 2-6); the audit file waits in the scratchpad (day80-states.cjs) until it passes.
+**Step:** 2 — the specific gaps + the audit suite: DONE (committed; Vitest 348, gates, day80-states-en/-ar 146/146, related suites green). Next: Day close (full browser run, Progress Log).
 
 Day 80 audit (e2e/day80-states.cjs, STATES_REPORT=1: a new account opens
 35 data routes empty / with every API read failing / offline in-app).

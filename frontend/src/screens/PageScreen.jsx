@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Flag, Pencil } from 'lucide-react';
 import { IconButton } from '../components/ui';
@@ -22,6 +22,7 @@ function PageScreen() {
   const [reportOpen, setReportOpen] = useState(false); // Day 24
   const [page, setPage] = useState(null);
   const [pageError, setPageError] = useState('');
+  const [pageMissing, setPageMissing] = useState(false);
   const [posts, setPosts] = useState(null);
   const [postsError, setPostsError] = useState('');
   const [pageNum, setPageNum] = useState(1);
@@ -43,6 +44,7 @@ function PageScreen() {
       .catch((err) => {
         if (cancelled) return;
         if (err.response?.status !== 404) console.error(err);
+        setPageMissing(err.response?.status === 404);
         setPageError(err.response?.status === 404 ? t('pages.unavailable') : t('pages.pageLoadFailed'));
       });
     return () => {
@@ -82,7 +84,15 @@ function PageScreen() {
           <IconButton icon={ChevronLeft} aria-label={t('pages.backToPages')} onClick={() => navigate('/pages')} />
           <h1 className="screen-header-title">{t('pages.page')}</h1>
         </header>
-        <FeedErrorState message={pageError} onRetry={() => { setPageError(''); setReloadKey((k) => k + 1); }} />
+        {/* Day 80: a page that isn't there can't be retried -- only left. */}
+        {pageMissing ? (
+          <div className="feed-error-state" role="alert">
+            <p>{pageError}</p>
+            <Link to="/pages" className="screen-link">{t('pages.backToPages')}</Link>
+          </div>
+        ) : (
+          <FeedErrorState message={pageError} onRetry={() => { setPageError(''); setReloadKey((k) => k + 1); }} />
+        )}
       </div>
     );
   }

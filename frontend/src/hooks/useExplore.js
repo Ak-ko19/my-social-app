@@ -2,28 +2,39 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchTrendingHashtags, fetchPopularPosts } from '../services/exploreService';
 import i18n from '../i18n';
 
-// Trending hashtags (one small list, no paging). Failures leave it empty:
-// it's a secondary strip, the screen still works without it.
+// Trending hashtags (one small list, no paging). A secondary strip: the
+// screen works without it, and since Day 80 a failure says so (failed +
+// retry) instead of looking like "nothing trending".
 export function useTrendingHashtags(token) {
   const [tags, setTags] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  // Day 80: a failed load is not "nothing trending" -- it says so, with retry.
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     fetchTrendingHashtags(token)
       .then((data) => {
-        if (!cancelled) setTags(data);
+        if (!cancelled) {
+          setTags(data);
+          setFailed(false);
+        }
       })
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        if (!cancelled) setFailed(true);
+      })
       .finally(() => {
         if (!cancelled) setLoaded(true);
       });
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, attempt]);
 
-  return { tags, loaded };
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+  return { tags, loaded, failed, retry };
 }
 
 // Popular posts, paginated -- same shape as useSavedPosts.

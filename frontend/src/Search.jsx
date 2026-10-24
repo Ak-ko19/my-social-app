@@ -252,7 +252,7 @@ function Search() {
           <>
             <RecentSearches token={token} onPick={(query) => { setInput(query); runSearch(query); }} />
             <PeopleYouMayKnow token={token} />
-            <TrendingHashtags tags={trending.tags} loaded={trending.loaded} />
+            <TrendingHashtags tags={trending.tags} loaded={trending.loaded} failed={trending.failed} onRetry={trending.retry} />
             <Link to="/explore" className="screen-link explore-link">
               <Compass size={16} aria-hidden="true" /> {t('search.explore')}
             </Link>
