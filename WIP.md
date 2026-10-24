@@ -1,30 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 80 — Empty/error states: friendly screens for every empty list, error, and offline case (EN/AR).
-**Step:** 2 — the specific gaps + the audit suite: DONE (committed; Vitest 348, gates, day80-states-en/-ar 146/146, related suites green). Next: Day close (full browser run, Progress Log).
-
-Day 80 audit (e2e/day80-states.cjs, STATES_REPORT=1: a new account opens
-35 data routes empty / with every API read failing / offline in-app).
-Empty: every screen says something sensible. Gaps found:
-1. OFFLINE: opening almost any screen in the app while offline shows the
-   generic crash page ("Something went wrong") -- its lazy-loaded code
-   can't download (no service worker in dev; in production the same on a
-   first visit, before the worker installs, or after a deploy renamed the
-   files). Fix: one lazy loader for screens; a failed load shows "You're
-   offline -- this screen opens once you're back online" (or, online, "a
-   new version is out" -> reload once) with Try again, and goes on by
-   itself when the connection is back. Audit: offline also with the
-   screen's code already loaded (its own data errors).
-2. /search and /explore: a failed trending load says "Nothing trending
-   yet" (wrong): say it failed, with Try again.
-3. Connections lists: error without a Try again button.
-4. /messages/<id> you're not in: "no longer in this conversation" AND a
-   failed-load error AND the composer: show only the first.
-5. /pages/<id> missing: "not available" + a pointless Try again -> back
-   to Pages. /events/<id> error says "Couldn't load events." -> the event.
-6. Errors caused by being offline should say so (shared error state:
-   "You're offline..." when navigator.onLine is false).
-Steps: 1 = item 1; 2 = items 2-6; 3 = audit strict in EN + AR, Day close.
+**Day:** 81–82 — Notifications center upgrade: group similar notifications ("5 people liked your post"), mark all read, filters.
+**Step:** 0 — not started (Day 80 closed: see the Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -237,3 +214,12 @@ Steps: 1 = item 1; 2 = items 2-6; 3 = audit strict in EN + AR, Day close.
   next run's database ("Connection refused" on 55433). Use
   run_in_background, and after an interruption look for leftover
   run-all/fullrun processes first.
+
+- Day 80 notes:
+  - Screens load through utils/lazyScreen (App.jsx): a new screen uses
+    lazyScreen(() => import(...)), never React.lazy directly.
+  - Failed loads: use FeedErrorState (offline-aware, retries by itself
+    when back online); a 404 gets a way back, not Try again.
+  - A new data screen: add its route to e2e/day80-states.cjs ROUTES.
+  - day80-states runs as two parts (day80-states-en / -ar, ~6 min each):
+    run them as their own batch.

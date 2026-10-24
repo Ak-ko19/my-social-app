@@ -267,7 +267,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 78–79 — Onboarding
 - [x] First-run steps: profile photo, follow suggestions, language choice, tour. *("Get started" after a new account's first login: language, photo, people to follow, a tour; skippable, shown once — see Progress Log.)*
 ### Day 80 — Empty/error states
-- [ ] Friendly screens for every empty list, error, and offline case, in 3 languages.
+- [x] Friendly screens for every empty list, error, and offline case, in 3 languages. *(EN/AR since 2026-10-07. A bilingual audit of 35 screens found and fixed an offline crash and five dishonest or dead-end error states — see Progress Log.)*
 ### Day 81–82 — Notifications center upgrade
 - [ ] Group similar notifications ("5 people liked your post"), mark all read, filters.
 ### Day 83–84 — Memories / "On this day"
@@ -2557,3 +2557,40 @@ lists that grow without limit.
     with a real photo upload), day27-perf, a11y (3 parts, 0
     serious/critical) and A3 EN/AR (150 page checks in each of 4 parts,
     0 failures).
+
+### 2026-10-22/24 — Day 80: Empty/error states
+- **How (better than checking screens by eye):** a new browser suite,
+  day80-states, opens 35 data screens as a brand-new account three ways
+  -- empty, with every API read failing, and offline (before and after
+  the screen's code was downloaded) -- in English/light and Arabic/dark.
+  Each screen must say something, a failed load must offer Try again,
+  and offline must never show the crash screen. Every empty state was
+  already friendly; the failures it found are fixed:
+- **Offline crash (`edcf5f7`):** opening almost any screen in the app
+  while offline showed "Something went wrong": screens load on demand and
+  their code couldn't download (in production the same on a first visit,
+  before the service worker installs, or with a tab open across a new
+  deploy). Screens now load through lazyScreen(): offline it says so and
+  opens by itself when the connection is back; online it offers Reload
+  ("a new version is ready") and reports it to Admin > Errors.
+- **Honest failures (`0316658`):**
+  - Offline, a failed list says "You're offline" and reloads by itself
+    when the connection returns (the shared error state of 38 screens,
+    and the chats list).
+  - Search and Explore said "Nothing trending yet" when trending failed.
+  - Followers/following had no Try again.
+  - A chat you're not in showed the notice, an error and the message box
+    at once; now the notice and "Back to Messages" only.
+  - A missing page offered a pointless Try again (now "Back to Pages");
+    an event that failed said "Couldn't load events."
+- **Slip:** after an interruption, a run started with `&` kept going in
+  the background and its teardown stopped the next run's database. Long
+  runs now always use a tracked background task (WIP lessons).
+- **Tests at close:**
+  - Backend unchanged since Day 78 (1019/1019); Vitest 348/348 (new:
+    lazyScreen 5, FeedErrorState/Trending 5); lint (exit 0); check:i18n;
+    check:headers; bundle 213.9 / 225 kB.
+  - Full browser run in small batches: all 65 regular suites, the 9
+    special-stack suites, day80-states (146 checks in each language),
+    day27-perf, a11y (3 parts, 0 serious/critical) and A3 EN/AR (150
+    page checks in each of 4 parts, 0 failures).
