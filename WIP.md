@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 92 — Audit 4 info items (B3, B5).
-**Step:** 1 — done (committed). Next: close Day 92 -- full browser run in batches, then the Progress Log entry.
+**Day:** 93–94 — Share a post.
+**Step:** 0 — not started (Day 92 closed: see the Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -252,6 +252,9 @@
   - Post lists: add commentCountColumnSql('$1') next to pollColumnSql.
   - Re-run `npm audit --omit=dev` in all three folders before each close:
     new advisories appear between days (two did between Days 76 and 85).
+
+- Day 92: a new public route needs a line in backend/docs/openapi/publicOperations.js
+  (openapiSpec.test fails otherwise; c4-audit-checks reads it too).
 
 - Day 89 notes:
   - A full run can be cut off by the machine sleeping: a suite with

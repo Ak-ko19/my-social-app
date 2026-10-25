@@ -2854,3 +2854,38 @@ Read-only; no application code changed. Same method as audit 3, on
     0 failures.
 - **Also:** the owner's top rule is at the head of CLAUDE.md: never end a
   turn while a shell or test is running.
+
+### 2026-10-25/26 — Day 92: Audit 4 info items (B3, B5)
+- **B3, a two-factor challenge logs in once (`1ba8022`):**
+  - The challenge from POST /login now carries an id (jti). The session
+    it opens records it: migration 078 adds sessions.login_challenge,
+    with a unique partial index.
+  - A used challenge is refused before a code or recovery code is spent
+    on it. Two racing requests both get past that check, so the unique
+    index refuses the second session. Either way the answer is "Your
+    login has expired" (a message that already exists, with its Arabic).
+  - Several devices still get a challenge each, and a wrong code doesn't
+    end a challenge.
+  - Migration chores: fixture, GO_LIVE_CHECKLIST (015 → 078, the loop,
+    counts 30/35/19, checked on a fixture database), API reference.
+- **B5, one reviewed list of public routes (`1ba8022`):**
+  backend/docs/openapi/publicOperations.js holds the 18 operations that
+  work without a login, each with a reason. openapiSpec.test (in CI)
+  checks the spec's public operations are exactly these, and the spec is
+  checked against the real middleware. c4-audit-checks reads the same list
+  and knows the machine-secret route: 13/13 again.
+- **Tests:**
+  - twoFactorLogin +5: reuse with a fresh code and with a recovery code
+    (not spent), a race the database stops, two devices, a challenge
+    without an id. All 5 mutations caught.
+  - The racing-requests test didn't reach the unique index: the code
+    check serialises them. So a separate test makes the early check miss,
+    as a real race between instances would.
+  - Two older tests reused a challenge to show a code is single-use; they
+    now use a fresh challenge.
+- **Tests at close:**
+  - Backend 1069/1069. Rehearsal 015 → 078 passes: 64 migrations up, down,
+    up; schema = fixture. npm audit 0/0/0.
+  - Full browser run in batches: all 67 regular suites, the 9
+    special-stack ones, day80-states 150 × 2, perf 47, a11y 62 + 62 + 7,
+    A3 153 × 4, 0 failures. Plus c1-seed 8/8 and c4-audit-checks 13/13.
