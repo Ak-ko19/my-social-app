@@ -132,8 +132,10 @@ async function seed() {
     const id = {};
     for (const [i, u] of USERS.entries()) {
       const r = await client.query(
-        `INSERT INTO users (username, email, password, bio, is_private, is_admin, email_verified, created_at, last_seen)
-         VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8) RETURNING id`,
+        // Day 88: demo accounts are past the first-run steps (Day 78), like any
+        // account that already existed.
+        `INSERT INTO users (username, email, password, bio, is_private, is_admin, email_verified, created_at, last_seen, onboarded_at)
+         VALUES ($1, $2, $3, $4, $5, $6, true, $7::timestamp, $8, $7::timestamp) RETURNING id`,
         [u.key, `${u.key}@${DEMO_DOMAIN}`, hash, u.bio, Boolean(u.private), Boolean(u.admin), hoursAgo(24 * 30 + i), hoursAgo(i % 4)]
       );
       id[u.key] = r.rows[0].id;

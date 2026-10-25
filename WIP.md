@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 88 — Documentation for the owner: OWNER_GUIDE.md in simple English.
-**Step:** 0 — not started (Days 85–87 closed: see the Progress Log).
+**Day:** 89 — Re-audit: AUDIT_REPORT_4.md (a full read-only audit, compared with audit 3).
+**Step:** 0 — not started (Day 88 closed: see the Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

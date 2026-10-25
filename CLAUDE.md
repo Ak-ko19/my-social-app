@@ -30,8 +30,9 @@ No investor deadline pressure — building thoroughly, roughly a month timeline
 rather than rushing.
 
 ## Completed Features
-(Updated Day 84. Details: PROJECT_DETAILED_GUIDE.md and MONTH_PLAN.md's
-Progress Log; how to run and test everything: README.md.)
+(Updated Day 88. Details: PROJECT_DETAILED_GUIDE.md and MONTH_PLAN.md's
+Progress Log; how to run and test everything: README.md; for the owner in
+simple English: OWNER_GUIDE.md.)
 
 - **Accounts:** signup / login (JWT sessions you can see and sign out),
   email verification and password reset (Brevo or SMTP; off without a

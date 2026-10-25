@@ -274,7 +274,7 @@ Build every feature the way a senior engineer at a top social media company woul
 - [x] Show your posts from past years on the same date. *(Memories screen, "On this day" on Home, and a morning reminder in your own time zone — see Progress Log.)*
 ### Day 85–87 — Buffer: fix everything left in AUDIT_REPORT_3.md
 ### Day 88 — Documentation for the owner
-- [ ] OWNER_GUIDE.md in simple English: what the app has, how to run it, what LATER.md items unlock.
+- [x] OWNER_GUIDE.md in simple English: what the app has, how to run it, what LATER.md items unlock. *(Plus a five-minute demo and the after-funding list — see Progress Log.)*
 ### Day 89 — Re-audit (AUDIT_REPORT_4.md)
 ### Day 90 — GO LIVE (only if you have the access), then apply rule 12 and continue.
 
@@ -2700,3 +2700,17 @@ lists that grow without limit.
     special-stack suites, day80-states (150 each language), day27-perf
     (47), a11y (3 parts, 0 serious/critical) and A3 EN/AR (153 page checks
     in each of 4 parts, 0 failures).
+
+### 2026-10-25 — Day 88: Documentation for the owner
+- **OWNER_GUIDE.md**, in simple English: what the app can
+  do (grouped as a person would look for it), how to open it on a Windows
+  computer step by step, a five-minute investor demo with the demo
+  accounts, how to run the tests, a table of every LATER.md item with what
+  it turns on, its cost and time, how GO LIVE works and the free-plan
+  limits, and what to change after funding (a paid server, Redis for the
+  limits, encrypted two-factor keys, a login cookie, Explore at scale,
+  the mobile app). Linked from README.md and CLAUDE.md.
+- **Found while writing it:** the demo seed made its accounts without
+  onboarded_at, so a demo login opened the first-run steps (Day 78) and
+  c1-seed would have stopped there. Demo accounts are now past them;
+  seed + c1-seed pass (8/8).

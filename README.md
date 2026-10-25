@@ -12,6 +12,9 @@ search, notifications and web push, an admin screen, and English and Arabic
 | `frontend/` | React + Vite web app (installable as a PWA) |
 | `e2e/` | Browser test suites (Playwright, headless Edge) on a throwaway local stack |
 
+For the owner, in simple English: `OWNER_GUIDE.md` (what the app does, how
+to run and demo it, what each LATER.md item turns on).
+
 Planning and history: `MONTH_PLAN.md` (the plan and the Progress Log),
 `PROJECT_DETAILED_GUIDE.md` (how each feature was built), `LATER.md`
 (things only the owner can do), `GO_LIVE_CHECKLIST.md` (deploying).
