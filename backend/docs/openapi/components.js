@@ -206,9 +206,10 @@ const schemas = {
     media: s.array(s.object({ url: s.str() }), 'Photos in order (empty when none)'),
     poll: s.nullable(s.ref('Poll')),
     page: s.nullable(s.object({ id: s.id(), name: s.str() }, { description: 'Set when the post was published as a page' })),
-    bookmarked_by_me: s.bool()
+    bookmarked_by_me: s.bool(),
+    comment_count: s.int('Day 85: the comments (and replies) you would see when you open them')
   }, {
-    optional: ['visibility', 'image_url', 'avatar_url', 'like_count', 'liked_by_me', 'my_reaction', 'reaction_counts', 'media', 'poll', 'page', 'bookmarked_by_me'],
+    optional: ['visibility', 'image_url', 'avatar_url', 'like_count', 'liked_by_me', 'my_reaction', 'reaction_counts', 'media', 'poll', 'page', 'bookmarked_by_me', 'comment_count'],
     description: 'A post card. Lists may add fields of their own (e.g. a group or an edit time).'
   }),
   PostRow: s.object({

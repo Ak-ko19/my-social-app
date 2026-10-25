@@ -3,6 +3,7 @@
 // UNIQUE(post_id, user_id). 'like' is the default, so the original
 // like/unlike API keeps working and "like count" means "total reactions".
 const db = require('../db');
+const { noBlockBetweenSql } = require('./blockService');
 
 // Keep in sync with migration 016's CHECK constraint and the frontend's
 // utils/reactions.js.
@@ -60,4 +61,17 @@ function pageColumnSql() {
     (SELECT json_build_object('id', pg.id, 'name', pg.name) FROM pages pg WHERE pg.id = posts.page_id) AS page`;
 }
 
-module.exports = { REACTIONS, isValidReaction, getReactionSummary, reactionColumnsSql, mediaColumnSql, pageColumnSql };
+// Day 85: "12 comments" on the card, before the comments are opened -- the
+// same comments the list would show the viewer: one waiting for approval
+// counts only for its author and the post's owner, and none across a
+// block (commentController.getComments). Replies count too. Read through
+// idx_comments_post_id (migration 070).
+function commentCountColumnSql(viewerParam) {
+  return `
+    (SELECT COUNT(*)::int FROM comments c
+     WHERE c.post_id = posts.id
+       AND (NOT c.awaiting_approval OR c.user_id = ${viewerParam}::int OR posts.user_id = ${viewerParam}::int)
+       AND (${viewerParam}::int IS NULL OR ${noBlockBetweenSql(`${viewerParam}::int`, 'c.user_id')})) AS comment_count`;
+}
+
+module.exports = { REACTIONS, isValidReaction, getReactionSummary, reactionColumnsSql, mediaColumnSql, pageColumnSql, commentCountColumnSql };

@@ -1,6 +1,6 @@
 const db = require('../db');
 const { noBlockBetweenSql } = require('../services/blockService');
-const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
+const { reactionColumnsSql, mediaColumnSql, pageColumnSql, commentCountColumnSql } = require('../services/reactionService');
 
 const { sendError } = require('../utils/httpError');
 const { mediaOfPost, deleteMedia } = require('../services/mediaCleanupService');
@@ -52,6 +52,7 @@ async function getPosts(req, res) {
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
         ${pollService.pollColumnSql('$1')},
+        ${commentCountColumnSql('$1')},
         ${pageColumnSql()},
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me
@@ -103,6 +104,7 @@ async function getFeed(req, res) {
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
         ${pollService.pollColumnSql('$1')},
+        ${commentCountColumnSql('$1')},
         ${pageColumnSql()},
         EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
         EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = posts.user_id AND follows.status = 'accepted') AS is_following
@@ -185,6 +187,7 @@ async function getPost(req, res) {
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
         ${pollService.pollColumnSql('$1')},
+        ${commentCountColumnSql('$1')},
         ${pageColumnSql()},
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted') AS viewer_is_follower

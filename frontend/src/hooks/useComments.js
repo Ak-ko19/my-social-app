@@ -21,6 +21,9 @@ export function useComments(postId, token, currentUser) {
   // Day 70: comments come a page at a time (oldest first); nextCursor is
   // null once they are all here.
   const [nextCursor, setNextCursor] = useState(null);
+  // Day 85: the first page has arrived (until then the list says nothing
+  // about how many there are).
+  const [loaded, setLoaded] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState(null);
 
@@ -48,6 +51,7 @@ export function useComments(postId, token, currentUser) {
       .then((page) => {
         setComments(page.comments);
         setNextCursor(page.nextCursor);
+        setLoaded(true);
       })
       .catch((err) => console.error(err));
   };
@@ -250,6 +254,7 @@ export function useComments(postId, token, currentUser) {
 
   return {
     visible,
+    loaded,
     nextCursor,
     loadMore,
     loadingMore,

@@ -159,14 +159,15 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
       .finally(() => setEditPending(false));
   };
 
-  // getFeed's query returns like_count (a cheap correlated COUNT) but no
-  // equivalent comment_count -- the real count is only known once the
-  // section has actually been opened and useComments' own load() has run.
-  // Only shown while open, rather than shown-then-hidden-again after
-  // closing, so this can never display a stale number.
-  const commentCountLabel = comments.visible
-    ? t('feed.commentCount', { count: comments.comments.length })
-    : t('feed.comments');
+  // Day 85: every list sends comment_count (the comments and replies this
+  // viewer would see), so the card says "12 comments" before they are
+  // opened, like Facebook's. Once they are open and every page has loaded,
+  // the list itself is the count -- it already has the ones just added or
+  // deleted here. None: nothing, like the reactions beside it.
+  const commentCount = comments.visible && comments.loaded && !comments.nextCursor
+    ? comments.comments.length
+    : post.comment_count;
+  const commentCountLabel = commentCount > 0 ? t('feed.commentCount', { count: commentCount }) : '';
 
   // The old common/Avatar component did this resolution internally; the
   // new components/ui/Avatar doesn't (it just renders whatever `src` it's

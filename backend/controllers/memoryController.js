@@ -1,6 +1,6 @@
 const db = require('../db');
 const { sendError } = require('../utils/httpError');
-const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
+const { reactionColumnsSql, mediaColumnSql, pageColumnSql, commentCountColumnSql } = require('../services/reactionService');
 const { pollColumnSql } = require('../services/pollService');
 const { validZone, todayIn } = require('../utils/timeZone');
 
@@ -40,6 +40,7 @@ async function getMemories(req, res) {
         ${reactionColumnsSql('$1')},
         ${mediaColumnSql()},
         ${pollColumnSql('$1')},
+        ${commentCountColumnSql('$1')},
         ${pageColumnSql()},
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,

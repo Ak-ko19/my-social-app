@@ -1,7 +1,7 @@
 const db = require('../db');
 const { noBlockBetweenSql } = require('../services/blockService');
 const { postAudienceSql } = require('../services/postVisibilityService');
-const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
+const { reactionColumnsSql, mediaColumnSql, pageColumnSql, commentCountColumnSql } = require('../services/reactionService');
 const { pollColumnSql } = require('../services/pollService');
 const { popularityScoreSql } = require('../services/popularity');
 const { sendError } = require('../utils/httpError');
@@ -40,6 +40,7 @@ const POST_COLUMNS_SQL = `
   ${reactionColumnsSql('$1')},
   ${mediaColumnSql()},
   ${pollColumnSql('$1')},
+  ${commentCountColumnSql('$1')},
   ${pageColumnSql()},
   $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me`;
 

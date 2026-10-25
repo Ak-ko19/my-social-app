@@ -2,7 +2,7 @@
 // a collection's posts share this one query, so both apply the same rules.
 const db = require('../db');
 const { noBlockBetweenSql } = require('../services/blockService');
-const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('./reactionService');
+const { reactionColumnsSql, mediaColumnSql, pageColumnSql, commentCountColumnSql } = require('./reactionService');
 const { pollColumnSql } = require('./pollService');
 const { communityVisibleSql, postAudienceSql } = require('./postVisibilityService');
 
@@ -33,6 +33,7 @@ async function listSaved(viewerId, { limit, offset, collectionId = null }) {
       ${reactionColumnsSql('$1')},
       ${mediaColumnSql()},
       ${pollColumnSql('$1')},
+      ${commentCountColumnSql('$1')},
       ${pageColumnSql()},
       true AS bookmarked_by_me
     FROM bookmarks
