@@ -1,5 +1,8 @@
 # MySocialApp Project
 
+## Top rule (owner, 2026-10-25)
+NEVER end your turn while any shell or test is still running. Run every test and command in the FOREGROUND with a long timeout and wait for it to finish. Never say 'waiting for X' and stop. After each step's report, immediately start the next step. The ONLY time you stop is when the owner presses Esc.
+
 ## Tech Stack
 - Backend: Node.js + Express
 - Frontend: React + Vite

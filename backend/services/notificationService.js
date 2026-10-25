@@ -4,7 +4,17 @@
 const db = require('../db');
 const { pushNotification } = require('./pushService');
 const { notRestrictedSql } = require('./restrictService');
+const { noBlockBetweenSql } = require('./blockService');
 const logger = require('../utils/logger');
+
+// Day 91 (AUDIT_REPORT_4 B1): which of a person's notifications they see --
+// their own system ones (the actor is them) and any whose actor has no
+// block with them, in either direction. Blocking hides the rows, counts
+// and faces; it doesn't delete them, so an unblock brings them back (like
+// Facebook). n = the notifications row's alias.
+function visibleSql(n) {
+  return `(${n}.actor_id = ${n}.user_id OR ${noBlockBetweenSql(`${n}.user_id`, `${n}.actor_id`)})`;
+}
 
 // Day 81: tells the user's open apps at once, with the new unread count:
 // 'notification_new' (the badge and an open Notifications screen update
@@ -21,7 +31,7 @@ async function announce(userId, { read = false } = {}) {
     } catch {
       return;
     }
-    const unread = await db.query('SELECT count(*)::int AS n FROM notifications WHERE user_id = $1 AND is_read = false', [userId]);
+    const unread = await db.query(`SELECT count(*)::int AS n FROM notifications n WHERE n.user_id = $1 AND n.is_read = false AND ${visibleSql('n')}`, [userId]);
     const payload = { unreadCount: unread.rows[0].n };
     if (read) io.to(`user_${userId}`).emit('notifications_read', payload);
     else io.to(`user_${userId}`).emit('notification_new', payload);
@@ -72,6 +82,32 @@ function allowedSql(category, recipientSql) {
   )`;
 }
 
+// Day 91 (AUDIT_REPORT_4 B2): kinds someone can repeat by undoing and
+// redoing (like -> unlike -> like, follow -> unfollow -> follow). Each
+// would otherwise be a new notification AND a new push every time. A like
+// is news once (for as long as the notification is kept); a follow again
+// after a day is news again. Intervals come only from this map.
+const REPEAT_WINDOW = {
+  like: null,
+  comment_like: null,
+  follow: '1 day',
+  follow_request: '1 day'
+};
+
+// SQL condition "this actor hasn't already told this person this", for a
+// repeatable type ($1 user, $2 actor, $4 post, $5 comment). The type is one of
+// REPEAT_WINDOW's own keys, never input, so it is written in as a literal.
+function notRepeatSql(type) {
+  if (!Object.hasOwn(REPEAT_WINDOW, type)) return 'true';
+  const window = REPEAT_WINDOW[type];
+  return `NOT EXISTS (
+    SELECT 1 FROM notifications d
+    WHERE d.user_id = $1 AND d.type = '${type}' AND d.actor_id = $2
+      AND d.post_id IS NOT DISTINCT FROM $4::int AND d.comment_id IS NOT DISTINCT FROM $5::int
+      ${window ? `AND d.created_at > now() - interval '${window}'` : ''}
+  )`;
+}
+
 // Creates one notification unless the recipient turned that category off
 // (or is the actor -- nobody is notified about their own actions). The
 // preference check and the insert are one statement.
@@ -84,6 +120,10 @@ async function notify({ userId, actorId, type, postId = null, commentId = null, 
      WHERE ${allowedSql(category, '$1::int')}
        -- Day 47: nobody you restricted can notify you.
        AND ${notRestrictedSql('$1::int', '$2::int')}
+       -- Day 91: nor anyone with a block between you (B1), nor the same
+       -- thing twice (B2).
+       AND ${noBlockBetweenSql('$1::int', '$2::int')}
+       AND ${notRepeatSql(type)}
      RETURNING id`,
     [userId, actorId, type, postId, commentId, communityId, pageId, eventId]
   );
@@ -142,4 +182,4 @@ async function updatePreferences(userId, changes) {
   return next;
 }
 
-module.exports = { notify, notifySystem, announce, SYSTEM_TYPES, getPreferences, updatePreferences, allowedSql, CATEGORIES, CATEGORY_BY_TYPE };
+module.exports = { notify, notifySystem, announce, SYSTEM_TYPES, getPreferences, updatePreferences, allowedSql, visibleSql, CATEGORIES, CATEGORY_BY_TYPE };

@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 91 — Notifications: no repeats, no blocked people (AUDIT_REPORT_4 B2, B1).
-**Step:** 0 — not started (Day 90 closed: GO LIVE skipped, Days 91–120 appended -- see the Progress Log).
+**Step:** 1 — done (committed). Next: close Day 91 -- full browser run in batches, then the Progress Log entry.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

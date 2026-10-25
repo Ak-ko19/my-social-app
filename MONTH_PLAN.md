@@ -286,7 +286,7 @@ Build every feature the way a senior engineer at a top social media company woul
 *(Written 2026-10-25 under rule 12 from AUDIT_REPORT_4.md §4 and §6. Every Day is owner-free, runs on the free tiers, and was checked against the code: none of it exists yet.)*
 
 ### Day 91 — Notifications: no repeats, no blocked people (AUDIT_REPORT_4 B2, B1)
-- [ ] Like → unlike → like (posts, comments, follows) notifies and pushes once per person per thing per day; someone blocked (either way) is out of your notifications — rows, grouped names and faces, counts, the unread badge — and back after an unblock.
+- [x] Like → unlike → like (posts, comments, follows) notifies and pushes once per person per thing per day; someone blocked (either way) is out of your notifications — rows, grouped names and faces, counts, the unread badge — and back after an unblock. *(Likes once while kept, follows once a day; blocks hide, unblock restores — see Progress Log.)*
 ### Day 92 — Audit 4 info items (B3, B5)
 - [ ] A two-factor login challenge works for one login only; c4-audit-checks takes its public routes from the API spec and passes again.
 ### Day 93–94 — Share a post

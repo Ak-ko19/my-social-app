@@ -93,10 +93,12 @@ describe('notification settings (B11)', () => {
     await request(app).post(`/posts/${myPost.id}/like`).set(auth(other));
     expect(await types(me)).toEqual(['like']);
     await setPrefs(me, { likes: true });
-    await request(app).delete(`/posts/${myPost.id}/like`).set(auth(other));
-    await request(app).post(`/posts/${myPost.id}/like`).set(auth(other));
+    // A new person's like (since Day 91 the same person liking again is
+    // never news twice).
+    const third = await registerAndLogin(app);
+    await request(app).post(`/posts/${myPost.id}/like`).set(auth(third));
     // Both likes are kept; since Day 81 they show as one row (same post).
     const [likes] = (await request(app).get('/notifications').set(auth(me))).body.notifications;
-    expect(likes).toMatchObject({ type: 'like', count: 2 });
+    expect(likes).toMatchObject({ type: 'like', count: 2, actor_count: 2 });
   });
 });

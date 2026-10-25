@@ -1,6 +1,15 @@
 const db = require('../db');
 const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
+const notificationService = require('../services/notificationService');
+
+// Day 91: a block hides (and an unblock brings back) notifications between
+// the two people, so both badges change -- sent as a read update, which
+// moves the count without the "new notifications" cue.
+function refreshBadges(a, b) {
+  notificationService.announce(a, { read: true });
+  notificationService.announce(b, { read: true });
+}
 
 async function blockUser(req, res) {
   try {
@@ -33,6 +42,7 @@ async function blockUser(req, res) {
       [req.userId, blockedId]
     );
 
+    refreshBadges(req.userId, blockedId);
     res.status(201).send('User blocked successfully');
   } catch (err) {
     if (err.code === '23505') {
@@ -55,6 +65,7 @@ async function unblockUser(req, res) {
     if (result.rows.length === 0) {
       return res.status(404).send('You have not blocked this user');
     }
+    refreshBadges(req.userId, blockedId);
     res.send('User unblocked successfully');
   } catch (err) {
     sendError(res, err, 'Unblock failed. Please try again later.');

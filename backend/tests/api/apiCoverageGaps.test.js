@@ -56,8 +56,10 @@ describe('API operations no other test reached', () => {
       // Day 81: both follows are one row (same day), so both are read.
       expect(read.body).toMatchObject({ id: first.id, is_read: true, marked: 2 });
       expect(await count()).toBe(0);
-      await request(app).delete(`/users/${alice.id}/follow`).set(auth(carol));
-      await request(app).post(`/users/${alice.id}/follow`).set(auth(carol));
+      // A new follower (since Day 91 carol following again the same day is
+      // not news twice).
+      const dan = await registerAndLogin(app);
+      await request(app).post(`/users/${alice.id}/follow`).set(auth(dan));
       expect(await count()).toBe(1);
 
       expect((await request(app).put('/notifications/abc/read').set(auth(alice))).status).toBe(400);

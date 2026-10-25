@@ -46,6 +46,9 @@ async function getNotifications(req, res) {
         SELECT n.id, n.actor_id, n.is_read, n.created_at, ${GROUP_KEY_SQL('n')} AS group_key
         FROM notifications n
         WHERE n.user_id = $1 AND ($4::text[] IS NULL OR n.type = ANY($4::text[]))
+          -- Day 91: nobody you blocked (or who blocked you) -- so the rows,
+          -- the grouped counts and the faces all leave them out.
+          AND ${notificationService.visibleSql('n')}
         ORDER BY n.created_at DESC, n.id DESC
         LIMIT ${WINDOW}
       ),
@@ -107,8 +110,9 @@ async function getNotifications(req, res) {
 
 async function getUnreadCount(req, res) {
   try {
+    // Day 91: counts only what the list shows (no blocked people).
     const result = await db.query(
-      'SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = false',
+      `SELECT COUNT(*) FROM notifications n WHERE n.user_id = $1 AND n.is_read = false AND ${notificationService.visibleSql('n')}`,
       [req.userId]
     );
     res.status(200).json({ unreadCount: parseInt(result.rows[0].count) });

@@ -4,7 +4,9 @@
 // mention; the tabs show their kinds; a new like while the list is open is
 // offered ("New notifications") and the badge on Home follows it live;
 // tapping the likes opens the post and reads the row; a post an admin
-// removes is explained ("We removed your post... Reason: Spam"). EN/light 390 px and
+// removes is explained ("We removed your post... Reason: Spam"); Day 91:
+// blocking someone takes them out of the list and the badge at once, and a
+// like toggled again brings nothing new. EN/light 390 px and
 // AR/dark 375 px (RTL). Throwaway stack from e2e-up.sh.
 const path = require('path');
 const { execSync } = require('child_process');
@@ -133,6 +135,38 @@ const follow = (user, target) => fetch(`${API}/users/${target.id}/follow`, { met
     await page.getByRole('button', { name: c.L.notifications.readRules, exact: true }).click();
     await page.waitForURL((u) => u.pathname === '/terms', { timeout: 8000 }).catch(() => {});
     check(`${tag}: ...with the rules a tap away`, page.url().endsWith('/terms'), page.url());
+
+    // Day 91 (AUDIT_REPORT_4 B1): nina blocks dee from dee's profile. dee
+    // leaves her notifications -- the follows row is ana's alone, dee's like
+    // is gone -- and Home's bell, open in another tab, drops at once from 4
+    // unread (2 follows, the mention, dee's like; the removal was read by
+    // opening the rules) to 2.
+    const home2 = await ctx.newPage();
+    await home2.goto(`${WEB}/`, { waitUntil: 'networkidle' });
+    const bell2 = (n) => home2.locator('.top-app-bar button').filter({ has: home2.locator('svg') }).and(home2.locator(`[aria-label*="${n}"]`));
+    check(`${tag}: Home's bell says 4 unread before the block`, await shows(bell2(4)));
+    await page.goto(`${WEB}/profile/${dee.id}`, { waitUntil: 'networkidle' });
+    await page.getByRole('button', { name: c.L.postMenu.moreOptions, exact: true }).click();
+    await page.getByRole('menuitem', { name: c.L.postMenu.block.replace('{{name}}', dee.username), exact: true }).click();
+    await page.getByRole('dialog').getByRole('button', { name: c.L.postMenu.blockConfirm, exact: true }).click();
+    check(`${tag}: nina blocks dee from her profile`, await shows(page.getByText(c.L.profile.blocked.replace('{{name}}', dee.username))));
+    check(`${tag}: ...and the bell drops to 2 at once`, await shows(bell2(2)));
+    await home2.close();
+    await page.goto(`${WEB}/notifications`, { waitUntil: 'networkidle' });
+    await shows(rows.first());
+    const anaFollowed = c.L.notifications.types.follow.replace(/<\/?b>/g, '').replace('{{name}}', ana.username);
+    check(`${tag}: the follows row is ana's alone`, await shows(page.getByText(anaFollowed, { exact: true })));
+    check(`${tag}: dee is nowhere in the list`, !(await page.locator('ul.card-list').innerText()).includes(dee.username));
+
+    // Day 91 (B2): ben unlikes and likes again, three times -- nothing new.
+    for (let i = 0; i < 3; i++) {
+      await fetch(`${API}/posts/${trip.id}/like`, { method: 'DELETE', headers: as(ben) });
+      await like(ben, trip);
+    }
+    await page.waitForTimeout(1500);
+    check(`${tag}: a like toggled three times brings nothing new`, !(await pill.isVisible()));
+    const after = await (await fetch(`${API}/notifications/unread-count`, { headers: as(nina) })).json();
+    check(`${tag}: ...and the unread count stays 2`, after.unreadCount === 2, JSON.stringify(after));
     await ctx.close();
   }
   await browser.close();
