@@ -103,12 +103,14 @@ async function checkAudience(userId, fields) {
 // the pool or a transaction's client. Returns the posts row.
 // Day 53: a page post's author is the page's OWNER, whichever admin wrote
 // it -- blocks, visibility and account deletion work on the owner (B14).
+// Days 93-94: fields.sharedPostId makes it a share of that post (shareService).
 async function insertPost(queryable, userId, fields, imageUrls) {
   const { content, visibility, poll, communityId, pageId } = fields;
+  const sharedPostId = fields.sharedPostId ?? null;
   const result = await queryable.query(
     `WITH new_post AS (
-       INSERT INTO posts (user_id, content, image_url, visibility, community_id, page_id)
-       VALUES (COALESCE((SELECT owner_id FROM pages WHERE id = $7), $1), $2, $3, $5, $6, $7) RETURNING *
+       INSERT INTO posts (user_id, content, image_url, visibility, community_id, page_id, shared_post_id, is_share)
+       VALUES (COALESCE((SELECT owner_id FROM pages WHERE id = $7), $1), $2, $3, $5, $6, $7, $10::int, $10::int IS NOT NULL) RETURNING *
      ), new_media AS (
        INSERT INTO post_media (post_id, url, position)
        SELECT new_post.id, m.url, (m.ord - 1)::smallint
@@ -124,7 +126,7 @@ async function insertPost(queryable, userId, fields, imageUrls) {
      )
      SELECT * FROM new_post`,
     [userId, content, imageUrls[0] || null, imageUrls, pageId !== null ? 'public' : visibility, communityId, pageId,
-      poll ? poll.durationHours : null, poll ? poll.labels : []]
+      poll ? poll.durationHours : null, poll ? poll.labels : [], sharedPostId]
   );
   return result.rows[0];
 }

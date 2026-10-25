@@ -5,6 +5,7 @@ const { notMutedSql } = require('../services/muteService');
 const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql, commentCountColumnSql } = require('../services/reactionService');
+const { shareColumnsSql } = require('../services/shareService');
 const { pollColumnSql } = require('../services/pollService');
 const { popularityScoreSql } = require('../services/popularity');
 
@@ -134,6 +135,7 @@ async function getPopularPosts(req, res) {
          ${mediaColumnSql()},
          ${pollColumnSql('$1')},
          ${commentCountColumnSql('$1')},
+         ${shareColumnsSql('$1')},
         ${pageColumnSql()},
          scored.reactions::int AS like_count,
          scored.comment_total::int AS comment_count,

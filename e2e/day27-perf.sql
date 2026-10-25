@@ -74,6 +74,11 @@ UPDATE conversation_participants cp SET last_read_message_id = (
   SELECT m.id FROM messages m WHERE m.conversation_id = cp.conversation_id ORDER BY m.id DESC OFFSET 5 LIMIT 1)
 WHERE cp.user_id = 1;
 
+-- Days 93-94: every 20th post shares the post before it (so lists read
+-- the shared post's card, and share counts, at this size too).
+UPDATE posts SET shared_post_id = posts.id - 1, is_share = true
+FROM r WHERE posts.id > r.plo AND posts.id % 20 = 0;
+
 INSERT INTO bookmarks (user_id, post_id) SELECT 1, r.plo + g * 7 FROM r, generate_series(0, 199) g;
 INSERT INTO stories (user_id, media_url, created_at, expires_at)
 SELECT r.ulo + (g % 30000), 'https://res.cloudinary.com/demo/image/upload/sample.jpg', now() - g * interval '1 minute',

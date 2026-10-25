@@ -7,8 +7,9 @@ const { encodeCursor, decodeCursor, getLimit } = require('../utils/cursorPaginat
 // Facebook's "Alice, Bob and 3 others liked your post": likes and comments
 // on the same post, likes of the same comment, and new followers on the
 // same (UTC) day. Every other kind stays one row each. ($n = the row.)
+// Days 93-94: shares of the same post too ("A and B shared your post").
 const GROUP_KEY_SQL = (n) => `CASE
-  WHEN ${n}.type IN ('like', 'comment') AND ${n}.post_id IS NOT NULL THEN ${n}.type || ':p' || ${n}.post_id
+  WHEN ${n}.type IN ('like', 'comment', 'share') AND ${n}.post_id IS NOT NULL THEN ${n}.type || ':p' || ${n}.post_id
   WHEN ${n}.type = 'comment_like' AND ${n}.comment_id IS NOT NULL THEN ${n}.type || ':c' || ${n}.comment_id
   WHEN ${n}.type = 'follow' THEN 'follow:' || to_char(${n}.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD')
   ELSE 'n' || ${n}.id END`;

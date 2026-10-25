@@ -180,6 +180,20 @@
     "comments": "Comments",
     "comment": "Comment",
     "share": "Share",
+    "shareNow": "Share now (Public)",
+    "shareWrite": "Write post",
+    "shareCopyLink": "Copy link",
+    "shareMore": "More ways to share",
+    "shared": "Shared!",
+    "shareFailed": "Sharing failed. Please try again.",
+    "shareCount_one": "{{count}} share",
+    "shareCount_other": "{{count}} shares",
+    "shareUnavailable": "This content isn't available right now",
+    "shareUnavailableHelp": "When this happens, it's usually because the owner changed who can see it, or it's been deleted.",
+    "shareDialogTitle": "Share post",
+    "shareWordsLabel": "Say something about this (optional)",
+    "sharing": "Sharing…",
+    "sharedPostLabel": "Shared post by {{name}}",
     "save": "Save",
     "saved": "Saved",
     "reactivated": "Welcome back! Your account has been reactivated.",
@@ -552,6 +566,9 @@
     "loadMoreFailed": "Couldn't load older notifications. Please try again.",
     "grouped": {
       "likeTwo": "<b>{{name}}</b> and <b>{{name2}}</b> liked your post",
+      "shareTwo": "<b>{{name}}</b> and <b>{{name2}}</b> shared your post",
+      "shareMany_one": "<b>{{name}}</b>, <b>{{name2}}</b> and {{count}} other shared your post",
+      "shareMany_other": "<b>{{name}}</b>, <b>{{name2}}</b> and {{count}} others shared your post",
       "likeMany_one": "<b>{{name}}</b>, <b>{{name2}}</b> and {{count}} other liked your post",
       "likeMany_other": "<b>{{name}}</b>, <b>{{name2}}</b> and {{count}} others liked your post",
       "commentTwo": "<b>{{name}}</b> and <b>{{name2}}</b> commented on your post",
@@ -566,6 +583,7 @@
     },
     "types": {
       "like": "<b>{{name}}</b> liked your post",
+      "share": "<b>{{name}}</b> shared your post",
       "comment": "<b>{{name}}</b> commented on your post",
       "follow": "<b>{{name}}</b> started following you",
       "mentionComment": "<b>{{name}}</b> mentioned you in a comment",
@@ -828,6 +846,10 @@
       "mentions": {
         "title": "Mentions",
         "description": "When someone @mentions you in a post or comment"
+      },
+      "shares": {
+        "title": "Shares",
+        "description": "When someone shares your post to their feed"
       },
       "follows": {
         "title": "New followers",
@@ -1389,7 +1411,7 @@
         },
         {
           "heading": "3. Who can see what",
-          "body": "Public posts, public profiles and pages can be seen by anyone. Followers-only posts, private accounts and private groups are limited to the people allowed in, and \"Only me\" posts are visible only to you. Stories disappear after 24 hours. Direct and group messages are visible only to the people in that conversation, who can also see when you are online or were last active. Blocking someone hides you from each other. Our moderators can see content that has been reported, so they can review it. Each moderation decision (for example removing a post or suspending an account) is recorded with which moderator made it, when, and the account, group or page it concerned — not the removed content itself. Poll votes are anonymous: everyone, including the poll's author, sees only how many votes each option has."
+          "body": "Public posts, public profiles and pages can be seen by anyone. Anyone may share a post that everyone can see (a public post of a public account, a page's post or a public group's post) to their own audience; a share shows your post only while it is still open to everyone, so changing its audience or deleting it removes it from every share. Followers-only posts, private accounts and private groups are limited to the people allowed in, and \"Only me\" posts are visible only to you. Stories disappear after 24 hours. Direct and group messages are visible only to the people in that conversation, who can also see when you are online or were last active. Blocking someone hides you from each other. Our moderators can see content that has been reported, so they can review it. Each moderation decision (for example removing a post or suspending an account) is recorded with which moderator made it, when, and the account, group or page it concerned — not the removed content itself. Poll votes are anonymous: everyone, including the poll's author, sees only how many votes each option has."
         },
         {
           "heading": "4. Links and sharing",

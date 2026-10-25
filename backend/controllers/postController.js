@@ -14,6 +14,7 @@ const postCreation = require('../services/postCreationService');
 const { notMutedSql } = require('../services/muteService');
 const spamService = require('../services/spamService');
 const { managesPage } = require('../services/pageAdminService');
+const shareService = require('../services/shareService');
 
 const { POST_VISIBILITIES, MAX_POST_LENGTH } = postCreation;
 
@@ -53,6 +54,7 @@ async function getPosts(req, res) {
         ${mediaColumnSql()},
         ${pollService.pollColumnSql('$1')},
         ${commentCountColumnSql('$1')},
+        ${shareService.shareColumnsSql('$1')},
         ${pageColumnSql()},
         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me
@@ -105,6 +107,7 @@ async function getFeed(req, res) {
         ${mediaColumnSql()},
         ${pollService.pollColumnSql('$1')},
         ${commentCountColumnSql('$1')},
+        ${shareService.shareColumnsSql('$1')},
         ${pageColumnSql()},
         EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
         EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = posts.user_id AND follows.status = 'accepted') AS is_following
@@ -188,6 +191,7 @@ async function getPost(req, res) {
         ${mediaColumnSql()},
         ${pollService.pollColumnSql('$1')},
         ${commentCountColumnSql('$1')},
+        ${shareService.shareColumnsSql('$1')},
         ${pageColumnSql()},
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = users.id AND follows.status = 'accepted') AS viewer_is_follower
@@ -235,7 +239,7 @@ async function updatePost(req, res) {
     if (typed === undefined && visibility === undefined) {
       return res.status(400).send('Nothing to update');
     }
-    if (typed !== undefined && (typeof typed !== 'string' || typed.trim() === '')) {
+    if (typed !== undefined && typeof typed !== 'string') {
       return res.status(400).send('Post content cannot be empty');
     }
     if (typed !== undefined && typed.length > MAX_POST_LENGTH) {
@@ -254,6 +258,10 @@ async function updatePost(req, res) {
     if (postCheck.rows[0].user_id !== req.userId && !(await managesPage(postCheck.rows[0].page_id, req.userId))) {
       return res.status(403).send('You can only edit your own posts');
     }
+    // Days 93-94: a share may have no words of its own; any other post must.
+    if (typed !== undefined && typed.trim() === '' && !postCheck.rows[0].is_share) {
+      return res.status(400).send('Post content cannot be empty');
+    }
     if (visibility !== undefined && (postCheck.rows[0].community_id || postCheck.rows[0].page_id)) {
       return res.status(400).send("Group and page posts don't have their own audience");
     }
@@ -267,6 +275,19 @@ async function updatePost(req, res) {
     res.json(result.rows[0]);
   } catch (err) {
     sendError(res, err, 'Update post failed. Please try again later.');
+  }
+}
+
+// Days 93-94: POST /posts/:id/share { content?, visibility? } -- share it
+// to your own feed (shareService has the rules).
+async function sharePost(req, res) {
+  try {
+    const content = req.body.content === undefined ? '' : req.body.content;
+    // Day 49: a share is a post -- the same flood and link checks.
+    if (typeof content === 'string') await spamService.checkPost(req.userId, content);
+    res.status(201).json(await shareService.share(req.userId, Number(req.params.id), { content, visibility: req.body.visibility }));
+  } catch (err) {
+    sendError(res, err, 'Sharing failed. Please try again later.');
   }
 }
 
@@ -325,4 +346,4 @@ async function votePoll(req, res) {
   }
 }
 
-module.exports = { createPost, getPosts, getFeed, getPost, updatePost, deletePost, votePoll };
+module.exports = { createPost, getPosts, getFeed, getPost, updatePost, sharePost, deletePost, votePoll };

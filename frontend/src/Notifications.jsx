@@ -43,12 +43,14 @@ function notificationKey(n) {
   if (n.type === 'content_removed') return 'contentRemoved';
   // Day 84: you have memories today.
   if (n.type === 'memories') return 'memories';
+  // Days 93-94: someone shared your post.
+  if (n.type === 'share') return 'share';
   return 'other';
 }
 
 // Day 81: the kinds the server groups (backend notificationController),
 // and their key under notifications.grouped.
-const GROUPED = { like: 'like', comment: 'comment', comment_like: 'commentLike', follow: 'follow' };
+const GROUPED = { like: 'like', comment: 'comment', comment_like: 'commentLike', follow: 'follow', share: 'share' };
 
 // Day 77: a new_login alert's device ({ browser, os }) in words, as the
 // Sessions screen writes it.
@@ -68,7 +70,7 @@ function removedWords(details, t) {
 function targetOf(n, myId) {
   switch (n.type) {
     case 'like': case 'comment': case 'mention': case 'reply': case 'comment_like':
-    case 'scheduled_post': case 'poll_ended': case 'poll_ended_own':
+    case 'scheduled_post': case 'poll_ended': case 'poll_ended_own': case 'share':
       return n.post_id ? `/posts/${n.post_id}` : null;
     case 'follow':
       return n.actor_count > 1 ? `/profile/${myId}/connections?tab=followers` : `/profile/${n.actor_id}`;

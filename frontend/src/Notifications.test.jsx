@@ -266,6 +266,25 @@ describe('Notifications: center', () => {
     expect(await screen.findByText(sentence(/أعجب cara وbob و3 أشخاص آخرين بمنشورك/))).toBeInTheDocument();
   });
 
+  // Days 93-94.
+  it('shares: one, a group, Arabic; a share opens the shared post', async () => {
+    api.get.mockResolvedValue(page([
+      like({ id: 41, type: 'share', count: 2, actor_count: 2, actors: [person(2, 'bob'), person(1, 'alice')] }),
+      like({ id: 40, type: 'share', post_id: 6 })
+    ]));
+    showCenter();
+    expect(await screen.findByText(sentence(/^bob and alice shared your post/))).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('link', { name: /^alice shared your post/ }));
+    expect(await screen.findByText('post page')).toBeInTheDocument();
+  });
+
+  it('shares in Arabic', async () => {
+    await setLanguage('ar');
+    api.get.mockResolvedValue(page([like({ type: 'share', count: 4, actor_count: 4, actors: [person(3, 'cara'), person(2, 'bob')] })]));
+    showCenter();
+    expect(await screen.findByText(sentence(/شارك cara وbob وشخصان آخران منشورك/))).toBeInTheDocument();
+  });
+
   it('tapping opens what it is about and reads it', async () => {
     api.get.mockResolvedValue(page([like({})]));
     api.put.mockResolvedValue({ data: { is_read: true, marked: 1 } });

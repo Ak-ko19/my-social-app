@@ -290,7 +290,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 92 — Audit 4 info items (B3, B5)
 - [x] A two-factor login challenge works for one login only; c4-audit-checks takes its public routes from the API spec and passes again. *(Migration 078; one reviewed public-route list, checked in CI — see Progress Log.)*
 ### Day 93–94 — Share a post
-- [ ] Share someone's post to your own feed with your own words (Facebook's "Share"), only when its audience allows; the original shows inside; share counts; a notification to its author; a deleted or hidden original shows "This content isn't available".
+- [x] Share someone's post to your own feed with your own words (Facebook's "Share"), only when its audience allows; the original shows inside; share counts; a notification to its author; a deleted or hidden original shows "This content isn't available". *(Share now / Write post / Copy link; only posts open to everyone; migration 079 — see Progress Log.)*
 ### Day 95 — Photo descriptions (alt text)
 - [ ] Write your own description for each photo you post; screen readers use it, with today's automatic text as the fallback.
 ### Day 96 — Edit a post's photos

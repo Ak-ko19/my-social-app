@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 93–94 — Share a post.
-**Step:** 0 — not started (Day 92 closed: see the Progress Log).
+**Step:** 1 — done (committed). Next: close Days 93–94 -- full browser run in batches, then the Progress Log entry.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -253,6 +253,11 @@
   - Re-run `npm audit --omit=dev` in all three folders before each close:
     new advisories appear between days (two did between Days 76 and 85).
 
+- Days 93-94: post lists add shareService.shareColumnsSql('$1') next to
+  pollColumnSql/commentCountColumnSql (shares.test lists every list). A
+  correlated EXISTS over posts can be hashed over the whole table -- use a
+  scalar subquery (the perf suite caught it). Never put `$1` in a JS
+  String.replace replacement (it means "group 1"): pass a function.
 - Day 92: a new public route needs a line in backend/docs/openapi/publicOperations.js
   (openapiSpec.test fails otherwise; c4-audit-checks reads it too).
 

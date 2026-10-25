@@ -25,6 +25,8 @@ import PostText from './PostText';
 import PollView from './PollView';
 import LinkPreviewCard from '../common/LinkPreviewCard';
 import HiddenContentCover from './HiddenContentCover';
+import ShareSheet from './ShareSheet';
+import SharedPostCard from './SharedPostCard';
 import './PostCard.css';
 
 // Replaces the old Feed.css-based PostCard IN PLACE -- same external
@@ -40,11 +42,10 @@ import './PostCard.css';
 // shape (checked directly against the posts table: id, user_id, content,
 // created_at, image_url -- nothing else, and no `verified` column on
 // users either). They simply don't render until/unless that data exists,
-// rather than being faked. Share has no server-side count to display (no
-// shares table, and none is needed -- sharing a link isn't a trackable
-// server event the way a like/bookmark is), so it's omitted from the stats
-// row but the action itself is real: Web Share API where available,
-// clipboard-copy fallback otherwise (see handleShare below).
+// rather than being faked. Days 93-94: Share opens ShareSheet (share to
+// your feed now or with your words, copy the link, the device's share
+// sheet); a share shows its original in a SharedPostCard, and the stats
+// row counts shares.
 // canManagePage (Day 53): you run the page this post is on -- edit and
 // delete it like its author.
 // groupLocked (Day 50): a group post seen by someone not in the group --
@@ -73,6 +74,9 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
   const [editPending, setEditPending] = useState(false);
   const [editError, setEditError] = useState('');
   const [shareFeedback, setShareFeedback] = useState('');
+  const [shareOpen, setShareOpen] = useState(false);
+  // A share's count belongs to its original, so only an original's goes up.
+  const [shareCount, setShareCount] = useState(post.share_count || 0);
   // B5 audience -- local so an owner's change shows immediately.
   const [visibility, setVisibility] = useState(post.visibility || 'public');
   const [visibilityError, setVisibilityError] = useState('');
@@ -80,7 +84,8 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
   // or poll options -- covered (warn) or left out (hide). Never your own.
   const hiddenWords = useHiddenWords();
   const [revealed, setRevealed] = useState(false);
-  const filterText = useMemo(() => [post.content, ...(post.poll?.options || []).map((o) => o.label)].join('\n'), [post.content, post.poll]);
+  // Days 93-94: a share is checked with the words of the post it shares.
+  const filterText = useMemo(() => [post.content, post.shared_post?.content, ...(post.poll?.options || []).map((o) => o.label)].join('\n'), [post.content, post.shared_post, post.poll]);
   const match = useMemo(() => hiddenWords.check(filterText), [hiddenWords, filterText]);
   const filterVerdict = post.user_id === userId || revealed ? null : match;
 
@@ -97,35 +102,10 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
     });
   };
 
-  const handleShare = async () => {
-    const url = `${window.location.origin}/posts/${post.id}`;
-    // navigator.share is the native OS share sheet (Android/iOS/desktop
-    // browsers that support it) -- preferred when available since it lets
-    // the user pick an actual destination (Messages, another app, ...)
-    // instead of just landing a URL on their clipboard. A cancelled share
-    // sheet throws an AbortError, which is a normal user action, not a
-    // failure -- silently ignored rather than falling through to the
-    // clipboard fallback (that would paper over an intentional cancel with
-    // an unrequested clipboard write).
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: t('feed.shareTitle', { name: post.username }), url });
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error(err);
-        }
-      }
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setShareFeedback(t('feed.linkCopied'));
-      setTimeout(() => setShareFeedback(''), 2000);
-    } catch (err) {
-      console.error(err);
-      setShareFeedback(t('feed.copyFailed'));
-      setTimeout(() => setShareFeedback(''), 2000);
-    }
+  // A short note on the Share button ("Shared!", "Link copied!").
+  const showShareFeedback = (text) => {
+    setShareFeedback(text);
+    setTimeout(() => setShareFeedback(''), 2000);
   };
 
   const startEditing = () => {
@@ -141,7 +121,8 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
 
   const saveEdit = () => {
     const trimmed = editContent.trim();
-    if (!trimmed) {
+    // Days 93-94: a share may say nothing of its own.
+    if (!trimmed && !post.is_share) {
       setEditError(t('feed.editEmpty'));
       return;
     }
@@ -281,6 +262,9 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
         <PostText content={post.content} className="post-card-body" />
       )}
 
+      {/* Days 93-94: the post this one shares. */}
+      {post.is_share && !covered && <SharedPostCard shared={post.shared_post} />}
+
       {/* Day 44: a poll post's options or results, under its question. */}
       {post.poll && !covered && <PollView postId={post.id} poll={post.poll} />}
 
@@ -309,7 +293,10 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
             </>
           )}
         </span>
-        <span>{commentCountLabel}</span>
+        <span className="post-card-stats-counts">
+          {commentCountLabel && <span>{commentCountLabel}</span>}
+          {shareCount > 0 && <span>{t('feed.shareCount', { count: shareCount })}</span>}
+        </span>
       </div>
 
       <div className="post-card-actions">
@@ -318,7 +305,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
           <MessageCircle size={18} aria-hidden="true" />
           <span>{t('feed.comment')}</span>
         </button>
-        <button type="button" className="post-card-action" onClick={handleShare}>
+        <button type="button" className="post-card-action" onClick={() => setShareOpen(true)} aria-haspopup="menu">
           <Share2 size={18} aria-hidden="true" />
           <span>{shareFeedback || t('feed.share')}</span>
         </button>
@@ -333,6 +320,14 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
           <span>{bookmark.bookmarked ? t('feed.saved') : t('feed.save')}</span>
         </button>
       </div>
+
+      <ShareSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        post={post}
+        onFeedback={showShareFeedback}
+        onShared={() => !post.is_share && setShareCount((n) => n + 1)}
+      />
 
       <AnimatePresence initial={false}>
         {comments.visible && <CommentSection key="comments" postId={post.id} postOwnerId={post.user_id} comments={comments} groupLocked={groupLocked} />}

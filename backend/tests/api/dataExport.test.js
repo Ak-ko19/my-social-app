@@ -30,7 +30,7 @@ describe('download your information (Day 28)', () => {
     expect(res.headers['cache-control']).toBe('no-store');
     expect(data).toMatchObject({ format: 'mysocialapp-data-export', version: 1 });
     expect(data.profile).toMatchObject({ id: me.id, username: me.username, email: me.email });
-    expect(data.settings.notifications).toEqual({ likes: true, comments: true, mentions: true, follows: true, follow_accepted: true, messages: true, groups: true, pages: true, events: true, memories: true });
+    expect(data.settings.notifications).toEqual({ likes: true, comments: true, mentions: true, follows: true, follow_accepted: true, messages: true, groups: true, pages: true, events: true, memories: true, shares: true });
   });
 
   it('contains what the account made, did and owns', async () => {

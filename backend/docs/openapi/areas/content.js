@@ -78,8 +78,24 @@ module.exports = {
     requestBody: body({ content: POST_FIELDS.content, visibility: POST_FIELDS.visibility }, { description: 'Send one or both' }),
     responses: {
       200: json(ref('PostRow'), 'Saved'),
-      400: text('Invalid post ID / Nothing to update / empty or too long / bad visibility / group and page posts have no audience'),
+      400: text('Invalid post ID / Nothing to update / empty (a share may be) or too long / bad visibility / group and page posts have no audience'),
       403: text('You can only edit your own posts'),
+      404: POST_NOT_FOUND
+    }
+  }),
+  'POST /posts/:id/share': op({
+    tag: 'Posts', auth: 'user',
+    summary: 'Share a post to your own feed, with your own words',
+    description: "Days 93-94, like Facebook's Share."
+      + ' Only a post anyone may see can be shared (a public post of a public account, a page '
+      + 'post, a post in a public group); sharing a share shares its original. The share is a post of yours: its words may be empty, '
+      + "it has its own audience, and it shows the original only while that is still open to everyone. The original's author is "
+      + 'notified once per person (setting: shares). Spam checks as for a post (429).',
+    requestBody: body({ content: POST_FIELDS.content, visibility: POST_FIELDS.visibility }, { description: 'Both optional' }),
+    responses: {
+      201: json(ref('PostRow'), 'Shared'),
+      400: text('Invalid post ID / too long / bad visibility'),
+      403: text('Only posts that everyone can see can be shared.'),
       404: POST_NOT_FOUND
     }
   }),

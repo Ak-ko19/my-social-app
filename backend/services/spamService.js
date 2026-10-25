@@ -99,8 +99,10 @@ async function checkPost(userId, content) {
     [userId, WINDOW_MINUTES, MAX_POSTS]
   );
   if (recent.rows.length >= MAX_POSTS) throw new SpamError(POSTING_TOO_FAST);
+  // Days 93-94: a share with no words of its own isn't "the same post
+  // again" (two shares of different posts are both empty).
   const key = sameTextKey(content);
-  if (recent.rows.some((r) => sameTextKey(r.content) === key)) throw new SpamError(SAME_POST);
+  if (content.trim() !== '' && recent.rows.some((r) => sameTextKey(r.content) === key)) throw new SpamError(SAME_POST);
   await checkLinks(userId, content);
 }
 

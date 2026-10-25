@@ -34,7 +34,9 @@ async function buildExport(userId) {
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
-            c.name AS group_name, pg.name AS page_name
+            c.name AS group_name, pg.name AS page_name,
+            -- Days 93-94: the post a share shares (null once it's deleted).
+            p.is_share, p.shared_post_id
           FROM posts p
           LEFT JOIN communities c ON c.id = p.community_id
           LEFT JOIN pages pg ON pg.id = p.page_id

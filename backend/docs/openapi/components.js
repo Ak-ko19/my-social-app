@@ -155,7 +155,7 @@ const schemas = {
     id: s.id(),
     type: s.enum(['like', 'comment_like', 'comment', 'reply', 'mention', 'follow', 'follow_request', 'follow_accepted',
       'group_request', 'group_approved', 'page_admin', 'event_reminder', 'event_cancelled', 'scheduled_post', 'scheduled_failed',
-      'poll_ended', 'poll_ended_own', 'new_login', 'content_removed', 'memories']),
+      'poll_ended', 'poll_ended_own', 'new_login', 'content_removed', 'memories', 'share']),
     post_id: s.nullable(s.id()),
     comment_id: s.nullable(s.id()),
     is_read: s.bool('Day 81: for a group, true only when all of it is read'),
@@ -186,7 +186,7 @@ const schemas = {
     }
   }),
   NotificationPreferences: s.object(Object.fromEntries(
-    ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events', 'memories'].map((c) => [c, s.bool()])
+    ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events', 'memories', 'shares'].map((c) => [c, s.bool()])
   ), { description: 'Each category on (true) or off; everything starts on' }),
 
   // ---- Posts ----
@@ -207,9 +207,17 @@ const schemas = {
     poll: s.nullable(s.ref('Poll')),
     page: s.nullable(s.object({ id: s.id(), name: s.str() }, { description: 'Set when the post was published as a page' })),
     bookmarked_by_me: s.bool(),
-    comment_count: s.int('Day 85: the comments (and replies) you would see when you open them')
+    comment_count: s.int('Day 85: the comments (and replies) you would see when you open them'),
+    is_share: s.bool('Days 93-94: this post shares another one'),
+    shared_post: s.nullable(s.object({
+      id: s.id(), content: s.nullable(s.str()), created_at: s.time(), user_id: s.id('Its author'), username: s.str(), avatar_url: s.nullable(s.str()),
+      page: s.nullable(s.object({ id: s.id(), name: s.str() })), media: s.array(s.object({ url: s.str() }))
+    }, { description: 'The shared post, while you may see it: open to everyone (or yours), no block, its author active' })),
+    share_count: s.int('How many posts share this one'),
+    can_share: s.bool('Share is offered: the post (a share: its original) is open to everyone')
   }, {
-    optional: ['visibility', 'image_url', 'avatar_url', 'like_count', 'liked_by_me', 'my_reaction', 'reaction_counts', 'media', 'poll', 'page', 'bookmarked_by_me', 'comment_count'],
+    optional: ['visibility', 'image_url', 'avatar_url', 'like_count', 'liked_by_me', 'my_reaction', 'reaction_counts', 'media', 'poll', 'page', 'bookmarked_by_me', 'comment_count',
+      'is_share', 'shared_post', 'share_count', 'can_share'],
     description: 'A post card. Lists may add fields of their own (e.g. a group or an edit time).'
   }),
   PostRow: s.object({
@@ -218,8 +226,10 @@ const schemas = {
     community_id: s.nullable(s.id('The group it was posted in')),
     page_id: s.nullable(s.id('The page it was published as')),
     media: s.array(s.object({ url: s.str() })),
-    poll: s.nullable(s.ref('Poll'))
-  }, { optional: ['community_id', 'page_id', 'media', 'poll'], description: 'A post as stored (no author name), as returned right after a write' }),
+    poll: s.nullable(s.ref('Poll')),
+    shared_post_id: s.nullable(s.id('Days 93-94: the post this one shares (null once it is deleted)')),
+    is_share: s.bool()
+  }, { optional: ['community_id', 'page_id', 'media', 'poll', 'shared_post_id', 'is_share'], description: 'A post as stored (no author name), as returned right after a write' }),
   ReactionSummary: s.object({
     likeCount: s.int('All reactions together'),
     reactionCounts: s.object({}, { description: 'Reaction -> count' })

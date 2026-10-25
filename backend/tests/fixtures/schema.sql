@@ -747,3 +747,9 @@ CREATE INDEX idx_posts_month_day ON posts ((extract(month FROM created_at)), (ex
 ALTER TABLE sessions ADD COLUMN login_challenge uuid;
 CREATE UNIQUE INDEX idx_sessions_login_challenge ON sessions (login_challenge)
   WHERE login_challenge IS NOT NULL;
+
+-- Days 93-94 (migration 079): sharing a post.
+ALTER TABLE posts ADD COLUMN shared_post_id integer REFERENCES posts(id) ON DELETE SET NULL;
+ALTER TABLE posts ADD COLUMN is_share boolean NOT NULL DEFAULT false;
+CREATE INDEX idx_posts_shared_post_id ON posts (shared_post_id) WHERE shared_post_id IS NOT NULL;
+ALTER TABLE notification_preferences ADD COLUMN shares boolean NOT NULL DEFAULT true;

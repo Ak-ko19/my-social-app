@@ -3,6 +3,7 @@
 const db = require('../db');
 const { noBlockBetweenSql } = require('../services/blockService');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql, commentCountColumnSql } = require('./reactionService');
+const { shareColumnsSql } = require('./shareService');
 const { pollColumnSql } = require('./pollService');
 const { communityVisibleSql, postAudienceSql } = require('./postVisibilityService');
 
@@ -34,6 +35,7 @@ async function listSaved(viewerId, { limit, offset, collectionId = null }) {
       ${mediaColumnSql()},
       ${pollColumnSql('$1')},
       ${commentCountColumnSql('$1')},
+      ${shareColumnsSql('$1')},
       ${pageColumnSql()},
       true AS bookmarked_by_me
     FROM bookmarks

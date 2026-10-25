@@ -59,14 +59,16 @@ const CATEGORY_BY_TYPE = {
   page_admin: 'pages',
   // Day 55: an event you answered starts within the hour, or was cancelled.
   event_reminder: 'events',
-  event_cancelled: 'events'
+  event_cancelled: 'events',
+  // Days 93-94: someone shared your post to their feed.
+  share: 'shares'
 };
 
 // 'messages' (Day 23) has no notification type: it controls message pushes
 // (pushService.pushNewMessage).
 // Day 84: 'memories' has no actor type either: it controls the morning
 // memories notification (memoryNotificationService).
-const CATEGORIES = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events', 'memories'];
+const CATEGORIES = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events', 'memories', 'shares'];
 
 function categoryFor(type) {
   const category = CATEGORY_BY_TYPE[type];
@@ -91,7 +93,9 @@ const REPEAT_WINDOW = {
   like: null,
   comment_like: null,
   follow: '1 day',
-  follow_request: '1 day'
+  follow_request: '1 day',
+  // Days 93-94: sharing the same post again isn't news either.
+  share: null
 };
 
 // SQL condition "this actor hasn't already told this person this", for a
@@ -157,7 +161,7 @@ async function notifySystem({ userId, type, postId = null, device = null, detail
   announce(userId);
 }
 
-// { likes, comments, mentions, follows, follow_accepted, messages, groups, pages, events, memories } -- all true when
+// { likes, comments, mentions, follows, follow_accepted, messages, groups, pages, events, memories, shares } -- all true when
 // the user never saved settings.
 async function getPreferences(userId) {
   const result = await db.query(`SELECT ${CATEGORIES.join(', ')} FROM notification_preferences WHERE user_id = $1`, [userId]);

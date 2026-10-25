@@ -81,6 +81,9 @@ const AR = {
   'Post content cannot be empty': 'لا يمكن أن يكون المنشور فارغًا',
   'Comment cannot be empty': 'لا يمكن أن يكون التعليق فارغًا',
   'Post not found': 'المنشور غير موجود',
+  // Days 93-94: sharing a post.
+  'Only posts that everyone can see can be shared.': 'يمكن مشاركة المنشورات التي يراها الجميع فقط.',
+  'Sharing failed. Please try again later.': 'تعذّرت المشاركة. حاول مرة أخرى لاحقًا.',
   'Comment not found': 'التعليق غير موجود',
   'Story not found': 'القصة غير موجودة',
   'A story needs an image': 'تحتاج القصة إلى صورة',

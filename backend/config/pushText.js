@@ -35,7 +35,9 @@ const TEXT = {
     // screen; the app says what and why).
     content_removed: 'We removed something you shared. Open the app to see why.',
     // Day 84: the morning memories notification.
-    memories: 'You have memories to look back on today.'
+    memories: 'You have memories to look back on today.',
+    // Days 93-94.
+    share: '{name} shared your post'
   },
   ar: {
     like: 'أعجب {name} بمنشورك',
@@ -60,7 +62,8 @@ const TEXT = {
     event_cancelled: 'ألغى {name} {event}',
     new_login: 'تسجيل دخول جديد إلى حسابك من {device}. لست أنت؟ راجع أجهزتك.',
     content_removed: 'أزلنا شيئًا شاركته. افتح التطبيق لمعرفة السبب.',
-    memories: 'لديك ذكريات تستعيدها اليوم.'
+    memories: 'لديك ذكريات تستعيدها اليوم.',
+    share: 'شارك {name} منشورك'
   }
 };
 

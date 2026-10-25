@@ -73,6 +73,12 @@ export function updatePost(postId, content, token) {
   return api.put(`/posts/${postId}`, { content }, authHeaders(token)).then((res) => res.data);
 }
 
+// Days 93-94: share a post to your own feed -- { content, visibility }, both
+// optional ("Share now" sends neither). Resolves to the new post.
+export function sharePost(postId, { content = '', visibility = 'public' } = {}, token) {
+  return api.post(`/posts/${postId}/share`, { content, visibility }, authHeaders(token)).then((res) => res.data);
+}
+
 // Public endpoint (optionalAuth on the backend) -- works for a logged-out
 // viewer following a shared link, not just an authenticated in-app user.
 // Passing no token omits the Authorization header entirely rather than

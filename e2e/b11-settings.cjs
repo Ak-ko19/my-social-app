@@ -34,7 +34,7 @@ const get = (url, token) => fetch(API + url, { headers: { Authorization: `Bearer
   await page.getByRole('switch', { name: 'Accepted requests' }).waitFor();
   const switches = page.getByRole('switch');
   const states = await switches.evaluateAll((els) => els.map((e) => e.getAttribute('aria-checked')));
-  check('10 switches (Day 23 Messages, Day 50 Groups, Day 53 Pages, Day 55 Events, Day 84 Memories), all on by default', states.length === 10 && states.every((s) => s === 'true'), JSON.stringify(states));
+  check('11 switches (Day 23 Messages, Day 50 Groups, Day 53 Pages, Day 55 Events, Day 84 Memories, Days 93-94 Shares), all on by default', states.length === 11 && states.every((s) => s === 'true'), JSON.stringify(states));
 
   const likes = page.getByRole('switch', { name: 'Likes and reactions' });
   await likes.click();
