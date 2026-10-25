@@ -30,7 +30,7 @@ No investor deadline pressure — building thoroughly, roughly a month timeline
 rather than rushing.
 
 ## Completed Features
-(Updated Day 82. Details: PROJECT_DETAILED_GUIDE.md and MONTH_PLAN.md's
+(Updated Day 84. Details: PROJECT_DETAILED_GUIDE.md and MONTH_PLAN.md's
 Progress Log; how to run and test everything: README.md.)
 
 - **Accounts:** signup / login (JWT sessions you can see and sign out),
@@ -45,6 +45,7 @@ Progress Log; how to run and test everything: README.md.)
   stories, follows and follow requests (private accounts), friends, people
   you may know, Explore, ranked search, profiles (links, cover, pinned post),
   first-run steps for new accounts (language, photo, people to follow, tour).
+  Memories ("On this day" on Home, a morning reminder in your own time zone).
 - **Chat:** direct and group chats over Socket.IO (live, typing, presence,
   read receipts), voice notes, photos, replies, edits, unsend, reactions,
   forwarding; paged inbox and history.

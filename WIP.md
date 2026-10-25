@@ -1,33 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 83–84 — Memories / "On this day": show your posts from past years on the same date.
-**Step:** 3 — the daily memories notification: DONE (committed; backend 1043, Vitest 370, rehearsal with 077, counts 30/34/18, day83-memories 28, b11, a11y). Next: Days close.
-
-Plan (Facebook's Memories): your own posts made on today's date in past
-years, in YOUR time zone.
-1. Backend GET /memories?tz=<IANA>&date=YYYY-MM-DD (date optional: today
-   in tz): your posts (profile posts: not page/group ones) whose local
-   date has today's month/day and an earlier year; Feb 29 posts show on
-   Feb 28 in a non-leap year. Same post shape as the profile list (media,
-   polls, reactions, page columns) -> { date, memories: [{ yearsAgo,
-   year, posts }] } newest year first. tz checked with Intl (and a
-   Postgres refusal -> 400). Bounded: one person's posts
-   (idx_posts_user_id); perf suite entry.
-2. UI: "On this day" card on Home when there are memories (hide for
-   today), /memories screen ("1 year ago", "3 years ago"), Menu entry,
-   EN/AR, empty state ("No memories today"), e2e day83-memories.
-3. Daily "You have memories from N years ago" notification, in each
-   person's LOCAL morning (a UTC-day job would tell New York at 7 pm
-   about tomorrow). Migration 077: users.time_zone (the app saves it:
-   PUT /profile/time-zone on start), notification_preferences.memories
-   (off switch, Settings > Notifications), index posts (month, day of
-   created_at) for profile posts. Job (ticker, every tick, advisory lock
-   so one instance): candidates from the index for yesterday/today/
-   tomorrow (any zone is within +-14 h), then exact: local date =
-   today's month/day in an earlier year, local time >= 08:00, none sent
-   in the last 20 h, setting on, account active -> notification
-   'memories' { yearsAgo } + push + live count. Cleanup backstop. Then
-   the Days' close.
+**Day:** 85–87 — Buffer: fix everything left in AUDIT_REPORT_3.md.
+**Step:** 0 — not started (Days 83–84 closed: see the Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -259,3 +233,15 @@ years, in YOUR time zone.
   - Live events for a user: io.to(`user_${id}`) with a LITERAL event name
     (realtimeDoc.test reads them), documented in docs/REALTIME.md; the
     app listens with hooks/useSocketEvent.
+
+- Days 83-84 notes:
+  - posts.created_at (and notifications.created_at) are `timestamp`
+    WITHOUT a zone, holding the database's local time (UTC on the host).
+    To read one in a person's zone: (col AT TIME ZONE
+    current_setting('TimeZone')) AT TIME ZONE $tz. Tests that move a post
+    in time store `$instant::timestamptz AT TIME ZONE
+    current_setting('TimeZone')`.
+  - users.time_zone is reported by the app (TimeZoneReporter); NULL = UTC.
+  - Browser suites can run a backend job in-process: set
+    process.env.DATABASE_URL to the e2e DB before requiring the service
+    (day83-memories).

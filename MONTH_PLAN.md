@@ -271,7 +271,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 81–82 — Notifications center upgrade
 - [x] Group similar notifications ("5 people liked your post"), mark all read, filters. *(Grouped rows, tabs, paging, live badge, rows that open their target, and "We removed your post" notices — see Progress Log.)*
 ### Day 83–84 — Memories / "On this day"
-- [ ] Show your posts from past years on the same date.
+- [x] Show your posts from past years on the same date. *(Memories screen, "On this day" on Home, and a morning reminder in your own time zone — see Progress Log.)*
 ### Day 85–87 — Buffer: fix everything left in AUDIT_REPORT_3.md
 ### Day 88 — Documentation for the owner
 - [ ] OWNER_GUIDE.md in simple English: what the app has, how to run it, what LATER.md items unlock.
@@ -2634,3 +2634,34 @@ lists that grow without limit.
     day81-notifications 32), the 9 special-stack suites, day80-states (146
     each language), day27-perf (45), a11y (3 parts, 0 serious/critical)
     and A3 EN/AR (150 page checks in each of 4 parts, 0 failures).
+
+### 2026-10-25 — Days 83–84: Memories / "On this day"
+- **API (`80064b2`):** GET /memories -- your own profile posts made on
+  today's month and day in earlier years, grouped by year, in the full
+  post shape. "Today" is the person's own date: the app sends its time
+  zone and every post's date is read in it. posts.created_at holds the
+  database's local time (no zone), so it is placed in that zone first. A
+  Feb 29 post comes back on Feb 28 in other years.
+- **Screens (`146d916`):** "On this day" on Home when there are memories
+  (the newest year and a first post; hide for the day), Memories (Menu,
+  /memories) with a section per year ("3 years ago · 2023") of full posts.
+- **Morning reminder (`fcaaf0d`):** "You have memories from 3 years ago",
+  once a day from 08:00 in the person's own zone -- better than the plan's
+  simple daily job, which on the server's UTC day would tell New York at
+  7 pm about tomorrow. The app reports its zone (PUT /profile/time-zone);
+  off switch in Settings > Notifications; a server job every 10 minutes
+  under an advisory lock (several instances never send twice), the daily
+  cleanup as backstop. Migration 077 (users.time_zone,
+  notification_preferences.memories, idx_posts_month_day: only the posts
+  of yesterday/today/tomorrow in any year are read, plus Feb 29). Export
+  and Privacy Policy updated.
+- **Tests at close:**
+  - Backend 1043/1043 (new: memories 6, memoryNotifications 6); Vitest
+    370/370; lint (exit 0); check:i18n; check:headers; bundle 216.0 / 225
+    kB; GO LIVE rehearsal (--old) passed with 077; checklist counts
+    30/34/18 on a fixture DB.
+  - Full browser run in small batches: all 67 regular suites (new:
+    day83-memories 28 -- it runs the morning job against the test
+    database), the 9 special-stack suites, day80-states (150 each
+    language), day27-perf (47), a11y (3 parts, 0 serious/critical) and A3
+    EN/AR (153 page checks in each of 4 parts, 0 failures).
