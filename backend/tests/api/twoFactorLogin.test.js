@@ -46,8 +46,9 @@ describe('logging in with two-factor authentication', () => {
     expect(res.body).toMatchObject({ id: me.id, username: me.username, token: expect.any(String) });
     expect(res.body.recoveryCodesLeft).toBeUndefined();
     expect((await request(app).get('/2fa').set(auth(res.body.token))).status).toBe(200);
-    // The same code can't log in a second time.
-    const again = await second({ challengeToken, code: code(secret, 1) });
+    // The same code can't log in a second time (with a new challenge: the
+    // old one is spent since Day 92).
+    const again = await second({ challengeToken: (await login(me)).body.challengeToken, code: code(secret, 1) });
     expect(again.status).toBe(400);
     expect(again.text).toBe('That code was already used. Wait for the next one in your app.');
   });
@@ -92,7 +93,73 @@ describe('logging in with two-factor authentication', () => {
     const res = await second({ challengeToken, recoveryCode: recoveryCodes[3] });
     expect(res.status).toBe(200);
     expect(res.body.recoveryCodesLeft).toBe(9);
-    expect((await second({ challengeToken, recoveryCode: recoveryCodes[3] })).text).toBe('That recovery code is not right, or it was already used.');
+    const fresh = (await login(me)).body.challengeToken;
+    expect((await second({ challengeToken: fresh, recoveryCode: recoveryCodes[3] })).text).toBe('That recovery code is not right, or it was already used.');
+  });
+
+  // Day 92 (AUDIT_REPORT_4 B3): one challenge, one login.
+  it('a challenge logs in once, even with a fresh code or a recovery code -- and spends nothing the second time', async () => {
+    const { me, secret, recoveryCodes } = await withTwoFactor();
+    const { challengeToken } = (await login(me)).body;
+    expect((await second({ challengeToken, code: code(secret, 1) })).status).toBe(200);
+    const before = await sessions(me);
+    expect((await second({ challengeToken, code: code(secret, 0) })).text).toBe(EXPIRED);
+    expect((await second({ challengeToken, recoveryCode: recoveryCodes[0] })).text).toBe(EXPIRED);
+    expect(await sessions(me)).toBe(before);
+    // The recovery code wasn't spent on the refused try.
+    const next = (await login(me)).body.challengeToken;
+    const res = await second({ challengeToken: next, recoveryCode: recoveryCodes[0] });
+    expect(res.status).toBe(200);
+    expect(res.body.recoveryCodesLeft).toBe(9);
+  });
+
+  it('two racing logins with one challenge: exactly one gets in', async () => {
+    const { me, secret, recoveryCodes } = await withTwoFactor();
+    const { challengeToken } = (await login(me)).body;
+    const before = await sessions(me);
+    const results = await Promise.all([
+      second({ challengeToken, code: code(secret, 1) }),
+      second({ challengeToken, recoveryCode: recoveryCodes[1] }),
+      second({ challengeToken, recoveryCode: recoveryCodes[2] })
+    ]);
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+    expect(results.filter((r) => r.status === 400).every((r) => r.text === EXPIRED)).toBe(true);
+    expect(await sessions(me)).toBe(before + 1);
+  });
+
+  it('a reuse that slips past the first check (a race between instances) is refused by the database', async () => {
+    const { me, secret, recoveryCodes } = await withTwoFactor();
+    const { challengeToken } = (await login(me)).body;
+    expect((await second({ challengeToken, code: code(secret, 1) })).status).toBe(200);
+    // What a racing request sees: the first login's session not there yet.
+    const db = require('../../db');
+    const realQuery = db.query;
+    jest.spyOn(db, 'query').mockImplementation((text, ...rest) =>
+      (String(text).startsWith('SELECT 1 FROM sessions WHERE login_challenge') ? Promise.resolve({ rows: [] }) : realQuery(text, ...rest)));
+    const before = await sessions(me);
+    const res = await second({ challengeToken, recoveryCode: recoveryCodes[5] });
+    expect(res.status).toBe(400);
+    expect(res.text).toBe(EXPIRED);
+    expect(await sessions(me)).toBe(before);
+  });
+
+  it('two devices, two challenges: both log in; a wrong code first is fine', async () => {
+    const { me, secret, recoveryCodes } = await withTwoFactor();
+    const phone = (await login(me, SAFARI_IPHONE)).body.challengeToken;
+    const laptop = (await login(me)).body.challengeToken;
+    expect((await second({ challengeToken: laptop, code: wrongCode(secret) })).status).toBe(400);
+    expect((await second({ challengeToken: laptop, code: code(secret, 1) })).status).toBe(200);
+    expect((await second({ challengeToken: phone, recoveryCode: recoveryCodes[4] }, SAFARI_IPHONE)).status).toBe(200);
+  });
+
+  it('a challenge without an id (made before Day 92) is refused', async () => {
+    const { me, secret } = await withTwoFactor();
+    const real = jwt.decode((await login(me)).body.challengeToken);
+    jest.spyOn(require('crypto'), 'randomUUID').mockReturnValue('not-a-uuid');
+    const odd = (await login(me)).body.challengeToken;
+    expect(jwt.decode(odd).jti).toBe('not-a-uuid');
+    expect((await second({ challengeToken: odd, code: code(secret, 1) })).text).toBe(EXPIRED);
+    expect(real.jti).toMatch(/^[0-9a-f-]{36}$/);
   });
 
   it('10 wrong codes lock the code step for 15 minutes', async () => {

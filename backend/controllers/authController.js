@@ -198,7 +198,7 @@ function refuseBanned(user, res) {
 
 // Everything after the account is proven (password, and the code when
 // 2FA is on): a new session and the login answer.
-async function finishLogin(user, req, res, extra = {}) {
+async function finishLogin(user, req, res, extra = {}, { loginChallenge = null } = {}) {
   // Day 12: a suspension that has run out is lifted here (which also
   // reactivates the account).
   if (user.banned_at && (await liftExpiredSuspension(user.id))) {
@@ -216,7 +216,7 @@ async function finishLogin(user, req, res, extra = {}) {
   }
 
   // Day 8: a session per login, so this device can later be signed out.
-  const { token } = await createSession(user.id, req);
+  const { token } = await createSession(user.id, req, { loginChallenge });
   // Day 77: tell the owner about a login on a new kind of device.
   await loginAlerts.afterLogin(user.id, req.headers['user-agent']);
   res.status(200).json({
@@ -238,7 +238,7 @@ async function finishLogin(user, req, res, extra = {}) {
 // or a recovery code, for the challenge POST /login handed out.
 async function loginSecondStep(req, res) {
   try {
-    const user = await twoFactor.readChallenge(textOf(req.body.challengeToken));
+    const { user, challengeId } = await twoFactor.readChallenge(textOf(req.body.challengeToken));
     if (refuseBanned(user, res)) return;
     const used = await twoFactor.checkSecondFactor(user.id, {
       code: textOf(req.body.code).trim(),
@@ -246,9 +246,10 @@ async function loginSecondStep(req, res) {
     });
     // A recovery code means the phone may be gone: say how many are left.
     const extra = used === 'recovery' ? { recoveryCodesLeft: await twoFactor.recoveryCodesLeft(user.id) } : {};
-    await finishLogin(user, req, res, extra);
+    // Day 92: the session records the challenge, so it logs in once.
+    await finishLogin(user, req, res, extra, { loginChallenge: challengeId });
   } catch (err) {
-    sendError(res, err, 'Login failed. Please try again later.');
+    sendError(res, twoFactor.usedChallengeError(err), 'Login failed. Please try again later.');
   }
 }
 

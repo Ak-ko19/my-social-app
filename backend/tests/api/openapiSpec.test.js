@@ -57,6 +57,14 @@ describe('API spec (docs/openapi)', () => {
     expect(operations.map((o) => o.key).filter((key) => !served.has(key))).toEqual([]);
   });
 
+  // Day 92 (AUDIT_REPORT_4 B5): no route works without a login unless it is
+  // on the reviewed list (and every listed one does).
+  it('the public operations are exactly the reviewed list', () => {
+    const PUBLIC = require('../../docs/openapi/publicOperations');
+    const isPublic = operations.filter(({ op }) => op['x-auth'] === 'public').map((o) => o.key).sort();
+    expect(isPublic).toEqual([...PUBLIC].sort());
+  });
+
   it("each operation's auth is what its middleware applies", () => {
     const wrong = routes.filter(opOf).filter((r) => opOf(r)['x-auth'] !== authOf(r))
       .map((r) => `${label(r)}: documented ${opOf(r)['x-auth']}, middleware says ${authOf(r)}`);

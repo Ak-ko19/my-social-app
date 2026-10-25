@@ -18,20 +18,21 @@ const check = (item, name, ok, extra = '') => {
 
 (async () => {
   // ---------- A6: every route classified (parses multi-line router calls) ----------
-  const PUBLIC_OK = new Set([
-    'POST /signup', 'POST /login', 'POST /forgot-password', 'POST /reset-password/:token',
-    'GET /verify-email/:token', 'GET /users/:id/follow-counts'
-  ]);
+  // Day 92 (AUDIT_REPORT_4 B5): the reviewed list the API spec test also
+  // uses (this was a copy from the first audit and went stale).
+  const { toOpenApiPath } = require(`${ROOT}/backend/docs/openapi`);
+  const PUBLIC_OK = new Set(require(`${ROOT}/backend/docs/openapi/publicOperations`));
   const routes = [];
   for (const f of fs.readdirSync(`${ROOT}/backend/routes`)) {
     const code = fs.readFileSync(`${ROOT}/backend/routes/${f}`, 'utf8');
     for (const m of code.matchAll(/router\.(get|post|put|patch|delete)\(\s*'([^']+)'([\s\S]*?)\);/g)) {
       const args = m[3];
-      const kind = /authMiddleware|\.\.\.admin/.test(args) ? (/\.\.\.admin/.test(args) ? 'admin' : 'auth') : /optionalAuth/.test(args) ? 'optional' : 'public';
+      const kind = /authMiddleware|\.\.\.admin/.test(args) ? (/\.\.\.admin/.test(args) ? 'admin' : 'auth') : /optionalAuth/.test(args) ? 'optional'
+        : /requireSecret\(/.test(args) ? 'secret' : 'public';
       routes.push({ file: f, method: m[1].toUpperCase(), path: m[2], kind });
     }
   }
-  const unexpected = routes.filter((r) => r.kind === 'public' && !PUBLIC_OK.has(`${r.method} ${r.path}`));
+  const unexpected = routes.filter((r) => r.kind === 'public' && !PUBLIC_OK.has(`${r.method} ${toOpenApiPath(r.path)}`));
   out.routes = { total: routes.length, byKind: routes.reduce((a, r) => ({ ...a, [r.kind]: (a[r.kind] || 0) + 1 }), {}), unexpectedPublic: unexpected };
   check('A6', `all ${routes.length} routes need a login, are admin-only, or are intentionally public/optional-auth`, unexpected.length === 0,
     JSON.stringify(out.routes.byKind) + (unexpected.length ? ' unexpected: ' + unexpected.map((r) => `${r.method} ${r.path}`).join(', ') : ''));

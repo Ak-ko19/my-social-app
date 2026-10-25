@@ -13,12 +13,14 @@ const { banState, liftExpiredSuspension } = require('./moderationService');
 
 const TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60; // same 7 days as before
 
-async function createSession(userId, req) {
+// Day 92: loginChallenge = the two-factor challenge's id, when this login
+// came through one (unique: a challenge opens one session only).
+async function createSession(userId, req, { loginChallenge = null } = {}) {
   const userAgent = (req.headers['user-agent'] || '').slice(0, 500) || null;
   const result = await db.query(
-    `INSERT INTO sessions (user_id, expires_at, user_agent)
-     VALUES ($1, now() + make_interval(secs => $2), $3) RETURNING id`,
-    [userId, TOKEN_TTL_SECONDS, userAgent]
+    `INSERT INTO sessions (user_id, expires_at, user_agent, login_challenge)
+     VALUES ($1, now() + make_interval(secs => $2), $3, $4) RETURNING id`,
+    [userId, TOKEN_TTL_SECONDS, userAgent, loginChallenge]
   );
   const sid = result.rows[0].id;
   const token = jwt.sign({ userId, sid }, process.env.JWT_SECRET, { expiresIn: TOKEN_TTL_SECONDS });
@@ -168,6 +170,7 @@ module.exports = {
   touchSession,
   describeDevice,
   listSessions,
+  isUuid,
   revokeSession,
   TOKEN_TTL_SECONDS
 };

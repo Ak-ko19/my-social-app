@@ -23,6 +23,7 @@ const email = require('../utils/email'); // called through the module, so tests 
 const { emailText } = require('../config/emailText');
 const { HttpError } = require('../utils/httpError');
 const totp = require('../utils/totp');
+const { isUuid } = require('./sessionService');
 
 class TwoFactorError extends HttpError {}
 
@@ -252,7 +253,9 @@ async function regenerateRecoveryCodes(userId) {
 // token instead of a session. It is signed with a key of its own, derived
 // from JWT_SECRET with a purpose label, so it can never pass for a session
 // token (or the other way round). It carries a fingerprint of the password
-// hash: a password change in the meantime ends it.
+// hash: a password change in the meantime ends it. Day 92: and an id of its
+// own (jti), which the session it opens records -- so it opens one session
+// only (sessions.login_challenge is unique, migration 078).
 const CHALLENGE_TTL_SECONDS = 5 * 60;
 const LOGIN_EXPIRED = 'Your login has expired. Please log in again.';
 
@@ -263,12 +266,14 @@ const passwordFingerprint = (passwordHash) => crypto.createHash('sha256').update
 
 function issueChallenge(user) {
   return jwt.sign({ uid: user.id, pf: passwordFingerprint(user.password), purpose: '2fa' }, challengeKey(), {
-    expiresIn: CHALLENGE_TTL_SECONDS
+    expiresIn: CHALLENGE_TTL_SECONDS,
+    jwtid: crypto.randomUUID()
   });
 }
 
-// The user row the challenge is for, if it is still good: signed, not
-// expired, same password, 2FA still on. Throws 400 otherwise.
+// { user, challengeId } -- the user row the challenge is for, if it is
+// still good: signed, not expired, same password, 2FA still on, with an id.
+// Throws 400 otherwise.
 async function readChallenge(token) {
   let claims;
   try {
@@ -276,12 +281,25 @@ async function readChallenge(token) {
   } catch {
     throw new TwoFactorError(400, LOGIN_EXPIRED);
   }
-  if (claims.purpose !== '2fa' || !Number.isInteger(claims.uid)) throw new TwoFactorError(400, LOGIN_EXPIRED);
+  if (claims.purpose !== '2fa' || !Number.isInteger(claims.uid) || !isUuid(claims.jti)) throw new TwoFactorError(400, LOGIN_EXPIRED);
   const user = (await db.query('SELECT * FROM users WHERE id = $1', [claims.uid])).rows[0];
   if (!user || !user.totp_enabled_at || passwordFingerprint(user.password) !== claims.pf) {
     throw new TwoFactorError(400, LOGIN_EXPIRED);
   }
-  return user;
+  // Day 92: already used for a login -- refused before a code or recovery
+  // code is spent on it. (Two racing requests both get past this; the
+  // unique index then refuses the second session: usedChallengeError.)
+  const used = await db.query('SELECT 1 FROM sessions WHERE login_challenge = $1', [claims.jti]);
+  if (used.rows.length > 0) throw new TwoFactorError(400, LOGIN_EXPIRED);
+  return { user, challengeId: claims.jti };
+}
+
+// Day 92: the session insert found this challenge already used (two logins
+// with one challenge, even racing) -> the same answer as an expired one.
+function usedChallengeError(err) {
+  return err && err.code === '23505' && err.constraint === 'idx_sessions_login_challenge'
+    ? new TwoFactorError(400, LOGIN_EXPIRED)
+    : err;
 }
 
 async function recoveryCodesLeft(userId) {
@@ -291,6 +309,7 @@ async function recoveryCodesLeft(userId) {
 module.exports = {
   issueChallenge,
   readChallenge,
+  usedChallengeError,
   recoveryCodesLeft,
   checkPassword,
   status,

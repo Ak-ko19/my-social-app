@@ -288,7 +288,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 91 — Notifications: no repeats, no blocked people (AUDIT_REPORT_4 B2, B1)
 - [x] Like → unlike → like (posts, comments, follows) notifies and pushes once per person per thing per day; someone blocked (either way) is out of your notifications — rows, grouped names and faces, counts, the unread badge — and back after an unblock. *(Likes once while kept, follows once a day; blocks hide, unblock restores — see Progress Log.)*
 ### Day 92 — Audit 4 info items (B3, B5)
-- [ ] A two-factor login challenge works for one login only; c4-audit-checks takes its public routes from the API spec and passes again.
+- [x] A two-factor login challenge works for one login only; c4-audit-checks takes its public routes from the API spec and passes again. *(Migration 078; one reviewed public-route list, checked in CI — see Progress Log.)*
 ### Day 93–94 — Share a post
 - [ ] Share someone's post to your own feed with your own words (Facebook's "Share"), only when its audience allows; the original shows inside; share counts; a notification to its author; a deleted or hidden original shows "This content isn't available".
 ### Day 95 — Photo descriptions (alt text)

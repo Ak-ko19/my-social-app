@@ -68,7 +68,7 @@ const schemas = {
   }, { optional: ['recoveryCodesLeft'] }),
   TwoFactorChallenge: s.object({
     twoFactorRequired: s.bool('Always true: send a code to POST /login/2fa'),
-    challengeToken: s.str('For POST /login/2fa; good for 5 minutes, and for nothing else')
+    challengeToken: s.str('For POST /login/2fa; good for 5 minutes and one login, and for nothing else')
   }),
   Suspended: s.object({ message: s.str(), until: s.time('When the suspension ends') }),
   TwoFactorStatus: s.object({

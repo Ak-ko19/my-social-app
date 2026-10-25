@@ -59,7 +59,7 @@ module.exports = {
   'POST /login/2fa': op({
     tag: 'Auth', auth: 'public', limited: true,
     summary: "Log in, step two: the authenticator app's code (or a recovery code)",
-    description: 'Finishes a login that POST /login answered with twoFactorRequired. The challenge is good for 5 minutes and ends '
+    description: 'Finishes a login that POST /login answered with twoFactorRequired. The challenge is good for 5 minutes and one login, and ends '
       + `if the password changes or 2FA is turned off. Each code works once; ${TWO_FACTOR_ATTEMPTS}`,
     requestBody: body({
       challengeToken: s.str('From POST /login'),
@@ -68,7 +68,7 @@ module.exports = {
     }, { required: ['challengeToken'] }),
     responses: {
       200: json(ref('LoginResult'), 'Logged in (after a recovery code, with recoveryCodesLeft)'),
-      400: text('Your login has expired. Please log in again. / no code / a wrong or used code'),
+      400: text('Your login has expired. Please log in again. (also a challenge already used for a login) / no code / a wrong or used code'),
       403: {
         description: 'Banned (text), or suspended (JSON with the end time)',
         content: {

@@ -742,3 +742,8 @@ ALTER TABLE users ADD COLUMN time_zone varchar(64);
 ALTER TABLE notification_preferences ADD COLUMN memories boolean NOT NULL DEFAULT true;
 CREATE INDEX idx_posts_month_day ON posts ((extract(month FROM created_at)), (extract(day FROM created_at)))
   WHERE page_id IS NULL AND community_id IS NULL;
+
+-- Day 92 (migration 078): a two-factor login challenge works once.
+ALTER TABLE sessions ADD COLUMN login_challenge uuid;
+CREATE UNIQUE INDEX idx_sessions_login_challenge ON sessions (login_challenge)
+  WHERE login_challenge IS NOT NULL;
