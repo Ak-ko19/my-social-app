@@ -2815,3 +2815,42 @@ Read-only; no application code changed. Same method as audit 3, on
   info items (Day 92), then features. A buffer, a re-audit and the next
   GO LIVE close the phase.
 - **Tests:** no code changed since the Day 89 verification.
+
+### 2026-10-25 — Day 91: Notifications -- no repeats, no blocked people (AUDIT_REPORT_4 B2, B1)
+- **B2 (`a3b184d`):** like → unlike → like used to send a new notification
+  and a push every time (5 rounds = 5). Now `notify()` skips a like or
+  comment like that the same person already sent about the same thing
+  while it is kept, and a follow or follow request sent within the last
+  day. It's one NOT EXISTS in the same INSERT, on the
+  (user_id, type, created_at) index. Comments and mentions are never
+  folded, because each one is new text. Facebook does the same: a like is
+  news once.
+- **B1 (`a3b184d`):** one rule, `notificationService.visibleSql`: your own
+  system notifications, plus any whose actor has no block with you in
+  either direction. It's applied inside the list's 1,000-row window, so
+  rows, grouped counts, the three faces and the newest name all agree. It
+  also covers the unread count and the live badge. `notify()` refuses new
+  ones across a block, so no push goes out either. Rows are kept, so an
+  unblock brings them back, like Facebook. Block and unblock send both
+  people `notifications_read`, which corrects the badge without the "new"
+  pill (docs/REALTIME.md).
+- **Better than planned:** the audit suggested a 1-day window for
+  everything. A like is now never repeated, because a second "X liked
+  your post" is never news.
+- **Tests:**
+  - New file notificationRepeatsBlocks: 14 tests; all 7 mutations caught
+    (each part switched off in turn).
+  - Two older tests that made a "new" notification by re-liking or
+    re-following now use a new person.
+  - day81-notifications +6 checks per language: block from the profile
+    menu, the bell drops live, the follows row and dee gone, and a toggled
+    like brings nothing new. A browser mutation (no badge refresh) fails
+    it.
+- **Tests at close:**
+  - Backend 1063/1063, perf 47/47 (notifications list 236 ms and badge
+    187 ms at the perf seed, with the block filter), npm audit 0/0/0.
+  - Full browser run in batches: all 67 regular suites, the 9
+    special-stack ones, day80-states 150 × 2, a11y 62 + 62 + 7, A3 153 × 4,
+    0 failures.
+- **Also:** the owner's top rule is at the head of CLAUDE.md: never end a
+  turn while a shell or test is running.
