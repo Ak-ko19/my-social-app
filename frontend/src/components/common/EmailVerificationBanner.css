@@ -1,3 +1,5 @@
+/* Day 85: readable in both themes (the amber text was ~2.9:1). Light:
+   dark amber on pale amber (~6.4:1); the button white on dark amber. */
 .email-verify-banner {
   display: flex;
   align-items: center;
@@ -5,7 +7,7 @@
   gap: var(--space-2) var(--space-3);
   padding: var(--space-3) var(--space-4);
   background: var(--badge-amber-bg);
-  color: var(--badge-amber-fg);
+  color: var(--badge-amber-text);
   font-size: 13px;
   font-weight: 600;
 }
@@ -14,7 +16,7 @@
   padding: var(--space-1) var(--space-3);
   border: none;
   border-radius: var(--radius-pill);
-  background: var(--badge-amber-fg);
+  background: var(--badge-amber-text);
   color: #fff;
   font-family: var(--font-sans);
   font-size: 12.5px;
@@ -28,6 +30,21 @@
 }
 
 .email-verify-banner-error {
-  color: var(--color-accent-3);
+  color: #b91c1c;
   width: 100%;
+}
+
+/* Dark: a deep amber band instead of a bright one, light text on it. */
+[data-theme='dark'] .email-verify-banner {
+  background: #3a2a0c;
+  color: #fde68a;
+}
+
+[data-theme='dark'] .email-verify-banner button {
+  background: #fbbf24;
+  color: #1f1300;
+}
+
+[data-theme='dark'] .email-verify-banner-error {
+  color: #fca5a5;
 }

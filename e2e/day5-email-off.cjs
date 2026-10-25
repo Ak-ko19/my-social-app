@@ -10,6 +10,7 @@ const { chromium } = require('./node_modules/playwright-core');
 const SP = __dirname;
 const WEB = 'http://localhost:5173';
 const token = fs.readFileSync(path.join(SP, 'alice.token'), 'utf8').trim();
+const AXE = fs.readFileSync(path.join(SP, 'node_modules', 'axe-core', 'axe.min.js'), 'utf8');
 const locale = (lang) => JSON.parse(fs.readFileSync(path.join(SP, '..', 'frontend', 'src', 'i18n', 'locales', `${lang}.json`), 'utf8'));
 const results = [];
 const errors = [];
@@ -66,6 +67,18 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   await page.locator('.email-verify-banner').waitFor({ timeout: 5000 }).catch(() => {});
   check('on: verify banner shown for an unverified user', (await page.locator('.email-verify-banner').count()) === 1);
   await page.context().close();
+
+  // Day 85: the banner's text and button are readable (AA) in both themes.
+  for (const [lang, theme] of [['en', 'light'], ['ar', 'dark']]) {
+    const p = await newPage({ loggedIn: true, lang, theme });
+    await p.goto(`${WEB}/`, { waitUntil: 'networkidle' });
+    await p.locator('.email-verify-banner').waitFor({ timeout: 5000 }).catch(() => {});
+    await p.addScriptTag({ content: AXE });
+    const r = await p.evaluate(() => window.axe.run('.email-verify-banner', { runOnly: { type: 'rule', values: ['color-contrast'] } }));
+    check(`on: the banner passes colour contrast (${lang}/${theme})`, r.violations.length === 0 && r.passes.length > 0,
+      r.violations.map((v) => v.nodes.map((n) => n.any[0]?.message).join(' | ')).join(' ; '));
+    await p.context().close();
+  }
 
   page = await newPage({});
   await page.goto(`${WEB}/forgot-password`, { waitUntil: 'networkidle' });

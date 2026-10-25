@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 85–87 — Buffer: fix everything left in AUDIT_REPORT_3.md.
-**Step:** 3 — ids: DONE (committed; backend 1049 incl. a new id sweep, 5 id-route browser suites). Next: 4 Arabic new-group back button.
+**Step:** 5 — EmailVerificationBanner: DONE (committed; axe contrast in light/EN + dark/AR, shown to fail on the old colours). Next: Days close. Step 4 verified, no code: in Arabic the new-group back button is at x=328 of 390 (the start edge, mirrored chevron), like Blocked users and a chat.
 
 AUDIT_REPORT_3 status: A1 (advisories, CI audit) fixed Day 60 + 75-76; A2
 (Coming-soon rows) fixed Day 60; A3 (split long suites) Day 66; N1-N4
