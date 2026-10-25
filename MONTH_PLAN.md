@@ -276,6 +276,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 88 — Documentation for the owner
 - [x] OWNER_GUIDE.md in simple English: what the app has, how to run it, what LATER.md items unlock. *(Plus a five-minute demo and the after-funding list — see Progress Log.)*
 ### Day 89 — Re-audit (AUDIT_REPORT_4.md)
+- [x] Repeat the full read-only audit; write AUDIT_REPORT_4.md comparing with the third audit. *(AUDIT_REPORT_4.md: B1–B2 medium, B3–B5 info — see Progress Log.)*
 ### Day 90 — GO LIVE (only if you have the access), then apply rule 12 and continue.
 
 ---
@@ -2714,3 +2715,34 @@ lists that grow without limit.
   onboarded_at, so a demo login opened the first-run steps (Day 78) and
   c1-seed would have stopped there. Demo accounts are now past them;
   seed + c1-seed pass (8/8).
+
+### 2026-10-25 — Day 89: Re-audit (AUDIT_REPORT_4.md)
+Read-only; no application code changed. Same method as audit 3, on
+`9b5e055` (the Day 88 close).
+- **Audit 3's findings:** A1–A3 fixed (Days 60, 66, 85). N5 and N6 stay
+  info items for after funding.
+- **Full verification of that commit:** backend 1049/1049, Vitest
+  374/374, lint, check:i18n, check:headers, bundle 216.1 kB, npm audit
+  0/0/0, the GO LIVE rehearsal (015 → 077). Full browser run in batches:
+  all 67 regular suites, the 9 special-stack ones, day80-states 150 × 2,
+  perf 47, a11y 62 + 62 + 7, A3 153 × 4. day48-activity was cut off once
+  (the stack went down mid-batch, no check ran) and passed 12/12 alone.
+  The audit-only run: c1-seed 8/8, c4-audit-checks 12/13 (B5).
+- **Probes, 26/28** on a throwaway stack, aimed at Days 59–88: two-factor
+  login (T1–T12), notifications vs blocks and live events (N1–N5, one
+  live Socket.IO probe), removal notices, memories, a fake photo, ids,
+  comment counts across a block.
+- **New findings:**
+  - B1, Medium: someone you blocked stays in your notifications, by name
+    and face in a grouped row (probe N1).
+  - B2, Medium: like/unlike (and comment likes, follows) re-notifies, with
+    a push, every time: 5 rounds made 5 notifications (probe B2).
+  - B3, Info: a 2FA challenge can be used for several logins within its
+    5 minutes (each still needs a fresh code).
+  - B4, Info: 180 of 202 router routes rely on the global limit only.
+  - B5, Info: c4-audit-checks' list of intended public routes is from the
+    first audit; all 12 "unexpected" routes were checked and are fine.
+- **Corrected while finishing the draft:** the B4 numbers (a re-count of
+  each router call's middleware) and how B3 was found (code reading).
+- **Next:** Day 90 GO LIVE is the owner's; then rule 12 -- the next 30
+  Days, starting with B2 and B1.

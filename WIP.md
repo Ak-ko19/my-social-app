@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 89 — Re-audit: AUDIT_REPORT_4.md (a full read-only audit, compared with audit 3).
-**Step:** 0 — not started (Day 88 closed: see the Progress Log).
+**Day:** 90 — GO LIVE (owner action: no production access) and rule 12 (append the next 30 Days).
+**Step:** 0 — not started (Day 89 closed: see the Progress Log and AUDIT_REPORT_4.md).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -252,3 +252,11 @@
   - Post lists: add commentCountColumnSql('$1') next to pollColumnSql.
   - Re-run `npm audit --omit=dev` in all three folders before each close:
     new advisories appear between days (two did between Days 76 and 85).
+
+- Day 89 notes:
+  - A full run can be cut off by the machine sleeping: a suite with
+    "pass 0, fail 0" and ECONNREFUSED in its out-*.txt never ran -- re-run
+    it alone before calling anything red or green.
+  - The audit-only suites run with `--audit` plus at least one real suite
+    name (E2E_ONLY rejects "c1-seed"): `E2E_ONLY="b7-explore" bash
+    run-all.sh --audit`.
