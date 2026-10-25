@@ -2665,3 +2665,38 @@ lists that grow without limit.
     database), the 9 special-stack suites, day80-states (150 each
     language), day27-perf (47), a11y (3 parts, 0 serious/critical) and A3
     EN/AR (153 page checks in each of 4 parts, 0 failures).
+
+### 2026-10-25 — Days 85–87: Buffer (AUDIT_REPORT_3 and the follow-ups)
+- **AUDIT_REPORT_3:** A1 (advisories, CI audit), A2 (Coming-soon rows) and
+  A3 (long suites split) were fixed on Days 60 and 64–66; N1–N4 earlier.
+  N5 (console.* in the frontend) and N6 (token in localStorage, behind a
+  strict CSP) stay info items for after funding.
+- **New advisories (`0ae3648`):** two high denial-of-service advisories
+  had appeared, both reachable: body-parser (every JSON request) and multer
+  (every upload). In-range updates; express 5.3.0.
+- **Comment counts (`6649d47`, follow-up from Day 40):** every post list
+  and a single post carry comment_count -- the comments the viewer would
+  see (held ones only for their writer and the post's owner, none across
+  a block) -- and the card says "12 comments" before opening, like
+  Facebook's.
+- **Ids (`1b0dccc`, follow-up from Day 68):** follow counts and a post's
+  reactions echoed the id as text; now numbers. Checking that found a
+  wider problem: an id like "1.5", "1e3" or "99999999999" in a URL was a
+  500 on 75 routes (118 cases, found by a new sweep over every documented
+  route). middleware/wholeIds answers 400 "Invalid ID" before the route
+  runs; the spec documents it on every such operation.
+- **Readable banner (`8b0398f`):** "verify your email" was 2.86:1 and had
+  no dark version; now ~6.4:1 light and ~10:1 dark, checked with axe in
+  day5-email-off (which fails on the old colours). The Arabic new-group
+  back button (follow-up from Day 70) was checked: already correct.
+- **Left for later on purpose:** Explore's popular posts still aggregate 7
+  days per request (per viewer; fine at today's size -- revisit at real
+  scale, as noted on Day 40).
+- **Tests at close:**
+  - Backend 1049/1049 (new: commentCounts 3, numericIds 2, the id
+    sweep); Vitest 374/374; lint (exit 0); check:i18n; check:headers;
+    bundle 216.1 / 225 kB; npm audit clean in all three folders.
+  - Full browser run in small batches: all 67 regular suites, the 9
+    special-stack suites, day80-states (150 each language), day27-perf
+    (47), a11y (3 parts, 0 serious/critical) and A3 EN/AR (153 page checks
+    in each of 4 parts, 0 failures).

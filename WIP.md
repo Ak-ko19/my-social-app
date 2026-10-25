@@ -1,22 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 85–87 — Buffer: fix everything left in AUDIT_REPORT_3.md.
-**Step:** 5 — EmailVerificationBanner: DONE (committed; axe contrast in light/EN + dark/AR, shown to fail on the old colours). Next: Days close. Step 4 verified, no code: in Arabic the new-group back button is at x=328 of 390 (the start edge, mirrored chevron), like Blocked users and a chat.
-
-AUDIT_REPORT_3 status: A1 (advisories, CI audit) fixed Day 60 + 75-76; A2
-(Coming-soon rows) fixed Day 60; A3 (split long suites) Day 66; N1-N4
-fixed; N5 (console.* in the frontend) and N6 (token in localStorage) are
-info items kept for after funding. So the buffer takes the follow-ups:
-1. NEW high advisories in the backend: body-parser 2.0.0-2.3.0 (DoS,
-   trailing bytes after a compressed body -- express.json) and multer
-   2.0.0-2.4.0 (DoS, pending fileFilter after teardown -- uploads).
-   npm audit fix (in range), full backend + upload browser suites.
-2. Post cards show "N comments" up front (seen Day 40): comment_count in
-   every post listing (one column helper, like pollColumnSql) + the card.
-3. Follow-counts and post likes echo the id as a string (Day 68).
-4. Arabic: the new-group screen's back button on the left (Day 70).
-5. EmailVerificationBanner amber text ~2.9:1, no dark tokens.
-Then the Days' close.
+**Day:** 88 — Documentation for the owner: OWNER_GUIDE.md in simple English.
+**Step:** 0 — not started (Days 85–87 closed: see the Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -260,3 +245,10 @@ Then the Days' close.
   - Browser suites can run a backend job in-process: set
     process.env.DATABASE_URL to the e2e DB before requiring the service
     (day83-memories).
+
+- Days 85-87 notes:
+  - New routers with integer path ids: call wholeIds(router) (middleware/
+    wholeIds); inputTypes.test sweeps every documented route with bad ids.
+  - Post lists: add commentCountColumnSql('$1') next to pollColumnSql.
+  - Re-run `npm audit --omit=dev` in all three folders before each close:
+    new advisories appear between days (two did between Days 76 and 85).
