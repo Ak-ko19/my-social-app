@@ -12,6 +12,7 @@ const scheduledPostService = require('./scheduledPostService');
 const pollEndService = require('./pollEndService');
 const eventNotificationService = require('./eventNotificationService');
 const statsService = require('./statsService');
+const memoryNotificationService = require('./memoryNotificationService');
 
 const TICK_MS = 30 * 1000;
 
@@ -22,7 +23,9 @@ const JOBS = [
   // Day 55: "starts in about an hour".
   ['event reminders', () => eventNotificationService.remindDue(), (r) => r.events],
   // Day 61: count each finished day once, for Admin > Overview.
-  ['daily stats', () => statsService.rollUp(), (r) => r.days]
+  ['daily stats', () => statsService.rollUp(), (r) => r.days],
+  // Day 84: "You have memories", in each person's morning.
+  ['memories', () => memoryNotificationService.notifyDue(), (r) => r.people]
 ];
 
 let timer = null;

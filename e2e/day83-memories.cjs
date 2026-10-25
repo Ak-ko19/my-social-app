@@ -1,7 +1,8 @@
 // Days 83-84: Memories. mira has posts from this day 1 and 3 years ago
 // (moved back in time in the database) and one from another day: Home
 // shows "On this day", which hides for the day and stays hidden on reload;
-// the Menu opens Memories with a section per year. EN/light 390 px and
+// the Menu opens Memories with a section per year; the morning job tells
+// her ("You have memories from 1 year ago"), which opens Memories. EN/light 390 px and
 // AR/dark 375 px (RTL), the browser in UTC. Throwaway stack from e2e-up.sh.
 const path = require('path');
 const { execSync } = require('child_process');
@@ -19,6 +20,10 @@ const errors = [];
 const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  -- ' + extra : ''}`);
 const shows = (locator, timeout = 10000) => locator.waitFor({ timeout }).then(() => true, () => false);
 const json = { 'Content-Type': 'application/json' };
+// Day 84: the morning job, run here against the test database (the
+// stack's own ticker waits 10 minutes between runs).
+process.env.DATABASE_URL = 'postgresql://testuser@localhost:55433/mysocialapp_e2e';
+const memoryNotifications = require('../backend/services/memoryNotificationService');
 const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysocialapp_e2e -At -c "${q}"`).toString().trim();
 
 async function account(name) {
@@ -86,6 +91,24 @@ async function postBack(user, content, interval) {
     check(`${tag}: no horizontal scroll (Memories)`, await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1));
     await page.waitForTimeout(700);
     await page.screenshot({ path: path.join(SP, `day83-memories-${c.lang}-${c.theme}-${c.width}.png`) });
+
+    // Day 84: the morning notification -- mira's zone is set to one where it
+    // is morning-to-night on the same date as UTC (her posts were moved back
+    // by whole years from UTC now).
+    const hourIn = (zone) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: zone, hour: '2-digit', hourCycle: 'h23' }).format(new Date()));
+    const dateIn = (zone) => new Intl.DateTimeFormat('en-CA', { timeZone: zone }).format(new Date());
+    const zone = ['UTC', 'Etc/GMT-3', 'Etc/GMT-6', 'Etc/GMT-9', 'Etc/GMT-12', 'Etc/GMT+3', 'Etc/GMT+6', 'Etc/GMT+9']
+      .find((z) => hourIn(z) >= 8 && dateIn(z) === dateIn('UTC'));
+    sql(`UPDATE users SET time_zone = '${zone}' WHERE id = ${mira.id}`);
+    const run = await memoryNotifications.notifyDue({ force: true });
+    check(`${tag}: the morning job tells mira`, run.people >= 1, JSON.stringify(run));
+    await page.goto(`${WEB}/notifications`, { waitUntil: 'networkidle' });
+    const words = c.L.notifications.types.memories_one.replace(/<\/?b>/g, '').replace('{{count}}', '1');
+    const row = page.locator('a.notif-main', { hasText: words });
+    check(`${tag}: "You have memories from 1 year ago"`, await shows(row));
+    await row.click();
+    await page.waitForURL((u) => u.pathname === '/memories', { timeout: 8000 }).catch(() => {});
+    check(`${tag}: ...opens Memories`, page.url().endsWith('/memories'), page.url());
     await ctx.close();
   }
   await browser.close();

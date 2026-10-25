@@ -24,7 +24,7 @@ describe('notification settings (B11)', () => {
   it('defaults to everything on', async () => {
     const res = await prefs(me);
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ likes: true, comments: true, mentions: true, follows: true, follow_accepted: true, messages: true, groups: true, pages: true, events: true });
+    expect(res.body).toEqual({ likes: true, comments: true, mentions: true, follows: true, follow_accepted: true, messages: true, groups: true, pages: true, events: true, memories: true });
   });
 
   it('partial updates persist; validation rejects unknown keys and non-booleans', async () => {

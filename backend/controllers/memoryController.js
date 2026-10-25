@@ -2,6 +2,7 @@ const db = require('../db');
 const { sendError } = require('../utils/httpError');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql } = require('../services/reactionService');
 const { pollColumnSql } = require('../services/pollService');
+const { validZone, todayIn } = require('../utils/timeZone');
 
 // Days 83-84: Memories, like Facebook's "On this day" -- your own posts
 // made on today's date in earlier years. "Today" is the viewer's own date:
@@ -13,24 +14,6 @@ const { pollColumnSql } = require('../services/pollService');
 // audience.
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-// A real IANA zone ("Europe/Istanbul", "UTC"), as Intl knows them.
-function validZone(tz) {
-  if (typeof tz !== 'string' || !tz || tz.length > 64) return false;
-  try {
-    new Intl.DateTimeFormat('en', { timeZone: tz });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// YYYY-MM-DD of `now` in `tz`.
-function todayIn(tz, now = new Date()) {
-  const parts = Object.fromEntries(new Intl.DateTimeFormat('en', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' })
-    .formatToParts(now).map((p) => [p.type, p.value]));
-  return `${parts.year}-${parts.month}-${parts.day}`;
-}
 
 function validDate(text) {
   if (!DATE_RE.test(text)) return false;
@@ -86,4 +69,4 @@ async function getMemories(req, res) {
   }
 }
 
-module.exports = { getMemories, todayIn, validZone };
+module.exports = { getMemories };

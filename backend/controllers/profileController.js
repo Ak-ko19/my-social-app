@@ -1,4 +1,5 @@
 const db = require('../db');
+const { validZone } = require('../utils/timeZone');
 const interactionService = require('../services/interactionService');
 const { APP_LANGUAGES, isAppLanguage } = require('../config/languages');
 const { sendError } = require('../utils/httpError');
@@ -310,4 +311,19 @@ async function updateLanguage(req, res) {
   }
 }
 
-module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, exportMyData, setCover, removeCover, setAvatar, finishOnboarding, pinPost, unpinPost, updateInteractions };
+// Day 84: PUT /profile/time-zone { timeZone } -- the app reports its zone
+// when it starts, so the morning memories notification comes in the
+// person's own morning.
+async function updateTimeZone(req, res) {
+  try {
+    const timeZone = textOf(req.body?.timeZone);
+    if (!validZone(timeZone)) return res.status(400).send('timeZone must be a time zone name such as Europe/London');
+    const result = await db.query('UPDATE users SET time_zone = $1 WHERE id = $2 RETURNING time_zone', [timeZone, req.userId]);
+    if (result.rows.length === 0) return res.status(404).send('User not found');
+    res.json({ timeZone: result.rows[0].time_zone });
+  } catch (err) {
+    sendError(res, err, 'Saving the time zone failed. Please try again later.');
+  }
+}
+
+module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, updateTimeZone, exportMyData, setCover, removeCover, setAvatar, finishOnboarding, pinPost, unpinPost, updateInteractions };

@@ -190,7 +190,9 @@ function pushNotification({ userId, actorId, type, postId = null, commentId = nu
           : eventId ? `/events/${eventId}`
             : type === 'scheduled_failed' ? '/drafts'
               // Day 77: a new login opens the list of signed-in devices.
-              : type === 'new_login' ? '/settings/sessions' : '/notifications';
+              : type === 'new_login' ? '/settings/sessions'
+                // Day 84: memories open Memories.
+                : type === 'memories' ? '/memories' : '/notifications';
     await sendToUser(userId, (language) => ({
       title: 'MySocialApp',
       body: pushText(language, key, { name: actor.username, group: group?.name, page: page?.name, event: event?.name, device: deviceText(language, device) }),

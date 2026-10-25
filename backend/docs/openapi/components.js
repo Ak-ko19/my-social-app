@@ -155,7 +155,7 @@ const schemas = {
     id: s.id(),
     type: s.enum(['like', 'comment_like', 'comment', 'reply', 'mention', 'follow', 'follow_request', 'follow_accepted',
       'group_request', 'group_approved', 'page_admin', 'event_reminder', 'event_cancelled', 'scheduled_post', 'scheduled_failed',
-      'poll_ended', 'poll_ended_own', 'new_login', 'content_removed']),
+      'poll_ended', 'poll_ended_own', 'new_login', 'content_removed', 'memories']),
     post_id: s.nullable(s.id()),
     comment_id: s.nullable(s.id()),
     is_read: s.bool('Day 81: for a group, true only when all of it is read'),
@@ -172,14 +172,21 @@ const schemas = {
     event_id: s.nullable(s.id()), event_name: s.nullable(s.str()), event_starts_at: s.nullable(s.time()),
     device: s.nullable(s.object({ browser: s.nullable(s.str()), os: s.nullable(s.str()), kind: s.enum(['mobile', 'desktop']) },
       { description: 'new_login: the kind of device that logged in (no IP address is kept)' })),
-    details: s.nullable(s.object({
-      kind: s.enum(['post', 'comment', 'message', 'community', 'page'], 'What was removed'),
-      reason: s.enum(['spam', 'harassment', 'inappropriate_content', 'hate_speech', 'misinformation', 'other'], 'The reason it was reported for'),
-      excerpt: s.nullable(s.str('Its first 100 characters, as reported'))
-    }, { description: 'content_removed (Day 82): an admin removed something of yours after a report' }))
+    details: {
+      oneOf: [
+        s.object({
+          kind: s.enum(['post', 'comment', 'message', 'community', 'page'], 'What was removed'),
+          reason: s.enum(['spam', 'harassment', 'inappropriate_content', 'hate_speech', 'misinformation', 'other'], 'The reason it was reported for'),
+          excerpt: s.nullable(s.str('Its first 100 characters, as reported'))
+        }, { description: 'content_removed (Day 82): an admin removed something of yours after a report' }),
+        s.object({ yearsAgo: s.int('The most recent year with memories, in years ago') },
+          { description: 'memories (Day 84): you have posts from this day in earlier years' }),
+        { type: 'null' }
+      ]
+    }
   }),
   NotificationPreferences: s.object(Object.fromEntries(
-    ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events'].map((c) => [c, s.bool()])
+    ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events', 'memories'].map((c) => [c, s.bool()])
   ), { description: 'Each category on (true) or off; everything starts on' }),
 
   // ---- Posts ----

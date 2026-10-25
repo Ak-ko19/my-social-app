@@ -354,3 +354,33 @@ describe('Notifications: content removed', () => {
     expect(screen.getByRole('button', { name: 'اقرأ القواعد' })).toBeInTheDocument();
   });
 });
+
+// Day 84: you have memories today.
+describe('Notifications: memories', () => {
+  const memories = { ...me, id: 60, type: 'memories', post_id: null, comment_id: null, post_content: null, count: 1, actor_count: 1, actors: [], details: { yearsAgo: 3 } };
+  const showOne = () => {
+    api.get.mockResolvedValue({ data: { notifications: [memories], nextCursor: null } });
+    render(
+      <MemoryRouter initialEntries={['/notifications']}>
+        <Routes>
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/memories" element={<p>Memories screen</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+  };
+  const line = (re) => (_, el) => Boolean(el?.classList?.contains('notif-sentence') && re.test(el.textContent));
+
+  it('says from how long ago, and opens Memories', async () => {
+    await setLanguage('en');
+    showOne();
+    await userEvent.click(await screen.findByRole('link', { name: /You have memories from 3 years ago/ }));
+    expect(await screen.findByText('Memories screen')).toBeInTheDocument();
+  });
+
+  it('...in Arabic', async () => {
+    await setLanguage('ar');
+    showOne();
+    expect(await screen.findByText(line(/^لديك ذكريات من قبل 3 سنوات\./))).toBeInTheDocument();
+  });
+});

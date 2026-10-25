@@ -63,6 +63,13 @@ module.exports = {
     requestBody: multipart({ cover: file('The photo') }, { required: ['cover'] }),
     responses: { 200: json(s.object({ cover_url: s.str() }), 'Saved'), 400: text('Choose a photo, or a refused file') }
   }),
+  'PUT /profile/time-zone': op({
+    tag: 'Profiles', auth: 'user',
+    summary: "Your device's time zone",
+    description: 'Day 84: the app reports it when it starts, so the memories notification comes in your own morning.',
+    requestBody: body({ timeZone: s.str('An IANA time zone, e.g. Europe/London') }, { required: ['timeZone'] }),
+    responses: { 200: json(s.object({ timeZone: s.str() }), 'Saved'), 400: text('Not a time zone name'), 404: text('User not found') }
+  }),
   'PUT /profile/avatar': op({
     tag: 'Profiles', auth: 'user', upload: true,
     summary: 'Set your profile photo (and nothing else)',

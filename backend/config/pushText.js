@@ -33,7 +33,9 @@ const TEXT = {
     new_login: 'New login to your account from {device}. Not you? Check your devices.',
     // Day 82: an admin removed something of yours (no details on a lock
     // screen; the app says what and why).
-    content_removed: 'We removed something you shared. Open the app to see why.'
+    content_removed: 'We removed something you shared. Open the app to see why.',
+    // Day 84: the morning memories notification.
+    memories: 'You have memories to look back on today.'
   },
   ar: {
     like: 'أعجب {name} بمنشورك',
@@ -57,7 +59,8 @@ const TEXT = {
     event_reminder: 'يبدأ {event} بعد ساعة تقريبًا',
     event_cancelled: 'ألغى {name} {event}',
     new_login: 'تسجيل دخول جديد إلى حسابك من {device}. لست أنت؟ راجع أجهزتك.',
-    content_removed: 'أزلنا شيئًا شاركته. افتح التطبيق لمعرفة السبب.'
+    content_removed: 'أزلنا شيئًا شاركته. افتح التطبيق لمعرفة السبب.',
+    memories: 'لديك ذكريات تستعيدها اليوم.'
   }
 };
 

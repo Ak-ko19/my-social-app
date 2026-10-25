@@ -736,3 +736,9 @@ CREATE INDEX idx_notifications_user_type_created ON notifications (user_id, type
 
 -- Day 82 (migration 076): what a notification about removed content says.
 ALTER TABLE notifications ADD COLUMN details jsonb;
+
+-- Day 84 (migration 077): daily memories notifications.
+ALTER TABLE users ADD COLUMN time_zone varchar(64);
+ALTER TABLE notification_preferences ADD COLUMN memories boolean NOT NULL DEFAULT true;
+CREATE INDEX idx_posts_month_day ON posts ((extract(month FROM created_at)), (extract(day FROM created_at)))
+  WHERE page_id IS NULL AND community_id IS NULL;

@@ -41,6 +41,8 @@ function notificationKey(n) {
   if (n.type === 'new_login') return 'newLogin';
   // Day 82: an admin removed something of yours after a report.
   if (n.type === 'content_removed') return 'contentRemoved';
+  // Day 84: you have memories today.
+  if (n.type === 'memories') return 'memories';
   return 'other';
 }
 
@@ -86,6 +88,8 @@ function targetOf(n, myId) {
       return n.event_id ? `/events/${n.event_id}` : null;
     case 'new_login':
       return '/settings/sessions';
+    case 'memories':
+      return '/memories';
     default:
       return null;
   }
@@ -108,7 +112,7 @@ function Sentence({ n, t }) {
     );
   }
   return (
-    <Trans i18nKey={`notifications.types.${notificationKey(n)}`} values={{ name: n.actor_username, group: n.community_name, page: n.page_name, event: n.event_name, time: n.event_starts_at ? formatDate(n.event_starts_at, 'time') : '', device: deviceWords(n.device, t), ...removedWords(n.details, t) }} components={{ b: <strong /> }} />
+    <Trans i18nKey={`notifications.types.${notificationKey(n)}`} count={n.type === 'memories' ? n.details?.yearsAgo : undefined} values={{ name: n.actor_username, group: n.community_name, page: n.page_name, event: n.event_name, time: n.event_starts_at ? formatDate(n.event_starts_at, 'time') : '', device: deviceWords(n.device, t), ...removedWords(n.details, t) }} components={{ b: <strong /> }} />
   );
 }
 

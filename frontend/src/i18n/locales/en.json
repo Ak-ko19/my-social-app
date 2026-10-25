@@ -585,7 +585,9 @@
       "eventReminder": "<b>{{event}}</b> starts at {{time}}",
       "eventCancelled": "<b>{{name}}</b> cancelled <b>{{event}}</b>",
       "newLogin": "<b>New login</b> to your account from {{device}}. Not you? Check your devices and change your password.",
-      "contentRemoved": "<b>We removed {{kind}}</b> because it went against our rules. Reason: {{reason}}."
+      "contentRemoved": "<b>We removed {{kind}}</b> because it went against our rules. Reason: {{reason}}.",
+      "memories_one": "<b>You have memories</b> from {{count}} year ago. Look back on this day.",
+      "memories_other": "<b>You have memories</b> from {{count}} years ago. Look back on this day."
     },
     "reviewRequests": "Review requests",
     "reviewRequestsIn": "Review requests to join {{group}}",
@@ -850,6 +852,10 @@
       "events": {
         "title": "Events",
         "description": "Reminders for events you're going to or interested in, and when one is cancelled"
+      },
+      "memories": {
+        "title": "Memories",
+        "description": "A morning reminder when you have posts from this day in earlier years"
       }
     },
     "push": {
@@ -1375,7 +1381,7 @@
       "sections": [
         {
           "heading": "1. What we collect",
-          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted or restricted, your close friends list, the words you chose to hide, events you host and your answers to events, the size and time of the files you upload (kept 30 days, for the daily upload limit), muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active. If we remove something you shared after a report, the notification that tells you keeps its first 100 characters and the reason, for 90 days."
+          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted or restricted, your close friends list, the words you chose to hide, events you host and your answers to events, the size and time of the files you upload (kept 30 days, for the daily upload limit), muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active. If we remove something you shared after a report, the notification that tells you keeps its first 100 characters and the reason, for 90 days. We keep your device's time zone (for example Europe/London) so the memories reminder comes in your morning; you can turn that reminder off in Settings."
         },
         {
           "heading": "2. How we use it",

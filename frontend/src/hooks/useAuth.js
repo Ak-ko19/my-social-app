@@ -58,6 +58,7 @@ export function clearLocalSession() {
   }
   // Days 83-84: "On this day" hidden for today.
   localStorage.removeItem('memoriesHidden');
+  localStorage.removeItem('timeZoneReported');
   // Day 72: and what was kept to work offline (feed, unsent messages).
   clearOfflineData();
   notifyAuthChange();

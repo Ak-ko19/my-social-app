@@ -54,7 +54,9 @@ const CATEGORY_BY_TYPE = {
 
 // 'messages' (Day 23) has no notification type: it controls message pushes
 // (pushService.pushNewMessage).
-const CATEGORIES = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events'];
+// Day 84: 'memories' has no actor type either: it controls the morning
+// memories notification (memoryNotificationService).
+const CATEGORIES = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events', 'memories'];
 
 function categoryFor(type) {
   const category = CATEGORY_BY_TYPE[type];
@@ -115,7 +117,7 @@ async function notifySystem({ userId, type, postId = null, device = null, detail
   announce(userId);
 }
 
-// { likes, comments, mentions, follows, follow_accepted, messages, groups, pages, events } -- all true when
+// { likes, comments, mentions, follows, follow_accepted, messages, groups, pages, events, memories } -- all true when
 // the user never saved settings.
 async function getPreferences(userId) {
   const result = await db.query(`SELECT ${CATEGORIES.join(', ')} FROM notification_preferences WHERE user_id = $1`, [userId]);

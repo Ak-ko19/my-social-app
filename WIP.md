@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 83–84 — Memories / "On this day": show your posts from past years on the same date.
-**Step:** 2 — Memories screen + Home card: DONE (committed; Vitest 366, gates, day83-memories 22, a11y 62, day80-states-en 150, Home suites). Next: 3 the daily memories notification.
+**Step:** 3 — the daily memories notification: DONE (committed; backend 1043, Vitest 370, rehearsal with 077, counts 30/34/18, day83-memories 28, b11, a11y). Next: Days close.
 
 Plan (Facebook's Memories): your own posts made on today's date in past
 years, in YOUR time zone.
@@ -16,9 +16,18 @@ years, in YOUR time zone.
 2. UI: "On this day" card on Home when there are memories (hide for
    today), /memories screen ("1 year ago", "3 years ago"), Menu entry,
    EN/AR, empty state ("No memories today"), e2e day83-memories.
-3. Daily "You have memories from N years ago" notification (ticker job,
-   once a day per person, UTC date) with an off switch (new preference
-   category 'memories', migration) + push text. Then the Days' close.
+3. Daily "You have memories from N years ago" notification, in each
+   person's LOCAL morning (a UTC-day job would tell New York at 7 pm
+   about tomorrow). Migration 077: users.time_zone (the app saves it:
+   PUT /profile/time-zone on start), notification_preferences.memories
+   (off switch, Settings > Notifications), index posts (month, day of
+   created_at) for profile posts. Job (ticker, every tick, advisory lock
+   so one instance): candidates from the index for yesterday/today/
+   tomorrow (any zone is within +-14 h), then exact: local date =
+   today's month/day in an earlier year, local time >= 08:00, none sent
+   in the last 20 h, setting on, account active -> notification
+   'memories' { yearsAgo } + push + live count. Cleanup backstop. Then
+   the Days' close.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

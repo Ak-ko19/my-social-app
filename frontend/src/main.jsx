@@ -22,6 +22,7 @@ import { ThemeProvider } from './context/ThemeProvider'
 import { SocketProvider } from './context/SocketProvider'
 import { HiddenWordsProvider } from './context/HiddenWordsProvider'
 import ErrorBoundary from './components/common/ErrorBoundary'
+import TimeZoneReporter from './components/layout/TimeZoneReporter'
 import { installGlobalErrorReporting } from './utils/errorReporter'
 import { startInstallListener } from './utils/installPrompt'
 
@@ -41,6 +42,8 @@ i18nReady.finally(() => createRoot(document.getElementById('root')).render(
     <LazyMotion features={loadMotionFeatures} strict>
       <ThemeProvider>
         <SocketProvider>
+          {/* Day 84: the device's time zone, for the memories notification. */}
+          <TimeZoneReporter />
           <HiddenWordsProvider>
             <LanguageRoot>
               {/* Inside LanguageRoot, so the crash screen is translated and RTL. */}

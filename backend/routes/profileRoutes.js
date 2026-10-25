@@ -22,6 +22,8 @@ router.put('/profile/pinned-post', authMiddleware, profileController.pinPost);
 router.delete('/profile/pinned-post', authMiddleware, profileController.unpinPost);
 router.put('/profile/privacy', authMiddleware, profileController.updatePrivacy);
 router.put('/profile/language', authMiddleware, profileController.updateLanguage);
+// Day 84: the app's time zone (memories in your own morning).
+router.put('/profile/time-zone', authMiddleware, profileController.updateTimeZone);
 // Day 47: who can message you / comment on your posts.
 router.put('/profile/interactions', authMiddleware, profileController.updateInteractions);
 
