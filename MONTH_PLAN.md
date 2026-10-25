@@ -278,6 +278,60 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 89 — Re-audit (AUDIT_REPORT_4.md)
 - [x] Repeat the full read-only audit; write AUDIT_REPORT_4.md comparing with the third audit. *(AUDIT_REPORT_4.md: B1–B2 medium, B3–B5 info — see Progress Log.)*
 ### Day 90 — GO LIVE (only if you have the access), then apply rule 12 and continue.
+*GO LIVE skipped 2026-10-25: no production access (CLAUDE.md hard limits) — owner action, LATER.md #2; the rehearsal covers 015 → 077. Rule 12 applied: AUDIT_REPORT_4.md was the full audit (Day 89), and Days 91–120 are below — see Progress Log.*
+
+---
+
+## PHASE 4 — Days 91–120: Audit 4 fixes, sharing, chat and safety depth
+*(Written 2026-10-25 under rule 12 from AUDIT_REPORT_4.md §4 and §6. Every Day is owner-free, runs on the free tiers, and was checked against the code: none of it exists yet.)*
+
+### Day 91 — Notifications: no repeats, no blocked people (AUDIT_REPORT_4 B2, B1)
+- [ ] Like → unlike → like (posts, comments, follows) notifies and pushes once per person per thing per day; someone blocked (either way) is out of your notifications — rows, grouped names and faces, counts, the unread badge — and back after an unblock.
+### Day 92 — Audit 4 info items (B3, B5)
+- [ ] A two-factor login challenge works for one login only; c4-audit-checks takes its public routes from the API spec and passes again.
+### Day 93–94 — Share a post
+- [ ] Share someone's post to your own feed with your own words (Facebook's "Share"), only when its audience allows; the original shows inside; share counts; a notification to its author; a deleted or hidden original shows "This content isn't available".
+### Day 95 — Photo descriptions (alt text)
+- [ ] Write your own description for each photo you post; screen readers use it, with today's automatic text as the fallback.
+### Day 96 — Edit a post's photos
+- [ ] Remove, add and reorder photos when editing a post; removed files leave storage too.
+### Day 97–98 — Chat organisation
+- [ ] Pin chats to the top of the inbox; archive chats (a new message brings a chat back, like Messenger); an Archived list.
+### Day 99 — Search inside a conversation
+- [ ] Find words in one chat's history, jump to a match with the messages around it; only chats you are in.
+### Day 100 — Story replies and reactions
+- [ ] Reply to a story (it arrives as a message with the story attached) and react with an emoji; respects message permissions and blocks.
+### Day 101 — Group and page notification settings
+- [ ] Turn off notifications for one group's or one page's new posts (all / highlights / off).
+### Day 102 — New-account safety
+- [ ] Tighter limits for an account's first 24 hours (posts, links, follows, messages to strangers), in the existing spam checks; clear messages in EN/AR.
+### Day 103–104 — Admin tools round 2
+- [ ] Bulk actions on reports (dismiss / remove several); a content search for admins (posts, comments, users); both in the audit log.
+### Day 105 — Profile completeness
+- [ ] A "finish your profile" card (photo, cover, bio, links), dismissable, like Facebook's.
+### Day 106 — Page verification requests
+- [ ] A page admin asks for verification; an admin approves or declines; a badge on approved pages; logged.
+### Day 107–108 — Follow a hashtag
+- [ ] Follow hashtags; their public posts appear on Home (Instagram-style), with a way to unfollow from a post.
+### Day 109–110 — Comment upgrades
+- [ ] The post's author pins one comment; sort comments by Most relevant / Newest; the pin survives paging.
+### Day 111 — Birthdays
+- [ ] An optional birthday with who can see it (only me / friends / public); a notification to friends on the day, in their time zone.
+### Day 112 — Accessibility + translations check
+- [ ] Every screen from Days 91–111 translated (EN/AR), RTL-correct, axe 0 serious/critical.
+### Day 113 — Performance round 3
+- [ ] Explore's popular posts at scale (AUDIT_REPORT_4 §6), the new lists' indexes, the perf suite at the larger seed.
+### Day 114–115 — Security round 3
+- [ ] Re-check every route and socket event added since Day 76; dependency updates; two-factor keys encrypted when the owner sets a key (works unencrypted without it).
+### Day 116 — Code health round 2
+- [ ] Split the largest files (messageService.js), remove dead code, the README and CLAUDE.md up to date.
+### Day 117 — Owner guide refresh
+- [ ] OWNER_GUIDE.md covers Days 89–116 in simple English; the demo seed shows the new features.
+### Day 118 — Buffer: fix everything left in AUDIT_REPORT_4.md
+- [ ] Every open audit 4 item fixed or explained.
+### Day 119 — Re-audit (AUDIT_REPORT_5.md)
+- [ ] Repeat the full read-only audit; write AUDIT_REPORT_5.md comparing with the fourth audit.
+### Day 120 — GO LIVE (only if you have the access), then apply rule 12 and continue.
 
 ---
 
@@ -2746,3 +2800,18 @@ Read-only; no application code changed. Same method as audit 3, on
   each router call's middleware) and how B3 was found (code reading).
 - **Next:** Day 90 GO LIVE is the owner's; then rule 12 -- the next 30
   Days, starting with B2 and B1.
+
+### 2026-10-25 — Day 90: GO LIVE skipped (owner); rule 12 applied
+- **GO LIVE** needs production access, so it stays the owner's (LATER.md
+  #2, GO_LIVE_CHECKLIST.md). The rehearsal (`golive-rehearsal.sh --old`)
+  passed on Day 89 for 015 → 077.
+- **Rule 12:** every Day 1–90 is done (Day 43 removed by the owner). The
+  full audit is AUDIT_REPORT_4.md (Day 89). PHASE 4 (Days 91–120) is
+  appended above, built from its findings and gap list. Each item was
+  checked against the code first. Two ideas were dropped because they
+  already exist: free-text report details (`reports.details`) and muting
+  one chat (migration 037).
+- **Order:** the two medium findings first (Day 91: B2 and B1), then the
+  info items (Day 92), then features. A buffer, a re-audit and the next
+  GO LIVE close the phase.
+- **Tests:** no code changed since the Day 89 verification.
