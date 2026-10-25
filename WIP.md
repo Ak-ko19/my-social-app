@@ -1,7 +1,22 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 85–87 — Buffer: fix everything left in AUDIT_REPORT_3.md.
-**Step:** 0 — not started (Days 83–84 closed: see the Progress Log).
+**Step:** 1 — dependency advisories: DONE (committed; backend 1043, 7 upload/chat suites). Next: 2 comment counts on post cards.
+
+AUDIT_REPORT_3 status: A1 (advisories, CI audit) fixed Day 60 + 75-76; A2
+(Coming-soon rows) fixed Day 60; A3 (split long suites) Day 66; N1-N4
+fixed; N5 (console.* in the frontend) and N6 (token in localStorage) are
+info items kept for after funding. So the buffer takes the follow-ups:
+1. NEW high advisories in the backend: body-parser 2.0.0-2.3.0 (DoS,
+   trailing bytes after a compressed body -- express.json) and multer
+   2.0.0-2.4.0 (DoS, pending fileFilter after teardown -- uploads).
+   npm audit fix (in range), full backend + upload browser suites.
+2. Post cards show "N comments" up front (seen Day 40): comment_count in
+   every post listing (one column helper, like pollColumnSql) + the card.
+3. Follow-counts and post likes echo the id as a string (Day 68).
+4. Arabic: the new-group screen's back button on the left (Day 70).
+5. EmailVerificationBanner amber text ~2.9:1, no dark tokens.
+Then the Days' close.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
