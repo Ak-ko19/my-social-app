@@ -21,6 +21,8 @@ const AR = {
   'Current password is incorrect': 'كلمة المرور الحالية غير صحيحة',
   'Incorrect password': 'كلمة المرور غير صحيحة',
   'Password is required.': 'كلمة المرور مطلوبة.',
+  // Day 85: an id in a link that is not a whole number.
+  'Invalid ID': 'معرّف غير صالح',
   // Day 77: two-factor authentication.
   'Two-factor authentication is already on.': 'المصادقة الثنائية مفعّلة بالفعل.',
   'Two-factor authentication is off.': 'المصادقة الثنائية غير مفعّلة.',

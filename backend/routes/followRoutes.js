@@ -4,6 +4,9 @@ const authMiddleware = require('../middleware/authMiddleware');
 const optionalAuth = require('../middleware/optionalAuth');
 const { followLimiter } = require('../middleware/rateLimiter');
 const followController = require('../controllers/followController');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router);
 
 router.post('/users/:id/follow', authMiddleware, followLimiter, followController.followUser);
 router.delete('/users/:id/follow', authMiddleware, followController.unfollowUser);

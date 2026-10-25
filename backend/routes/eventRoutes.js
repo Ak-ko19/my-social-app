@@ -3,6 +3,9 @@ const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const optionalAuth = require('../middleware/optionalAuth');
 const e = require('../controllers/eventController');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router);
 
 // Day 55: events. Reading a public event (and its guests) works logged
 // out, like a public post; everything else needs a login.

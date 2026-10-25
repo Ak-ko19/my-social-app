@@ -3,6 +3,9 @@ const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const optionalAuth = require('../middleware/optionalAuth');
 const p = require('../controllers/pageController');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router);
 
 // B14 Pages. Reading a page and its posts works logged out (optionalAuth);
 // creating, editing and following need a login.

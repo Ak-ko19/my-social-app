@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const notificationController = require('../controllers/notificationController');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router);
 
 router.get('/notifications', authMiddleware, notificationController.getNotifications);
 // B11 notification settings.

@@ -4,6 +4,9 @@ const authMiddleware = require('../middleware/authMiddleware');
 const optionalAuth = require('../middleware/optionalAuth');
 const { uploadPostImages, uploadManyToCloudinary } = require('../middleware/cloudinaryUpload');
 const postController = require('../controllers/postController');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router);
 
 router.post('/posts', authMiddleware, uploadPostImages, uploadManyToCloudinary('posts'), postController.createPost);
 router.get('/posts', optionalAuth, postController.getPosts);

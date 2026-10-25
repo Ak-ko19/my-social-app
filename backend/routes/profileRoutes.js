@@ -5,6 +5,9 @@ const optionalAuth = require('../middleware/optionalAuth');
 const { upload, uploadToCloudinary } = require('../middleware/cloudinaryUpload');
 const profileController = require('../controllers/profileController');
 const { dataExportLimiter } = require('../middleware/rateLimiter');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router, ['userId', 'messageId', 'followerId']);
 
 // Order matters: /profile/me and /profile/export must come before /profile/:id
 router.get('/profile/me', authMiddleware, profileController.getMyProfile);

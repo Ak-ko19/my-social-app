@@ -3,6 +3,9 @@ const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const { uploadPostImages, uploadManyToCloudinary } = require('../middleware/cloudinaryUpload');
 const draftController = require('../controllers/draftController');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router);
 
 // Day 45: drafts. Photos go to the posts folder: a published draft's
 // photos become its post's.

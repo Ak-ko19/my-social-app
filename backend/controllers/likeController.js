@@ -122,8 +122,9 @@ async function getLikes(req, res) {
     if (!post) {
       return res.status(404).send('Post not found');
     }
-    const summary = await reactionService.getReactionSummary(req.params.id);
-    res.json({ postId: req.params.id, ...summary });
+    const summary = await reactionService.getReactionSummary(post.id);
+    // Day 85: the post's own id (a number), not the text that was asked for.
+    res.json({ postId: post.id, ...summary });
   } catch (err) {
     sendError(res, err, 'Fetch likes failed. Please try again later.');
   }

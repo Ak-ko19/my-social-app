@@ -199,7 +199,10 @@ async function getMutualFriends(req, res) {
 
 async function getFollowCounts(req, res) {
   try {
-    if (isNaN(req.params.id)) {
+    // Day 85: a whole id ("1.5" passed isNaN, then failed in the query),
+    // echoed back as a number like every other id.
+    const userId = Number(req.params.id);
+    if (!Number.isInteger(userId) || userId < 1) {
       return res.status(400).send('Invalid user ID');
     }
     // Day 37: deactivated accounts aren't counted (they're hidden), and
@@ -211,10 +214,10 @@ async function getFollowCounts(req, res) {
          (SELECT COUNT(*)::int FROM follows f JOIN users u ON u.id = f.following_id
             WHERE f.follower_id = $1 AND f.status = 'accepted' AND NOT u.is_deactivated) AS following,
          (SELECT COUNT(*)::int FROM ${FRIENDS_OF('$1')}) AS friends`,
-      [req.params.id]
+      [userId]
     );
     res.json({
-      userId: req.params.id,
+      userId,
       followersCount: counts.rows[0].followers,
       followingCount: counts.rows[0].following,
       friendsCount: counts.rows[0].friends

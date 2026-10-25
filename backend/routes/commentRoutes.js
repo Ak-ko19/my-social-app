@@ -3,6 +3,9 @@ const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const optionalAuth = require('../middleware/optionalAuth');
 const commentController = require('../controllers/commentController');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router);
 
 router.post('/posts/:id/comments', authMiddleware, commentController.createComment);
 router.get('/posts/:id/comments', optionalAuth, commentController.getComments);

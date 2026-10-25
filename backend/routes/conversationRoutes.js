@@ -6,6 +6,9 @@ const { upload, uploadAudio, uploadToCloudinary } = require('../middleware/cloud
 const conversationController = require('../controllers/conversationController');
 const groupController = require('../controllers/groupController');
 const { messageReactionLimiter } = require('../middleware/rateLimiter');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router);
 
 router.get('/conversations', authMiddleware, conversationController.getConversations);
 router.post('/conversations', authMiddleware, conversationController.createConversation);

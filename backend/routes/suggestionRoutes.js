@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const suggestionsController = require('../controllers/suggestionsController');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router);
 
 // B8 "People you may know". Must be registered BEFORE any /users/:id
 // route could shadow it -- 'suggestions' isn't numeric, but keeping the

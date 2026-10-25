@@ -266,7 +266,7 @@ module.exports = {
     tag: 'Reactions', auth: 'optional',
     summary: "A post's reaction counts",
     responses: {
-      200: json({ allOf: [ref('ReactionSummary'), s.object({ postId: s.str('The id as asked for (a string)') })] }, 'The counts'),
+      200: json({ allOf: [ref('ReactionSummary'), s.object({ postId: s.id() })] }, 'The counts'),
       400: BAD_POST,
       404: POST_NOT_FOUND
     }

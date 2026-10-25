@@ -156,7 +156,7 @@ module.exports = {
     description: 'Friends follow each other. Deactivated accounts are not counted.',
     responses: {
       200: json(s.object({
-        userId: s.str('The id as it was asked for (a string)'),
+        userId: s.id(),
         followersCount: s.int(), followingCount: s.int(), friendsCount: s.int()
       }), 'The counts'),
       400: BAD_ID

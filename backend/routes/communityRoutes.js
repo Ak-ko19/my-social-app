@@ -3,6 +3,9 @@ const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const optionalAuth = require('../middleware/optionalAuth');
 const c = require('../controllers/communityController');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router);
 
 // B13 Groups. Reading a public group works logged out (optionalAuth);
 // everything that changes membership or settings needs a login.

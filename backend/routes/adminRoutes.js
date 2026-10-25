@@ -7,6 +7,9 @@ const errorLogController = require('../controllers/errorLogController');
 const storageController = require('../controllers/storageController');
 const statsController = require('../controllers/statsController');
 const adminLogController = require('../controllers/adminLogController');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router);
 
 // B12 admin moderation. Every route: logged in AND users.is_admin (checked
 // in the DB on each request). Non-admins get 404.

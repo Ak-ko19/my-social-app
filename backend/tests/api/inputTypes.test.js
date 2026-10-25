@@ -56,4 +56,24 @@ describe('fields of the wrong type', () => {
     }
     expect(bad).toEqual([]);
   });
+
+  // Day 85: an id in the path that is not a plain whole number -- part of
+  // one, negative, written as a power, too big for the database, or in
+  // hex -- is the client's mistake: 400 or 404, never a 5xx. ("1.5" passed
+  // isNaN and then failed in the query.)
+  it('an id in the path that is not a plain whole number is never a 5xx', async () => {
+    const bad = [];
+    for (const o of operations) {
+      if (o.op['x-auth'] === 'secret') continue;
+      const ints = (o.op.parameters || []).filter((p) => p.in === 'path' && p.schema?.type === 'integer').map((p) => p.name);
+      for (const name of ints) {
+        for (const value of ['1.5', '-1', '1e3', '99999999999', '0x10']) {
+          const target = url(o.path.replace(`{${name}}`, value));
+          const res = await request(app)[o.method](target).set(auth).send({});
+          if (res.status >= 500 && !PUSH_OFF(o, res)) bad.push(`${res.status} ${o.method.toUpperCase()} ${o.path} ${name}=${value}`);
+        }
+      }
+    }
+    expect(bad).toEqual([]);
+  }, 180000);
 });

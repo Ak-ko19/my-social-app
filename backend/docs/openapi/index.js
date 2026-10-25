@@ -85,8 +85,18 @@ function build({ serverUrl } = {}) {
         ...names.map((name) => ({ name, in: 'path', required: true, schema: pathParams[name] || s.id() })),
         ...Object.entries(query).map(([name, { schema, required }]) => ({ name, in: 'query', required, schema }))
       ];
+      // Day 85: an integer id in the path that is not a whole number gets a
+      // 400 before the route runs (middleware/wholeIds) -- on every such
+      // operation, so it is documented here once.
+      const responses = { ...rest.responses };
+      if (parameters.some((p) => p.in === 'path' && p.schema.type === 'integer')) {
+        const note = 'Invalid ID (a path id that is not a whole number from 1 to 2147483647)';
+        responses[400] = responses[400]
+          ? { ...responses[400], description: `${responses[400].description} / ${note}` }
+          : { description: note, content: { 'text/plain': { schema: { type: 'string' } } } };
+      }
       paths[path] = paths[path] || {};
-      paths[path][verb] = { operationId: operationId(method, route), ...rest, ...(parameters.length && { parameters }) };
+      paths[path][verb] = { operationId: operationId(method, route), ...rest, responses, ...(parameters.length && { parameters }) };
     }
   }
   return {

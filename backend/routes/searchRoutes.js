@@ -4,6 +4,9 @@ const optionalAuth = require('../middleware/optionalAuth');
 const authMiddleware = require('../middleware/authMiddleware');
 const searchController = require('../controllers/searchController');
 const searchHistoryController = require('../controllers/searchHistoryController');
+const { wholeIds } = require('../middleware/wholeIds');
+// Day 85: ids in the path are whole numbers (middleware/wholeIds).
+wholeIds(router);
 
 router.get('/search/users', optionalAuth, searchController.searchUsers);
 router.get('/search/posts', optionalAuth, searchController.searchPosts);

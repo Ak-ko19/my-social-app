@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 85–87 — Buffer: fix everything left in AUDIT_REPORT_3.md.
-**Step:** 2 — comment counts on cards: DONE (committed; backend 1046, Vitest 374, perf 47, b4-comments 23, 9 card suites). Next: 3 ids echoed as strings.
+**Step:** 3 — ids: DONE (committed; backend 1049 incl. a new id sweep, 5 id-route browser suites). Next: 4 Arabic new-group back button.
 
 AUDIT_REPORT_3 status: A1 (advisories, CI audit) fixed Day 60 + 75-76; A2
 (Coming-soon rows) fixed Day 60; A3 (split long suites) Day 66; N1-N4
