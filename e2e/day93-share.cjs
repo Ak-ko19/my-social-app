@@ -118,8 +118,10 @@ async function axeSerious(page, selector) {
     await inside(ana.username).filter({ hasText: 'Sunset at Inle Lake' }).getByRole('link').click();
     await k.page.waitForURL((u) => u.pathname === `/posts/${sunset.id}`, { timeout: 8000 }).catch(() => {});
     check(`${tag}: the shared post opens the original`, k.page.url().endsWith(`/posts/${sunset.id}`), k.page.url());
-    // Let that page finish loading first: its requests would rightly be 404s
-    // once the post is followers-only.
+    // Let that page show the post first (the screen loads lazily, then asks
+    // for it): once the post is followers-only that request would rightly
+    // be a 404.
+    await shows(k.page.locator('.post-card-body', { hasText: 'Sunset at Inle Lake' }));
     await k.page.waitForLoadState('networkidle');
 
     // Ana makes the first post followers-only: the share can't show it.

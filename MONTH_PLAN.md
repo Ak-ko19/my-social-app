@@ -2889,3 +2889,51 @@ Read-only; no application code changed. Same method as audit 3, on
   - Full browser run in batches: all 67 regular suites, the 9
     special-stack ones, day80-states 150 × 2, perf 47, a11y 62 + 62 + 7,
     A3 153 × 4, 0 failures. Plus c1-seed 8/8 and c4-audit-checks 13/13.
+
+### 2026-10-26 — Days 93–94: Share a post
+- **What (`da0c449`):** Facebook's Share. The button opens "Share now
+  (Public)", "Write post" (your words, an audience, the post shown below),
+  "Copy link" and, where the device has one, its own share sheet. A share
+  is a post of yours (migration 079: posts.shared_post_id ON DELETE SET
+  NULL, posts.is_share). It shows the original in a frame whose author
+  line opens it. Posts count their shares ("2 shares", all six Arabic
+  forms).
+- **Rules:**
+  - Only a post anyone may see can be shared: a public post of a public
+    account, a page's post, or a post in a public group. The same rule is
+    written once in shareService.openToEveryoneSql.
+  - A share shows its original only while that is still true (or the
+    viewer wrote it), with no block either way and an active author.
+    Otherwise it shows Facebook's "This content isn't available right
+    now", so sharing never carries a post past its audience. Followers-only
+    posts offer only Copy link.
+  - Sharing a share shares its original.
+  - A share's words may be empty (also when edited later); the spam
+    checks' "same text" rule ignores empty text.
+- **Notifications:** "bob shared your post", grouped per post, once per
+  person (REPEAT_WINDOW), a Shares setting (notification_preferences.shares),
+  push text in EN and AR. Restrict and block rules come from notify().
+- **Better than planned:** the original's author is sent to the original,
+  not the share (they may not be allowed to see the share). Hidden words
+  also read the shared text.
+- **Found by the perf suite (now seeded with shares, 1 post in 20):**
+  can_share as an EXISTS over posts was planned as a hash of the whole
+  table (/feed read 150k rows). Rewritten as scalar subqueries: /feed 72 ms.
+- **Also:** Privacy Policy section 3 (EN/AR, dated 2026-10-26), data
+  export (is_share, shared_post_id), API reference (new route, Post
+  fields), checklist 015 → 079 (30/38/20 checked on a fixture database).
+- **Tests:**
+  - shares.test 10, 8 mutations caught. Vitest +9 (Share 7,
+    Notifications 2).
+  - day93-share 32 checks EN/light + AR/dark, with axe on the dialog and
+    the cards. Its first full-run pass logged 404s from a test race (the
+    post changed audience while its lazily loaded page was still asking
+    for it); it now waits for the post to show. 3/3 clean afterwards.
+  - b11-settings expects 11 switches.
+- **Tests at close:**
+  - Backend 1079/1079, Vitest 383/383, lint (exit 0), check:i18n (1562
+    keys), bundle 217.8 kB, npm audit 0/0/0, rehearsal 015 → 079.
+  - Full browser run in batches: 86 of 87 runs OK, plus day93-share (the
+    race above) fixed and 3/3 clean. That covers the 68 regular suites, the
+    9 special-stack ones, day80-states 150 × 2, perf 47, a11y 62 + 62 + 7,
+    and A3 153 × 4.

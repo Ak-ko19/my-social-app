@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 93–94 — Share a post.
-**Step:** 1 — done (committed). Next: close Days 93–94 -- full browser run in batches, then the Progress Log entry.
+**Day:** 95 — Photo descriptions (alt text).
+**Step:** 0 — not started (Days 93–94 closed: see the Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
