@@ -26,6 +26,8 @@ async function createPost(req, res) {
     // B2: every uploaded image, in the order sent (see uploadManyToCloudinary).
     // (A refused request's images are deleted again by the middleware.)
     const imageUrls = (req.cloudinaryResults || []).map((r) => r.secure_url);
+    // Day 95: their descriptions, in the same order.
+    fields.altTexts = postCreation.readAltTexts(req.body, imageUrls.length);
     // Day 49: flooding, the same post again, the same link again and again.
     await spamService.checkPost(req.userId, fields.content);
     res.status(201).json(await postCreation.createPost(req.userId, fields, imageUrls));

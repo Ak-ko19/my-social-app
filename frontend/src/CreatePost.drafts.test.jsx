@@ -21,7 +21,7 @@ const show = (path = '/create-post') => render(
 const sentForm = (call) => Object.fromEntries([...call[1].entries()].filter(([k]) => k !== 'images'));
 const draft = {
   id: 7, content: 'Trail report', visibility: 'public', community_id: 3, community_name: 'Hikers', page_id: null, page_name: null,
-  poll: null, media: [{ url: 'https://cdn/a.jpg' }, { url: 'https://cdn/b.jpg' }], scheduled_for: null, last_error: null
+  poll: null, media: [{ url: 'https://cdn/a.jpg', alt: null }, { url: 'https://cdn/b.jpg', alt: 'A trail sign' }], scheduled_for: null, last_error: null
 };
 
 beforeEach(() => {
@@ -46,7 +46,7 @@ describe('CreatePost: drafts', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save draft' }));
     expect(await screen.findByText('drafts screen')).toBeInTheDocument();
     expect(api.post.mock.calls[0][0]).toBe('/drafts');
-    expect(sentForm(api.post.mock.calls[0])).toEqual({ content: '', visibility: 'public', scheduledFor: '' });
+    expect(sentForm(api.post.mock.calls[0])).toEqual({ content: '', visibility: 'public', scheduledFor: '', altTexts: JSON.stringify(['']) });
     expect(api.post.mock.calls[0][1].getAll('images')).toHaveLength(1);
   });
 
@@ -88,7 +88,9 @@ describe('CreatePost: drafts', () => {
     expect(await screen.findByText('group screen')).toBeInTheDocument();
     expect(api.put.mock.calls[0][0]).toBe('/drafts/7');
     expect(sentForm(api.put.mock.calls[0])).toEqual({
-      content: 'Trail report', communityId: '3', keepMedia: JSON.stringify(['https://cdn/b.jpg']), scheduledFor: ''
+      content: 'Trail report', communityId: '3', keepMedia: JSON.stringify(['https://cdn/b.jpg']), scheduledFor: '',
+      // Day 95: the kept photo keeps its description.
+      altTexts: JSON.stringify(['A trail sign'])
     });
     expect(api.post).toHaveBeenCalledWith('/drafts/7/publish', null, { headers: { Authorization: 'Bearer tok' } });
   });

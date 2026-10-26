@@ -66,6 +66,35 @@ function readPostFields(body, { allowEmpty = false } = {}) {
   return { content: toUnicode(typed), visibility, poll, communityId, pageId };
 }
 
+// Day 95: photo descriptions (alt text) -- body.altTexts, a JSON list in
+// the photos' order, each a string or null. Returns `count` entries (null
+// = none): trimmed, Zawgyi as Unicode, '' as null. Throws a 400 for a
+// non-list, more entries than photos, or a description over the limit.
+const MAX_ALT_LENGTH = 1000;
+const ALT_TOO_LONG = `A photo description can be up to ${MAX_ALT_LENGTH} characters.`;
+function readAltTexts(body, count) {
+  const raw = body.altTexts;
+  if (raw === undefined || raw === '') return Array(count).fill(null);
+  let list;
+  try {
+    list = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch {
+    throw new PostInputError(400, 'Invalid altTexts');
+  }
+  if (!Array.isArray(list) || list.length > count || list.some((a) => a !== null && typeof a !== 'string')) {
+    throw new PostInputError(400, 'Invalid altTexts');
+  }
+  return Array.from({ length: count }, (_, i) => {
+    const text = (list[i] ?? '').trim();
+    if (!text) return null;
+    // As typed (like the dialog's maxLength), and as stored (the column's
+    // CHECK): Zawgyi turned into Unicode can change the length.
+    const stored = toUnicode(text);
+    if (text.length > MAX_ALT_LENGTH || stored.length > MAX_ALT_LENGTH) throw new PostInputError(400, ALT_TOO_LONG);
+    return stored;
+  });
+}
+
 // May `userId` publish `fields` (with `imageCount` photos) right now?
 // Throws a PostInputError otherwise.
 async function checkCanPublish(userId, fields, imageCount) {
@@ -104,17 +133,19 @@ async function checkAudience(userId, fields) {
 // Day 53: a page post's author is the page's OWNER, whichever admin wrote
 // it -- blocks, visibility and account deletion work on the owner (B14).
 // Days 93-94: fields.sharedPostId makes it a share of that post (shareService).
+// Day 95: fields.altTexts, the photos' descriptions in their order.
 async function insertPost(queryable, userId, fields, imageUrls) {
   const { content, visibility, poll, communityId, pageId } = fields;
   const sharedPostId = fields.sharedPostId ?? null;
+  const altTexts = imageUrls.map((_, i) => fields.altTexts?.[i] ?? null);
   const result = await queryable.query(
     `WITH new_post AS (
        INSERT INTO posts (user_id, content, image_url, visibility, community_id, page_id, shared_post_id, is_share)
        VALUES (COALESCE((SELECT owner_id FROM pages WHERE id = $7), $1), $2, $3, $5, $6, $7, $10::int, $10::int IS NOT NULL) RETURNING *
      ), new_media AS (
-       INSERT INTO post_media (post_id, url, position)
-       SELECT new_post.id, m.url, (m.ord - 1)::smallint
-       FROM new_post, unnest($4::text[]) WITH ORDINALITY AS m(url, ord)
+       INSERT INTO post_media (post_id, url, position, alt_text)
+       SELECT new_post.id, m.url, (m.ord - 1)::smallint, m.alt
+       FROM new_post, unnest($4::text[], $11::text[]) WITH ORDINALITY AS m(url, alt, ord)
      ), new_poll AS (
        INSERT INTO polls (post_id, closes_at)
        SELECT new_post.id, now() + make_interval(hours => $8::int) FROM new_post WHERE $8::int IS NOT NULL
@@ -126,7 +157,7 @@ async function insertPost(queryable, userId, fields, imageUrls) {
      )
      SELECT * FROM new_post`,
     [userId, content, imageUrls[0] || null, imageUrls, pageId !== null ? 'public' : visibility, communityId, pageId,
-      poll ? poll.durationHours : null, poll ? poll.labels : [], sharedPostId]
+      poll ? poll.durationHours : null, poll ? poll.labels : [], sharedPostId, altTexts]
   );
   return result.rows[0];
 }
@@ -134,12 +165,13 @@ async function insertPost(queryable, userId, fields, imageUrls) {
 // After the post is saved (and committed): its hashtags and mention
 // notifications. Returns the post as POST /posts answers it.
 async function finishPost(row, userId, fields, imageUrls) {
+  const altTexts = fields.altTexts || [];
   await hashtagService.syncPostHashtags(row.id, row.content);
   // The post's author (a page post: the page's owner), not whoever typed it.
   await mentionService.notifyMentions({ content: row.content, authorId: row.user_id, postId: row.id });
   return {
     ...row,
-    media: imageUrls.map((url) => ({ url })),
+    media: imageUrls.map((url, i) => ({ url, alt: altTexts[i] ?? null })),
     poll: fields.poll ? await pollService.getPoll(row.id, userId) : null
   };
 }
@@ -155,7 +187,9 @@ module.exports = {
   POST_VISIBILITIES,
   MAX_POST_LENGTH,
   PostInputError,
+  MAX_ALT_LENGTH,
   readPostFields,
+  readAltTexts,
   checkCanPublish,
   checkAudience,
   insertPost,

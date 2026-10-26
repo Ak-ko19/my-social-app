@@ -43,12 +43,13 @@ function reactionColumnsSql(viewerParam) {
     ) AS reaction_counts`;
 }
 
-// B2: a post's images in display order, as [{ url }], from post_media
+// B2: a post's images in display order, as [{ url, alt }], from post_media
+// (Day 95: alt = the description its author wrote, or null)
 // (migration 017). Lives here next to reactionColumnsSql because both are
 // injected into the same post-listing queries; '[]' when a post has none.
 function mediaColumnSql() {
   return `
-    (SELECT COALESCE(json_agg(json_build_object('url', pm.url) ORDER BY pm.position), '[]'::json)
+    (SELECT COALESCE(json_agg(json_build_object('url', pm.url, 'alt', pm.alt_text) ORDER BY pm.position), '[]'::json)
        FROM post_media pm WHERE pm.post_id = posts.id
     ) AS media`;
 }

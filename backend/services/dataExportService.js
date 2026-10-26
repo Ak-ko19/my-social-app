@@ -41,7 +41,7 @@ async function buildExport(userId) {
           LEFT JOIN communities c ON c.id = p.community_id
           LEFT JOIN pages pg ON pg.id = p.page_id
           WHERE p.user_id = $1 ORDER BY p.created_at, p.id`, [userId]),
-    rows(`SELECT pm.post_id, pm.url FROM post_media pm JOIN posts p ON p.id = pm.post_id
+    rows(`SELECT pm.post_id, pm.url, pm.alt_text FROM post_media pm JOIN posts p ON p.id = pm.post_id
           WHERE p.user_id = $1 ORDER BY pm.post_id, pm.position`, [userId]),
     rows(`SELECT id, post_id, parent_comment_id, content, created_at
           FROM comments WHERE user_id = $1 ORDER BY created_at, id`, [userId]),
@@ -111,7 +111,7 @@ async function buildExport(userId) {
           FROM poll_votes v JOIN poll_options o ON o.id = v.option_id
           WHERE v.user_id = $1 ORDER BY v.created_at`, [userId]),
     // Day 45: drafts and scheduled posts.
-    rows(`SELECT content, visibility, community_id, page_id, poll, media_urls AS media, scheduled_for, created_at, updated_at
+    rows(`SELECT content, visibility, community_id, page_id, poll, media_urls AS media, media_alts AS photo_descriptions, scheduled_for, created_at, updated_at
           FROM post_drafts WHERE user_id = $1 ORDER BY created_at`, [userId]),
     // Day 46: saved collections and which saved posts are in each.
     rows(`SELECT c.name, c.created_at,
@@ -172,6 +172,8 @@ async function buildExport(userId) {
     posts: posts.map((p) => ({
       ...p,
       media: (mediaByPost[p.id] || []).map((m) => m.url),
+      // Day 95: the descriptions you wrote for them (alt text), same order.
+      photo_descriptions: (mediaByPost[p.id] || []).map((m) => m.alt_text),
       poll: pollByPost[p.id]
         ? { closes_at: pollByPost[p.id][0].closes_at, options: pollByPost[p.id].map(({ label, votes }) => ({ label, votes })) }
         : null

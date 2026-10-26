@@ -3,6 +3,9 @@
 // ref('Name').
 const { s } = require('./helpers');
 
+// Day 95: a photo, with the description its author wrote (alt text) or null.
+const MEDIA_ITEM = s.object({ url: s.str(), alt: s.nullable(s.str('The description its author wrote (alt text), for screen readers')) }, { optional: ['alt'] });
+
 const securitySchemes = {
   bearerAuth: {
     type: 'http',
@@ -203,7 +206,7 @@ const schemas = {
     liked_by_me: s.bool(),
     my_reaction: s.nullable(s.enum(['like', 'love', 'haha', 'wow', 'sad', 'angry'])),
     reaction_counts: s.object({}, { description: 'Reaction -> count, only for reactions someone used' }),
-    media: s.array(s.object({ url: s.str() }), 'Photos in order (empty when none)'),
+    media: s.array(MEDIA_ITEM, 'Photos in order (empty when none)'),
     poll: s.nullable(s.ref('Poll')),
     page: s.nullable(s.object({ id: s.id(), name: s.str() }, { description: 'Set when the post was published as a page' })),
     bookmarked_by_me: s.bool(),
@@ -211,7 +214,7 @@ const schemas = {
     is_share: s.bool('Days 93-94: this post shares another one'),
     shared_post: s.nullable(s.object({
       id: s.id(), content: s.nullable(s.str()), created_at: s.time(), user_id: s.id('Its author'), username: s.str(), avatar_url: s.nullable(s.str()),
-      page: s.nullable(s.object({ id: s.id(), name: s.str() })), media: s.array(s.object({ url: s.str() }))
+      page: s.nullable(s.object({ id: s.id(), name: s.str() })), media: s.array(MEDIA_ITEM)
     }, { description: 'The shared post, while you may see it: open to everyone (or yours), no block, its author active' })),
     share_count: s.int('How many posts share this one'),
     can_share: s.bool('Share is offered: the post (a share: its original) is open to everyone')
@@ -225,7 +228,7 @@ const schemas = {
     visibility: s.enum(['public', 'followers', 'close_friends', 'only_me']),
     community_id: s.nullable(s.id('The group it was posted in')),
     page_id: s.nullable(s.id('The page it was published as')),
-    media: s.array(s.object({ url: s.str() })),
+    media: s.array(MEDIA_ITEM),
     poll: s.nullable(s.ref('Poll')),
     shared_post_id: s.nullable(s.id('Days 93-94: the post this one shares (null once it is deleted)')),
     is_share: s.bool()
@@ -252,7 +255,7 @@ const schemas = {
     community_id: s.nullable(s.id()), page_id: s.nullable(s.id()),
     community_name: s.nullable(s.str()), page_name: s.nullable(s.str()),
     poll: s.nullable(s.object({ options: s.array(s.str()), durationHours: s.int() }, { description: 'As POST /posts takes it' })),
-    media: s.array(s.object({ url: s.str() }), 'Photos already uploaded'),
+    media: s.array(MEDIA_ITEM, 'Photos already uploaded'),
     scheduled_for: s.nullable(s.time('When it will be published; null for a plain draft')),
     last_error: s.nullable(s.str('Why a scheduled post could not go up')),
     created_at: s.time(), updated_at: s.time()

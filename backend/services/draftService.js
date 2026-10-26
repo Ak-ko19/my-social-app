@@ -34,16 +34,20 @@ function readSchedule(raw, now = new Date()) {
 
 // What the API returns for a draft. The poll is shaped as POST /posts
 // takes it ({ options, durationHours }), so the composer can send it back.
-const DRAFT_COLUMNS = `d.id, d.content, d.visibility, d.community_id, d.page_id, d.poll, d.media_urls,
+const DRAFT_COLUMNS = `d.id, d.content, d.visibility, d.community_id, d.page_id, d.poll, d.media_urls, d.media_alts,
   d.scheduled_for, d.last_error, d.created_at, d.updated_at,
   c.name AS community_name, pg.name AS page_name`;
 const DRAFT_FROM = 'post_drafts d LEFT JOIN communities c ON c.id = d.community_id LEFT JOIN pages pg ON pg.id = d.page_id';
 
+// Day 95: a photo's description (media_alts, in media_urls' order; an
+// older draft's missing entries are none).
+const altsOf = (row) => row.media_urls.map((_, i) => row.media_alts?.[i] ?? null);
+
 function serialize(row) {
-  const { media_urls: mediaUrls, poll, ...rest } = row;
+  const { media_urls: mediaUrls, media_alts: mediaAlts, poll, ...rest } = row;
   return {
     ...rest,
-    media: mediaUrls.map((url) => ({ url })),
+    media: mediaUrls.map((url, i) => ({ url, alt: mediaAlts?.[i] ?? null })),
     poll: poll ? { options: poll.labels, durationHours: poll.durationHours } : null
   };
 }
@@ -54,7 +58,8 @@ const fieldsOf = (row) => ({
   visibility: row.visibility,
   poll: row.poll,
   communityId: row.community_id,
-  pageId: row.page_id
+  pageId: row.page_id,
+  altTexts: altsOf(row)
 });
 
 async function load(userId, draftId, queryable = db, lock = '') {
@@ -91,15 +96,16 @@ async function checkSchedulable(userId, fields, mediaUrls, scheduledFor) {
 
 async function create(userId, body, newMediaUrls) {
   const fields = postCreation.readPostFields(body, { allowEmpty: true });
+  const mediaAlts = postCreation.readAltTexts(body, newMediaUrls.length);
   const scheduledFor = readSchedule(body.scheduledFor) ?? null;
   await checkDraft(userId, fields, newMediaUrls);
   await checkSchedulable(userId, fields, newMediaUrls, scheduledFor);
   const count = await db.query('SELECT COUNT(*)::int AS n FROM post_drafts WHERE user_id = $1', [userId]);
   if (count.rows[0].n >= MAX_DRAFTS) throw new PostInputError(400, `You can keep up to ${MAX_DRAFTS} drafts`);
   const result = await db.query(
-    `INSERT INTO post_drafts (user_id, content, visibility, community_id, page_id, poll, media_urls, scheduled_for)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-    [userId, fields.content, fields.visibility, fields.communityId, fields.pageId, fields.poll, newMediaUrls, scheduledFor]
+    `INSERT INTO post_drafts (user_id, content, visibility, community_id, page_id, poll, media_urls, media_alts, scheduled_for)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+    [userId, fields.content, fields.visibility, fields.communityId, fields.pageId, fields.poll, newMediaUrls, mediaAlts, scheduledFor]
   );
   return loadSerialized(result.rows[0].id);
 }
@@ -120,12 +126,15 @@ async function get(userId, draftId) {
 // Replaces the draft's fields. `keepMedia` (a JSON list of its photo URLs,
 // in order) says which photos stay; new uploads are added after them, and
 // the photos left out are deleted. Without it, every photo stays. Without
-// scheduledFor the draft keeps its time (if any); '' takes it off.
+// scheduledFor the draft keeps its time (if any); '' takes it off. Day 95:
+// altTexts describes the photos in that final order (kept, then new);
+// without it the kept photos keep their descriptions.
 async function update(userId, draftId, body, newMediaUrls) {
   const row = await load(userId, draftId);
   const fields = postCreation.readPostFields(body, { allowEmpty: true });
   const given = readSchedule(body.scheduledFor);
   const scheduledFor = given === undefined ? row.scheduled_for : given;
+  const oldAlts = altsOf(row);
   let kept = row.media_urls;
   if (body.keepMedia !== undefined) {
     let keep;
@@ -139,13 +148,16 @@ async function update(userId, draftId, body, newMediaUrls) {
     kept = [...new Set(keep)].filter((url) => row.media_urls.includes(url));
   }
   const mediaUrls = [...kept, ...newMediaUrls];
+  const mediaAlts = body.altTexts === undefined
+    ? [...kept.map((url) => oldAlts[row.media_urls.indexOf(url)]), ...newMediaUrls.map(() => null)]
+    : postCreation.readAltTexts(body, mediaUrls.length);
   await checkDraft(userId, fields, mediaUrls);
   await checkSchedulable(userId, fields, mediaUrls, scheduledFor);
   const updated = await db.query(
     `UPDATE post_drafts SET content = $1, visibility = $2, community_id = $3, page_id = $4, poll = $5,
-       media_urls = $6, scheduled_for = $7, last_error = NULL, updated_at = now()
+       media_urls = $6, media_alts = $10, scheduled_for = $7, last_error = NULL, updated_at = now()
      WHERE id = $8 AND user_id = $9 RETURNING id`,
-    [fields.content, fields.visibility, fields.communityId, fields.pageId, fields.poll, mediaUrls, scheduledFor, draftId, userId]
+    [fields.content, fields.visibility, fields.communityId, fields.pageId, fields.poll, mediaUrls, scheduledFor, draftId, userId, mediaAlts]
   );
   // Published or deleted meanwhile: nothing to update (and the new photos
   // are deleted by the upload middleware with the 404).

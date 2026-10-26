@@ -40,6 +40,7 @@ module.exports = {
     requestBody: multipart({
       ...POST_FIELDS,
       images: s.array(file('A photo'), 'Up to 10 photos, in order (repeat the field)'),
+      altTexts: s.str('Day 95: a JSON list of photo descriptions (alt text) in the same order as the photos, each a string or null, up to 1000 characters'),
       image: file('One photo (older clients; images is preferred)')
     }),
     responses: { 201: json(ref('PostRow'), 'Published'), ...POST_REFUSED }
@@ -127,7 +128,8 @@ module.exports = {
     requestBody: multipart({
       ...POST_FIELDS,
       scheduledFor: s.time('When to publish it'),
-      images: s.array(file('A photo'), 'Up to 10 photos')
+      images: s.array(file('A photo'), 'Up to 10 photos'),
+      altTexts: s.str('Day 95: a JSON list of photo descriptions (alt text) in the same order as the photos, each a string or null, up to 1000 characters')
     }),
     responses: { 201: json(ref('Draft'), 'Saved'), ...POST_REFUSED, 400: text('Needs text, a photo or a poll; a bad time; too many drafts; or a field refused as for POST /posts') }
   }),
@@ -148,6 +150,7 @@ module.exports = {
       ...POST_FIELDS,
       scheduledFor: s.time('Empty: not scheduled any more'),
       keepMedia: s.str('A JSON list of the photo URLs to keep, in order (new uploads go after them); left out: keep them all'),
+      altTexts: s.str('Day 95: a JSON list of descriptions for the photos in their final order (kept, then new); left out: kept photos keep theirs'),
       images: s.array(file('A photo'))
     }),
     responses: { 200: json(ref('Draft'), 'Saved'), ...POST_REFUSED, 404: text('Draft not found') }

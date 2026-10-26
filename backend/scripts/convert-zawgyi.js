@@ -50,6 +50,8 @@ const COLUMNS = [
   // every converted column is here.
   { table: 'post_drafts', column: 'content' },
   { table: 'bookmark_collections', column: 'name', maxLength: 50 },
+  // Day 95: photo descriptions (a CHECK of 1000 characters).
+  { table: 'post_media', column: 'alt_text', maxLength: 1000 },
 ];
 
 function parseArgs(argv) {

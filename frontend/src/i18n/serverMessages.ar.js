@@ -110,6 +110,8 @@ const AR = {
   'Description must be 1000 characters or fewer': 'يجب ألا يزيد الوصف عن 1000 حرف',
   // Day 43: text length limits
   'Post must be 10000 characters or fewer': 'يجب ألا يزيد المنشور عن 10000 حرف',
+  // Day 95.
+  'A photo description can be up to 1000 characters.': 'يمكن أن يصل وصف الصورة إلى 1000 حرف.',
   'Comment must be 5000 characters or fewer': 'يجب ألا يزيد التعليق عن 5000 حرف',
   'Bio must be 500 characters or fewer': 'يجب ألا تزيد النبذة عن 500 حرف',
   // Day 44: polls

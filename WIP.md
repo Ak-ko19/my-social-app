@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 95 — Photo descriptions (alt text).
-**Step:** 0 — not started (Days 93–94 closed: see the Progress Log).
+**Step:** 1 — done (committed). Next: close Day 95 -- full browser run in batches (day95-alt is a MEDIA suite: the scratchpad fullrun.sh SPECIAL list has it), then the Progress Log entry.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

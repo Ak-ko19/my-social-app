@@ -21,8 +21,9 @@ function MediaCarousel({ media, altPrefix: altPrefixProp, className }) {
 
   if (!media || media.length === 0) return null;
 
+  // Day 95: a photo its author described is read by its description.
   if (media.length === 1) {
-    return <ProgressiveImage src={media[0].url} alt={altPrefix} className={className} />;
+    return <ProgressiveImage src={media[0].url} alt={media[0].alt || altPrefix} className={className} />;
   }
 
   const count = media.length;
@@ -75,7 +76,7 @@ function MediaCarousel({ media, altPrefix: altPrefixProp, className }) {
             aria-roledescription="slide"
             aria-label={t('media.slide', { n: i + 1, count })}
           >
-            <ProgressiveImage src={item.url} alt={t('media.imageAlt', { prefix: altPrefix, n: i + 1, count })} />
+            <ProgressiveImage src={item.url} alt={item.alt || t('media.imageAlt', { prefix: altPrefix, n: i + 1, count })} />
           </div>
         ))}
       </div>

@@ -292,7 +292,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 93–94 — Share a post
 - [x] Share someone's post to your own feed with your own words (Facebook's "Share"), only when its audience allows; the original shows inside; share counts; a notification to its author; a deleted or hidden original shows "This content isn't available". *(Share now / Write post / Copy link; only posts open to everyone; migration 079 — see Progress Log.)*
 ### Day 95 — Photo descriptions (alt text)
-- [ ] Write your own description for each photo you post; screen readers use it, with today's automatic text as the fallback.
+- [x] Write your own description for each photo you post; screen readers use it, with today's automatic text as the fallback. *(An Alt button on each photo, drafts keep them, migration 080 — see Progress Log.)*
 ### Day 96 — Edit a post's photos
 - [ ] Remove, add and reorder photos when editing a post; removed files leave storage too.
 ### Day 97–98 — Chat organisation

@@ -753,3 +753,8 @@ ALTER TABLE posts ADD COLUMN shared_post_id integer REFERENCES posts(id) ON DELE
 ALTER TABLE posts ADD COLUMN is_share boolean NOT NULL DEFAULT false;
 CREATE INDEX idx_posts_shared_post_id ON posts (shared_post_id) WHERE shared_post_id IS NOT NULL;
 ALTER TABLE notification_preferences ADD COLUMN shares boolean NOT NULL DEFAULT true;
+
+-- Day 95 (migration 080): photo descriptions (alt text).
+ALTER TABLE post_media ADD COLUMN alt_text text
+  CONSTRAINT chk_post_media_alt_text CHECK (char_length(alt_text) <= 1000);
+ALTER TABLE post_drafts ADD COLUMN media_alts text[] NOT NULL DEFAULT '{}';

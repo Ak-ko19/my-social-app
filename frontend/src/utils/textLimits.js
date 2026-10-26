@@ -5,3 +5,7 @@ export const MAX_POST_LENGTH = 10000;
 export const MAX_COMMENT_LENGTH = 5000;
 export const MAX_MESSAGE_LENGTH = 5000;
 export const MAX_BIO_LENGTH = 500;
+
+// Day 95: a photo description (alt text) -- backend postCreationService
+// MAX_ALT_LENGTH.
+export const MAX_ALT_LENGTH = 1000;

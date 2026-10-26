@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import api, { resolveImageUrl } from './api';
 import { getOptimizedImageUrl } from './utils/cloudinaryImage';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CalendarClock, ChevronLeft, FileText, Globe, ImagePlus, ListChecks, Lock, Plus, Star, Users, X } from 'lucide-react';
+import { CalendarClock, Check, ChevronLeft, FileText, Globe, ImagePlus, ListChecks, Lock, Plus, Star, Users, X } from 'lucide-react';
 import { IconButton } from './components/ui';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
 import { MAX_POST_LENGTH } from './utils/textLimits';
 import MentionAutocomplete from './components/feed/MentionAutocomplete';
+import AltTextDialog from './components/feed/AltTextDialog';
 import { useMentionAutocomplete, applyMentionSelection } from './hooks/useMentionAutocomplete';
 import {
   fetchDraft, saveDraft, publishDraft, toLocalInputValue, fromLocalInputValue, scheduleProblem,
@@ -28,9 +29,28 @@ const POLL_LENGTHS = [
   { hours: 168, key: 'compose.pollOneWeek' }
 ];
 
+// Day 95: a photo tile's "Alt" button (its description, for screen
+// readers). Its name starts with the visible word, in EN and AR, and says
+// whether the photo has one.
+function AltButton({ described, n, disabled, onClick }) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      className={described ? 'image-picker-alt is-described' : 'image-picker-alt'}
+      aria-label={t(described ? 'compose.altEdit' : 'compose.altAdd', { n })}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      {described && <Check size={12} aria-hidden="true" />}
+      {t('compose.altShort')}
+    </button>
+  );
+}
+
 function CreatePost() {
   const [content, setContent] = useState('');
-  const [images, setImages] = useState([]); // [{ file, preview }] -- new picks
+  const [images, setImages] = useState([]); // [{ file, preview, alt }] -- new picks
   const [submitting, setSubmitting] = useState(false);
   // Day 57: photos still being shrunk -- Post waits for them.
   const [preparing, setPreparing] = useState(0);
@@ -43,6 +63,11 @@ function CreatePost() {
   // Day 45: editing a draft (?draftId=N) -- its already-uploaded photos,
   // its group/page, and "Schedule for later".
   const [keptMedia, setKeptMedia] = useState([]); // URLs of the draft's photos still in it
+  // Day 95: photo descriptions (alt text) -- a draft photo's by its URL (a
+  // new pick keeps its own in `images`), and which photo's dialog is open:
+  // { url } or { preview }, with its number.
+  const [keptAlts, setKeptAlts] = useState({});
+  const [altFor, setAltFor] = useState(null);
   const [draftPlace, setDraftPlace] = useState({ communityId: null, pageId: null });
   const [scheduleOn, setScheduleOn] = useState(false);
   const [scheduleAt, setScheduleAt] = useState('');
@@ -74,6 +99,7 @@ function CreatePost() {
         setContent(draft.content);
         setVisibility(draft.visibility);
         setKeptMedia(draft.media.map((m) => m.url));
+        setKeptAlts(Object.fromEntries(draft.media.map((m) => [m.url, m.alt || ''])));
         setDraftPlace({
           communityId: draft.community_id ? String(draft.community_id) : null,
           pageId: draft.page_id ? String(draft.page_id) : null
@@ -132,7 +158,7 @@ function CreatePost() {
     setPreparing((n) => n + chosen.length);
     try {
       const files = await Promise.all(chosen.map((file) => compressImage(file)));
-      const added = files.map((file) => ({ file, preview: URL.createObjectURL(file) }));
+      const added = files.map((file) => ({ file, preview: URL.createObjectURL(file), alt: '' }));
       setImages((current) => [...current, ...added]);
     } finally {
       setPreparing((n) => n - chosen.length);
@@ -149,6 +175,12 @@ function CreatePost() {
   const removeKept = (url) => {
     setKeptMedia((current) => current.filter((u) => u !== url));
     setError('');
+  };
+
+  // Day 95: the open dialog's photo gets its description.
+  const saveAlt = (text) => {
+    if (altFor?.url) setKeptAlts((current) => ({ ...current, [altFor.url]: text }));
+    else if (altFor?.preview) setImages((current) => current.map((img) => (img.preview === altFor.preview ? { ...img, alt: text } : img)));
   };
 
   const setPollOption = (index, value) => setPollOptions((current) => current.map((o, i) => (i === index ? value : o)));
@@ -188,6 +220,8 @@ function CreatePost() {
     if (draftId) formData.append('keepMedia', JSON.stringify(keptMedia));
     for (const [key, value] of Object.entries(extra)) formData.append(key, value);
     images.forEach((img) => formData.append('images', img.file));
+    // Day 95: the descriptions, in the photos' order (kept, then new).
+    if (photoCount > 0) formData.append('altTexts', JSON.stringify([...keptMedia.map((url) => keptAlts[url] || ''), ...images.map((img) => img.alt)]));
     return formData;
   };
 
@@ -394,6 +428,7 @@ function CreatePost() {
                 >
                   <X size={14} aria-hidden="true" />
                 </button>
+                <AltButton described={Boolean(keptAlts[url])} n={i + 1} disabled={submitting} onClick={() => setAltFor({ url, n: i + 1 })} />
               </li>
             ))}
             {images.map((img, i) => (
@@ -408,9 +443,23 @@ function CreatePost() {
                 >
                   <X size={14} aria-hidden="true" />
                 </button>
+                <AltButton
+                  described={Boolean(img.alt)}
+                  n={keptMedia.length + i + 1}
+                  disabled={submitting}
+                  onClick={() => setAltFor({ preview: img.preview, n: keptMedia.length + i + 1 })}
+                />
               </li>
             ))}
           </ul>
+        )}
+        {altFor && (
+          <AltTextDialog
+            n={altFor.n}
+            initial={altFor.url ? keptAlts[altFor.url] : images.find((img) => img.preview === altFor.preview)?.alt}
+            onSave={saveAlt}
+            onClose={() => setAltFor(null)}
+          />
         )}
         {/* Day 45: schedule for later, in the person's own time zone. */}
         <div className="compose-schedule">
