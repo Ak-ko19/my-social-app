@@ -2972,3 +2972,40 @@ Read-only; no application code changed. Same method as audit 3, on
   - Full browser run in batches: 88/88 OK. That covers the 68 regular
     suites, the 10 special-stack ones (with day95-alt), day80-states
     150 × 2, a11y 62 + 62 + 7, and A3 153 × 4.
+
+### 2026-10-26/27 — Day 96: Edit a post's photos
+- **What (`e673cc0`):** like Facebook's "Edit post". On a post that can
+  have photos (not a share or a poll, which keep their quick text edit) it
+  opens the composer with the post's text, audience and photos. Every photo
+  can be removed, moved earlier or later, and described, and new ones can
+  be added. The chevrons point to the start in Arabic too: the browser
+  suite measures the mirrored icon.
+- **API:** PUT /posts/:id/media, for the author or a page admin. `photos`
+  is the new order, each entry a URL the post has or {"upload": i}; every
+  upload is used once; at most 10; a share or a poll has none. It runs in
+  one transaction with the post's row locked; image_url follows the first
+  photo. Removed files leave storage after the commit (only real
+  res.cloudinary.com URLs, so the e2e stub's files are never deleted;
+  postPhotos.test checks the call and its timing).
+- **One order format:** drafts take the same `photos` (keepMedia still
+  works), so a new photo can go before a kept one. The composer holds one
+  ordered photo list.
+- **Better than planned:** Save sends the photos first, then the text.
+  Once the photos are saved the form holds them as the post's own, so
+  trying again after a failed text save never uploads twice (Vitest checks
+  it).
+- **Tests:** postPhotos.test 8. 12 mutations caught: two (duplicate and
+  foreign URLs) first survived because every bad-list case also sent an
+  unused upload; each case is now wrong one way only. Vitest +7 (396).
+  day96-edit-photos 26/26 (MEDIA_SUITES, EN/light + AR/dark, axe). The
+  auth and input sweeps cover the new route.
+- **The close:** the first full run was stopped by Claude Code for low
+  memory, but its script kept running. When the run restarted, the two runs
+  failed each other (ports, database). Both were stopped, and one run in
+  batches of 3 was green. WIP has the lesson.
+- **Tests at close:**
+  - Backend 1094/1094, Vitest 396/396, lint (exit 0), check:i18n (1574
+    keys), bundle 218.1 kB, npm audit 0/0/0.
+  - Full browser run: 89/89 OK. That covers the 68 regular suites, the 11
+    special-stack ones, day80-states 150 × 2, perf 47, a11y 62 + 62 + 7,
+    and A3 153 × 4.

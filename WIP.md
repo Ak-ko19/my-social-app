@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 96 — Edit a post's photos.
-**Step:** 1 — done (committed). Next: close Day 96 -- full browser run in batches (fullrun.sh SPECIAL has day96-edit-photos), then the Progress Log entry.
+**Day:** 97–98 — Chat organisation (pin, archive).
+**Step:** 0 — not started (Day 96 closed: see the Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -253,6 +253,9 @@
   - Re-run `npm audit --omit=dev` in all three folders before each close:
     new advisories appear between days (two did between Days 76 and 85).
 
+- Day 96 close: a background run "stopped for low memory" by Claude Code
+  can leave its script running. Before any browser run: ps aux | grep -E
+  "bash|node" -- two runs at once fail each other (ports, DB). Batches of 3.
 - Day 96: the composer holds ONE ordered photo list ({ key, url } saved,
   { key, file, preview } new); forms send photos = [url | { upload: i }] +
   images + altTexts (resolvePhotos). Media cleanup deletes only
