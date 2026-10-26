@@ -2937,3 +2937,38 @@ Read-only; no application code changed. Same method as audit 3, on
     race above) fixed and 3/3 clean. That covers the 68 regular suites, the
     9 special-stack ones, day80-states 150 × 2, perf 47, a11y 62 + 62 + 7,
     and A3 153 × 4.
+
+### 2026-10-26 — Day 95: Photo descriptions (alt text)
+- **What (`64d4816`):** like Instagram's and X's alt text. Every photo in
+  the composer has an "Alt" button ("وصف" in Arabic), and its accessible
+  name begins with that visible word. It opens "Describe photo 2": up to
+  1000 characters, any language in its own direction, with Save, Cancel,
+  and Remove when the photo has a description. A described photo shows a
+  check. Screen readers read the description; a photo without one keeps
+  the automatic "Photo 1 of 2 by ...".
+- **Data:** migration 080. post_media.alt_text has a CHECK of 1000
+  characters. post_drafts.media_alts follows media_urls' order (an older
+  draft's missing entries mean none).
+- **API:** altTexts is a JSON list in the photos' order. For a draft it is
+  the kept photos then the new ones; left out, kept photos keep theirs, even
+  reordered. Each entry is checked as typed and as stored, because Zawgyi
+  turned into Unicode can change the length (otherwise the CHECK would have
+  been a 500). Every media list, the shared post and drafts return
+  { url, alt }. Publishing a draft, now or on schedule, carries the
+  descriptions.
+- **Also:** data export (photo_descriptions next to media, so the format
+  stays the same), the Zawgyi converter's columns, the API reference, and
+  an Arabic version of the new message.
+- **Tests:**
+  - altText.test 7, 8 mutations caught. Vitest +6 (composer dialog, Arabic,
+    carousel). Two draft-composer tests now expect altTexts, one with a
+    kept description.
+  - day95-alt 22/22 with real uploads (MEDIA_SUITES), EN/light + AR/dark,
+    axe on the dialog.
+- **Tests at close:**
+  - Backend 1086/1086, Vitest 389/389, lint (exit 0), check:i18n (1569
+    keys), bundle 218.0 kB, npm audit 0/0/0, rehearsal 015 → 080 (counts
+    30/40/20 on a fixture database), perf 47/47.
+  - Full browser run in batches: 88/88 OK. That covers the 68 regular
+    suites, the 10 special-stack ones (with day95-alt), day80-states
+    150 × 2, a11y 62 + 62 + 7, and A3 153 × 4.
