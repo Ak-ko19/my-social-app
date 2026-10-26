@@ -3051,3 +3051,34 @@ Read-only; no application code changed. Same method as audit 3, on
   - Full browser run in batches of 3: 90/90 OK. That covers the 69 regular
     suites, the 11 special-stack ones, day80-states 154 × 2, perf 47, a11y
     62 + 62 + 7, and A3 153 × 4.
+
+### 2026-10-26 — Day 99: Search inside a conversation
+- **What (`d25cf15`):** like Messenger's "Search in conversation". The chat
+  header has a Search button; the thread stays mounted and live (just
+  hidden) while a search box takes its place.
+  - Searches from 2 characters (debounced), in any language and in its own
+    text direction; matches newest first with the words marked, sender,
+    time and Load more.
+  - A result opens the messages around it (up to 10 before and 10 after),
+    read-only, the match outlined and scrolled into view, with Back to
+    results and Back to the chat. The live thread never jumps to an old
+    message: it keeps the newest window, live and offline-queued.
+- **API:** GET /conversations/:id/search (your chats only; text and photo
+  captions, not deleted messages or voice; 2–100 characters; % and _
+  searched as themselves; Zawgyi read as Unicode; keyset paging like the
+  history) and GET /conversations/:id/messages/:messageId/context (shaped
+  like the history; 404 for a deleted message or one from another chat).
+  No migration: one chat's messages are read through
+  idx_messages_conversation_id (perf suite: 63 ms). A trigram index on
+  messages.content is the next step if chats grow very long.
+- **Checked at close:** search and context show exactly what the chat
+  history shows (the history has no per-viewer filter), so nothing leaks.
+- **Tests:** chatSearch 8 (11 mutations caught); Vitest +5 (405);
+  day99-chat-search 28/28 EN/light + AR/dark with axe; perf 48/48.
+- **Tests at close:**
+  - Backend 1111/1111, Vitest 405/405, lint (exit 0), check:i18n (1597
+    keys), bundle 218.7 kB, npm audit 0/0. No migration, so no rehearsal.
+  - Full browser run in batches of 3: 91/91 OK. day30-guard and
+    day31-reactions first crashed at 0/0 because a backend Jest start reset
+    the shared test database mid-batch; that batch re-ran alone, green
+    (9/9, 18/18).
