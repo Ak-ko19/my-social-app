@@ -3009,3 +3009,45 @@ Read-only; no application code changed. Same method as audit 3, on
   - Full browser run: 89/89 OK. That covers the 68 regular suites, the 11
     special-stack ones, day80-states 150 × 2, perf 47, a11y 62 + 62 + 7,
     and A3 153 × 4.
+
+### 2026-10-27 — Days 97–98: Chat organisation (pin, archive)
+- **What (`1fe5d68`):** like Messenger and WhatsApp. Each inbox row has a
+  "More options" menu (named after the chat) with Pin / Unpin and Archive /
+  Unarchive.
+  - Pinned chats come first, the most recently pinned first, with a pin
+    mark. Up to 3: a fourth is refused in the app's language.
+  - Archived chats leave the inbox for "Archived chats (N)"
+    (/messages/archived), the same screen in archived mode with its own
+    title, back button and empty state. Archiving unpins; pinning brings an
+    archived chat back.
+- **A new message** brings an archived chat back for everyone in it,
+  except someone who also muted it (they asked for quiet, like WhatsApp's
+  "keep chats archived"). It's one UPDATE in messageService.createMessage.
+  The archived screen hears it live and the chat leaves it at once.
+- **Data and API:** migration 081 (conversation_participants.pinned_at,
+  archived_at; yours only).
+  - PUT /conversations/:id/pin and /archive lock your participant rows, so
+    two pins at once can't make a fourth (tested with racing requests).
+  - GET /conversations: pins all on the first page and the cursor pages the
+    rest (no chat twice or lost, tested with 7 chats at 2 per page);
+    ?archived=1; the inbox's first page says archivedCount.
+  - Also: data export, API reference, Arabic messages, EN/AR strings with
+    every plural form.
+- **Found on the way:** an unread chat's time was 4.41:1 on its tinted row
+  (below AA). The new suite's axe check had unread chats; day26-a11y's inbox
+  doesn't. It now uses the main text color, like the unread preview.
+- **Tests:**
+  - chatOrganisation 9, 11 mutations caught. "Pins ordered by last
+    message" and "re-pin jumps to the top" first survived; a test now pins
+    an older chat later and re-pins.
+  - Vitest +4 (400). day97-chats 26/26 EN/light + AR/dark with axe: the
+    refused pin's 400 is allowed only during that step.
+  - day80-states 154 × 2 (the archived screen joins); day30-guard guards
+    it; perf 47/47 (/conversations 169 ms).
+- **Tests at close:**
+  - Backend 1103/1103, Vitest 400/400, lint (exit 0), check:i18n (1586
+    keys), bundle 218.5 kB, npm audit 0/0/0, rehearsal 015 → 081 (counts
+    30/42/20).
+  - Full browser run in batches of 3: 90/90 OK. That covers the 69 regular
+    suites, the 11 special-stack ones, day80-states 154 × 2, perf 47, a11y
+    62 + 62 + 7, and A3 153 × 4.
