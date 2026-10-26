@@ -73,7 +73,7 @@ async function publishServerCounters() {
     // Day 69: the group-member picker's search.
     '/users/1/connections?type=following&q=perf', `/users/${perfUser}/mutual-friends`,
     '/notifications', '/notifications?filter=unread', '/notifications?filter=mentions', '/notifications/unread-count', '/conversations', `/conversations/${conv}`,
-    `/conversations/${conv}/messages`, '/explore/posts', '/explore/hashtags', '/hashtags/perf/posts', '/hashtags/perf/posts?sort=top', '/hashtags/mingalar/posts',
+    `/conversations/${conv}/messages`, `/conversations/${conv}/search?q=message`, '/explore/posts', '/explore/hashtags', '/hashtags/perf/posts', '/hashtags/perf/posts?sort=top', '/hashtags/mingalar/posts',
     '/bookmarks', '/stories', '/blocked-users',
     // Day 48: the activity log.
     '/activity/likes', '/activity/comments',

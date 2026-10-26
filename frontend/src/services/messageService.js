@@ -24,6 +24,18 @@ export function fetchConversations(token, { cursor, q, id, archived } = {}) {
     .then((res) => res.data);
 }
 
+// Day 99: search inside a chat -> { results, nextCursor }, and the messages
+// around one result -> { messageId, messages } (oldest first).
+export function searchConversation(conversationId, q, token, { cursor } = {}) {
+  return api
+    .get(`/conversations/${conversationId}/search`, { ...authHeaders(token), params: { q, cursor } })
+    .then((res) => res.data);
+}
+
+export function fetchMessageContext(conversationId, messageId, token) {
+  return api.get(`/conversations/${conversationId}/messages/${messageId}/context`, authHeaders(token)).then((res) => res.data);
+}
+
 // Days 97-98: your own inbox -- pin a chat to the top, or archive it.
 // Each resolves to { pinned, archived }.
 export function pinConversation(conversationId, pinned, token) {

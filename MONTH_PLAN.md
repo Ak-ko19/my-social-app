@@ -298,7 +298,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 97–98 — Chat organisation
 - [x] Pin chats to the top of the inbox; archive chats (a new message brings a chat back, like Messenger); an Archived list. *(Up to 3 pins, an Archived chats screen, migration 081 — see Progress Log.)*
 ### Day 99 — Search inside a conversation
-- [ ] Find words in one chat's history, jump to a match with the messages around it; only chats you are in.
+- [x] Find words in one chat's history, jump to a match with the messages around it; only chats you are in. *(A search panel in the chat; a result opens the messages around it — see Progress Log.)*
 ### Day 100 — Story replies and reactions
 - [ ] Reply to a story (it arrives as a message with the story attached) and react with an emoji; respects message permissions and blocks.
 ### Day 101 — Group and page notification settings

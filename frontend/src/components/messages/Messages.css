@@ -1316,3 +1316,171 @@
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+/* ============================================================
+   Day 99: search inside a chat (ChatSearch)
+   ============================================================ */
+/* The thread and composer stay mounted (and live) while searching. */
+.messages-thread[hidden] {
+  display: none;
+}
+
+.chat-search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-height: 60vh;
+  padding-inline: var(--space-sm);
+}
+
+.chat-search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.chat-search-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.chat-search-box {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-background);
+  color: var(--color-text-muted);
+}
+
+.chat-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+}
+
+.chat-search-input:focus {
+  outline: none;
+}
+
+.chat-search-box:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.chat-search-status {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.chat-search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.chat-search-result {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.chat-search-result:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.chat-search-result-top {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.chat-search-sender {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.chat-search-time {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.chat-search-text {
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.chat-search-text mark {
+  background: var(--accent-bg);
+  color: var(--color-text-primary);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.chat-search-more {
+  align-self: center;
+}
+
+/* Framed like the thread it stands in for. */
+.chat-search-context {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  max-height: 65vh;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-sizing: border-box;
+}
+
+.chat-search-context:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.chat-search-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 75%;
+  align-self: flex-start;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.chat-search-bubble.is-own {
+  align-self: flex-end;
+  background: var(--accent-bg);
+}
+
+.chat-search-bubble.is-match {
+  border: 2px solid var(--color-accent);
+}

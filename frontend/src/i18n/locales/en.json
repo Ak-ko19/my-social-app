@@ -657,6 +657,20 @@
   "messages": {
     "title": "Messages",
     "newGroup": "New group",
+    "search": {
+      "open": "Search in this chat",
+      "placeholder": "Search messages",
+      "hint": "Type at least 2 characters.",
+      "none": "No messages found.",
+      "failed": "Searching failed. Please try again.",
+      "close": "Back to the chat",
+      "backToResults": "Back to results",
+      "contextTitle": "Around this message",
+      "contextFailed": "Loading the messages failed. Please try again.",
+      "you": "You",
+      "results_one": "{{count}} message found",
+      "results_other": "{{count}} messages found"
+    },
     "organise": {
       "options": "More options for {{name}}",
       "pin": "Pin",

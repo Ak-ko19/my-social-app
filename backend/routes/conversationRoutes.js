@@ -4,6 +4,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const requireConversationParticipant = require('../middleware/requireConversationParticipant');
 const { upload, uploadAudio, uploadToCloudinary } = require('../middleware/cloudinaryUpload');
 const conversationController = require('../controllers/conversationController');
+const chatSearchController = require('../controllers/chatSearchController');
 const groupController = require('../controllers/groupController');
 const { messageReactionLimiter } = require('../middleware/rateLimiter');
 const { wholeIds } = require('../middleware/wholeIds');
@@ -24,6 +25,9 @@ router.patch('/conversations/:id/members/:userId', authMiddleware, groupControll
 router.put('/conversations/:id/photo', authMiddleware, groupController.requireGroupAdmin, upload.single('photo'), uploadToCloudinary('group-photos'), groupController.setGroupPhoto);
 router.delete('/conversations/:id/photo', authMiddleware, groupController.requireGroupAdmin, groupController.removeGroupPhoto);
 router.get('/conversations/:id/messages', authMiddleware, conversationController.getMessages);
+// Day 99: search inside a chat, and the messages around a result.
+router.get('/conversations/:id/search', authMiddleware, chatSearchController.searchMessages);
+router.get('/conversations/:id/messages/:messageId/context', authMiddleware, chatSearchController.messageContext);
 router.post('/conversations/:id/messages', authMiddleware, conversationController.sendMessage);
 router.post(
   '/conversations/:id/messages/voice',

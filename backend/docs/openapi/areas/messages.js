@@ -199,6 +199,40 @@ module.exports = {
       404: text('Conversation not found (or not yours)')
     }
   }),
+  'GET /conversations/:id/search': op({
+    tag: 'Messages', auth: 'user',
+    summary: 'Search inside one of your chats',
+    description: 'Day 99. Text messages and photo captions containing q (not deleted ones; voice has no text), newest first, '
+      + 'a page at a time. Burmese typed in Zawgyi is searched as Unicode.',
+    query: {
+      ...cursorQuery({ defaultLimit: 20, maxLimit: 50 }),
+      q: q(s.str('2 to 100 characters'))
+    },
+    responses: {
+      200: json(s.object({
+        results: s.array(s.object({
+          id: s.id(), sender_id: s.nullable(s.id()), sender_username: s.nullable(s.str()), type: s.enum(['text', 'image']),
+          content: s.str(), created_at: s.time()
+        })),
+        nextCursor: s.nullable(s.str('null: no more'))
+      }), 'One page of matches'),
+      400: text('Invalid conversation ID / Search for at least 2 characters. / Invalid cursor'),
+      403: NOT_PARTICIPANT
+    }
+  }),
+  'GET /conversations/:id/messages/:messageId/context': op({
+    tag: 'Messages', auth: 'user',
+    summary: 'A message with the messages around it (up to 10 before and 10 after)',
+    description: 'Day 99, for a search result. Oldest first, shaped like the history (reply previews, reactions; deleted ones '
+      + 'without their content).',
+    pathParams: { messageId: s.id() },
+    responses: {
+      200: json(s.object({ messageId: s.id(), messages: s.array(ref('Message')) }), 'The messages around it'),
+      400: text('Invalid conversation ID / Invalid message ID'),
+      403: NOT_PARTICIPANT,
+      404: text('Message not found (not in this chat, or deleted)')
+    }
+  }),
   'PUT /conversations/:id/pin': op({
     tag: 'Messages', auth: 'user',
     summary: 'Pin a chat to the top of your inbox, or unpin it',

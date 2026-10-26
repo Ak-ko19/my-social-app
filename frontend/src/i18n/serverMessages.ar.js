@@ -163,6 +163,11 @@ const AR = {
   'Only WEBM, MP4, OGG, and MPEG audio files are allowed': 'يُسمح فقط بملفات الصوت WEBM وMP4 وOGG وMPEG',
   'File is too large (max 5 MB)': 'الملف كبير جدًا (الحد الأقصى 5 ميغابايت)',
   'You can attach up to 10 images': 'يمكنك إرفاق 10 صور كحد أقصى',
+  // Day 99: searching inside a chat.
+  'Search for at least 2 characters.': 'ابحث عن حرفين على الأقل.',
+  'Invalid message ID': 'معرّف الرسالة غير صالح',
+  'Searching the chat failed. Please try again later.': 'تعذّر البحث في المحادثة. حاول مرة أخرى لاحقًا.',
+  'Loading the messages failed. Please try again later.': 'تعذّر تحميل الرسائل. حاول مرة أخرى لاحقًا.',
   // Days 97-98: pinned and archived chats.
   'You can pin up to 3 chats.': 'يمكنك تثبيت 3 محادثات كحد أقصى.',
   'Pinning the chat failed. Please try again later.': 'تعذّر تثبيت المحادثة. حاول مرة أخرى لاحقًا.',

@@ -9,7 +9,7 @@ import { VoicePlaybackProvider } from './context/VoicePlaybackProvider';
 import { fetchConversations, fetchConversationDetails, forwardMessageRest, muteConversation } from './services/messageService';
 import { formatRelativeTime } from './utils/formatRelativeTime';
 import Avatar from './components/common/Avatar';
-import { Bell, BellOff, ChevronLeft } from 'lucide-react';
+import { Bell, BellOff, ChevronLeft, Search } from 'lucide-react';
 import { ActionSheet, IconButton } from './components/ui';
 import MessageBubble from './components/messages/MessageBubble';
 import MessageComposer from './components/messages/MessageComposer';
@@ -18,6 +18,7 @@ import ConversationListErrorState from './components/messages/ConversationListEr
 import ConnectionBanner from './components/messages/ConnectionBanner';
 import ReportDialog from './components/feed/ReportDialog';
 import ForwardSheet from './components/messages/ForwardSheet';
+import ChatSearch from './components/messages/ChatSearch';
 import GroupAvatar from './components/messages/GroupAvatar';
 import './components/messages/Messages.css';
 import './components/feed/Feed.css';
@@ -94,6 +95,8 @@ function Conversation() {
   const [details, setDetails] = useState(null);
   // Day 23: mute this chat's notifications (for me).
   const [muteOpen, setMuteOpen] = useState(false);
+  // Day 99: "Search in this chat" takes the thread's place while open.
+  const [searchOpen, setSearchOpen] = useState(false);
   const [muteError, setMuteError] = useState('');
   const changeMute = (duration) => {
     setMuteError('');
@@ -339,6 +342,14 @@ function Conversation() {
         )}
         {details && (
           <IconButton
+            icon={Search}
+            aria-label={t('messages.search.open')}
+            className="conversation-mute-btn"
+            onClick={() => setSearchOpen(true)}
+          />
+        )}
+        {details && (
+          <IconButton
             icon={muted ? BellOff : Bell}
             aria-label={muted ? t('messages.mute.mutedLabel') : t('messages.mute.open')}
             className="conversation-mute-btn"
@@ -375,8 +386,19 @@ function Conversation() {
 
       {!detailsError && !loading && error && <ConversationListErrorState message={error} onRetry={reload} />}
 
+      {searchOpen && !detailsError && (
+        <ChatSearch
+          conversationId={conversationId}
+          token={token}
+          userId={userId}
+          isGroup={isGroup}
+          onClose={() => setSearchOpen(false)}
+        />
+      )}
+
+      {/* Hidden, not unmounted, while searching: it keeps its place and stays live. */}
       {!detailsError && !loading && !error && (
-        <div className="messages-thread" ref={containerRef} onScroll={handleScroll}>
+        <div className="messages-thread" ref={containerRef} onScroll={handleScroll} hidden={searchOpen}>
           {loadingOlder && (
             <div className="messages-load-older" role="status" aria-label={t('messages.loadingOlder')}>
               <span className="messages-spinner" />
@@ -417,18 +439,19 @@ function Conversation() {
         </div>
       )}
 
-      {isOtherTyping && (
+      {!searchOpen && isOtherTyping && (
         <p className="messages-typing-indicator" role="status">
           {t('messages.typingOne', { name: headerInfo?.username || t('messages.someone') })}
         </p>
       )}
-      {groupTypingText && (
+      {!searchOpen && groupTypingText && (
         <p className="messages-typing-indicator" role="status">
           {groupTypingText}
         </p>
       )}
 
       {!detailsError && (
+        <div hidden={searchOpen}>
         <MessageComposer
           onSend={handleSend}
           onSendVoice={handleSendVoice}
@@ -438,6 +461,7 @@ function Conversation() {
           replyToLabel={replyTo ? replyAuthorLabel(replyTo.sender_id) : ''}
           onCancelReply={() => setReplyTo(null)}
         />
+        </div>
       )}
       {forwardStatus && (
         <p className="messages-forward-status" role="status">{forwardStatus}</p>

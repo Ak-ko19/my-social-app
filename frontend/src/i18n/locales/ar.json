@@ -765,6 +765,24 @@
   "messages": {
     "title": "الرسائل",
     "newGroup": "مجموعة جديدة",
+    "search": {
+      "open": "البحث في هذه المحادثة",
+      "placeholder": "ابحث في الرسائل",
+      "hint": "اكتب حرفين على الأقل.",
+      "none": "لم يُعثر على رسائل.",
+      "failed": "تعذّر البحث. حاول مرة أخرى.",
+      "close": "العودة إلى المحادثة",
+      "backToResults": "العودة إلى النتائج",
+      "contextTitle": "حول هذه الرسالة",
+      "contextFailed": "تعذّر تحميل الرسائل. حاول مرة أخرى.",
+      "you": "أنت",
+      "results_zero": "لم يُعثر على رسائل",
+      "results_one": "رسالة واحدة",
+      "results_two": "رسالتان",
+      "results_few": "{{count}} رسائل",
+      "results_many": "{{count}} رسالة",
+      "results_other": "{{count}} رسالة"
+    },
     "organise": {
       "options": "خيارات أخرى لـ {{name}}",
       "pin": "تثبيت",

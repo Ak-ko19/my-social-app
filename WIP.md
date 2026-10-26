@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 99 — Search inside a conversation.
-**Step:** 0 — not started (Days 97–98 closed: see the Progress Log).
+**Step:** 1 — done (committed). Next: close Day 99 -- full browser run in batches of 3, then the Progress Log entry.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
