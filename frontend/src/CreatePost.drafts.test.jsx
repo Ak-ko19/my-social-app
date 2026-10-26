@@ -88,7 +88,8 @@ describe('CreatePost: drafts', () => {
     expect(await screen.findByText('group screen')).toBeInTheDocument();
     expect(api.put.mock.calls[0][0]).toBe('/drafts/7');
     expect(sentForm(api.put.mock.calls[0])).toEqual({
-      content: 'Trail report', communityId: '3', keepMedia: JSON.stringify(['https://cdn/b.jpg']), scheduledFor: '',
+      // Day 96: the order as "photos" (a saved photo's URL, or an upload).
+      content: 'Trail report', communityId: '3', photos: JSON.stringify(['https://cdn/b.jpg']), scheduledFor: '',
       // Day 95: the kept photo keeps its description.
       altTexts: JSON.stringify(['A trail sign'])
     });

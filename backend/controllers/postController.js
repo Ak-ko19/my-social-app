@@ -15,6 +15,7 @@ const { notMutedSql } = require('../services/muteService');
 const spamService = require('../services/spamService');
 const { managesPage } = require('../services/pageAdminService');
 const shareService = require('../services/shareService');
+const postPhotos = require('../services/postPhotosService');
 
 const { POST_VISIBILITIES, MAX_POST_LENGTH } = postCreation;
 
@@ -280,6 +281,18 @@ async function updatePost(req, res) {
   }
 }
 
+// Day 96: PUT /posts/:id/media -- remove, add, reorder and describe the
+// photos of your post (postPhotosService). (A refused request's uploads
+// are deleted again by the middleware.)
+async function editPhotos(req, res) {
+  try {
+    const uploaded = (req.cloudinaryResults || []).map((r) => r.secure_url);
+    res.json(await postPhotos.editPhotos(req.userId, Number(req.params.id), req.body, uploaded));
+  } catch (err) {
+    sendError(res, err, 'Saving the photos failed. Please try again later.');
+  }
+}
+
 // Days 93-94: POST /posts/:id/share { content?, visibility? } -- share it
 // to your own feed (shareService has the rules).
 async function sharePost(req, res) {
@@ -348,4 +361,4 @@ async function votePoll(req, res) {
   }
 }
 
-module.exports = { createPost, getPosts, getFeed, getPost, updatePost, sharePost, deletePost, votePoll };
+module.exports = { createPost, getPosts, getFeed, getPost, updatePost, editPhotos, sharePost, deletePost, votePoll };

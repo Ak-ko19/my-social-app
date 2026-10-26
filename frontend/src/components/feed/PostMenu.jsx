@@ -14,8 +14,9 @@ import { deletePost } from '../../services/postService';
 // The post card's "..." menu. Report (Feature 2) and the post owner's
 // edit/delete (Feature 4) extend this same sheet rather than building a
 // second menu component, so there's exactly one "more options" surface per
-// post card. onEdit puts PostCard into inline edit mode; the edit form
-// itself lives there, not here, since it needs to replace the post body.
+// post card. onEdit is PostCard's: the composer's "Edit post" (Day 96), or
+// for a share or a poll its inline edit form, which lives there, not here,
+// since it needs to replace the post body.
 // canModerate (B13): the viewer is an admin of the post's group, so they
 // may delete someone else's post there.
 // B5 / Day 20: the audiences a post can be switched to (all but its own).

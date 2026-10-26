@@ -84,6 +84,25 @@ module.exports = {
       404: POST_NOT_FOUND
     }
   }),
+  'PUT /posts/:id/media': op({
+    tag: 'Posts', auth: 'user', upload: true,
+    summary: 'Edit the photos of your post: remove, add, reorder, describe',
+    description: 'Day 96. Your post, or a post of a page you run. The text and audience stay with PUT /posts/{id}. '
+      + 'Done in one step; the files of removed photos are deleted from storage afterwards. A share and a poll have no photos.',
+    requestBody: multipart({
+      photos: s.str('A JSON list in the new order: a URL the post already has, or {"upload": i} for the i-th of the images sent '
+        + 'here (each used once). Left out: every photo stays and new ones go after them'),
+      images: s.array(file('A photo'), 'New photos (up to 10 in all)'),
+      altTexts: s.str('A JSON list of descriptions in the new order, each a string or null; left out: each kept photo keeps its own')
+    }),
+    responses: {
+      200: json(s.object({ media: s.array(s.object({ url: s.str(), alt: s.nullable(s.str('Its description (alt text)')) })) }), 'Saved: the photos now'),
+      400: text('Invalid post ID / Invalid photos / Invalid altTexts / too many photos / a description too long / '
+        + "A share can't have photos. / A poll can't have photos"),
+      403: text('You can only edit your own posts'),
+      404: text('Post not found')
+    }
+  }),
   'POST /posts/:id/share': op({
     tag: 'Posts', auth: 'user',
     summary: 'Share a post to your own feed, with your own words',
@@ -150,6 +169,7 @@ module.exports = {
       ...POST_FIELDS,
       scheduledFor: s.time('Empty: not scheduled any more'),
       keepMedia: s.str('A JSON list of the photo URLs to keep, in order (new uploads go after them); left out: keep them all'),
+      photos: s.str('Day 96, instead of keepMedia: the final order, each a URL the draft has or {"upload": i} for the i-th image sent here'),
       altTexts: s.str('Day 95: a JSON list of descriptions for the photos in their final order (kept, then new); left out: kept photos keep theirs'),
       images: s.array(file('A photo'))
     }),

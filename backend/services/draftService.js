@@ -147,9 +147,12 @@ async function update(userId, draftId, body, newMediaUrls) {
     // Only this draft's own photos, each once, in the order sent.
     kept = [...new Set(keep)].filter((url) => row.media_urls.includes(url));
   }
-  const mediaUrls = [...kept, ...newMediaUrls];
+  // Day 96: or `photos`, any order of kept and new (resolvePhotos).
+  const ordered = postCreation.resolvePhotos(body, row.media_urls, newMediaUrls);
+  if (ordered) kept = ordered.filter((url) => row.media_urls.includes(url));
+  const mediaUrls = ordered || [...kept, ...newMediaUrls];
   const mediaAlts = body.altTexts === undefined
-    ? [...kept.map((url) => oldAlts[row.media_urls.indexOf(url)]), ...newMediaUrls.map(() => null)]
+    ? mediaUrls.map((url) => (row.media_urls.includes(url) ? oldAlts[row.media_urls.indexOf(url)] : null))
     : postCreation.readAltTexts(body, mediaUrls.length);
   await checkDraft(userId, fields, mediaUrls);
   await checkSchedulable(userId, fields, mediaUrls, scheduledFor);

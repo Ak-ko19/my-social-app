@@ -13,6 +13,8 @@ router.get('/posts', optionalAuth, postController.getPosts);
 router.get('/feed', authMiddleware, postController.getFeed);
 router.get('/posts/:id', optionalAuth, postController.getPost);
 router.put('/posts/:id', authMiddleware, postController.updatePost);
+// Day 96: the photos of your post -- remove, add, reorder, describe.
+router.put('/posts/:id/media', authMiddleware, uploadPostImages, uploadManyToCloudinary('posts'), postController.editPhotos);
 // Days 93-94: share to your own feed.
 router.post('/posts/:id/share', authMiddleware, postController.sharePost);
 // Day 44: vote in a poll post.

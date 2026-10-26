@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 96 — Edit a post's photos.
-**Step:** 0 — not started (Day 95 closed: see the Progress Log).
+**Step:** 1 — done (committed). Next: close Day 96 -- full browser run in batches (fullrun.sh SPECIAL has day96-edit-photos), then the Progress Log entry.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
@@ -253,6 +253,10 @@
   - Re-run `npm audit --omit=dev` in all three folders before each close:
     new advisories appear between days (two did between Days 76 and 85).
 
+- Day 96: the composer holds ONE ordered photo list ({ key, url } saved,
+  { key, file, preview } new); forms send photos = [url | { upload: i }] +
+  images + altTexts (resolvePhotos). Media cleanup deletes only
+  res.cloudinary.com URLs, so browser suites can't see a file deleted.
 - Days 93-94: post lists add shareService.shareColumnsSql('$1') next to
   pollColumnSql/commentCountColumnSql (shares.test lists every list). A
   correlated EXISTS over posts can be hashed over the whole table -- use a

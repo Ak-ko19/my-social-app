@@ -294,7 +294,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 95 — Photo descriptions (alt text)
 - [x] Write your own description for each photo you post; screen readers use it, with today's automatic text as the fallback. *(An Alt button on each photo, drafts keep them, migration 080 — see Progress Log.)*
 ### Day 96 — Edit a post's photos
-- [ ] Remove, add and reorder photos when editing a post; removed files leave storage too.
+- [x] Remove, add and reorder photos when editing a post; removed files leave storage too. *("Edit post" opens the composer; PUT /posts/:id/media; one photo order format for drafts too — see Progress Log.)*
 ### Day 97–98 — Chat organisation
 - [ ] Pin chats to the top of the inbox; archive chats (a new message brings a chat back, like Messenger); an Archived list.
 ### Day 99 — Search inside a conversation

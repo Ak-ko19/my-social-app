@@ -73,6 +73,18 @@ export function updatePost(postId, content, token) {
   return api.put(`/posts/${postId}`, { content }, authHeaders(token)).then((res) => res.data);
 }
 
+// Day 96: the composer's "Edit post" -- the text and (not for group or page
+// posts) the audience in one request...
+export function updatePostWithAudience(postId, fields, token) {
+  return api.put(`/posts/${postId}`, fields, authHeaders(token)).then((res) => res.data);
+}
+
+// ...and the photos: a form with photos (the order), images (new files) and
+// altTexts. Resolves to { media }.
+export function savePostPhotos(postId, formData, token) {
+  return api.put(`/posts/${postId}/media`, formData, authHeaders(token)).then((res) => res.data);
+}
+
 // Days 93-94: share a post to your own feed -- { content, visibility }, both
 // optional ("Share now" sends neither). Resolves to the new post.
 export function sharePost(postId, { content = '', visibility = 'public' } = {}, token) {

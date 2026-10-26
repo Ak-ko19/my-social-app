@@ -163,6 +163,10 @@ const AR = {
   'Only WEBM, MP4, OGG, and MPEG audio files are allowed': 'يُسمح فقط بملفات الصوت WEBM وMP4 وOGG وMPEG',
   'File is too large (max 5 MB)': 'الملف كبير جدًا (الحد الأقصى 5 ميغابايت)',
   'You can attach up to 10 images': 'يمكنك إرفاق 10 صور كحد أقصى',
+  // Day 96: editing a post's photos.
+  "A share can't have photos.": 'لا يمكن أن تحتوي المشاركة على صور.',
+  'Invalid photos': 'قائمة الصور غير صالحة',
+  'Saving the photos failed. Please try again later.': 'تعذّر حفظ الصور. حاول مرة أخرى لاحقًا.',
   'Server error': 'حدث خطأ في الخادم',
   'Something went wrong. Please try again later.': 'حدث خطأ ما. يرجى المحاولة لاحقًا.',
   "This text contains a character that can't be saved.": 'يحتوي هذا النص على حرف لا يمكن حفظه.',

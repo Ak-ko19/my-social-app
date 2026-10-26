@@ -95,6 +95,38 @@ function readAltTexts(body, count) {
   });
 }
 
+// Day 96: a post's (or draft's) photos in their new order -- body.photos,
+// a JSON list whose entries are a photo it already has (its URL) or
+// { "upload": i }, the i-th file of this request. Each photo once; every
+// upload used. Returns the URLs in order, or null when photos wasn't sent.
+// Throws a 400 for anything else.
+function resolvePhotos(body, currentUrls, newUrls) {
+  if (body.photos === undefined) return null;
+  let list;
+  try {
+    list = typeof body.photos === 'string' ? JSON.parse(body.photos) : body.photos;
+  } catch {
+    throw new PostInputError(400, 'Invalid photos');
+  }
+  if (!Array.isArray(list)) throw new PostInputError(400, 'Invalid photos');
+  const seen = new Set();
+  const usedUploads = new Set();
+  const urls = list.map((entry) => {
+    if (typeof entry === 'string' && currentUrls.includes(entry) && !seen.has(entry)) {
+      seen.add(entry);
+      return entry;
+    }
+    const i = entry?.upload;
+    if (Number.isInteger(i) && i >= 0 && i < newUrls.length && !usedUploads.has(i)) {
+      usedUploads.add(i);
+      return newUrls[i];
+    }
+    throw new PostInputError(400, 'Invalid photos');
+  });
+  if (usedUploads.size !== newUrls.length) throw new PostInputError(400, 'Invalid photos');
+  return urls;
+}
+
 // May `userId` publish `fields` (with `imageCount` photos) right now?
 // Throws a PostInputError otherwise.
 async function checkCanPublish(userId, fields, imageCount) {
@@ -190,6 +222,7 @@ module.exports = {
   MAX_ALT_LENGTH,
   readPostFields,
   readAltTexts,
+  resolvePhotos,
   checkCanPublish,
   checkAudience,
   insertPost,

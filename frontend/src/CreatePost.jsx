@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import api, { resolveImageUrl } from './api';
 import { getOptimizedImageUrl } from './utils/cloudinaryImage';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CalendarClock, Check, ChevronLeft, FileText, Globe, ImagePlus, ListChecks, Lock, Plus, Star, Users, X } from 'lucide-react';
+import { CalendarClock, Check, ChevronLeft, ChevronRight, FileText, Globe, ImagePlus, ListChecks, Lock, Plus, Star, Users, X } from 'lucide-react';
 import { IconButton } from './components/ui';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
@@ -16,6 +16,7 @@ import {
 } from './services/draftService';
 import { timeZone } from './utils/localTime';
 import { compressImage } from './utils/compressImage';
+import { fetchPost, updatePostWithAudience, savePostPhotos } from './services/postService';
 
 // Matches the backend's MAX_POST_IMAGES (middleware/cloudinaryUpload.js).
 const MAX_IMAGES = 10;
@@ -48,9 +49,15 @@ function AltButton({ described, n, disabled, onClick }) {
   );
 }
 
+// Photos already saved (a draft's or a post's), as the form holds them.
+const savedPhotos = (media) => media.map((m) => ({ key: m.url, url: m.url, alt: m.alt || '' }));
+
 function CreatePost() {
   const [content, setContent] = useState('');
-  const [images, setImages] = useState([]); // [{ file, preview, alt }] -- new picks
+  // The photos, in order (Day 96: one list, so any photo can move): a photo
+  // already saved (a draft's or, when editing, the post's) is { key: url,
+  // url, alt }; a new pick is { key: preview, file, preview, alt }.
+  const [photos, setPhotos] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   // Day 57: photos still being shrunk -- Post waits for them.
   const [preparing, setPreparing] = useState(0);
@@ -60,13 +67,9 @@ function CreatePost() {
   const [pollOn, setPollOn] = useState(false);
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [pollHours, setPollHours] = useState(24);
-  // Day 45: editing a draft (?draftId=N) -- its already-uploaded photos,
-  // its group/page, and "Schedule for later".
-  const [keptMedia, setKeptMedia] = useState([]); // URLs of the draft's photos still in it
-  // Day 95: photo descriptions (alt text) -- a draft photo's by its URL (a
-  // new pick keeps its own in `images`), and which photo's dialog is open:
-  // { url } or { preview }, with its number.
-  const [keptAlts, setKeptAlts] = useState({});
+  // Day 45: editing a draft (?draftId=N) -- its group/page, and "Schedule
+  // for later".
+  // Day 95: which photo's description dialog is open: { key, n }.
   const [altFor, setAltFor] = useState(null);
   const [draftPlace, setDraftPlace] = useState({ communityId: null, pageId: null });
   const [scheduleOn, setScheduleOn] = useState(false);
@@ -77,17 +80,21 @@ function CreatePost() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const draftId = searchParams.get('draftId');
-  const [draftState, setDraftState] = useState(draftId ? 'loading' : 'none'); // none | loading | ready | missing
+  // Day 96: editing a published post (?editPostId=N) -- its text, audience
+  // and photos (Facebook's "Edit post"); shares and polls are edited on
+  // their card instead.
+  const editPostId = searchParams.get('editPostId');
+  const [draftState, setDraftState] = useState(draftId || editPostId ? 'loading' : 'none'); // none | loading | ready | missing
   // B13: /create-post?communityId=N posts inside that group.
   // B14: /create-post?pageId=N posts as that page (owner only; always public).
   // A draft brings its own.
-  const communityId = draftId ? draftPlace.communityId : searchParams.get('communityId');
-  const pageId = draftId ? draftPlace.pageId : searchParams.get('pageId');
-  const backTo = draftId ? '/drafts' : communityId ? `/groups/${communityId}` : pageId ? `/pages/${pageId}` : '/';
+  const communityId = draftId || editPostId ? draftPlace.communityId : searchParams.get('communityId');
+  const pageId = draftId || editPostId ? draftPlace.pageId : searchParams.get('pageId');
+  const backTo = editPostId ? `/posts/${editPostId}` : draftId ? '/drafts' : communityId ? `/groups/${communityId}` : pageId ? `/pages/${pageId}` : '/';
   const textareaRef = useRef(null);
   const mention = useMentionAutocomplete();
   const token = localStorage.getItem('token');
-  const photoCount = keptMedia.length + images.length;
+  const photoCount = photos.length;
 
   // Day 45: open the draft into the form.
   useEffect(() => {
@@ -98,8 +105,7 @@ function CreatePost() {
         if (cancelled) return;
         setContent(draft.content);
         setVisibility(draft.visibility);
-        setKeptMedia(draft.media.map((m) => m.url));
-        setKeptAlts(Object.fromEntries(draft.media.map((m) => [m.url, m.alt || ''])));
+        setPhotos(savedPhotos(draft.media));
         setDraftPlace({
           communityId: draft.community_id ? String(draft.community_id) : null,
           pageId: draft.page_id ? String(draft.page_id) : null
@@ -122,6 +128,35 @@ function CreatePost() {
       cancelled = true;
     };
   }, [draftId, token]);
+
+  // Day 96: open the post into the form.
+  useEffect(() => {
+    if (!editPostId) return undefined;
+    let cancelled = false;
+    fetchPost(editPostId, token)
+      .then((post) => {
+        if (cancelled) return;
+        // A share or a poll isn't edited here (their card edits the text).
+        if (post.is_share || post.poll) {
+          setDraftState('missing');
+          return;
+        }
+        setContent(post.content);
+        setVisibility(post.visibility || 'public');
+        setPhotos(savedPhotos(post.media || []));
+        setDraftPlace({
+          communityId: post.community_id ? String(post.community_id) : null,
+          pageId: post.page ? String(post.page.id) : null
+        });
+        setDraftState('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setDraftState('missing');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [editPostId, token]);
 
   const handleContentChange = (e) => {
     setContent(e.target.value);
@@ -158,29 +193,36 @@ function CreatePost() {
     setPreparing((n) => n + chosen.length);
     try {
       const files = await Promise.all(chosen.map((file) => compressImage(file)));
-      const added = files.map((file) => ({ file, preview: URL.createObjectURL(file), alt: '' }));
-      setImages((current) => [...current, ...added]);
+      const added = files.map((file) => {
+        const preview = URL.createObjectURL(file);
+        return { key: preview, file, preview, alt: '' };
+      });
+      setPhotos((current) => [...current, ...added]);
     } finally {
       setPreparing((n) => n - chosen.length);
     }
   };
 
-  const removeImage = (index) => {
-    setImages((current) => {
-      URL.revokeObjectURL(current[index].preview);
-      return current.filter((_, i) => i !== index);
+  const removePhoto = (key) => {
+    setPhotos((current) => {
+      const gone = current.find((photo) => photo.key === key);
+      if (gone?.preview) URL.revokeObjectURL(gone.preview);
+      return current.filter((photo) => photo.key !== key);
     });
     setError('');
   };
-  const removeKept = (url) => {
-    setKeptMedia((current) => current.filter((u) => u !== url));
-    setError('');
+  // Day 96: one place earlier (-1) or later (+1).
+  const movePhoto = (index, step) => {
+    setPhotos((current) => {
+      const next = [...current];
+      [next[index], next[index + step]] = [next[index + step], next[index]];
+      return next;
+    });
   };
 
   // Day 95: the open dialog's photo gets its description.
   const saveAlt = (text) => {
-    if (altFor?.url) setKeptAlts((current) => ({ ...current, [altFor.url]: text }));
-    else if (altFor?.preview) setImages((current) => current.map((img) => (img.preview === altFor.preview ? { ...img, alt: text } : img)));
+    setPhotos((current) => current.map((photo) => (photo.key === altFor?.key ? { ...photo, alt: text } : photo)));
   };
 
   const setPollOption = (index, value) => setPollOptions((current) => current.map((o, i) => (i === index ? value : o)));
@@ -188,11 +230,11 @@ function CreatePost() {
   const removePollOption = (index) => setPollOptions((current) => current.filter((_, i) => i !== index));
 
   // Free the preview blob URLs when leaving the screen.
-  const imagesRef = useRef(images);
+  const photosRef = useRef(photos);
   useEffect(() => {
-    imagesRef.current = images;
-  }, [images]);
-  useEffect(() => () => imagesRef.current.forEach((img) => URL.revokeObjectURL(img.preview)), []);
+    photosRef.current = photos;
+  }, [photos]);
+  useEffect(() => () => photosRef.current.forEach((photo) => photo.preview && URL.revokeObjectURL(photo.preview)), []);
 
   // Day 44: the poll rules the server applies, explained here. Returns the
   // trimmed options, or null after showing what's wrong.
@@ -209,6 +251,18 @@ function CreatePost() {
     return options;
   };
 
+  // The photos for a form: the new files (in order), and -- where photos
+  // are already saved (a draft, a post being edited) -- their order as
+  // "photos": a saved one's URL or { upload: i } (Day 96). Day 95: the
+  // descriptions in that order.
+  const appendPhotos = (formData, withOrder) => {
+    let uploads = 0;
+    const order = photos.map((photo) => (photo.url ? photo.url : { upload: uploads++ }));
+    photos.forEach((photo) => photo.file && formData.append('images', photo.file));
+    if (withOrder) formData.append('photos', JSON.stringify(order));
+    if (photoCount > 0) formData.append('altTexts', JSON.stringify(photos.map((photo) => photo.alt || '')));
+  };
+
   // The form the server takes for a post and for a draft.
   const buildForm = (options, extra = {}) => {
     const formData = new FormData();
@@ -217,11 +271,8 @@ function CreatePost() {
     if (communityId) formData.append('communityId', communityId);
     else if (pageId) formData.append('pageId', pageId);
     else formData.append('visibility', visibility);
-    if (draftId) formData.append('keepMedia', JSON.stringify(keptMedia));
     for (const [key, value] of Object.entries(extra)) formData.append(key, value);
-    images.forEach((img) => formData.append('images', img.file));
-    // Day 95: the descriptions, in the photos' order (kept, then new).
-    if (photoCount > 0) formData.append('altTexts', JSON.stringify([...keptMedia.map((url) => keptAlts[url] || ''), ...images.map((img) => img.alt)]));
+    appendPhotos(formData, Boolean(draftId));
     return formData;
   };
 
@@ -243,6 +294,22 @@ function CreatePost() {
       navigate('/login');
       return;
     }
+    // Day 96: the photos first (an upload is likelier to fail), then the
+    // text and audience. Once the photos are saved the form holds them as
+    // the post's own, so trying again never uploads them twice.
+    if (editPostId) {
+      run(async () => {
+        const photosForm = new FormData();
+        appendPhotos(photosForm, true);
+        const saved = await savePostPhotos(editPostId, photosForm, token);
+        photos.forEach((photo) => photo.preview && URL.revokeObjectURL(photo.preview));
+        setPhotos(savedPhotos(saved.media));
+        await updatePostWithAudience(editPostId, { content, ...(communityId || pageId ? {} : { visibility }) }, token);
+        navigate(backTo);
+      }, 'feed.updateFailed');
+      return;
+    }
+
     const options = checkedPollOptions();
     if (!options) return;
 
@@ -295,21 +362,21 @@ function CreatePost() {
     }, 'drafts.saveFailed');
   };
 
-  const title = draftId ? t('drafts.editTitle') : communityId ? t('compose.inGroupTitle') : pageId ? t('compose.asPageTitle') : t('compose.title');
-  const backLabel = draftId ? t('drafts.backToDrafts') : communityId ? t('compose.backToGroup') : pageId ? t('compose.backToPage') : t('common.backToHome');
+  const title = editPostId ? t('compose.editTitle') : draftId ? t('drafts.editTitle') : communityId ? t('compose.inGroupTitle') : pageId ? t('compose.asPageTitle') : t('compose.title');
+  const backLabel = editPostId ? t('compose.backToPost') : draftId ? t('drafts.backToDrafts') : communityId ? t('compose.backToGroup') : pageId ? t('compose.backToPage') : t('common.backToHome');
 
   return (
     <div className="screen-enter">
       <header className="screen-header">
         <IconButton icon={ChevronLeft} aria-label={backLabel} onClick={() => navigate(backTo)} />
         <h1 className="screen-header-title">{title}</h1>
-        {!draftId && <IconButton icon={FileText} aria-label={t('drafts.open')} onClick={() => navigate('/drafts')} />}
+        {!draftId && !editPostId && <IconButton icon={FileText} aria-label={t('drafts.open')} onClick={() => navigate('/drafts')} />}
       </header>
       {draftState === 'loading' && <p className="screen-status" role="status">{t('common.loading')}</p>}
       {draftState === 'missing' && (
         <div className="screen-body">
-          <p className="form-error" role="alert">{t('drafts.notFound')}</p>
-          <button type="button" className="btn btn-secondary" onClick={() => navigate('/drafts')}>{t('drafts.backToDrafts')}</button>
+          <p className="form-error" role="alert">{editPostId ? t('compose.editUnavailable') : t('drafts.notFound')}</p>
+          <button type="button" className="btn btn-secondary" onClick={() => navigate(backTo)}>{backLabel}</button>
         </div>
       )}
       {(draftState === 'none' || draftState === 'ready') && (
@@ -328,7 +395,9 @@ function CreatePost() {
           />
         </label>
         {mention.active && <MentionAutocomplete suggestions={mention.suggestions} onSelect={handleMentionSelect} />}
-        {/* Day 44: a poll instead of photos (a poll post has none, like X). */}
+        {/* Day 44: a poll instead of photos (a poll post has none, like X).
+            Day 96: not when editing (a published post's poll can't change). */}
+        {!editPostId && (
         <button
           type="button"
           className="btn btn-secondary btn-sm compose-poll-toggle"
@@ -337,7 +406,8 @@ function CreatePost() {
         >
           <ListChecks size={16} aria-hidden="true" /> {pollOn ? t('compose.removePoll') : t('compose.addPoll')}
         </button>
-        {!pollOn && photoCount > 0 && <p className="form-hint">{t('compose.pollNoPhotos')}</p>}
+        )}
+        {!editPostId && !pollOn && photoCount > 0 && <p className="form-hint">{t('compose.pollNoPhotos')}</p>}
         {pollOn && (
           <fieldset className="poll-editor">
             <legend className="form-label">{t('compose.pollLegend')}</legend>
@@ -415,40 +485,37 @@ function CreatePost() {
         )}
         {photoCount > 0 && (
           <ul className="image-picker-grid" aria-label={t('compose.selectedImages')}>
-            {keptMedia.map((url, i) => (
-              <li key={url} className="image-picker-item">
+            {photos.map((photo, i) => (
+              <li key={photo.key} className="image-picker-item">
                 {/* Day 74: a ~90px tile -- not the full-size stored photo. */}
-                <img src={getOptimizedImageUrl(resolveImageUrl(url), 300)} alt={t('compose.selectedImage', { n: i + 1 })} decoding="async" />
+                {photo.url
+                  ? <img src={getOptimizedImageUrl(resolveImageUrl(photo.url), 300)} alt={t('compose.selectedImage', { n: i + 1 })} decoding="async" />
+                  : <img src={photo.preview} alt={t('compose.selectedImage', { n: i + 1 })} />}
                 <button
                   type="button"
                   className="image-picker-remove"
                   aria-label={t('compose.removeImage', { n: i + 1 })}
-                  onClick={() => removeKept(url)}
+                  onClick={() => removePhoto(photo.key)}
                   disabled={submitting}
                 >
                   <X size={14} aria-hidden="true" />
                 </button>
-                <AltButton described={Boolean(keptAlts[url])} n={i + 1} disabled={submitting} onClick={() => setAltFor({ url, n: i + 1 })} />
-              </li>
-            ))}
-            {images.map((img, i) => (
-              <li key={img.preview} className="image-picker-item">
-                <img src={img.preview} alt={t('compose.selectedImage', { n: keptMedia.length + i + 1 })} />
-                <button
-                  type="button"
-                  className="image-picker-remove"
-                  aria-label={t('compose.removeImage', { n: keptMedia.length + i + 1 })}
-                  onClick={() => removeImage(i)}
-                  disabled={submitting}
-                >
-                  <X size={14} aria-hidden="true" />
-                </button>
-                <AltButton
-                  described={Boolean(img.alt)}
-                  n={keptMedia.length + i + 1}
-                  disabled={submitting}
-                  onClick={() => setAltFor({ preview: img.preview, n: keptMedia.length + i + 1 })}
-                />
+                <AltButton described={Boolean(photo.alt)} n={i + 1} disabled={submitting} onClick={() => setAltFor({ key: photo.key, n: i + 1 })} />
+                {/* Day 96: the order (chevrons flip in RTL: earlier points to the start). */}
+                {photoCount > 1 && (
+                  <span className="image-picker-move">
+                    {i > 0 && (
+                      <button type="button" aria-label={t('compose.moveEarlier', { n: i + 1 })} onClick={() => movePhoto(i, -1)} disabled={submitting}>
+                        <ChevronLeft size={14} aria-hidden="true" />
+                      </button>
+                    )}
+                    {i < photoCount - 1 && (
+                      <button type="button" aria-label={t('compose.moveLater', { n: i + 1 })} onClick={() => movePhoto(i, 1)} disabled={submitting}>
+                        <ChevronRight size={14} aria-hidden="true" />
+                      </button>
+                    )}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
@@ -456,12 +523,13 @@ function CreatePost() {
         {altFor && (
           <AltTextDialog
             n={altFor.n}
-            initial={altFor.url ? keptAlts[altFor.url] : images.find((img) => img.preview === altFor.preview)?.alt}
+            initial={photos.find((photo) => photo.key === altFor.key)?.alt}
             onSave={saveAlt}
             onClose={() => setAltFor(null)}
           />
         )}
         {/* Day 45: schedule for later, in the person's own time zone. */}
+        {!editPostId && (
         <div className="compose-schedule">
           <label className="compose-schedule-toggle">
             <input
@@ -495,16 +563,21 @@ function CreatePost() {
             </div>
           )}
         </div>
+        )}
         {error && <p className="form-error" role="alert">{error}</p>}
         {preparing > 0 && <p className="form-hint" role="status">{t('compose.preparingPhotos', { count: preparing })}</p>}
         <button type="submit" className="btn btn-primary btn-block" disabled={submitting || preparing > 0}>
-          {scheduleOn
-            ? (submitting ? t('drafts.scheduling') : t('drafts.schedule'))
-            : (submitting ? t('compose.posting') : t('compose.post'))}
+          {editPostId
+            ? (submitting ? t('common.saving') : t('common.save'))
+            : scheduleOn
+              ? (submitting ? t('drafts.scheduling') : t('drafts.schedule'))
+              : (submitting ? t('compose.posting') : t('compose.post'))}
         </button>
+        {!editPostId && (
         <button type="button" className="btn btn-secondary btn-block" onClick={handleSaveDraft} disabled={submitting || preparing > 0}>
           {t('drafts.saveDraft')}
         </button>
+        )}
       </form>
       )}
     </div>

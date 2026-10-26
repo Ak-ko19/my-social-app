@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from '../../utils/serverError';
 import { AnimatePresence } from 'motion/react';
@@ -108,7 +108,15 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
     setTimeout(() => setShareFeedback(''), 2000);
   };
 
+  const navigate = useNavigate();
   const startEditing = () => {
+    // Day 96: a post that can have photos is edited in the composer (its
+    // text, audience and photos, like Facebook's); a share or a poll keeps
+    // this quick text edit.
+    if (!post.is_share && !post.poll) {
+      navigate(`/create-post?editPostId=${post.id}`);
+      return;
+    }
     setEditContent(post.content);
     setEditError('');
     setIsEditing(true);
