@@ -16,9 +16,13 @@ const presence = require('../sockets/presence');
 // header uses it). The page is picked first -- each chat's last activity,
 // keyset by conversation id, compared in SQL so no timestamp goes through a
 // JS Date -- and the details below are read for those chats only.
+// Days 97-98: pinned chats come first (the most recently pinned first, at
+// most 3), all on the first page; the cursor pages the others. ?archived=1
+// ($5) lists the archived chats instead of the inbox. (The cursor's chat is
+// looked up in all your chats, so archiving it meanwhile loses no place.)
 const INBOX_PAGE_SQL = `
   WITH mine AS (
-    SELECT c.id, COALESCE(lm.created_at, c.created_at) AS activity_at,
+    SELECT c.id, COALESCE(lm.created_at, c.created_at) AS activity_at, cp.pinned_at, cp.archived_at,
       CASE WHEN c.type = 'group' THEN c.name ELSE (
         SELECT u.username FROM conversation_participants o JOIN users u ON u.id = o.user_id
         WHERE o.conversation_id = c.id AND o.user_id <> $1 LIMIT 1
@@ -30,17 +34,24 @@ const INBOX_PAGE_SQL = `
       ORDER BY m.created_at DESC, m.id DESC LIMIT 1
     ) lm ON true
     WHERE cp.user_id = $1
+  ),
+  found AS (
+    SELECT * FROM mine WHERE (archived_at IS NOT NULL) = $5 AND ($3 = '' OR name ILIKE '%' || $3 || '%')
   )
-  SELECT id FROM mine
-  WHERE ($2::int IS NULL OR (activity_at, id) < (SELECT activity_at, id FROM mine WHERE id = $2))
-    AND ($3 = '' OR name ILIKE '%' || $3 || '%')
-  ORDER BY activity_at DESC, id DESC
-  LIMIT $4`;
+  (SELECT id, pinned_at, activity_at FROM found WHERE pinned_at IS NOT NULL AND $2::int IS NULL)
+  UNION ALL
+  (SELECT id, pinned_at, activity_at FROM found
+   WHERE pinned_at IS NULL AND ($2::int IS NULL OR (activity_at, id) < (SELECT activity_at, id FROM mine WHERE id = $2))
+   ORDER BY activity_at DESC, id DESC
+   LIMIT $4)
+  ORDER BY pinned_at DESC NULLS LAST, activity_at DESC, id DESC`;
 
 async function getConversations(req, res) {
   try {
     let ids;
     let nextCursor = null;
+    let archived = false;
+    let archivedCount;
     if (req.query.id !== undefined) {
       const one = Number(req.query.id);
       if (!Number.isInteger(one) || one < 1) return res.status(400).send('Invalid conversation ID');
@@ -54,9 +65,20 @@ async function getConversations(req, res) {
         return res.status(400).send('Invalid cursor');
       }
       const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
-      const page = await db.query(INBOX_PAGE_SQL, [req.userId, cursor?.id ?? null, escapeLike(q), limit + 1]);
-      ids = page.rows.slice(0, limit).map((r) => r.id);
-      if (page.rows.length > limit) nextCursor = encodeCursor({ id: ids[ids.length - 1] });
+      if (![undefined, '0', '1'].includes(req.query.archived)) return res.status(400).send('archived must be 0 or 1');
+      archived = req.query.archived === '1';
+      const page = await db.query(INBOX_PAGE_SQL, [req.userId, cursor?.id ?? null, escapeLike(q), limit + 1, archived]);
+      const pinned = page.rows.filter((r) => r.pinned_at);
+      const rest = page.rows.filter((r) => !r.pinned_at);
+      ids = [...pinned, ...rest.slice(0, limit)].map((r) => r.id);
+      if (rest.length > limit) nextCursor = encodeCursor({ id: rest[limit - 1].id });
+      // The inbox's first page says how many chats are archived ("Archived
+      // chats (2)").
+      if (!archived && !cursor) {
+        archivedCount = (await db.query(
+          'SELECT COUNT(*)::int AS n FROM conversation_participants WHERE user_id = $1 AND archived_at IS NOT NULL', [req.userId]
+        )).rows[0].n;
+      }
     }
 
     // Direct chats: exactly 2 participants (type = 'direct').
@@ -80,7 +102,10 @@ async function getConversations(req, res) {
         COALESCE(lm.created_at, c.created_at) AS activity_at,
         COALESCE(unread.count, 0)::int AS unread_count,
         -- Day 23: muted for you (no message notifications)
-        COALESCE(cp.muted_until > now(), false) AS muted
+        COALESCE(cp.muted_until > now(), false) AS muted,
+        -- Days 97-98: yours only.
+        cp.pinned_at IS NOT NULL AS pinned,
+        cp.archived_at IS NOT NULL AS archived
       FROM conversation_participants cp
       JOIN conversations c ON c.id = cp.conversation_id AND c.type = 'direct'
       JOIN conversation_participants other_cp
@@ -147,7 +172,10 @@ async function getConversations(req, res) {
         lm.created_at AS last_message_at,
         COALESCE(lm.created_at, c.created_at) AS activity_at,
         COALESCE(unread.count, 0)::int AS unread_count,
-        COALESCE(cp.muted_until > now(), false) AS muted
+        COALESCE(cp.muted_until > now(), false) AS muted,
+        -- Days 97-98: yours only.
+        cp.pinned_at IS NOT NULL AS pinned,
+        cp.archived_at IS NOT NULL AS archived
       FROM conversation_participants cp
       JOIN conversations c ON c.id = cp.conversation_id AND c.type = 'group'
       LEFT JOIN LATERAL (
@@ -172,7 +200,7 @@ async function getConversations(req, res) {
     const byId = new Map([...rows, ...groups.rows.map((g) => ({ ...g, is_online: false }))].map((c) => [c.conversation_id, c]));
     const conversations = ids.map((id) => byId.get(id)).filter(Boolean);
     if (req.query.id !== undefined && conversations.length === 0) return res.status(404).send('Conversation not found');
-    res.json({ conversations, nextCursor });
+    res.json({ conversations, nextCursor, ...(archivedCount !== undefined && { archivedCount }) });
   } catch (err) {
     sendError(res, err, 'Fetch conversations failed. Please try again later.');
   }
@@ -564,8 +592,73 @@ async function muteConversation(req, res) {
   }
 }
 
+// Days 97-98: PUT /conversations/:id/pin { pinned } and
+// PUT /conversations/:id/archive { archived } -- your own inbox only (like
+// mute: anyone not in the chat gets a 404). Up to MAX_PINNED pinned;
+// pinning brings an archived chat back, archiving unpins.
+const MAX_PINNED = 3;
+const TOO_MANY_PINNED = `You can pin up to ${MAX_PINNED} chats.`;
+
+async function setChatPlace(req, res, field) {
+  const conversationId = Number(req.params.id);
+  if (!Number.isInteger(conversationId)) return res.status(400).send('Invalid conversation ID');
+  const on = req.body?.[field];
+  if (typeof on !== 'boolean') return res.status(400).send(field === 'pinned' ? 'pinned must be true or false' : 'archived must be true or false');
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    // Your participant rows, locked: two pins at once can't make a fourth.
+    const mine = await client.query(
+      'SELECT conversation_id, pinned_at FROM conversation_participants WHERE user_id = $1 ORDER BY conversation_id FOR UPDATE', [req.userId]
+    );
+    const row = mine.rows.find((r) => r.conversation_id === conversationId);
+    if (!row) {
+      await client.query('ROLLBACK');
+      return res.status(404).send('Conversation not found');
+    }
+    if (field === 'pinned' && on && !row.pinned_at && mine.rows.filter((r) => r.pinned_at).length >= MAX_PINNED) {
+      await client.query('ROLLBACK');
+      return res.status(400).send(TOO_MANY_PINNED);
+    }
+    // The SQL comes only from these fixed strings, never from input.
+    const set = field === 'pinned'
+      ? (on ? 'pinned_at = COALESCE(pinned_at, now()), archived_at = NULL' : 'pinned_at = NULL')
+      : (on ? 'archived_at = COALESCE(archived_at, now()), pinned_at = NULL' : 'archived_at = NULL');
+    const result = await client.query(
+      `UPDATE conversation_participants SET ${set} WHERE conversation_id = $1 AND user_id = $2
+       RETURNING pinned_at IS NOT NULL AS pinned, archived_at IS NOT NULL AS archived`,
+      [conversationId, req.userId]
+    );
+    await client.query('COMMIT');
+    res.json(result.rows[0]);
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function pinConversation(req, res) {
+  try {
+    await setChatPlace(req, res, 'pinned');
+  } catch (err) {
+    sendError(res, err, 'Pinning the chat failed. Please try again later.');
+  }
+}
+
+async function archiveConversation(req, res) {
+  try {
+    await setChatPlace(req, res, 'archived');
+  } catch (err) {
+    sendError(res, err, 'Archiving the chat failed. Please try again later.');
+  }
+}
+
 module.exports = {
   muteConversation,
+  pinConversation,
+  archiveConversation,
   getConversations,
   sendImageMessage,
   editMessage,

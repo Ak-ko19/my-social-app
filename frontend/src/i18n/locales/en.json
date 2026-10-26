@@ -657,6 +657,21 @@
   "messages": {
     "title": "Messages",
     "newGroup": "New group",
+    "organise": {
+      "options": "More options for {{name}}",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "pinnedLabel": "Pinned",
+      "archivedTitle": "Archived chats",
+      "archivedLink_one": "Archived chats ({{count}})",
+      "archivedLink_other": "Archived chats ({{count}})",
+      "noArchived": "No archived chats. Archive a chat from its ⋯ menu to keep your inbox tidy; a new message brings it back.",
+      "backToMessages": "Back to messages",
+      "pinFailed": "Pinning the chat failed. Please try again.",
+      "archiveFailed": "Archiving the chat failed. Please try again."
+    },
     "backToMessages": "Back to Messages",
     "conversationMissing": "This conversation doesn't exist any more.",
     "noLongerMember": "You're no longer in this conversation.",

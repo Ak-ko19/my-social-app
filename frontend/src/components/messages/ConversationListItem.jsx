@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { BellOff } from 'lucide-react';
+import { BellOff, Pin } from 'lucide-react';
 import GroupAvatar from './GroupAvatar';
 import Avatar from '../common/Avatar';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
@@ -39,7 +39,8 @@ function ConversationListItem({ conversation, isOnline = false, onClick }) {
     unread_count: unreadCount,
     type,
     member_count: memberCount,
-    muted
+    muted,
+    pinned
   } = conversation;
   const isGroup = type === 'group';
 
@@ -68,6 +69,8 @@ function ConversationListItem({ conversation, isOnline = false, onClick }) {
             {isGroup && <span className="messages-member-count"> · {t('messages.memberCount', { count: memberCount })}</span>}
             {/* Day 23 */}
             {muted && <BellOff size={13} className="messages-muted-icon" aria-label={t('messages.mute.mutedLabel')} role="img" />}
+            {/* Days 97-98 */}
+            {pinned && <Pin size={13} className="messages-muted-icon" aria-label={t('messages.organise.pinnedLabel')} role="img" />}
           </span>
           {lastMessageAt && (
             <time

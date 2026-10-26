@@ -163,6 +163,13 @@ async function createMessage({ conversationId, senderId, type, content, mediaUrl
      RETURNING *`,
     [conversationId, senderId, content ?? null, clientTempId || null, type, mediaUrl || null, durationSeconds ?? null, replyToMessageId, isForwarded]
   );
+  // Days 97-98: a new message brings an archived chat back to the inbox
+  // (Messenger) -- except for someone who also muted it: they asked for quiet.
+  await db.query(
+    `UPDATE conversation_participants SET archived_at = NULL
+     WHERE conversation_id = $1 AND archived_at IS NOT NULL AND (muted_until IS NULL OR muted_until <= now())`,
+    [conversationId]
+  );
   // Day 22: a push to participants who aren't in the app right now.
   pushNewMessage({ conversationId, senderId });
   // Every new message goes out with its reply preview already attached, so

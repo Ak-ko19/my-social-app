@@ -203,6 +203,8 @@ function App() {
         <Route path="/reset-password/:token" element={<PhoneShell hideTabBar><ResetPassword /></PhoneShell>} />
         <Route path="/notifications" element={authOnly(<PhoneShell><Notifications /></PhoneShell>)} />
         <Route path="/messages" element={authOnly(<PhoneShell><Messages /></PhoneShell>)} />
+        {/* Days 97-98 */}
+        <Route path="/messages/archived" element={authOnly(<PhoneShell><Messages archived /></PhoneShell>)} />
         <Route path="/messages/new-group" element={authOnly(<PhoneShell hideTabBar><CreateGroupScreen /></PhoneShell>)} />
         <Route path="/messages/:conversationId/info" element={authOnly(<PhoneShell hideTabBar><GroupInfoScreen /></PhoneShell>)} />
         <Route path="/messages/:conversationId" element={authOnly(<PhoneShell hideTabBar><Conversation /></PhoneShell>)} />

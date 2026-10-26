@@ -300,7 +300,9 @@ const schemas = {
     last_message_at: s.nullable(s.time()),
     activity_at: s.time('The last message, or when the chat was created'),
     unread_count: s.int(),
-    muted: s.bool()
+    muted: s.bool(),
+    pinned: s.bool('Days 97-98: you pinned it'),
+    archived: s.bool('Days 97-98: you archived it')
   }, { optional: ['name', 'member_count', 'last_seen'] }),
   Message: s.object({
     id: s.id(),

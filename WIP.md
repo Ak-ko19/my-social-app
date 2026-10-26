@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 97–98 — Chat organisation (pin, archive).
-**Step:** 0 — not started (Day 96 closed: see the Progress Log).
+**Step:** 1 — done (committed). Next: close Days 97–98 -- full browser run in batches of 3, then the Progress Log entry.
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

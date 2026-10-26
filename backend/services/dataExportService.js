@@ -64,7 +64,9 @@ async function buildExport(userId) {
     rows(`SELECT id, name, category, description, created_at FROM pages WHERE owner_id = $1 ORDER BY created_at`, [userId]),
     rows(`SELECT pg.id, pg.name, pf.created_at FROM page_follows pf JOIN pages pg ON pg.id = pf.page_id
           WHERE pf.user_id = $1 ORDER BY pf.created_at`, [userId]),
-    rows(`SELECT c.id, c.type, c.name, c.avatar_url, c.created_at, cp.joined_at FROM conversation_participants cp
+    rows(`SELECT c.id, c.type, c.name, c.avatar_url, c.created_at, cp.joined_at,
+            -- Days 97-98: your own pin and archive.
+            cp.pinned_at, cp.archived_at FROM conversation_participants cp
           JOIN conversations c ON c.id = cp.conversation_id
           WHERE cp.user_id = $1 ORDER BY c.id`, [userId]),
     rows(`SELECT other.conversation_id, u.username FROM conversation_participants mine

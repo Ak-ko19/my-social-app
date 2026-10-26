@@ -22,7 +22,7 @@ const LANGS = process.env.STATES_LANG ? [process.env.STATES_LANG] : ['en', 'ar']
 
 // Screens that show a list or data loaded from the API.
 const ROUTES = [
-  '/', '/notifications', '/messages', '/search', '/explore', '/saved', '/saved/collections/1', '/drafts', '/drafts?tab=scheduled',
+  '/', '/notifications', '/messages', '/messages/archived', '/search', '/explore', '/saved', '/saved/collections/1', '/drafts', '/drafts?tab=scheduled',
   '/activity', '/activity?tab=comments', '/activity?tab=searches', '/groups', '/pages', '/events', '/hashtag/welcome',
   '/profile/me', '/profile/2', '/profile/2/connections?tab=followers', '/profile/2/connections?tab=following',
   '/settings/sessions', '/settings/blocked-users', '/settings/follow-requests', '/settings/muted', '/settings/restricted',

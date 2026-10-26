@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 080, check the environment variables,
+database, run migrations 015 → 081, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -99,7 +99,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 080 on production
+## 3. Run migrations 015 → 081 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -153,16 +153,17 @@ account as past the first-run steps, so only new sign-ups see them.)
            071_message_text_as_typed 072_add_login_alerts 073_add_two_factor \
            074_add_onboarding 075_add_notification_type_index \
            076_add_notification_details 077_add_memories_notifications \
-           078_add_session_login_challenge 079_add_post_shares 080_add_photo_alt_text; do
+           078_add_session_login_challenge 079_add_post_shares 080_add_photo_alt_text \
+           081_add_chat_pin_archive; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
-- [ ] Check the result (this should print `30`, then `40`, then `20`):
+- [ ] Check the result (this should print `30`, then `42`, then `20`):
   ```bash
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
     "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('post_media','stories','pages','communities','sessions','error_groups','link_previews','push_subscriptions','message_reactions','suggestion_dismissals','search_history','polls','poll_options','poll_votes','post_drafts','bookmark_collections','bookmark_collection_items','user_mutes','user_restrictions','close_friends','user_hidden_words','community_bans','page_admins','events','event_responses','media_uploads','daily_stats','admin_actions','known_devices','recovery_codes')"
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
-    "SELECT count(*) FROM information_schema.columns WHERE (table_name = 'reports' AND column_name IN ('target_owner_id','target_snapshot')) OR (table_name = 'users' AND column_name IN ('banned_until','language')) OR (table_name = 'notification_preferences' AND column_name = 'messages') OR (table_name = 'conversation_participants' AND column_name = 'muted_until') OR (table_name = 'messages' AND column_name = 'is_forwarded') OR (table_name = 'conversations' AND column_name = 'avatar_url') OR (table_name = 'users' AND column_name = 'links') OR (table_name = 'users' AND column_name = 'cover_url') OR (table_name = 'users' AND column_name = 'pinned_post_id') OR (table_name = 'polls' AND column_name = 'ended_notified') OR (table_name = 'comments' AND column_name = 'awaiting_approval') OR (table_name = 'stories' AND column_name = 'close_friends') OR (table_name = 'users' AND column_name IN ('message_permission','comment_permission','hidden_words_mode')) OR (table_name = 'notifications' AND column_name = 'community_id') OR (table_name = 'notification_preferences' AND column_name = 'groups') OR (table_name = 'notifications' AND column_name = 'page_id') OR (table_name = 'notification_preferences' AND column_name = 'pages') OR (table_name = 'notifications' AND column_name = 'event_id') OR (table_name = 'notification_preferences' AND column_name = 'events') OR (table_name = 'notifications' AND column_name = 'device') OR (table_name = 'users' AND column_name IN ('totp_secret','totp_pending_secret','totp_enabled_at','totp_last_step','totp_failures','totp_failures_since','onboarded_at')) OR (table_name = 'notifications' AND column_name = 'details') OR (table_name = 'users' AND column_name = 'time_zone') OR (table_name = 'notification_preferences' AND column_name = 'memories') OR (table_name = 'sessions' AND column_name = 'login_challenge') OR (table_name = 'posts' AND column_name IN ('shared_post_id','is_share')) OR (table_name = 'notification_preferences' AND column_name = 'shares') OR (table_name = 'post_media' AND column_name = 'alt_text') OR (table_name = 'post_drafts' AND column_name = 'media_alts')"
+    "SELECT count(*) FROM information_schema.columns WHERE (table_name = 'reports' AND column_name IN ('target_owner_id','target_snapshot')) OR (table_name = 'users' AND column_name IN ('banned_until','language')) OR (table_name = 'notification_preferences' AND column_name = 'messages') OR (table_name = 'conversation_participants' AND column_name = 'muted_until') OR (table_name = 'messages' AND column_name = 'is_forwarded') OR (table_name = 'conversations' AND column_name = 'avatar_url') OR (table_name = 'users' AND column_name = 'links') OR (table_name = 'users' AND column_name = 'cover_url') OR (table_name = 'users' AND column_name = 'pinned_post_id') OR (table_name = 'polls' AND column_name = 'ended_notified') OR (table_name = 'comments' AND column_name = 'awaiting_approval') OR (table_name = 'stories' AND column_name = 'close_friends') OR (table_name = 'users' AND column_name IN ('message_permission','comment_permission','hidden_words_mode')) OR (table_name = 'notifications' AND column_name = 'community_id') OR (table_name = 'notification_preferences' AND column_name = 'groups') OR (table_name = 'notifications' AND column_name = 'page_id') OR (table_name = 'notification_preferences' AND column_name = 'pages') OR (table_name = 'notifications' AND column_name = 'event_id') OR (table_name = 'notification_preferences' AND column_name = 'events') OR (table_name = 'notifications' AND column_name = 'device') OR (table_name = 'users' AND column_name IN ('totp_secret','totp_pending_secret','totp_enabled_at','totp_last_step','totp_failures','totp_failures_since','onboarded_at')) OR (table_name = 'notifications' AND column_name = 'details') OR (table_name = 'users' AND column_name = 'time_zone') OR (table_name = 'notification_preferences' AND column_name = 'memories') OR (table_name = 'sessions' AND column_name = 'login_challenge') OR (table_name = 'posts' AND column_name IN ('shared_post_id','is_share')) OR (table_name = 'notification_preferences' AND column_name = 'shares') OR (table_name = 'post_media' AND column_name = 'alt_text') OR (table_name = 'post_drafts' AND column_name = 'media_alts') OR (table_name = 'conversation_participants' AND column_name IN ('pinned_at','archived_at'))"
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
     "SELECT count(*) FROM pg_indexes WHERE indexname IN ('idx_messages_conversation_id','idx_post_hashtags_hashtag','idx_participants_last_read','idx_story_views_viewer','idx_posts_content_fts','idx_hashtags_tag_trgm','idx_search_history_user_recent','idx_poll_votes_user','idx_post_drafts_due','idx_polls_end_queue','idx_bookmark_collections_user_name','idx_users_created_at','idx_comments_created_at','idx_reports_created_at','idx_admin_actions_created','idx_known_devices_last_seen','idx_notifications_user_type_created','idx_posts_month_day','idx_sessions_login_challenge','idx_posts_shared_post_id')"
   ```

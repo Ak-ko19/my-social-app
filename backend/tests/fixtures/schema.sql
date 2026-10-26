@@ -758,3 +758,7 @@ ALTER TABLE notification_preferences ADD COLUMN shares boolean NOT NULL DEFAULT 
 ALTER TABLE post_media ADD COLUMN alt_text text
   CONSTRAINT chk_post_media_alt_text CHECK (char_length(alt_text) <= 1000);
 ALTER TABLE post_drafts ADD COLUMN media_alts text[] NOT NULL DEFAULT '{}';
+
+-- Days 97-98 (migration 081): pinned and archived chats, per person.
+ALTER TABLE conversation_participants ADD COLUMN pinned_at timestamptz;
+ALTER TABLE conversation_participants ADD COLUMN archived_at timestamptz;

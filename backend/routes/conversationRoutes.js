@@ -50,6 +50,9 @@ router.put('/conversations/:id/messages/:messageId', authMiddleware, conversatio
 router.delete('/conversations/:id/messages/:messageId', authMiddleware, conversationController.deleteMessage);
 router.put('/conversations/:id/read', authMiddleware, conversationController.markConversationRead);
 router.put('/conversations/:id/mute', authMiddleware, conversationController.muteConversation);
+// Days 97-98: pin to the top, archive out of the inbox (yours only).
+router.put('/conversations/:id/pin', authMiddleware, conversationController.pinConversation);
+router.put('/conversations/:id/archive', authMiddleware, conversationController.archiveConversation);
 // Day 31: react to a message (one reaction per person; DELETE removes it).
 router.put('/conversations/:id/messages/:messageId/reaction', authMiddleware, messageReactionLimiter, conversationController.setMessageReaction);
 router.delete('/conversations/:id/messages/:messageId/reaction', authMiddleware, messageReactionLimiter, conversationController.setMessageReaction);

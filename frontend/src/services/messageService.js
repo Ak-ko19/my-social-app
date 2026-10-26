@@ -16,10 +16,22 @@ export function fetchMessages(conversationId, token, { cursor, limit = 20 } = {}
 // One row per conversation: other participant's info, last message preview,
 // and unread count -- most recent first. Day 70: a page at a time ->
 // { conversations, nextCursor }; q: by name; id: just that chat.
-export function fetchConversations(token, { cursor, q, id } = {}) {
+// Days 97-98: pinned chats first; archived: the archived ones instead (the
+// inbox's first page also says archivedCount).
+export function fetchConversations(token, { cursor, q, id, archived } = {}) {
   return api
-    .get('/conversations', { ...authHeaders(token), params: { cursor, q: q || undefined, id } })
+    .get('/conversations', { ...authHeaders(token), params: { cursor, q: q || undefined, id, archived: archived ? '1' : undefined } })
     .then((res) => res.data);
+}
+
+// Days 97-98: your own inbox -- pin a chat to the top, or archive it.
+// Each resolves to { pinned, archived }.
+export function pinConversation(conversationId, pinned, token) {
+  return api.put(`/conversations/${conversationId}/pin`, { pinned }, authHeaders(token)).then((res) => res.data);
+}
+
+export function archiveConversation(conversationId, archived, token) {
+  return api.put(`/conversations/${conversationId}/archive`, { archived }, authHeaders(token)).then((res) => res.data);
 }
 
 // Finds or creates the direct conversation with `userId` -- the backend is

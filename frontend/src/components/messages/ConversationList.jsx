@@ -1,5 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
+import { MoreHorizontal } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { IconButton } from '../ui';
 import ConversationListItem from './ConversationListItem';
 
 // Window-scoped virtualization, same approach as FeedList (see its comment)
@@ -9,7 +12,10 @@ import ConversationListItem from './ConversationListItem';
 // `onlineUserIds` is a stubbed presence signal (Step 8 doesn't exist yet):
 // a Set of user ids currently known to be online, or undefined/empty if the
 // caller has nothing to report yet -- in which case no row shows a dot.
-function ConversationList({ conversations, onlineUserIds, onOpenConversation }) {
+// Days 97-98: onOptions(conversation) -- a "More options" button beside
+// each row (pin, archive), named after the chat.
+function ConversationList({ conversations, onlineUserIds, onOpenConversation, onOptions }) {
+  const { t } = useTranslation();
   const listRef = useRef(null);
   const [scrollMargin, setScrollMargin] = useState(0);
 
@@ -44,6 +50,14 @@ function ConversationList({ conversations, onlineUserIds, onOpenConversation }) 
               isOnline={Boolean(onlineUserIds?.has(conversation.other_user_id))}
               onClick={() => onOpenConversation(conversation)}
             />
+            {onOptions && (
+              <IconButton
+                icon={MoreHorizontal}
+                className="messages-row-options"
+                aria-label={t('messages.organise.options', { name: conversation.username })}
+                onClick={() => onOptions(conversation)}
+              />
+            )}
           </li>
         );
       })}

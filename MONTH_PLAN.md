@@ -296,7 +296,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 96 — Edit a post's photos
 - [x] Remove, add and reorder photos when editing a post; removed files leave storage too. *("Edit post" opens the composer; PUT /posts/:id/media; one photo order format for drafts too — see Progress Log.)*
 ### Day 97–98 — Chat organisation
-- [ ] Pin chats to the top of the inbox; archive chats (a new message brings a chat back, like Messenger); an Archived list.
+- [x] Pin chats to the top of the inbox; archive chats (a new message brings a chat back, like Messenger); an Archived list. *(Up to 3 pins, an Archived chats screen, migration 081 — see Progress Log.)*
 ### Day 99 — Search inside a conversation
 - [ ] Find words in one chat's history, jump to a match with the messages around it; only chats you are in.
 ### Day 100 — Story replies and reactions

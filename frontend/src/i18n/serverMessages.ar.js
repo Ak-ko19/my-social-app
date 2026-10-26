@@ -163,6 +163,10 @@ const AR = {
   'Only WEBM, MP4, OGG, and MPEG audio files are allowed': 'يُسمح فقط بملفات الصوت WEBM وMP4 وOGG وMPEG',
   'File is too large (max 5 MB)': 'الملف كبير جدًا (الحد الأقصى 5 ميغابايت)',
   'You can attach up to 10 images': 'يمكنك إرفاق 10 صور كحد أقصى',
+  // Days 97-98: pinned and archived chats.
+  'You can pin up to 3 chats.': 'يمكنك تثبيت 3 محادثات كحد أقصى.',
+  'Pinning the chat failed. Please try again later.': 'تعذّر تثبيت المحادثة. حاول مرة أخرى لاحقًا.',
+  'Archiving the chat failed. Please try again later.': 'تعذّرت أرشفة المحادثة. حاول مرة أخرى لاحقًا.',
   // Day 96: editing a post's photos.
   "A share can't have photos.": 'لا يمكن أن تحتوي المشاركة على صور.',
   'Invalid photos': 'قائمة الصور غير صالحة',

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSocket } from './useSocket';
-import { fetchConversations } from '../services/messageService';
+import { fetchConversations, pinConversation, archiveConversation } from '../services/messageService';
+import { serverErrorText } from '../utils/serverError';
 import i18n from '../i18n';
 
 // Owns the inbox's conversation list: initial load, plus live in-place
@@ -16,7 +17,9 @@ export function messagePreviewText(message) {
   return message.content;
 }
 
-export function useConversations(token, currentUserId) {
+// Days 97-98: { archived: true } lists the archived chats instead; the
+// inbox also learns archivedCount, and both can pin and archive.
+export function useConversations(token, currentUserId, { archived = false } = {}) {
   const { socket, connectionState } = useSocket();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +27,9 @@ export function useConversations(token, currentUserId) {
   // Day 70: chats come a page at a time; nextCursor is null at the end.
   const [nextCursor, setNextCursor] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [archivedCount, setArchivedCount] = useState(0);
+  // A pin or archive the server refused (e.g. a fourth pin).
+  const [actionError, setActionError] = useState('');
 
   const requestIdRef = useRef(0);
   const hasConnectedOnceRef = useRef(false);
@@ -32,11 +38,12 @@ export function useConversations(token, currentUserId) {
     if (!token) return;
     const requestId = ++requestIdRef.current;
 
-    fetchConversations(token)
+    fetchConversations(token, { archived })
       .then((data) => {
         if (requestId !== requestIdRef.current) return;
         setConversations(data.conversations);
         setNextCursor(data.nextCursor);
+        setArchivedCount(data.archivedCount ?? 0);
         setError(null);
       })
       .catch((err) => {
@@ -47,7 +54,7 @@ export function useConversations(token, currentUserId) {
       .finally(() => {
         if (requestId === requestIdRef.current) setLoading(false);
       });
-  }, [token]);
+  }, [token, archived]);
 
   useEffect(() => {
     load();
@@ -81,6 +88,12 @@ export function useConversations(token, currentUserId) {
         }
 
         const existing = current[index];
+        // Days 97-98: a new message takes an archived chat back to the inbox
+        // (unless it's muted) -- so it leaves this list.
+        if (archived && !existing.muted) {
+          load();
+          return current;
+        }
         const isFromOther = message.sender_id !== currentUserId;
         const updated = {
           ...existing,
@@ -92,14 +105,16 @@ export function useConversations(token, currentUserId) {
 
         const next = current.slice();
         next.splice(index, 1);
-        next.unshift(updated);
+        // After the pinned chats (they stay on top).
+        const at = updated.pinned ? 0 : next.findIndex((c) => !c.pinned);
+        next.splice(at === -1 ? next.length : at, 0, updated);
         return next;
       });
     };
 
     socket.on('new_message', handleNewMessage);
     return () => socket.off('new_message', handleNewMessage);
-  }, [socket, currentUserId, load]);
+  }, [socket, currentUserId, load, archived]);
 
   // A delete only changes the row's preview text when it deleted the
   // CURRENT last message -- matched by id, since last_message_id is only
@@ -129,7 +144,7 @@ export function useConversations(token, currentUserId) {
     if (!nextCursor || loadingMore) return;
     const requestId = requestIdRef.current;
     setLoadingMore(true);
-    fetchConversations(token, { cursor: nextCursor })
+    fetchConversations(token, { cursor: nextCursor, archived })
       .then((data) => {
         if (requestId !== requestIdRef.current) return;
         setConversations((current) => {
@@ -143,7 +158,27 @@ export function useConversations(token, currentUserId) {
         setError(i18n.t('errors.loadConversations'));
       })
       .finally(() => setLoadingMore(false));
-  }, [token, nextCursor, loadingMore]);
+  }, [token, nextCursor, loadingMore, archived]);
 
-  return { conversations, loading, error, reload: load, nextCursor, loadMore, loadingMore };
+  // Days 97-98: pin or archive, then the list again from the server (pinned
+  // order and paging are its to decide). An archived chat leaves this list
+  // at once.
+  const organise = useCallback((conversation, change) => {
+    setActionError('');
+    const id = conversation.conversation_id;
+    if (change.archived !== undefined && change.archived !== archived) {
+      setConversations((current) => current.filter((c) => c.conversation_id !== id));
+    }
+    const request = change.pinned !== undefined
+      ? pinConversation(id, change.pinned, token)
+      : archiveConversation(id, change.archived, token);
+    return request
+      .catch((err) => {
+        console.error(err);
+        setActionError(serverErrorText(err, change.pinned !== undefined ? 'messages.organise.pinFailed' : 'messages.organise.archiveFailed'));
+      })
+      .finally(load);
+  }, [token, archived, load]);
+
+  return { conversations, loading, error, reload: load, nextCursor, loadMore, loadingMore, archivedCount, organise, actionError };
 }

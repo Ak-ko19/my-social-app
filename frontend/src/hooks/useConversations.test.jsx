@@ -21,7 +21,7 @@ describe('useConversations pages', () => {
     act(() => result.current.loadMore());
     await waitFor(() => expect(result.current.conversations.map((c) => c.conversation_id)).toEqual([5, 4, 3]));
     expect(result.current.nextCursor).toBeNull();
-    expect(fetchConversations).toHaveBeenLastCalledWith('tok', { cursor: 'p2' });
+    expect(fetchConversations).toHaveBeenLastCalledWith('tok', { cursor: 'p2', archived: false });
   });
 
   it('a reload starts over from the first page', async () => {

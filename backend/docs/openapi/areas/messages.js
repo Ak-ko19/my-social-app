@@ -23,16 +23,23 @@ const GROUP_REFUSED = (action) => ({
 module.exports = {
   'GET /conversations': op({
     tag: 'Messages', auth: 'user',
-    summary: 'Your chats (direct and group), most recent activity first, a page at a time',
-    description: 'A chat with no messages yet counts from when it was made. `id` answers just that one chat (same shape).',
+    summary: 'Your chats (direct and group): pinned first, then most recent activity, a page at a time',
+    description: 'A chat with no messages yet counts from when it was made. `id` answers just that one chat (same shape). '
+      + 'Days 97-98: pinned chats (up to 3, the most recently pinned first) are all on the first page; archived chats are '
+      + 'left out (archived=1 lists only them). The inbox\'s first page says how many are archived (archivedCount).',
     query: {
       ...cursorQuery({ defaultLimit: 20, maxLimit: 50 }),
       q: q(s.str("Only chats whose name (a group's, or the other person's username) contains this")),
-      id: q(s.id('Just this chat'))
+      id: q(s.id('Just this chat')),
+      archived: q(s.enum(['0', '1'], '1: your archived chats instead of the inbox'))
     },
     responses: {
-      200: json(s.object({ conversations: s.array(ref('ConversationSummary')), nextCursor: s.nullable(s.str('null: no more chats')) }), 'One page'),
-      400: text('Invalid cursor / Invalid conversation ID'),
+      200: json(s.object({
+        conversations: s.array(ref('ConversationSummary')),
+        nextCursor: s.nullable(s.str('null: no more chats')),
+        archivedCount: s.int('How many chats you archived (the inbox\'s first page only)')
+      }, { optional: ['archivedCount'] }), 'One page'),
+      400: text('Invalid cursor / Invalid conversation ID / archived must be 0 or 1'),
       404: text('Conversation not found (with id: not one of yours)')
     }
   }),
@@ -189,6 +196,29 @@ module.exports = {
     responses: {
       200: json(s.object({ muted: s.bool(), muted_until: s.nullable(s.time('null for "always" or when unmuted')) }), 'Saved'),
       400: text('Invalid conversation ID / duration must be one of: 8h, 1w, always, or null'),
+      404: text('Conversation not found (or not yours)')
+    }
+  }),
+  'PUT /conversations/:id/pin': op({
+    tag: 'Messages', auth: 'user',
+    summary: 'Pin a chat to the top of your inbox, or unpin it',
+    description: 'Days 97-98. Yours only. Up to 3 pinned; pinning an archived chat brings it back to the inbox.',
+    requestBody: body({ pinned: s.bool() }, { required: ['pinned'] }),
+    responses: {
+      200: json(s.object({ pinned: s.bool(), archived: s.bool() }), 'Saved'),
+      400: text('Invalid conversation ID / pinned must be true or false / You can pin up to 3 chats.'),
+      404: text('Conversation not found (or not yours)')
+    }
+  }),
+  'PUT /conversations/:id/archive': op({
+    tag: 'Messages', auth: 'user',
+    summary: 'Archive a chat (out of your inbox) or bring it back',
+    description: 'Days 97-98. Yours only. Archiving unpins it. A new message in it brings it back to your inbox -- unless you '
+      + 'also muted it.',
+    requestBody: body({ archived: s.bool() }, { required: ['archived'] }),
+    responses: {
+      200: json(s.object({ pinned: s.bool(), archived: s.bool() }), 'Saved'),
+      400: text('Invalid conversation ID / archived must be true or false'),
       404: text('Conversation not found (or not yours)')
     }
   }),
