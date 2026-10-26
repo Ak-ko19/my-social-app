@@ -168,7 +168,7 @@ module.exports = {
     responses: {
       200: json(ref('Message'), 'Saved'),
       400: text('Empty or too long'),
-      403: text('Not your message / This message can no longer be edited'),
+      403: text("Not your message / This message can no longer be edited / A reaction to a story can't be edited"),
       404: text('Message not found')
     }
   }),

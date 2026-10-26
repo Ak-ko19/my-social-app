@@ -18,18 +18,20 @@ const follows = (followerSql, followingSql) =>
 // May `senderId` message `recipientId` in a direct chat? Their setting
 // decides -- except that a chat the recipient has already written in
 // always goes on (turning the setting on doesn't cut off a friend).
+// As SQL: the sender is `senderSql`, the recipient the users row `r`
+// (Day 100: the story tray asks it for every author in one query).
+function canMessageSql(senderSql, r) {
+  return `(${r}.message_permission = 'everyone'
+    OR (${r}.message_permission = 'following' AND ${follows(`${r}.id`, senderSql)})
+    OR EXISTS (
+      SELECT 1 FROM conversations dc
+      JOIN messages dm ON dm.conversation_id = dc.id AND dm.sender_id = ${r}.id
+      WHERE dc.type = 'direct' AND dc.user_a_id = LEAST(${senderSql}::int, ${r}.id) AND dc.user_b_id = GREATEST(${senderSql}::int, ${r}.id)
+    ))`;
+}
+
 async function canMessage(senderId, recipientId) {
-  const result = await db.query(
-    `SELECT r.message_permission = 'everyone'
-       OR (r.message_permission = 'following' AND ${follows('r.id', '$1')})
-       OR EXISTS (
-         SELECT 1 FROM conversations c
-         JOIN messages m ON m.conversation_id = c.id AND m.sender_id = r.id
-         WHERE c.type = 'direct' AND c.user_a_id = LEAST($1::int, r.id) AND c.user_b_id = GREATEST($1::int, r.id)
-       ) AS allowed
-     FROM users r WHERE r.id = $2`,
-    [senderId, recipientId]
-  );
+  const result = await db.query(`SELECT ${canMessageSql('$1', 'r')} AS allowed FROM users r WHERE r.id = $2`, [senderId, recipientId]);
   return Boolean(result.rows[0]?.allowed);
 }
 
@@ -51,4 +53,4 @@ async function assertCanComment(commenterId, ownerId) {
   if (!result.rows[0]?.allowed) throw new InteractionError('This person limits who can comment on their posts');
 }
 
-module.exports = { MESSAGE_PERMISSIONS, COMMENT_PERMISSIONS, InteractionError, canMessage, assertCanMessage, assertCanComment };
+module.exports = { MESSAGE_PERMISSIONS, COMMENT_PERMISSIONS, InteractionError, canMessage, canMessageSql, assertCanMessage, assertCanComment };

@@ -16,6 +16,9 @@ const POST_REFUSED = {
   400: text('Empty or too long, a bad visibility / poll / id, photos with a poll, a group and a page together'),
   403: text('Join this group to post in it / Only the page\'s owner and admins can post as this page')
 };
+// Day 100: what a story reply or reaction answers.
+const STORY_REPLY_SENT = s.object({ conversationId: s.id('The direct chat with the author'), message: ref('Message') });
+const { STORY_REACTIONS } = require('../../../config/storyReactions');
 const BAD_COMMENT = text('Invalid comment ID');
 const COMMENT_NOT_FOUND = text('Comment not found');
 const BAD_EVENT_ID = text('Invalid event ID');
@@ -462,6 +465,34 @@ module.exports = {
     tag: 'Stories', auth: 'user',
     summary: 'Delete your story (and its photo)',
     responses: { 200: text('Story deleted'), 400: text('Invalid story ID'), 403: text('You can only delete your own story'), 404: text('Story not found') }
+  }),
+
+  'POST /stories/:id/reply': op({
+    tag: 'Stories', auth: 'user',
+    summary: "Reply to a story: a message to its author, with the story attached",
+    description: 'Day 100 (Instagram). Opens the direct chat when there is none yet; every check a send has applies '
+      + '(blocks, "who can message me", the send rate limit). The message also goes out live as new_message.',
+    requestBody: body({ text: s.str('Up to 5000 characters') }, { required: ['text'] }),
+    responses: {
+      201: json(STORY_REPLY_SENT, 'Sent'),
+      400: text("Invalid story ID, empty or too long text, or your own story (You can't reply to your own story)"),
+      403: text("You cannot message this user / This person isn't accepting messages from you"),
+      404: text('Story not found (also expired, or one you may not see)'),
+      429: text('You are sending messages too quickly. Please slow down.')
+    }
+  }),
+  'POST /stories/:id/react': op({
+    tag: 'Stories', auth: 'user',
+    summary: 'React to a story with an emoji: sent to its author as a message',
+    description: 'Day 100. The emoji is the message (like Instagram); the same checks as a reply.',
+    requestBody: body({ emoji: s.enum(STORY_REACTIONS) }, { required: ['emoji'] }),
+    responses: {
+      201: json(STORY_REPLY_SENT, 'Sent'),
+      400: text("Invalid story ID, not one of the reactions (Choose one of the story reactions), or your own story"),
+      403: text("You cannot message this user / This person isn't accepting messages from you"),
+      404: text('Story not found (also expired, or one you may not see)'),
+      429: text('You are sending messages too quickly. Please slow down.')
+    }
   }),
 
   // ---- Events ----

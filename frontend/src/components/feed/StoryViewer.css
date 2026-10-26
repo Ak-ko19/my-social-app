@@ -166,6 +166,112 @@
   outline-offset: -4px;
 }
 
+/* ---------- Day 100: reply and quick reactions (above the tap zones) ---------- */
+.story-viewer-reply {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-3) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+  color: #fff;
+}
+
+/* Eight in a row at any width: they share it, up to 44px each. */
+.story-viewer-reactions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.story-viewer-reaction {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 120ms ease-out;
+}
+
+.story-viewer-reaction:hover:not(:disabled),
+.story-viewer-reaction:focus-visible {
+  transform: scale(1.15);
+}
+
+.story-viewer-reaction:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+
+.story-viewer-reaction:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.story-viewer-reply-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.story-viewer-reply-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 44px;
+  padding-inline: var(--space-4);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+}
+
+.story-viewer-reply-input::placeholder {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.story-viewer-reply-input:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+
+.story-viewer-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.story-viewer-reply-status,
+.story-viewer-reply-error {
+  margin: 0;
+  font-size: 13px;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Empty until sent; kept in the page so the live region announces it. */
+.story-viewer-reply-status:empty {
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.story-viewer-reply-error {
+  color: #ffb4ab;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-viewer-reaction {
+    transition: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .story-viewer-image {
     transition: none;

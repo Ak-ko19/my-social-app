@@ -300,7 +300,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 99 — Search inside a conversation
 - [x] Find words in one chat's history, jump to a match with the messages around it; only chats you are in. *(A search panel in the chat; a result opens the messages around it — see Progress Log.)*
 ### Day 100 — Story replies and reactions
-- [ ] Reply to a story (it arrives as a message with the story attached) and react with an emoji; respects message permissions and blocks.
+- [x] Reply to a story (it arrives as a message with the story attached) and react with an emoji; respects message permissions and blocks. *(A reply box and 8 quick reactions in the story viewer; the chat shows the story while it is up — see Progress Log.)*
 ### Day 101 — Group and page notification settings
 - [ ] Turn off notifications for one group's or one page's new posts (all / highlights / off).
 ### Day 102 — New-account safety

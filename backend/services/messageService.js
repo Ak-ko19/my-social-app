@@ -14,6 +14,7 @@ const { deleteMedia, cloudinaryAsset } = require('./mediaCleanupService');
 const cloudinary = require('../config/cloudinary');
 const { isValidReaction } = require('./reactionService');
 const { toUnicode } = require('../utils/myanmarText');
+const { STORY_REACTIONS } = require('../config/storyReactions');
 
 const MAX_MESSAGE_LENGTH = 5000;
 const MAX_CLIENT_TEMP_ID_LENGTH = 255;
@@ -139,7 +140,7 @@ function validateClientTempId(clientTempId) {
 // (e.g. one enforcing participation and the other forgetting to). Callers
 // are expected to have already done their own type-specific validation
 // (content shape, media fields, etc.) before reaching this.
-async function createMessage({ conversationId, senderId, type, content, mediaUrl, durationSeconds, clientTempId, replyToMessageId = null, isForwarded = false }) {
+async function createMessage({ conversationId, senderId, type, content, mediaUrl, durationSeconds, clientTempId, replyToMessageId = null, isForwarded = false, storyId = null, storyReply = null }) {
   // Room membership alone is never trusted as authorization -- a socket
   // could theoretically still be joined to a stale room, so every write
   // re-checks conversation_participants directly.
@@ -158,10 +159,10 @@ async function createMessage({ conversationId, senderId, type, content, mediaUrl
   }
 
   const result = await db.query(
-    `INSERT INTO messages (conversation_id, sender_id, content, client_temp_id, type, media_url, duration_seconds, reply_to_message_id, is_forwarded)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `INSERT INTO messages (conversation_id, sender_id, content, client_temp_id, type, media_url, duration_seconds, reply_to_message_id, is_forwarded, story_id, story_reply)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      RETURNING *`,
-    [conversationId, senderId, content ?? null, clientTempId || null, type, mediaUrl || null, durationSeconds ?? null, replyToMessageId, isForwarded]
+    [conversationId, senderId, content ?? null, clientTempId || null, type, mediaUrl || null, durationSeconds ?? null, replyToMessageId, isForwarded, storyId, storyReply]
   );
   // Days 97-98: a new message brings an archived chat back to the inbox
   // (Messenger) -- except for someone who also muted it: they asked for quiet.
@@ -404,8 +405,13 @@ const REPLY_PREVIEW_LENGTH = 120;
 // Adds reply_to: { id, sender_id, type, content, deleted } to every row
 // that replies to something -- one query for the whole page, not one per
 // message. A deleted original shows as deleted (no content), same scrub
-// rule as the thread itself.
+// rule as the thread itself. Day 100: and the story a story reply answers
+// (attachStories) -- every path that shapes messages goes through here.
 async function attachReplyPreviews(conversationId, rows) {
+  return attachStories(await attachQuotes(conversationId, rows));
+}
+
+async function attachQuotes(conversationId, rows) {
   const ids = [...new Set(rows.map((r) => r.reply_to_message_id).filter(Boolean))];
   if (ids.length === 0) return rows.map((r) => ({ ...r, reply_to: null }));
   const result = await db.query(
@@ -428,6 +434,85 @@ async function attachReplyPreviews(conversationId, rows) {
       }
     };
   });
+}
+
+// Day 100: story: { id, media_url } on a story reply while that story is
+// still showing, else null (the bubble says "Story unavailable", as
+// Instagram). Both people in the chat get the same shape (new_message goes
+// to the room), so a block either way between the author and the sender
+// hides it -- like the story itself.
+async function attachStories(rows) {
+  const ids = [...new Set(rows.map((r) => r.story_id).filter(Boolean))];
+  if (ids.length === 0) return rows.map((r) => ({ ...r, story: null }));
+  const result = await db.query(
+    `SELECT s.id, s.media_url, s.user_id FROM stories s JOIN users u ON u.id = s.user_id
+     WHERE s.id = ANY($1::int[]) AND s.expires_at > now() AND NOT u.is_deactivated`,
+    [ids]
+  );
+  const byId = new Map(result.rows.map((s) => [s.id, s]));
+  // Blocks among the authors and senders, in one query for the page.
+  const people = [...new Set(rows.map((r) => r.sender_id).concat(result.rows.map((s) => s.user_id)))];
+  const blocks = await db.query('SELECT blocker_id, blocked_id FROM blocks WHERE blocker_id = ANY($1::int[]) AND blocked_id = ANY($1::int[])', [people]);
+  const blockedPair = new Set(blocks.rows.flatMap((b) => [`${b.blocker_id}:${b.blocked_id}`, `${b.blocked_id}:${b.blocker_id}`]));
+  return rows.map((r) => {
+    const s = byId.get(r.story_id);
+    const shown = s && !r.deleted_at && !blockedPair.has(`${s.user_id}:${r.sender_id}`);
+    return { ...r, story: shown ? { id: s.id, media_url: s.media_url } : null };
+  });
+}
+
+// Day 100: the direct chat between two people, opened when there is none
+// yet -- { conversation, created }. A new chat needs the other person to
+// accept messages from you (Day 47); an existing one opens either way, and
+// every send re-checks. Two requests racing to open the same chat both get
+// the one row (idx_conversations_direct_unique_pair). The caller joins the
+// sockets' rooms when created (sockets/ requires this module).
+async function openDirectChat(userId, otherUserId) {
+  const pair = [Math.min(userId, otherUserId), Math.max(userId, otherUserId)];
+  const find = async () =>
+    (await db.query(`SELECT * FROM conversations WHERE type = 'direct' AND user_a_id = $1 AND user_b_id = $2`, pair)).rows[0];
+  const existing = await find();
+  if (existing) return { conversation: existing, created: false };
+  if (!(await interactionService.canMessage(userId, otherUserId))) {
+    throw new BlockedError("This person isn't accepting messages from you");
+  }
+  let conversation;
+  try {
+    conversation = (await db.query(`INSERT INTO conversations (type, user_a_id, user_b_id) VALUES ('direct', $1, $2) RETURNING *`, pair)).rows[0];
+  } catch (err) {
+    if (err.code !== '23505') throw err;
+    return { conversation: await find(), created: false };
+  }
+  await db.query('INSERT INTO conversation_participants (conversation_id, user_id) VALUES ($1, $2), ($1, $3)', [
+    conversation.id,
+    userId,
+    otherUserId
+  ]);
+  return { conversation, created: true };
+}
+
+// Day 100: the text of a reply ('reply', text) or a reaction ('reaction',
+// one of STORY_REACTIONS) to a story -- checked before any chat is opened,
+// so a refused one never leaves an empty chat behind. A reply follows the
+// rules of any text message (length, Zawgyi as Unicode).
+function storyReplyContent(kind, { text, emoji }) {
+  if (kind === 'reaction') {
+    if (!STORY_REACTIONS.includes(emoji)) throw new MessageValidationError('Choose one of the story reactions');
+    return emoji;
+  }
+  const cleaned = messageText(text);
+  if (!cleaned) throw new MessageValidationError('Message content cannot be empty');
+  if (cleaned.length > MAX_MESSAGE_LENGTH) {
+    throw new MessageValidationError(`Message content must be under ${MAX_MESSAGE_LENGTH} characters`);
+  }
+  return toUnicode(cleaned);
+}
+
+// Day 100: send it to story `storyId`'s author in chat `conversationId`
+// (the caller has checked the story and opened the chat), with every
+// createMessage check.
+function sendStoryReply({ conversationId, senderId, storyId, kind, content }) {
+  return createMessage({ conversationId, senderId, type: 'text', content, storyId, storyReply: kind });
 }
 
 // Day 32: forward a message to up to MAX_FORWARD_TARGETS chats. Each copy
@@ -568,6 +653,10 @@ async function editMessage({ conversationId, messageId, userId, content }) {
   if (message.type !== 'text') {
     throw new NotEditableError('Only text messages can be edited');
   }
+  // Day 100: a story reaction is its emoji, not text to rewrite.
+  if (message.story_reply === 'reaction') {
+    throw new NotEditableError("A reaction to a story can't be edited");
+  }
   if (Date.now() - new Date(message.created_at).getTime() > MESSAGE_EDIT_WINDOW_MS) {
     throw new NotEditableError('Messages can only be edited within 15 minutes of sending');
   }
@@ -656,6 +745,9 @@ module.exports = {
   editMessage,
   attachReplyPreviews,
   attachReactions,
+  openDirectChat,
+  storyReplyContent,
+  sendStoryReply,
   setReaction,
   forwardMessage,
   MAX_FORWARD_TARGETS,

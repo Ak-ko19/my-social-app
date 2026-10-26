@@ -1135,6 +1135,44 @@
   opacity: 0.85;
 }
 
+/* Day 100: what a story reply or reaction answered. */
+.messages-story-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+}
+
+.messages-story-label {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.messages-story-thumb {
+  display: block;
+  width: 96px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.messages-story-unavailable {
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px dashed currentColor;
+  border-radius: 12px;
+  font-size: 12px;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+/* A story reaction is the emoji itself, shown big. */
+.messages-bubble-emoji {
+  font-size: 40px;
+  line-height: 1.15;
+}
+
 .messages-forward-status {
   margin: 0;
   padding: var(--space-xs) var(--space-sm);

@@ -88,6 +88,7 @@ function HomeFeed() {
           onClose={() => setOpenStoryGroup(null)}
           onViewed={stories.markViewed}
           onDelete={stories.removeStory}
+          onReply={stories.sendReply}
         />
       )}
       <PostComposer currentUser={currentUser} />

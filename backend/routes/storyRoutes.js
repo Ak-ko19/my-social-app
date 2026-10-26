@@ -13,5 +13,8 @@ router.post('/stories', authMiddleware, upload.single('image'), uploadToCloudina
 router.get('/stories', authMiddleware, storiesController.getStoriesTray);
 router.post('/stories/:id/view', authMiddleware, storiesController.markStoryViewed);
 router.delete('/stories/:id', authMiddleware, storiesController.deleteStory);
+// Day 100: a reply or a quick reaction, sent to the author as a message.
+router.post('/stories/:id/reply', authMiddleware, storiesController.replyToStory);
+router.post('/stories/:id/react', authMiddleware, storiesController.reactToStory);
 
 module.exports = router;

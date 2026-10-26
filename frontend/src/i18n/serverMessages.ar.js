@@ -163,6 +163,11 @@ const AR = {
   'Only WEBM, MP4, OGG, and MPEG audio files are allowed': 'يُسمح فقط بملفات الصوت WEBM وMP4 وOGG وMPEG',
   'File is too large (max 5 MB)': 'الملف كبير جدًا (الحد الأقصى 5 ميغابايت)',
   'You can attach up to 10 images': 'يمكنك إرفاق 10 صور كحد أقصى',
+  // Day 100: replies and reactions to a story.
+  "A reaction to a story can't be edited": 'لا يمكن تعديل التفاعل مع قصة',
+  "You can't reply to your own story": 'لا يمكنك الرد على قصتك',
+  'Choose one of the story reactions': 'اختر أحد تفاعلات القصة',
+  'Sending your reply failed. Please try again later.': 'تعذّر إرسال ردك. حاول مرة أخرى لاحقًا.',
   // Day 99: searching inside a chat.
   'Search for at least 2 characters.': 'ابحث عن حرفين على الأقل.',
   'Invalid message ID': 'معرّف الرسالة غير صالح',

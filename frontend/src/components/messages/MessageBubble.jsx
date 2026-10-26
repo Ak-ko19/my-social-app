@@ -4,6 +4,7 @@ import { CornerUpLeft, Flag, Forward, Pencil, SmilePlus } from 'lucide-react';
 import MessageStatusIcon from './MessageStatusIcon';
 import { MessageReactionChips, MessageReactionPicker } from './MessageReactions';
 import VoiceMessagePlayer from './VoiceMessagePlayer';
+import StoryReplyCard from './StoryReplyCard';
 import { MAX_MESSAGE_LENGTH } from '../../utils/textLimits';
 import { useTranslation } from 'react-i18next';
 import i18n, { formatDate } from '../../i18n';
@@ -125,7 +126,9 @@ function MessageBubble({
   const closePicker = useCallback(() => setPickerOpen(false), []);
   // Whether the 15-minute edit window is still open -- state + a timer (not
   // Date.now() during render) so "Edit" disappears exactly when it closes.
-  const isEditableType = isOwn && message.type !== 'voice' && message.type !== 'image';
+  // Day 100: a story reaction is its emoji -- not editable into other text.
+  const isStoryReaction = message.story_reply === 'reaction';
+  const isEditableType = isOwn && message.type !== 'voice' && message.type !== 'image' && !isStoryReaction;
   const [inEditWindow, setInEditWindow] = useState(false);
   useEffect(() => {
     if (!isEditableType) return undefined;
@@ -189,7 +192,9 @@ function MessageBubble({
     // (once the message is really sent).
     body = (
       <>
-        <p className="messages-bubble-text" dir="auto">{renderTextWithLinks(message.content || '', { tags: false })}</p>
+        <p className={`messages-bubble-text${isStoryReaction ? ' messages-bubble-emoji' : ''}`} dir="auto">
+          {renderTextWithLinks(message.content || '', { tags: false })}
+        </p>
         {isPersisted && <LinkPreviewCard url={firstLink(message.content)} className="link-preview-in-message" />}
       </>
     );
@@ -241,6 +246,7 @@ function MessageBubble({
             <span className="messages-reply-quote-text" dir="auto">{quoteText(message.reply_to)}</span>
           </div>
         )}
+        {message.story_reply && !isDeleted && <StoryReplyCard message={message} isOwn={isOwn} />}
         {body}
         {(isVoice || isImage) && isSending && showProgress && (
           <div

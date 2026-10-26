@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchStoriesTray, createStory, markStoryViewed, deleteStory } from '../services/storyService';
+import { fetchStoriesTray, createStory, markStoryViewed, deleteStory, replyToStory, reactToStory } from '../services/storyService';
 import { serverErrorText } from '../utils/serverError';
 
 // Owns the Home screen's stories tray (B3): load, post a new story,
 // mark one seen (optimistically -- the ring should flip the moment it's
-// watched), and delete your own. Same stale-response guard as useFeed.
+// watched), delete your own, and (Day 100) reply or react to someone's.
+// Same stale-response guard as useFeed.
 export function useStories(token) {
   const [tray, setTray] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -71,5 +72,11 @@ export function useStories(token) {
     [token]
   );
 
-  return { tray, uploading, error, addStory, markViewed, removeStory, reload };
+  // Day 100: { text } or { emoji }; resolves to { conversationId, message }.
+  const sendReply = useCallback(
+    (storyId, { text, emoji }) => (emoji ? reactToStory(storyId, emoji, token) : replyToStory(storyId, text, token)),
+    [token]
+  );
+
+  return { tray, uploading, error, addStory, markViewed, removeStory, sendReply, reload };
 }

@@ -1,5 +1,4 @@
 const db = require('../db');
-const interactionService = require('../services/interactionService');
 const { sendError } = require('../utils/httpError');
 const logger = require('../utils/logger');
 const { escapeLike } = require('../utils/escapeLike');
@@ -225,72 +224,23 @@ async function createConversation(req, res) {
       return res.status(403).send('You cannot message this user');
     }
 
-    const userAId = Math.min(req.userId, targetUserId);
-    const userBId = Math.max(req.userId, targetUserId);
-
-    const existing = await db.query(
-      `SELECT * FROM conversations WHERE type = 'direct' AND user_a_id = $1 AND user_b_id = $2`,
-      [userAId, userBId]
-    );
-    if (existing.rows.length > 0) {
-      const other = await db.query('SELECT id, username, avatar_url FROM users WHERE id = $1', [targetUserId]);
-      return res.status(200).json({
-        ...existing.rows[0],
-        other_user_id: other.rows[0].id,
-        username: other.rows[0].username,
-        avatar_url: other.rows[0].avatar_url
-      });
-    }
-
-    // Day 47: a new chat only with someone who accepts messages from you
-    // (an existing one opens either way; sending is checked every time).
-    if (!(await interactionService.canMessage(req.userId, targetUserId))) {
-      return res.status(403).send("This person isn't accepting messages from you");
-    }
-
-    const created = await db.query(
-      `INSERT INTO conversations (type, user_a_id, user_b_id) VALUES ('direct', $1, $2) RETURNING *`,
-      [userAId, userBId]
-    );
-    const conversation = created.rows[0];
-
-    await db.query(
-      `INSERT INTO conversation_participants (conversation_id, user_id) VALUES ($1, $2), ($1, $3)`,
-      [conversation.id, req.userId, targetUserId]
-    );
+    // Day 100: shared with story replies (messageService.openDirectChat):
+    // an existing chat opens either way; a new one needs the other person
+    // to accept messages from you (Day 47), and two requests racing to
+    // open it get the same row.
+    const { conversation, created } = await messageService.openDirectChat(req.userId, targetUserId);
     // Day 64: both people's open sockets join the new chat's room now, or
     // its first messages only appear after a reload (found by journeys-core).
-    syncRooms(conversation.id, [req.userId, targetUserId], 'join');
+    if (created) syncRooms(conversation.id, [req.userId, targetUserId], 'join');
 
     const other = await db.query('SELECT id, username, avatar_url FROM users WHERE id = $1', [targetUserId]);
-
-    res.status(201).json({
+    res.status(created ? 201 : 200).json({
       ...conversation,
       other_user_id: other.rows[0].id,
       username: other.rows[0].username,
       avatar_url: other.rows[0].avatar_url
     });
   } catch (err) {
-    // A concurrent request (e.g. the other user opening the same DM at the
-    // same moment) can race past the existing-conversation check above and
-    // hit idx_conversations_direct_unique_pair -- same case that check
-    // handles, not a real failure, so just return the conversation it raced with.
-    if (err.code === '23505') {
-      const targetUserId = parseInt(req.body.userId);
-      const userAId = Math.min(req.userId, targetUserId);
-      const userBId = Math.max(req.userId, targetUserId);
-      const existing = await db.query(
-        `SELECT * FROM conversations WHERE type = 'direct' AND user_a_id = $1 AND user_b_id = $2`,
-        [userAId, userBId]
-      );
-      const other = await db.query('SELECT id, username, avatar_url FROM users WHERE id = $1', [targetUserId]);
-      return res.status(200).json({
-        ...existing.rows[0],
-        other_user_id: other.rows[0].id,
-        username: other.rows[0].username,
-        avatar_url: other.rows[0].avatar_url
-      });
-    }
     sendError(res, err, 'Create conversation failed. Please try again later.');
   }
 }

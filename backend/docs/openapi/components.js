@@ -272,6 +272,7 @@ const schemas = {
   StoryGroup: s.object({
     user_id: s.id(), username: s.str(), avatar_url: s.nullable(s.str()),
     is_own: s.bool(), all_seen: s.bool(), latest_at: s.time(),
+    can_reply: s.bool('Day 100: you may reply or react (not your own; they accept messages from you)'),
     stories: s.array(s.ref('Story'), 'Oldest first')
   }),
   Event: s.object({
@@ -319,12 +320,15 @@ const schemas = {
     deleted_at: s.nullable(s.time('Unsent: kept in place, without its content')),
     reply_to_message_id: s.nullable(s.id()),
     is_forwarded: s.bool(),
+    story_id: s.nullable(s.id('Day 100: the story this replies to; null once the story is deleted')),
+    story_reply: s.nullable(s.enum(['reply', 'reaction'], 'Day 100: a reply or a quick reaction to a story (kept after the story is gone)')),
+    story: s.nullable(s.object({ id: s.id(), media_url: s.str() }, 'The story while it is still showing (not across a block); null after')),
     reply_to: s.nullable(s.object({
       id: s.id(), sender_id: s.id(), type: s.enum(['text', 'voice', 'image']), deleted: s.bool(),
       content: s.nullable(s.str('The first characters of the original'))
     })),
     reactions: s.array(s.object({ user_id: s.id(), reaction: s.str() }), 'In the order they were added')
-  }, { optional: ['reply_to', 'reactions'] }),
+  }, { optional: ['reply_to', 'reactions', 'story'] }),
   GroupMember: s.object({
     id: s.id(), username: s.str(), avatar_url: s.nullable(s.str()),
     role: s.enum(['admin', 'member']), joined_at: s.time()

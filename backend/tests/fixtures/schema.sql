@@ -762,3 +762,9 @@ ALTER TABLE post_drafts ADD COLUMN media_alts text[] NOT NULL DEFAULT '{}';
 -- Days 97-98 (migration 081): pinned and archived chats, per person.
 ALTER TABLE conversation_participants ADD COLUMN pinned_at timestamptz;
 ALTER TABLE conversation_participants ADD COLUMN archived_at timestamptz;
+
+-- Day 100 (migration 082): replies and reactions to a story, as messages.
+ALTER TABLE messages ADD COLUMN story_id integer REFERENCES stories(id) ON DELETE SET NULL;
+ALTER TABLE messages ADD COLUMN story_reply text
+  CONSTRAINT chk_messages_story_reply CHECK (story_reply IN ('reply', 'reaction'));
+CREATE INDEX idx_messages_story_id ON messages (story_id) WHERE story_id IS NOT NULL;

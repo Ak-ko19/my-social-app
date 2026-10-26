@@ -3,6 +3,10 @@ const { noBlockBetweenSql } = require('../services/blockService');
 const { notMutedSql } = require('../services/muteService');
 const { sendError } = require('../utils/httpError');
 const { mediaOfStory, deleteMedia } = require('../services/mediaCleanupService');
+const { canMessageSql } = require('../services/interactionService');
+const messageService = require('../services/messageService');
+const { getIO, syncRooms } = require('../sockets');
+const logger = require('../utils/logger');
 
 // B3 Stories. Visibility follows the Instagram model: you see your own
 // stories plus those of accounts you follow (accepted follows only),
@@ -67,6 +71,16 @@ async function getStoriesTray(req, res) {
        ORDER BY s.user_id, s.created_at ASC`,
       [req.userId]
     );
+    // Day 100: may you reply to each author (a message to them)? Once per
+    // author, not per story.
+    const authors = [...new Set(result.rows.map((r) => r.user_id))].filter((id) => id !== req.userId);
+    const replyable = new Set(
+      authors.length === 0
+        ? []
+        : (
+            await db.query(`SELECT u.id FROM users u WHERE u.id = ANY($2::int[]) AND ${canMessageSql('$1', 'u')}`, [req.userId, authors])
+          ).rows.map((r) => r.id)
+    );
 
     const groups = new Map();
     for (const row of result.rows) {
@@ -76,6 +90,7 @@ async function getStoriesTray(req, res) {
           username: row.username,
           avatar_url: row.avatar_url,
           is_own: row.user_id === req.userId,
+          can_reply: replyable.has(row.user_id),
           stories: []
         });
       }
@@ -154,4 +169,43 @@ async function deleteStory(req, res) {
   }
 }
 
-module.exports = { createStory, getStoriesTray, markStoryViewed, deleteStory };
+// Day 100: POST /stories/:id/reply { text } and /stories/:id/react
+// { emoji } -- a direct message to the story's author with the story
+// attached (Instagram). Only a story you can see (404 otherwise, as
+// /view), never your own; the chat is opened if there is none yet, and
+// the message gets every check a send does (blocks, "who can message me",
+// the send rate limit). Returns { conversationId, message }.
+function storyReplyHandler(kind) {
+  return async (req, res) => {
+    try {
+      const storyId = Number(req.params.id);
+      if (!Number.isInteger(storyId)) return res.status(400).send('Invalid story ID');
+      const story = await db.query(
+        `SELECT s.id, s.user_id FROM stories s JOIN users u ON u.id = s.user_id
+         WHERE s.id = $2 AND ${VISIBLE_TO_VIEWER_SQL}`,
+        [req.userId, storyId]
+      );
+      if (story.rows.length === 0) return res.status(404).send('Story not found');
+      const authorId = story.rows[0].user_id;
+      if (authorId === req.userId) return res.status(400).send("You can't reply to your own story");
+      const content = messageService.storyReplyContent(kind, { text: req.body?.text, emoji: req.body?.emoji });
+
+      const { conversation, created } = await messageService.openDirectChat(req.userId, authorId);
+      if (created) syncRooms(conversation.id, [req.userId, authorId], 'join');
+      const message = await messageService.sendStoryReply({ conversationId: conversation.id, senderId: req.userId, storyId, kind, content });
+      try {
+        getIO().to(`conv_${conversation.id}`).emit('new_message', message);
+      } catch (err) {
+        logger.error('socket emit failed', { event: 'new_message', err });
+      }
+      res.status(201).json({ conversationId: conversation.id, message });
+    } catch (err) {
+      sendError(res, err, 'Sending your reply failed. Please try again later.');
+    }
+  };
+}
+
+const replyToStory = storyReplyHandler('reply');
+const reactToStory = storyReplyHandler('reaction');
+
+module.exports = { createStory, getStoriesTray, markStoryViewed, deleteStory, replyToStory, reactToStory };
