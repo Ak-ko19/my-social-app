@@ -14,7 +14,7 @@ const aliceToken = fs.readFileSync(path.join(SP, 'alice.token'), 'utf8').trim();
 const bobToken = fs.readFileSync(path.join(SP, 'bob.token'), 'utf8').trim();
 const locale = (lang) => JSON.parse(fs.readFileSync(path.join(SP, '..', 'frontend', 'src', 'i18n', 'locales', `${lang}.json`), 'utf8'));
 const fill = (text, values) => text.replace(/\{\{(\w+)\}\}/g, (_, k) => values[k]);
-const stripTags = (s) => s.replace(/<\/?link>/g, '');
+const stripTags = (s) => s.replace(/<\/?target>/g, '');
 const results = [];
 const errors = [];
 const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  -- ' + extra : ''}`);

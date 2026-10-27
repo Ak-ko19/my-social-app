@@ -17,6 +17,8 @@ const admin = [authMiddleware, requireAdmin];
 router.get('/admin/reports', ...admin, adminController.listReports);
 router.post('/admin/reports/:id/dismiss', ...admin, adminController.dismissReport);
 router.post('/admin/reports/:id/remove-content', ...admin, adminController.removeReportedContent);
+// Day 103: the same action on several reports.
+router.post('/admin/reports/bulk', ...admin, adminController.bulkReports);
 router.post('/admin/users/:id/ban', ...admin, adminController.banUser);
 router.post('/admin/users/:id/suspend', ...admin, adminController.suspendUser);
 router.post('/admin/users/:id/unban', ...admin, adminController.unbanUser);

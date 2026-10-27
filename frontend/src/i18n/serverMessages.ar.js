@@ -163,6 +163,8 @@ const AR = {
   'Only WEBM, MP4, OGG, and MPEG audio files are allowed': 'يُسمح فقط بملفات الصوت WEBM وMP4 وOGG وMPEG',
   'File is too large (max 5 MB)': 'الملف كبير جدًا (الحد الأقصى 5 ميغابايت)',
   'You can attach up to 10 images': 'يمكنك إرفاق 10 صور كحد أقصى',
+  // Day 103: one report in a bulk action.
+  'Something went wrong with this one. Please try again.': 'حدث خطأ في هذا البلاغ. حاول مرة أخرى.',
   // Day 102: an account's first day.
   'New accounts can only post a few times in a short while. Please wait a few minutes and try again.':
     'لا يمكن للحسابات الجديدة النشر إلا مرات قليلة في وقت قصير. انتظر بضع دقائق وحاول مرة أخرى.',

@@ -34,6 +34,8 @@
   --color-accent: #4f46e5;
   --color-accent-2: #0891b2;
   --color-accent-3: #e11d48;
+  /* Day 103: red TEXT on light grey buttons (accent-3 is 4.2:1 there). */
+  --color-danger-text: #be123c;
   /* Day 47: close friends (Instagram's green) -- the story ring, and as
      text (-text: 4.5:1 on light surfaces). */
   --color-close-friends: #16a34a;
@@ -131,6 +133,8 @@
    are left as-is: they're saturated brand/status chips, not surface
    tones, and already read fine on a dark card. */
 :root[data-theme='dark'] {
+  /* Day 103: accent-3 is 3.3:1 on the dark grey buttons. */
+  --color-danger-text: #fb7185;
   --color-bg: #16171d;
   --color-surface: #1c1d24;
   --color-text: #f3f4f6;

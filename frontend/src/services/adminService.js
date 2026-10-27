@@ -16,6 +16,11 @@ export function removeReportedContent(reportId, token) {
   return api.post(`/admin/reports/${reportId}/remove-content`, {}, withAuth(token));
 }
 
+// Day 103: the same action on several reports -- { done, skipped, failed: [{ id, error }] }.
+export function bulkReports(action, reportIds, token) {
+  return api.post('/admin/reports/bulk', { action, reportIds }, withAuth(token)).then((res) => res.data);
+}
+
 export function banUser(userId, reason, token) {
   return api.post(`/admin/users/${userId}/ban`, { reason }, withAuth(token));
 }

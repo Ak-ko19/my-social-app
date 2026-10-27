@@ -10,10 +10,11 @@ import AdminErrorsPanel from '../components/admin/AdminErrorsPanel';
 import AdminStoragePanel from '../components/admin/AdminStoragePanel';
 import AdminOverviewPanel from '../components/admin/AdminOverviewPanel';
 import AdminLogPanel from '../components/admin/AdminLogPanel';
-import { fetchReports, dismissReport, removeReportedContent, banUser, suspendUser, unbanUser } from '../services/adminService';
+import AdminBulkBar from '../components/admin/AdminBulkBar';
+import { fetchReports, dismissReport, removeReportedContent, bulkReports, banUser, suspendUser, unbanUser } from '../services/adminService';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
 import { Trans, useTranslation } from 'react-i18next';
-import { serverErrorText } from '../utils/serverError';
+import { serverErrorText, serverText } from '../utils/serverError';
 import { formatDate } from '../i18n';
 import '../components/feed/Feed.css';
 import './AdminScreen.css';
@@ -46,8 +47,8 @@ function ReportedText({ report }) {
   const isComment = report.target_type === 'comment';
   const name = report.target_owner_username;
   const owner = name
-    ? { values: { name }, components: { link: <Link to={`/profile/${report.target_owner_id}`} /> } }
-    : { values: { name: t('admin.deletedAccount') }, components: { link: <span /> } };
+    ? { values: { name }, components: { target: <Link to={`/profile/${report.target_owner_id}`} /> } }
+    : { values: { name: t('admin.deletedAccount') }, components: { target: <span /> } };
   const text = isComment ? report.comment_content : report.message_content;
   let kind = isComment ? 'admin.commentBy' : 'admin.messageBy';
   if (!isComment && report.message_type === 'voice') kind = 'admin.voiceBy';
@@ -111,7 +112,7 @@ function ReportedPlace({ report }) {
   return (
     <>
       <span className="admin-report-kind">
-        <Trans i18nKey={isGroup ? 'admin.groupNamed' : 'admin.pageNamed'} values={{ name }} components={{ link: <Link to={to} /> }} />
+        <Trans i18nKey={isGroup ? 'admin.groupNamed' : 'admin.pageNamed'} values={{ name }} components={{ target: <Link to={to} /> }} />
         {isGroup && report.community_privacy === 'private' && <span className="admin-banned-tag">{t('admin.privateGroup')}</span>}
       </span>
       {report.target_owner_username && (
@@ -125,7 +126,7 @@ function ReportedPlace({ report }) {
 // One report, with the actions an admin can take on it. Ban and suspend
 // (Day 12) ask for an optional reason inline -- and suspend for how long --
 // before confirming.
-function ReportCard({ report, token, onDone }) {
+function ReportCard({ report, token, onDone, selected = false, onToggleSelect = null }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -161,6 +162,16 @@ function ReportCard({ report, token, onDone }) {
   return (
     <li className={clsx('admin-report', !pending && 'is-reviewed')}>
       <div className="admin-report-head">
+        {/* Day 103: picked for a bulk action (Pending only). */}
+        {pending && onToggleSelect && (
+          <input
+            type="checkbox"
+            className="admin-report-select"
+            checked={selected}
+            onChange={() => onToggleSelect(report.id)}
+            aria-label={t('admin.bulk.selectOne', { reason: t(`report.reasons.${report.reason}`, { defaultValue: report.reason }), time: formatRelativeTime(report.created_at) })}
+          />
+        )}
         <span className="admin-report-reason">{t(`report.reasons.${report.reason}`, { defaultValue: report.reason })}</span>
         {pending && report.pending_for_target > 1 && (
           <span className="admin-report-count">{t('admin.reportCount', { count: report.pending_for_target })}</span>
@@ -176,7 +187,7 @@ function ReportCard({ report, token, onDone }) {
         ) : isPost ? (
           report.target_exists ? (
             <>
-              <span className="admin-report-kind"><Trans i18nKey="admin.postBy" values={{ name: report.post_author_username }} components={{ link: <Link to={`/profile/${report.post_author_id}`} /> }} /></span>
+              <span className="admin-report-kind"><Trans i18nKey="admin.postBy" values={{ name: report.post_author_username }} components={{ target: <Link to={`/profile/${report.post_author_id}`} /> }} /></span>
               <p className="admin-report-quote" dir="auto">“{report.post_content}”</p>
               <Link to={`/posts/${report.target_id}`} className="admin-report-link">{t('admin.openPost')}</Link>
             </>
@@ -185,7 +196,7 @@ function ReportCard({ report, token, onDone }) {
           )
         ) : report.target_exists ? (
           <span className="admin-report-kind">
-            <Trans i18nKey="admin.account" values={{ name: report.target_username }} components={{ link: <Link to={`/profile/${report.target_id}`} /> }} />
+            <Trans i18nKey="admin.account" values={{ name: report.target_username }} components={{ target: <Link to={`/profile/${report.target_id}`} /> }} />
             {report.target_banned && <RestrictionTag until={report.target_banned_until} />}
           </span>
         ) : (
@@ -302,6 +313,27 @@ function ReportCard({ report, token, onDone }) {
 // B12 admin panel: /admin. Pending reports oldest-first (nothing waits
 // forever), reviewed ones newest-first with their outcome. The API returns
 // 404 to non-admins; this screen then shows "Not found" too.
+// Day 103: "3 removed · 1 already handled · 1 couldn't be: <reason>".
+function BulkResult({ result }) {
+  const { t } = useTranslation();
+  if (result.error) {
+    return (
+      <p className="form-error admin-bulk-result" role="alert">
+        {result.error}
+      </p>
+    );
+  }
+  const parts = [t(`admin.bulk.done.${result.action}`, { count: result.done.length })];
+  if (result.skipped.length) parts.push(t('admin.bulk.skipped', { count: result.skipped.length }));
+  const reasons = [...new Set(result.failed.map((f) => serverText(f.error)))];
+  if (result.failed.length) parts.push(t('admin.bulk.failed', { count: result.failed.length, reasons: reasons.join(' · ') }));
+  return (
+    <p className={clsx('admin-bulk-result', result.failed.length && 'has-failures')} role="status">
+      {parts.join(' · ')}
+    </p>
+  );
+}
+
 function AdminScreen() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -316,11 +348,18 @@ function AdminScreen() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [notAdmin, setNotAdmin] = useState(false);
+  // Day 103: reports picked for a bulk action, and what the last one did.
+  const [selected, setSelected] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkResult, setBulkResult] = useState(null);
 
   const load = useCallback(() => {
     setError('');
     fetchReports(token, { status })
-      .then(setData)
+      .then((d) => {
+        setData(d);
+        setSelected(new Set());
+      })
       .catch((err) => {
         if (err.response?.status === 404) {
           setNotAdmin(true);
@@ -349,6 +388,31 @@ function AdminScreen() {
       cancelled = true;
     };
   }, [token, status, t]);
+
+  const reportsShown = data?.reports || [];
+  const allSelected = reportsShown.length > 0 && reportsShown.every((r) => selected.has(r.id));
+  const toggleSelect = (id) =>
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(reportsShown.map((r) => r.id)));
+  const runBulk = (action) => {
+    setBulkBusy(true);
+    setBulkResult(null);
+    bulkReports(action, [...selected], token)
+      .then((result) => {
+        setBulkResult({ action, ...result });
+        load();
+      })
+      .catch((err) => {
+        console.error(err);
+        setBulkResult({ error: serverErrorText(err, 'admin.actionFailed') });
+      })
+      .finally(() => setBulkBusy(false));
+  };
 
   if (notAdmin) {
     return (
@@ -401,6 +465,8 @@ function AdminScreen() {
                   className={clsx('admin-tab', status === s && 'is-active')}
                   onClick={() => {
                     setData(null);
+                    setSelected(new Set());
+                    setBulkResult(null);
                     setStatus(s);
                   }}
                 >
@@ -417,12 +483,30 @@ function AdminScreen() {
                 <p>{status === 'pending' ? t('admin.emptyPending') : t('admin.emptyReviewed')}</p>
               </div>
             )}
+            {bulkResult && <BulkResult result={bulkResult} />}
             {data && data.reports.length > 0 && (
               <ul className="admin-report-list">
                 {data.reports.map((r) => (
-                  <ReportCard key={r.id} report={r} token={token} onDone={load} />
+                  <ReportCard
+                    key={r.id}
+                    report={r}
+                    token={token}
+                    onDone={load}
+                    selected={selected.has(r.id)}
+                    onToggleSelect={status === 'pending' ? toggleSelect : null}
+                  />
                 ))}
               </ul>
+            )}
+            {status === 'pending' && data && data.reports.length > 0 && (
+              <AdminBulkBar
+                selectedCount={selected.size}
+                pageCount={reportsShown.length}
+                allSelected={allSelected}
+                onToggleAll={toggleAll}
+                onRun={runBulk}
+                busy={bulkBusy}
+              />
             )}
           </>
         )}

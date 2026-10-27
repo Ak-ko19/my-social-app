@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendError } = require('../utils/httpError');
+const { HttpError, sendError } = require('../utils/httpError');
 const { mediaOfPost, mediaOfCommunity, mediaOfPage, deleteMedia } = require('../services/mediaCleanupService');
 const { getIO } = require('../sockets');
 const messageService = require('../services/messageService');
@@ -95,98 +95,161 @@ async function getReport(id) {
   return result.rows[0] || null;
 }
 
-// POST /admin/reports/:id/dismiss -- nothing wrong; resolves all pending
-// reports on the same target.
+// Acting on one report (Day 103: shared by the single and the bulk
+// actions). `bulk` marks the log entry. Each is its own transaction.
+
+// Dismiss: nothing wrong; resolves all pending reports on the same target.
+async function dismissOne(report, adminId, { bulk = false } = {}) {
+  await inTransaction(async (q) => {
+    const closed = await resolvePending(q, 'target_type = $1 AND target_id = $2', [report.target_type, report.target_id], adminId, 'dismissed');
+    await adminLog.record(q, {
+      adminId,
+      action: 'report_dismissed',
+      targetType: report.target_type,
+      targetId: report.target_id,
+      targetLabel: await adminLog.labelOfReportTarget(q, report),
+      details: { reportId: report.id, reportsResolved: closed, ...(bulk && { bulk: true }) }
+    });
+  });
+}
+
+// Remove: deletes the reported post, comment (its replies and likes go
+// with it), group, page or message (Day 12: removed like an unsend -- the
+// chat shows "message deleted" -- and its photo or voice note is deleted
+// from Cloudinary). Not for an account (ban or suspend it instead).
+class NotRemovableError extends HttpError {
+  constructor() {
+    super(400, 'Accounts cannot be removed here; ban or suspend the user instead');
+  }
+}
+
+async function removeOne(report, adminId, { bulk = false } = {}) {
+  if (report.target_type === 'user') throw new NotRemovableError();
+  // Day 63: the removal, its reports and the log entry are one
+  // transaction; photos and voice notes are deleted (from Cloudinary,
+  // which can't be undone) only once it has committed.
+  let media = [];
+  const removed = await inTransaction(async (q) => {
+    // The label first: whose content (or which group / page) it was.
+    const targetLabel = await adminLog.labelOfReportTarget(q, report);
+    let message = null;
+    if (report.target_type === 'post') {
+      media = await mediaOfPost(report.target_id);
+      await q.query('DELETE FROM posts WHERE id = $1', [report.target_id]);
+    } else if (report.target_type === 'comment') {
+      await q.query('DELETE FROM comments WHERE id = $1', [report.target_id]);
+    } else if (report.target_type === 'community') {
+      // Day 24: the whole group -- its posts (and their photos) go with it.
+      media = await mediaOfCommunity(report.target_id);
+      await q.query('DELETE FROM communities WHERE id = $1', [report.target_id]);
+    } else if (report.target_type === 'page') {
+      media = await mediaOfPage(report.target_id);
+      await q.query('DELETE FROM pages WHERE id = $1', [report.target_id]);
+    } else {
+      message = await messageService.removeMessageAsModerator(report.target_id, { q, deleteMediaNow: false });
+      if (message?.media_url) media = [message.media_url];
+    }
+    const closed = await resolvePending(q, 'target_type = $1 AND target_id = $2', [report.target_type, report.target_id], adminId, 'content_removed');
+    await adminLog.record(q, {
+      adminId,
+      action: 'content_removed',
+      targetType: report.target_type,
+      targetId: report.target_id,
+      targetLabel,
+      details: { reportId: report.id, reportsResolved: closed, ...(bulk && { bulk: true }) }
+    });
+    return message;
+  });
+  deleteMedia(media);
+  // Day 82: the owner is told what was removed and why (only now that the
+  // removal has committed). The excerpt comes from the report's own copy:
+  // the thing itself is gone.
+  if (report.target_owner_id && report.target_owner_id !== adminId) {
+    notificationService.notifySystem({
+      userId: report.target_owner_id,
+      type: 'content_removed',
+      details: { kind: report.target_type, reason: report.reason, excerpt: report.target_snapshot ? [...report.target_snapshot].slice(0, 100).join('') : null }
+    }).catch((err) => logger.error('content removed notice failed', { reportId: report.id, err }));
+  }
+  if (removed) {
+    try {
+      getIO().to(`conv_${removed.conversation_id}`).emit('message_deleted', {
+        conversationId: removed.conversation_id,
+        messageId: removed.id,
+        deletedAt: removed.deleted_at
+      });
+    } catch (err) {
+      logger.error('socket emit failed', { event: 'message_deleted', err });
+    }
+  }
+}
+
+// POST /admin/reports/:id/dismiss
 async function dismissReport(req, res) {
   try {
     const report = await getReport(req.params.id);
     if (!report) return res.status(404).send('Report not found');
-    await inTransaction(async (q) => {
-      const closed = await resolvePending(q, 'target_type = $1 AND target_id = $2', [report.target_type, report.target_id], req.userId, 'dismissed');
-      await adminLog.record(q, {
-        adminId: req.userId,
-        action: 'report_dismissed',
-        targetType: report.target_type,
-        targetId: report.target_id,
-        targetLabel: await adminLog.labelOfReportTarget(q, report),
-        details: { reportId: report.id, reportsResolved: closed }
-      });
-    });
+    await dismissOne(report, req.userId);
     res.json({ ok: true });
   } catch (err) {
     sendError(res, err, 'Dismissing the report failed. Please try again later.');
   }
 }
 
-// POST /admin/reports/:id/remove-content -- deletes the reported post,
-// comment (its replies and likes go with it) or message (Day 12: removed
-// like an unsend -- the chat shows "message deleted" -- and its photo or
-// voice note is deleted from Cloudinary).
+// POST /admin/reports/:id/remove-content
 async function removeReportedContent(req, res) {
   try {
     const report = await getReport(req.params.id);
     if (!report) return res.status(404).send('Report not found');
-    if (report.target_type === 'user') return res.status(400).send('Accounts cannot be removed here; ban or suspend the user instead');
-    // Day 63: the removal, its reports and the log entry are one
-    // transaction; photos and voice notes are deleted (from Cloudinary,
-    // which can't be undone) only once it has committed.
-    let media = [];
-    const removed = await inTransaction(async (q) => {
-      // The label first: whose content (or which group / page) it was.
-      const targetLabel = await adminLog.labelOfReportTarget(q, report);
-      let message = null;
-      if (report.target_type === 'post') {
-        media = await mediaOfPost(report.target_id);
-        await q.query('DELETE FROM posts WHERE id = $1', [report.target_id]);
-      } else if (report.target_type === 'comment') {
-        await q.query('DELETE FROM comments WHERE id = $1', [report.target_id]);
-      } else if (report.target_type === 'community') {
-        // Day 24: the whole group -- its posts (and their photos) go with it.
-        media = await mediaOfCommunity(report.target_id);
-        await q.query('DELETE FROM communities WHERE id = $1', [report.target_id]);
-      } else if (report.target_type === 'page') {
-        media = await mediaOfPage(report.target_id);
-        await q.query('DELETE FROM pages WHERE id = $1', [report.target_id]);
-      } else {
-        message = await messageService.removeMessageAsModerator(report.target_id, { q, deleteMediaNow: false });
-        if (message?.media_url) media = [message.media_url];
-      }
-      const closed = await resolvePending(q, 'target_type = $1 AND target_id = $2', [report.target_type, report.target_id], req.userId, 'content_removed');
-      await adminLog.record(q, {
-        adminId: req.userId,
-        action: 'content_removed',
-        targetType: report.target_type,
-        targetId: report.target_id,
-        targetLabel,
-        details: { reportId: report.id, reportsResolved: closed }
-      });
-      return message;
-    });
-    deleteMedia(media);
-    // Day 82: the owner is told what was removed and why (only now that the
-    // removal has committed). The excerpt comes from the report's own copy:
-    // the thing itself is gone.
-    if (report.target_owner_id && report.target_owner_id !== req.userId) {
-      notificationService.notifySystem({
-        userId: report.target_owner_id,
-        type: 'content_removed',
-        details: { kind: report.target_type, reason: report.reason, excerpt: report.target_snapshot ? [...report.target_snapshot].slice(0, 100).join('') : null }
-      }).catch((err) => logger.error('content removed notice failed', { reportId: report.id, err }));
-    }
-    if (removed) {
-      try {
-        getIO().to(`conv_${removed.conversation_id}`).emit('message_deleted', {
-          conversationId: removed.conversation_id,
-          messageId: removed.id,
-          deletedAt: removed.deleted_at
-        });
-      } catch (err) {
-        logger.error('socket emit failed', { event: 'message_deleted', err });
-      }
-    }
+    await removeOne(report, req.userId);
     res.json({ ok: true });
   } catch (err) {
     sendError(res, err, 'Removing the content failed. Please try again later.');
+  }
+}
+
+// Day 103: POST /admin/reports/bulk { action: 'dismiss' | 'remove',
+// reportIds: [...] } -- the same action on up to BULK_MAX reports, one by
+// one (each its own transaction and log entry). A report already handled
+// meanwhile -- acting on one closes every pending report on its target --
+// is skipped; one that can't be acted on fails alone, the rest go on.
+// Answers { done, skipped, failed: [{ id, error }] }.
+const BULK_MAX = 50;
+const BULK_ACTIONS = { dismiss: dismissOne, remove: removeOne };
+
+async function bulkReports(req, res) {
+  try {
+    const { action, reportIds } = req.body || {};
+    if (!Object.hasOwn(BULK_ACTIONS, action)) return res.status(400).send('action must be dismiss or remove');
+    if (!Array.isArray(reportIds) || reportIds.length === 0 || reportIds.length > BULK_MAX
+      || !reportIds.every((id) => Number.isInteger(id) && id > 0)) {
+      return res.status(400).send(`reportIds must be 1 to ${BULK_MAX} report IDs`);
+    }
+    const ids = [...new Set(reportIds)];
+    const done = [];
+    const skipped = [];
+    const failed = [];
+    for (const id of ids) {
+      const report = await getReport(id);
+      if (!report) {
+        failed.push({ id, error: 'Report not found' });
+        continue;
+      }
+      if (report.status !== 'pending') {
+        skipped.push(id);
+        continue;
+      }
+      try {
+        await BULK_ACTIONS[action](report, req.userId, { bulk: true });
+        done.push(id);
+      } catch (err) {
+        if (!(err instanceof HttpError)) logger.error('bulk report action failed', { reportId: id, action, err });
+        failed.push({ id, error: err instanceof HttpError ? err.message : 'Something went wrong with this one. Please try again.' });
+      }
+    }
+    res.json({ done, skipped, failed });
+  } catch (err) {
+    sendError(res, err, 'Acting on the reports failed. Please try again later.');
   }
 }
 
@@ -286,4 +349,4 @@ async function unbanUser(req, res) {
   }
 }
 
-module.exports = { listReports, dismissReport, removeReportedContent, banUser, suspendUser, unbanUser };
+module.exports = { listReports, dismissReport, removeReportedContent, bulkReports, banUser, suspendUser, unbanUser };

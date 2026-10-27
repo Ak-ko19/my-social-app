@@ -66,6 +66,22 @@ const SAME_OK = new Set(['follow.buttonFor', 'poll.percent', 'editProfile.linkPl
   }
 }
 
+// 3b. Day 103: a <Trans> tag named like an HTML void element (<link>,
+// <img>, <br>, ...) can't hold text -- the parser closes it at once, so
+// "Post by <link>{{name}}</link>" rendered an empty link and the name
+// after it. Name such tags something else (<target>).
+{
+  const VOID = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
+  const pattern = new RegExp(`<(${VOID.join('|')})>[^<]*</\\1>`);
+  for (const l of ['en', 'ar']) {
+    const all = (o, p = '') => Object.entries(o).flatMap(([k, v]) => (v && typeof v === 'object' ? all(v, `${p}${k}.`) : [[`${p}${k}`, v]]));
+    for (const [k, v] of all(JSON.parse(fs.readFileSync(path.join(LOCALES, `${l}.json`), 'utf8')))) {
+      const m = typeof v === 'string' && v.match(pattern);
+      if (m) problems.push(`${l}.json: "${k}" wraps text in <${m[1]}>, an HTML void element -- it renders empty; use another tag name`);
+    }
+  }
+}
+
 // 4. Server messages (i18n/serverMessages.ar.js) against what the backend sends.
 // DEV_ONLY: messages the UI never lets a person trigger -- API field names
 // (lowercase start or a camelCase field), lists built at run time, internal

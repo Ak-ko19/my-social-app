@@ -325,6 +325,25 @@ module.exports = {
     summary: 'Dismiss a report (and every waiting report about the same thing)',
     responses: { 200: OK, 404: text('Report not found') }
   }),
+  'POST /admin/reports/bulk': op({
+    tag: 'Admin', auth: 'admin',
+    summary: 'Dismiss several reports, or remove what they are about',
+    description: 'Day 103. One by one, exactly as the single actions (each its own decision and admin-log entry, marked bulk). '
+      + 'A report already handled meanwhile is skipped (acting on one closes every waiting report on the same thing); one '
+      + 'that cannot be acted on (removing an account) fails alone and the rest go on.',
+    requestBody: body({
+      action: s.enum(['dismiss', 'remove']),
+      reportIds: s.array(s.id(), '1 to 50 report IDs (a repeated one counts once)')
+    }, { required: ['action', 'reportIds'] }),
+    responses: {
+      200: json(s.object({
+        done: s.array(s.id()),
+        skipped: s.array(s.id(), 'Already handled'),
+        failed: s.array(s.object({ id: s.id(), error: s.str() }))
+      }), 'What happened to each'),
+      400: text('action must be dismiss or remove / reportIds must be 1 to 50 report IDs')
+    }
+  }),
   'POST /admin/reports/:id/remove-content': op({
     tag: 'Admin', auth: 'admin',
     summary: 'Remove what was reported (a post, comment, message, group or page) and close its reports',
