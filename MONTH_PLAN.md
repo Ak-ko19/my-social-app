@@ -3128,3 +3128,49 @@ Read-only; no application code changed. Same method as audit 3, on
   - Full browser run in batches of 3: 92/92 OK. The machine slept and ran
     low on memory during the A3 batches; a3-en-light and a3-en-dark (0/0,
     a page-load timeout) re-ran alone, green (153 checks each).
+
+### 2026-10-27 — Day 101: Group and page notification settings
+- **Better than the plan (rule 9):** the app sent no "new post"
+  notifications for groups or pages at all, so there was nothing to turn
+  off. This Day added them (Facebook: "Lin posted in Tea Lovers", "Corner
+  Cafe has a new post") together with the choice per group / page.
+- **What (`91540f0`, `fix` after it):**
+  - A bell next to Leave (a group) or Following (a page) opens All posts /
+    Highlights / Off, each with a line saying what it means; saved at
+    once, shown at once, back to the old choice if saving fails.
+  - Highlights (the default, as Facebook's): a group's posts by its admins
+    and by people you follow; a page's first new post of the day.
+  - The existing Groups / Pages switches in notification settings still
+    turn all of it off (their descriptions now say so, EN/AR).
+  - The row: "NAME posted in GROUP" / "PAGE has a new post" (the page's
+    initials, not the person running it) with the post's first words; it
+    opens the post.
+- **Data and API:** migration 083 (community_members /
+  page_follows.post_notifications, default highlights; leaving or
+  unfollowing drops the choice). PUT /communities/:id/notifications and
+  /pages/:id/notifications (members / followers only); my_post_notifications
+  on a group and a page; push text EN/AR; data export.
+- **Rules:** one INSERT ... SELECT per post in finishPost (direct, draft
+  and scheduled posts), with the recipient's setting, no block, nobody
+  they restricted, not a muted author (groups), never the author or the
+  page's own admins, members only (not pending). visibleSql hides a
+  group's post notifications once you leave it (no snippets of a private
+  group's posts), so the list, badge and live count agree.
+- **Found on the way:**
+  - Notification snippets were never cut: a 10,000-character post printed
+    in full. The list now sends 200 characters and the row shows two lines.
+  - 3 of 20 mutations first survived because the list's own filters hid
+    the rows; the test now reads the table (a row is also a push).
+  - The full browser run's axe check on the dialog failed once (hint
+    contrast, light theme). The options faded to 70% while saving, below AA:
+    removed; the suite also lets the dialog settle before measuring.
+  - Known limit (WIP carry-over): the fan-out runs in the post request;
+    move it to a background job for very large groups / pages.
+- **Tests:** postNotifications 10 (20 mutations caught); Vitest +5 (419);
+  day101-post-notifications 30/30 EN/light + AR/dark with axe.
+- **Tests at close:**
+  - Backend 1135/1135, Vitest 419/419, lint (exit 0), check:i18n (1633
+    keys), bundle 220.2 kB, npm audit 0/0, rehearsal 015 → 083 (columns
+    333, constraints 194, indexes 149).
+  - Full browser run in batches of 3: 93/93 OK (day101 re-ran after the
+    contrast fix, green in its batch and alone).

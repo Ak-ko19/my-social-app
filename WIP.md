@@ -1,48 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 101 — Group and page notification settings.
-**Step:** 1 — done (committed). Next: close Day 101 -- full browser run in batches of 3, then the Progress Log entry.
-
-### Plan (Day 101, step 1)
-The app sends no "new post" notifications for groups or pages yet, so
-there is nothing to turn off: this step adds them (Facebook: "Lin posted
-in Tea Lovers") together with the per-group / per-page choice.
-- **Choice:** All posts / Highlights / Off, per membership, default
-  Highlights (Facebook's default, and it keeps big groups quiet).
-  - Group highlights: posts by the group's admins and by people you follow.
-  - Page highlights: at most one a day per page (the first new post).
-  - The existing Groups / Pages switches in notification settings still
-    turn all of it off.
-- **Data (migration 083):** community_members.post_notifications and
-  page_follows.post_notifications, text NOT NULL DEFAULT 'highlights'
-  CHECK IN ('all','highlights','off'). Leaving / unfollowing drops the row
-  (and the choice), like Facebook.
-- **Fan-out:** in postCreationService.finishPost (direct, draft and
-  scheduled posts all pass there): one INSERT ... SELECT per post for every
-  member / follower whose choice and settings allow it -- not the author,
-  not across a block, not someone restricted, only status 'member';
-  notificationService.notifyMany pushes and announces to those inserted.
-  Types group_post ('groups') and page_post ('pages'), one row each.
-- **Who sees them:** visibleSql also drops a group_post once you are no
-  longer a member (no snippets of a private group's posts after you leave),
-  so the list, badge and live count agree.
-- **API:** PUT /communities/:id/notifications and PUT
-  /pages/:id/notifications { level } (member / follower only; 400 bad level,
-  403/404 otherwise); GET of a group / page gains my_post_notifications.
-- **UI:** a bell button "Notifications" next to Leave / Following opens a
-  dialog with the three choices (radios, each with one line saying what it
-  means), saved at once, optimistic with rollback; the notification reads
-  "NAME posted in GROUP" / "PAGE posted" with the snippet, opens the post;
-  a page post shows the page's initials. Push text EN/AR.
-- **Edge cases:** private group (members only), pending members, banned,
-  a deleted post (its notifications cascade), the author's own post, a page
-  admin posting (the page's followers, not the admin), a long post (the
-  snippet is cut), Arabic text, duplicate taps.
-- **Tests:** backend groupPageNotifications (each level, each exclusion,
-  the daily page highlight, leaving hides them, the endpoints), Vitest for
-  the dialog and the notification rows, e2e day101-post-notifications
-  EN/light + AR/dark with axe; perf for the fan-out query; schema fixture,
-  rehearsal, OpenAPI, export, i18n, privacy policy.
+**Day:** 102 — New-account safety.
+**Step:** 0 — not started (Day 101 closed: see the Progress Log).
 
 ## Carry-over notes
 - Day 101: new-post notifications fan out inside the post request (one
