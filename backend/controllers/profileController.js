@@ -19,7 +19,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function getMyProfile(req, res) {
   try {
-    const result = await db.query('SELECT id, username, email, bio, links, avatar_url, cover_url, is_private, email_verified, is_admin, language, message_permission, comment_permission, onboarded_at, created_at FROM users WHERE id = $1', [req.userId]);
+    const result = await db.query('SELECT id, username, email, bio, links, avatar_url, cover_url, is_private, email_verified, is_admin, language, message_permission, comment_permission, onboarded_at, profile_card_dismissed_at, created_at FROM users WHERE id = $1', [req.userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).send('User not found');
@@ -214,6 +214,21 @@ async function finishOnboarding(req, res) {
   }
 }
 
+// Day 105: POST /profile/completion/dismiss -- "Don't show again" on the
+// Finish-your-profile card. Idempotent: the first time is kept.
+async function dismissProfileCard(req, res) {
+  try {
+    const result = await db.query(
+      'UPDATE users SET profile_card_dismissed_at = COALESCE(profile_card_dismissed_at, now()) WHERE id = $1 RETURNING profile_card_dismissed_at',
+      [req.userId]
+    );
+    if (result.rows.length === 0) return res.status(404).send('User not found');
+    res.json({ profile_card_dismissed_at: result.rows[0].profile_card_dismissed_at });
+  } catch (err) {
+    sendError(res, err, 'Saving failed. Please try again later.');
+  }
+}
+
 async function removeCover(req, res) {
   try {
     await replaceCover(req.userId, null);
@@ -326,4 +341,4 @@ async function updateTimeZone(req, res) {
   }
 }
 
-module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, updateTimeZone, exportMyData, setCover, removeCover, setAvatar, finishOnboarding, pinPost, unpinPost, updateInteractions };
+module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, updateTimeZone, exportMyData, setCover, removeCover, setAvatar, finishOnboarding, dismissProfileCard, pinPost, unpinPost, updateInteractions };

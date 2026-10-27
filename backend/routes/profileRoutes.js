@@ -20,6 +20,8 @@ router.delete('/profile/cover', authMiddleware, profileController.removeCover);
 // Day 78: the profile photo alone, and the end of the first-run steps.
 router.put('/profile/avatar', authMiddleware, upload.single('avatar'), uploadToCloudinary('avatars'), profileController.setAvatar);
 router.post('/profile/onboarding/done', authMiddleware, profileController.finishOnboarding);
+// Day 105: hide the Finish-your-profile card for good.
+router.post('/profile/completion/dismiss', authMiddleware, profileController.dismissProfileCard);
 // Day 36: one post pinned to the top of your profile.
 router.put('/profile/pinned-post', authMiddleware, profileController.pinPost);
 router.delete('/profile/pinned-post', authMiddleware, profileController.unpinPost);

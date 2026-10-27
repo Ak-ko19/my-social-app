@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api, { resolveImageUrl } from './api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { setEmailVerified } from './hooks/useAuth';
 import { ChevronLeft } from 'lucide-react';
 import { IconButton, Avatar } from './components/ui';
@@ -34,6 +34,11 @@ function EditProfile() {
   const { t } = useTranslation();
 
   const token = localStorage.getItem('token');
+  // Day 105: ?focus=photo|cover|bio|links (from Home's Finish-your-profile
+  // card) -- that field, in view and focused, once the profile has loaded.
+  const [searchParams] = useSearchParams();
+  const focus = searchParams.get('focus');
+  const formRef = useRef(null);
 
   useEffect(() => {
     if (!token) {
@@ -62,6 +67,14 @@ function EditProfile() {
       setLoading(false);
     });
   }, [token, navigate, t]);
+
+  useEffect(() => {
+    if (loading || !focus) return;
+    const field = formRef.current?.querySelector(`[data-focus="${CSS.escape(focus)}"]`);
+    if (!field) return;
+    field.scrollIntoView({ block: 'center' });
+    field.focus({ preventScroll: true });
+  }, [loading, focus]);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0] || null;
@@ -127,14 +140,14 @@ function EditProfile() {
         <IconButton icon={ChevronLeft} aria-label={t('common.backToSettings')} onClick={() => navigate('/settings')} />
         <h1 className="screen-header-title">{t('editProfile.title')}</h1>
       </header>
-      <form className="screen-body form-stack" onSubmit={handleSubmit}>
+      <form ref={formRef} className="screen-body form-stack" onSubmit={handleSubmit}>
         <section className="edit-profile-cover" aria-labelledby="cover-heading">
           <span className="form-label" id="cover-heading">{t('editProfile.cover')}</span>
           <CoverPhoto src={coverUrl} className="edit-profile-cover-preview" />
           <div className="edit-profile-cover-actions">
             <label className={`btn btn-secondary btn-sm${coverBusy ? ' is-busy' : ''}`} aria-busy={coverBusy}>
               {coverBusy ? t('editProfile.coverUploading') : coverUrl ? t('editProfile.changeCover') : t('editProfile.addCover')}
-              <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="feed-visually-hidden" onChange={pickCover} disabled={coverBusy} />
+              <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="feed-visually-hidden" onChange={pickCover} disabled={coverBusy} data-focus="cover" />
             </label>
             {coverUrl && (
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => changeCover(removeCoverPhoto(token))} disabled={coverBusy}>
@@ -156,7 +169,7 @@ function EditProfile() {
             {/* A translated button, not the browser's own file picker text. */}
             <label className="btn btn-secondary btn-sm form-file-button">
               {t('editProfile.choosePicture')}
-              <input className="feed-visually-hidden" type="file" accept="image/*" onChange={handleAvatarChange} />
+              <input className="feed-visually-hidden" type="file" accept="image/*" onChange={handleAvatarChange} data-focus="photo" />
             </label>
           </div>
         </div>
@@ -177,6 +190,7 @@ function EditProfile() {
             placeholder={t('editProfile.bioPlaceholder')}
             maxLength={MAX_BIO_LENGTH}
             rows="4"
+            data-focus="bio"
           />
         </label>
         <fieldset className="form-field edit-profile-links">
@@ -194,6 +208,7 @@ function EditProfile() {
                 onChange={(e) => setLinks((current) => current.map((l, j) => (j === i ? e.target.value : l)))}
                 placeholder={t('editProfile.linkPlaceholder')}
                 aria-label={t('editProfile.linkN', { n: i + 1 })}
+                data-focus={i === 0 ? 'links' : undefined}
               />
               {(links.length > 1 || link) && (
                 <button

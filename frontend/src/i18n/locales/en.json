@@ -571,6 +571,23 @@
     "removeRecent": "Remove “{{query}}” from recent searches",
     "recentFailed": "That didn’t work. Please try again."
   },
+  "profileCard": {
+    "title": "Finish your profile",
+    "progress": "{{done}} of {{total}} done",
+    "dismiss": "Don't show again",
+    "todo": {
+      "photo": "Add a profile photo",
+      "cover": "Add a cover photo",
+      "bio": "Write a bio",
+      "links": "Add a link"
+    },
+    "done": {
+      "photo": "Profile photo",
+      "cover": "Cover photo",
+      "bio": "Bio",
+      "links": "Link"
+    }
+  },
   "postNotifications": {
     "button": "Notifications: {{level}}",
     "title": "Notifications for {{name}}",

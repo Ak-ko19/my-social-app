@@ -787,3 +787,6 @@ ALTER TABLE admin_actions ADD CONSTRAINT chk_admin_actions_target CHECK (target_
 ));
 CREATE INDEX idx_comments_content_trgm ON comments USING GIN (content gin_trgm_ops);
 CREATE INDEX idx_users_email_lower ON users (lower(email));
+
+-- Day 105 (migration 085): the "Finish your profile" card, hidden for good.
+ALTER TABLE users ADD COLUMN profile_card_dismissed_at timestamptz;

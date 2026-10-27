@@ -308,7 +308,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 103–104 — Admin tools round 2
 - [x] Bulk actions on reports (dismiss / remove several); a content search for admins (posts, comments, users); both in the audit log. *(Admin > Reports checkboxes and bar; Admin > Search, every search logged — see Progress Log.)*
 ### Day 105 — Profile completeness
-- [ ] A "finish your profile" card (photo, cover, bio, links), dismissable, like Facebook's.
+- [x] A "finish your profile" card (photo, cover, bio, links), dismissable, like Facebook's. *(On Home; each step opens its field; hidden for good on the server — see Progress Log.)*
 ### Day 106 — Page verification requests
 - [ ] A page admin asks for verification; an admin approves or declines; a badge on approved pages; logged.
 ### Day 107–108 — Follow a hashtag

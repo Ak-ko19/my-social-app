@@ -83,6 +83,13 @@ module.exports = {
     description: 'They are not shown again. Repeating it keeps the first time.',
     responses: { 200: json(s.object({ onboarded_at: s.time() }), 'Done'), 404: USER_NOT_FOUND }
   }),
+  'POST /profile/completion/dismiss': op({
+    tag: 'Profiles', auth: 'user',
+    summary: 'Hide the Finish-your-profile card for good',
+    description: 'Day 105 ("Don’t show again"). The card on Home lists what is left of photo, cover, bio and a link. '
+      + 'Repeating it keeps the first time.',
+    responses: { 200: json(s.object({ profile_card_dismissed_at: s.time() }), 'Hidden'), 404: USER_NOT_FOUND }
+  }),
   'DELETE /profile/cover': op({
     tag: 'Profiles', auth: 'user',
     summary: 'Remove your cover photo',

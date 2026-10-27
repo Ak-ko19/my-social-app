@@ -1,9 +1,34 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 105 — Profile completeness.
-**Step:** 0 — not started (Days 103–104 closed: see the Progress Log).
+**Step:** 1 — done (committed). Next: close Day 105 -- full browser run in batches of 3, then the Progress Log entry.
+
+### Plan (Day 105, step 1)
+A "Finish your profile" card on Home, like Facebook's: how far along you
+are and what's left, each step one tap from its field; dismissable.
+- **Steps (4):** profile photo, cover photo, bio, a link -- worked out from
+  GET /profile/me (no new data needed for them).
+- **Dismiss:** kept on the server (migration 085,
+  users.profile_card_dismissed_at) so it stays hidden on every device;
+  POST /profile/completion/dismiss (idempotent); /profile/me says
+  profile_card_dismissed_at. Data export includes it.
+- **When it shows:** your first-run steps are done (onboarded_at), it isn't
+  dismissed, and something is left. Below the composer, above Memories.
+- **Card:** title, "2 of 4 done" with a progress bar (role progressbar,
+  labelled), the steps left as links ("Add a profile photo" ->
+  /edit-profile?focus=photo, ...), done ones shown ticked; an X labelled
+  "Don't show again" (it stays hidden, as Facebook's). EN/AR, RTL,
+  light/dark.
+- **Edit profile:** ?focus=photo|cover|bio|links scrolls that field into
+  view and puts the keyboard focus on it.
+- **Tests:** backend (dismiss, the field, auth, export), Vitest (the card
+  in each state, dismiss, Arabic; EditProfile focus), e2e
+  day105-profile-card EN/light + AR/dark with axe.
 
 ## Carry-over notes
+- Day 105: the first download is 222.0 kB of the 225 kB budget (Home's
+  cards ship with it). Day 113 (performance round 3): look for what can
+  load later (e.g. the Memories and profile cards, the story viewer).
 - Day 103 (for the Day 112 accessibility check): --color-accent-3 (#e11d48)
   is not redefined for dark and is used as TEXT in PollView, PostCard,
   StoriesRow and ui.css -- 3.3:1 on dark grey. Admin buttons now use

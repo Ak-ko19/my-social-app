@@ -46,6 +46,11 @@ export function finishOnboarding(token) {
   return api.post('/profile/onboarding/done', {}, authHeaders(token)).then((res) => res.data);
 }
 
+// Day 105: "Don't show again" on the Finish-your-profile card.
+export function dismissProfileCard(token) {
+  return api.post('/profile/completion/dismiss', {}, authHeaders(token)).then((res) => res.data);
+}
+
 export function removeCoverPhoto(token) {
   return api.delete('/profile/cover', authHeaders(token)).then((res) => res.data);
 }

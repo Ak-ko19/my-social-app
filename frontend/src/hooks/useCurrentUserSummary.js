@@ -44,7 +44,17 @@ export function useCurrentUserSummary() {
           verified: false,
           avatarUrl: resolveImageUrl(profile.avatar_url),
           // B12: shows the Admin row in Settings (the API enforces it anyway).
-          isAdmin: Boolean(profile.is_admin)
+          isAdmin: Boolean(profile.is_admin),
+          // Day 105: the Finish-your-profile card's steps, and whether it
+          // shows at all (after the first-run steps, until hidden).
+          completion: {
+            photo: Boolean(profile.avatar_url),
+            cover: Boolean(profile.cover_url),
+            bio: Boolean(profile.bio && profile.bio.trim()),
+            links: Array.isArray(profile.links) && profile.links.length > 0,
+            onboarded: Boolean(profile.onboarded_at),
+            dismissed: Boolean(profile.profile_card_dismissed_at)
+          }
         });
       })
       .catch((err) => console.error(err));

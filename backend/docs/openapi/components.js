@@ -138,6 +138,7 @@ const schemas = {
     message_permission: s.enum(['everyone', 'following', 'nobody'], 'Who may start a chat with you'),
     comment_permission: s.enum(['everyone', 'followers', 'following'], 'Who may comment on your posts'),
     onboarded_at: s.nullable(s.time('When the first-run steps were finished or skipped (null: not yet)')),
+    profile_card_dismissed_at: s.nullable(s.time('Day 105: when the Finish-your-profile card was hidden for good (null: not hidden)')),
     created_at: s.time()
   }, { description: 'Your own account, as only you see it' }),
   UpdatedProfile: s.object({
