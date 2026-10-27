@@ -77,9 +77,9 @@
   line-height: 1.4;
 }
 
+/* While saving: no fading (the hints must keep their contrast). */
 .post-notif-choices:disabled .post-notif-option {
   cursor: progress;
-  opacity: 0.7;
 }
 
 .post-notif-actions {

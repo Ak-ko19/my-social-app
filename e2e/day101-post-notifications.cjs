@@ -81,6 +81,8 @@ async function axeOf(page, selector) {
     const dialog = page.getByRole('dialog', { name: fill(P.title, { name: group.name }) });
     check(`${tag}: its dialog offers the three choices, each explained`, await shows(dialog)
       && (await dialog.getByRole('radio').count()) === 3 && (await dialog.innerText()).includes(P.hints.group.highlights));
+    // Settled first: on a busy machine axe once measured mid-render.
+    await page.waitForTimeout(500);
     const dialogAxe = await axeOf(page, '[role="dialog"]');
     check(`${tag}: the dialog has no serious axe issues`, dialogAxe.length === 0, dialogAxe.join(', '));
     await page.screenshot({ path: path.join(SP, `day101-choice-${c.lang}-${c.theme}.png`) });
