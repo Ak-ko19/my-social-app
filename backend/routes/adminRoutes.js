@@ -7,6 +7,7 @@ const errorLogController = require('../controllers/errorLogController');
 const storageController = require('../controllers/storageController');
 const statsController = require('../controllers/statsController');
 const adminLogController = require('../controllers/adminLogController');
+const adminSearchController = require('../controllers/adminSearchController');
 const { wholeIds } = require('../middleware/wholeIds');
 // Day 85: ids in the path are whole numbers (middleware/wholeIds).
 wholeIds(router);
@@ -31,5 +32,7 @@ router.get('/admin/storage', ...admin, storageController.getStorage);
 router.get('/admin/overview', ...admin, statsController.getOverview);
 // Day 63: the audit log of admin actions.
 router.get('/admin/log', ...admin, adminLogController.getLog);
+// Days 103-104: search posts, comments and accounts (every search is logged).
+router.get('/admin/search', ...admin, adminSearchController.search);
 
 module.exports = router;

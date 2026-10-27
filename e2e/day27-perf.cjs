@@ -83,7 +83,10 @@ async function publishServerCounters() {
     // indexes (002). A word that matches nothing is the worst case.
     '/search/posts?q=shwedagon', '/search/posts?q=mohinga', '/search/posts?q=perf', '/search/posts?q=sunset%20shwedagon', '/search/users?q=perf12', '/search/users?q=zawgyi', '/search/hashtags?q=t1', '/search/hashtags?q=perf',
     // Day 61: Admin > Overview (alice is made an admin below).
-    '/admin/overview?days=90'
+    '/admin/overview?days=90',
+    // Days 103-104: the admin search -- posts and comments through their
+    // trigram indexes (002, 084), accounts by username or exact email.
+    '/admin/search?q=shwedagon&type=posts', '/admin/search?q=mohinga&type=comments', '/admin/search?q=perf12&type=users'
   ];
 
   const results = [];

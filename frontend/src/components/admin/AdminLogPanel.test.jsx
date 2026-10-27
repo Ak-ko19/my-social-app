@@ -67,4 +67,13 @@ describe('Admin log', () => {
     expect(first.textContent).toBe('علّق ⁨alice⁩ حساب ⁨dave⁩ لمدة 7 أيام');
     expect(screen.getByText(/أُغلق بلاغان/)).toBeInTheDocument();
   });
+
+  // Days 103-104: a search is in the log too.
+  it('a search reads as one: who searched which kind for what', async () => {
+    fetchAdminLog.mockReset();
+    fetchAdminLog.mockResolvedValue({ page: 1, hasMore: false, actions: [entry(9, 'admin_search', 'search', 'cheap pills', { type: 'posts', results: 3, hasMore: false })] });
+    render(<AdminLogPanel token="tok" />);
+    expect(strip((await screen.findByText(/searched/)).textContent)).toBe('alice searched posts for “cheap pills”');
+    expect(screen.getByRole('option', { name: 'Searches' })).toBeInTheDocument();
+  });
 });

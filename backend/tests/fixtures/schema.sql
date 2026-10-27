@@ -774,3 +774,16 @@ ALTER TABLE community_members ADD COLUMN post_notifications text NOT NULL DEFAUL
   CONSTRAINT chk_community_members_post_notifications CHECK (post_notifications IN ('all', 'highlights', 'off'));
 ALTER TABLE page_follows ADD COLUMN post_notifications text NOT NULL DEFAULT 'highlights'
   CONSTRAINT chk_page_follows_post_notifications CHECK (post_notifications IN ('all', 'highlights', 'off'));
+
+-- Days 103-104 (migration 084): the admin content search -- logged, and
+-- comments searchable by their text.
+ALTER TABLE admin_actions DROP CONSTRAINT chk_admin_actions_action;
+ALTER TABLE admin_actions ADD CONSTRAINT chk_admin_actions_action CHECK (action IN (
+  'report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved', 'admin_search'
+));
+ALTER TABLE admin_actions DROP CONSTRAINT chk_admin_actions_target;
+ALTER TABLE admin_actions ADD CONSTRAINT chk_admin_actions_target CHECK (target_type IN (
+  'post', 'comment', 'message', 'community', 'page', 'user', 'error', 'search'
+));
+CREATE INDEX idx_comments_content_trgm ON comments USING GIN (content gin_trgm_ops);
+CREATE INDEX idx_users_email_lower ON users (lower(email));

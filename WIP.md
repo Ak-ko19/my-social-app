@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 103–104 — Admin tools round 2.
-**Step:** 1 of 2 — done (committed). Next: step 2 -- content search for admins (PLAN below).
+**Step:** 2 of 2 — done (committed). Next: close Days 103–104 -- full browser run in batches of 3, then the Progress Log entry.
 
 ### Plan (Days 103–104)
 **Step 1 — bulk actions on reports.**

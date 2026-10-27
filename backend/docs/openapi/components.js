@@ -393,10 +393,10 @@ const schemas = {
   AdminAction: s.object({
     id: s.str('A 64-bit id, sent as a string of digits', { pattern: '^[0-9]+$' }),
     admin_id: s.nullable(s.id('null once that admin\'s account is gone')), admin_username: s.str(),
-    action: s.enum(['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved']),
-    target_type: s.enum(['post', 'comment', 'message', 'community', 'page', 'user', 'error']),
-    target_id: s.str('The id of what it was about (an error group: its fingerprint)'),
-    target_label: s.nullable(s.str('A name for it, kept even after it is gone (never the removed content)')),
+    action: s.enum(['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved', 'admin_search']),
+    target_type: s.enum(['post', 'comment', 'message', 'community', 'page', 'user', 'error', 'search']),
+    target_id: s.str('The id of what it was about (an error group: its fingerprint; a search: posts, comments or users)'),
+    target_label: s.nullable(s.str('A name for it, kept even after it is gone (never the removed content); a search: what was searched for')),
     details: s.object({}, { description: 'Reason, report count, suspension days...' }),
     created_at: s.time()
   }),

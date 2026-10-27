@@ -8,7 +8,8 @@ import { formatDate } from '../../i18n';
 import './AdminLogPanel.css';
 
 // Kinds of decision, as the API names them (labels: admin.log.filter.<kind>).
-const ACTIONS = ['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved'];
+// Days 103-104: 'admin_search' -- what an admin searched for.
+const ACTIONS = ['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved', 'admin_search'];
 // A name inside a sentence in the other script keeps its own direction
 // (Unicode first-strong isolate ... pop directional isolate).
 const isolate = (text) => `⁨${text}⁩`;
@@ -19,6 +20,7 @@ function sentence(t, entry) {
   const name = isolate(entry.target_label || t('admin.log.unknownName'));
   const what = t(`admin.log.what.${entry.target_type}`, { name });
   if (entry.action === 'user_suspended') return t('admin.log.sentence.user_suspended', { admin, name, count: entry.details.days, days: entry.details.days });
+  if (entry.action === 'admin_search') return t('admin.log.sentence.admin_search', { admin, name, kind: t(`admin.log.searchKinds.${entry.details.type}`) });
   return t(`admin.log.sentence.${entry.action}`, { admin, name, what });
 }
 

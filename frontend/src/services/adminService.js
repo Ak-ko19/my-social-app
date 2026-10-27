@@ -61,3 +61,8 @@ export function fetchOverview(token, days) {
 export function fetchAdminLog(token, { action = '', page = 1 } = {}) {
   return api.get('/admin/log', { ...withAuth(token), params: { page, ...(action ? { action } : {}) } }).then((res) => res.data);
 }
+
+// Days 103-104: posts, comments or accounts for an admin -- { type, results, hasMore, page }.
+export function searchAsAdmin(token, { q, type = 'posts', page = 1 }) {
+  return api.get('/admin/search', { ...withAuth(token), params: { q, type, page } }).then((res) => res.data);
+}

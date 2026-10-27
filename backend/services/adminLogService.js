@@ -4,7 +4,8 @@
 // group or page concerned, never the removed content.
 const db = require('../db');
 
-const ACTIONS = ['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved'];
+// Day 103: 'admin_search' -- an admin searched posts, comments or accounts.
+const ACTIONS = ['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved', 'admin_search'];
 const PAGE_SIZE = 30;
 const LABEL_MAX = 120;
 

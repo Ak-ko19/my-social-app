@@ -306,7 +306,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 102 — New-account safety
 - [x] Tighter limits for an account's first 24 hours (posts, links, follows, messages to strangers), in the existing spam checks; clear messages in EN/AR. *(Plus a refused chat message now says why — see Progress Log.)*
 ### Day 103–104 — Admin tools round 2
-- [ ] Bulk actions on reports (dismiss / remove several); a content search for admins (posts, comments, users); both in the audit log.
+- [x] Bulk actions on reports (dismiss / remove several); a content search for admins (posts, comments, users); both in the audit log. *(Admin > Reports checkboxes and bar; Admin > Search, every search logged — see Progress Log.)*
 ### Day 105 — Profile completeness
 - [ ] A "finish your profile" card (photo, cover, bio, links), dismissable, like Facebook's.
 ### Day 106 — Page verification requests

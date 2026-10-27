@@ -425,12 +425,50 @@ module.exports = {
       400: text('days must be one of: 7, 30, 90')
     }
   }),
+  'GET /admin/search': op({
+    tag: 'Admin', auth: 'admin',
+    summary: 'Search posts and comments by their text, or accounts by username or exact email',
+    description: 'Days 103-104. Unlike the app\u2019s search it sees everything (any audience, private groups, banned and deactivated '
+      + 'accounts), so each search (its first page) is written to the admin log with what was searched for. Newest first, 20 a page.',
+    query: {
+      q: q(s.str('2 to 100 characters'), true),
+      type: q(s.enum(['posts', 'comments', 'users'], 'Default posts')),
+      page: q(s.int('1 to 50', { default: 1 }))
+    },
+    responses: {
+      200: json(s.object({
+        type: s.enum(['posts', 'comments', 'users']),
+        results: s.array({
+          oneOf: [
+            s.object({
+              id: s.id(), content: s.str('The first 300 characters'), created_at: s.time(),
+              visibility: s.enum(['public', 'followers', 'close_friends', 'only_me']),
+              community_id: s.nullable(s.id()), community_name: s.nullable(s.str()), community_privacy: s.nullable(s.enum(['public', 'private'])),
+              page_id: s.nullable(s.id()), page_name: s.nullable(s.str()),
+              author_id: s.id(), author_username: s.str(), author_banned: s.bool()
+            }, { description: 'A post' }),
+            s.object({
+              id: s.id(), content: s.str('The first 300 characters'), created_at: s.time(), post_id: s.id(),
+              author_id: s.id(), author_username: s.str(), author_banned: s.bool()
+            }, { description: 'A comment' }),
+            s.object({
+              id: s.id(), username: s.str(), email: s.str(), created_at: s.time(),
+              is_private: s.bool(), is_deactivated: s.bool(), is_admin: s.bool(), banned: s.bool(), banned_until: s.nullable(s.time())
+            }, { description: 'An account' })
+          ]
+        }),
+        hasMore: s.bool(),
+        page: s.int()
+      }), 'One page'),
+      400: text('Search for 2 to 100 characters. / type must be one of: posts, comments, users / page must be 1 to 50')
+    }
+  }),
   'GET /admin/log': op({
     tag: 'Admin', auth: 'admin',
     summary: 'Every moderation decision, newest first, 30 a page',
     query: {
       page: q(s.int('From 1', { default: 1 })),
-      action: q(s.enum(['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved']))
+      action: q(s.enum(['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved', 'admin_search']))
     },
     responses: {
       200: json(s.object({ actions: s.array(ref('AdminAction')), hasMore: s.bool(), page: s.int() }), 'One page'),
