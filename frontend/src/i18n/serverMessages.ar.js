@@ -163,6 +163,17 @@ const AR = {
   'Only WEBM, MP4, OGG, and MPEG audio files are allowed': 'يُسمح فقط بملفات الصوت WEBM وMP4 وOGG وMPEG',
   'File is too large (max 5 MB)': 'الملف كبير جدًا (الحد الأقصى 5 ميغابايت)',
   'You can attach up to 10 images': 'يمكنك إرفاق 10 صور كحد أقصى',
+  // Day 102: an account's first day.
+  'New accounts can only post a few times in a short while. Please wait a few minutes and try again.':
+    'لا يمكن للحسابات الجديدة النشر إلا مرات قليلة في وقت قصير. انتظر بضع دقائق وحاول مرة أخرى.',
+  'New accounts can only comment a few times in a short while. Please wait a few minutes and try again.':
+    'لا يمكن للحسابات الجديدة التعليق إلا مرات قليلة في وقت قصير. انتظر بضع دقائق وحاول مرة أخرى.',
+  'New accounts can only share a few links an hour. Please try again later.':
+    'لا يمكن للحسابات الجديدة مشاركة إلا روابط قليلة في الساعة. حاول مرة أخرى لاحقًا.',
+  'New accounts can follow up to 20 people an hour. Please try again later.':
+    'يمكن للحسابات الجديدة متابعة 20 شخصًا في الساعة كحد أقصى. حاول مرة أخرى لاحقًا.',
+  "New accounts can message up to 5 people who don't follow them in their first day. Please try again tomorrow.":
+    'يمكن للحسابات الجديدة مراسلة 5 أشخاص لا يتابعونها كحد أقصى في يومها الأول. حاول مرة أخرى غدًا.',
   // Day 101: your choice for a group's / page's new posts.
   'Join this group first': 'انضم إلى هذه المجموعة أولًا',
   'Follow this page first': 'تابع هذه الصفحة أولًا',

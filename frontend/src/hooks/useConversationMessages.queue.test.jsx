@@ -90,5 +90,19 @@ describe('useConversationMessages offline queue', () => {
     act(() => result.current.sendMessage('hello'));
     await waitFor(() => expect(texts(result)).toEqual(['hello:failed']));
     expect(readOutbox(1, 4)).toEqual([]);
+    // A server error has no reason to show: Retry is the answer.
+    expect(result.current.messages[0]._error).toBeNull();
+  });
+
+  // Day 102: a refused send keeps the server's reason for the bubble.
+  it('a refused send (429, 403) is failed with the reason the server gave', async () => {
+    const reason = "New accounts can message up to 5 people who don't follow them in their first day. Please try again tomorrow.";
+    sendMessageRest.mockRejectedValueOnce(Object.assign(new Error('429'), { response: { status: 429, data: reason } }));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result } = open();
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => result.current.sendMessage('hi stranger'));
+    await waitFor(() => expect(texts(result)).toEqual(['hi stranger:failed']));
+    expect(result.current.messages[0]._error).toBe(reason);
   });
 });

@@ -32,7 +32,7 @@ TURNSTILE_SUITES="day11-turnstile"
 # the real service worker runs (Day 22).
 PUSH_SUITES="day22-push"
 # Spam checks on (Day 49): off for every other suite, which post freely.
-SPAM_SUITES="day49-spam"
+SPAM_SUITES="day49-spam day102-new-accounts"
 # Real photo uploads (Day 64), kept by a local Cloudinary stand-in.
 MEDIA_SUITES="journeys-social day78-onboarding day95-alt day96-edit-photos"
 # The parts of the split suites (see the top).

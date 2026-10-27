@@ -12,7 +12,7 @@ const MESSAGE_FIELDS = {
 const SEND_REFUSED = {
   400: text('Empty or too long (5000 characters), or a bad reply'),
   403: text('You are not a participant / You cannot message this user (a block) / This person isn\'t accepting messages from you'),
-  429: text('You are sending messages too quickly. Please slow down.')
+  429: text('You are sending messages too quickly. Please slow down. / Day 102: an account in its first day writes to up to 5 people a day who don’t follow it')
 };
 const MEMBERS = json(s.object({ members: s.array(ref('GroupMember')) }), 'The members now');
 const GROUP_REFUSED = (action) => ({

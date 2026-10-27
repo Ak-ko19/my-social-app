@@ -1,6 +1,6 @@
 const request = require('supertest');
 const { setupTestApp } = require('../helpers/setupTestApp');
-const { registerAndLogin } = require('../helpers/auth');
+const { registerAndLogin: registerAndLoginNew } = require('../helpers/auth');
 const { pool } = require('../helpers/testDb');
 
 // Day 49 step 3: spam checks on new posts and comments -- flooding, the
@@ -19,6 +19,13 @@ describe('spam checks (Day 49)', () => {
   });
 
   const auth = (user) => ({ Authorization: `Bearer ${user.token}` });
+  // Day 102: accounts past their first day (new ones have tighter limits,
+  // tests/api/spamNewAccounts.test.js).
+  const registerAndLogin = async (theApp) => {
+    const user = await registerAndLoginNew(theApp);
+    await pool.query("UPDATE users SET created_at = now() - interval '2 days' WHERE id = $1", [user.id]);
+    return user;
+  };
   const post = (user, content) => request(app).post('/posts').set(auth(user)).field('content', content);
   const comment = (user, postId, content) => request(app).post(`/posts/${postId}/comments`).set(auth(user)).send({ content });
   // Rows from earlier, straight into the table (no API, no checks).

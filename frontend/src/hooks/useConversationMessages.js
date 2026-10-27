@@ -5,6 +5,7 @@ import { useMediaMessages } from './useMediaMessages';
 import { fetchMessages, sendMessageRest, markConversationRead, deleteMessageRest, editMessageRest, setMessageReactionRest } from '../services/messageService';
 import { STATUS_ORDER, buildReplyPreview, localKey, makeClientTempId, sortByCreatedAt, syncQuotes } from '../utils/chatMessages';
 import { readOutbox, saveOutbox } from '../utils/offlineStore';
+import { refusalText } from '../utils/serverError';
 
 // Day 72: the browser says it has no connection right now.
 const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
@@ -259,12 +260,14 @@ export function useConversationMessages(conversationId, token, currentUserId) {
       clearPendingTimeout(clientTempId);
       mergeMessages([message]);
     };
-    const handleErrorEvent = ({ clientTempId, messageId, error: errorMessage }) => {
+    const handleErrorEvent = ({ clientTempId, messageId, error: errorMessage, code }) => {
       if (clientTempId) {
         clearPendingTimeout(clientTempId);
         console.error('send_message failed:', errorMessage);
+        // Day 102: a refusal (not a server error) says why under the bubble.
+        const reason = code && code !== 'SERVER_ERROR' ? errorMessage : null;
         setMessages((current) =>
-          current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, status: 'failed' } : m))
+          current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, status: 'failed', _error: reason } : m))
         );
         return;
       }
@@ -335,8 +338,8 @@ export function useConversationMessages(conversationId, token, currentUserId) {
   // socket even if the original attempt had to fall back to REST.
   const attemptSend = useCallback(
     (clientTempId, content, replyToMessageId = null) => {
-      const setStatus = (status) => setMessages((current) =>
-        current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, status } : m))
+      const setStatus = (status, extra) => setMessages((current) =>
+        current.map((m) => (m.client_temp_id === clientTempId && m.id == null ? { ...m, status, ...extra } : m))
       );
       // Day 72: no connection -- wait for one instead of failing.
       const queue = () => {
@@ -381,7 +384,8 @@ export function useConversationMessages(conversationId, token, currentUserId) {
             return;
           }
           console.error(err);
-          setStatus('failed');
+          // Day 102: with the server's reason when it refused the message.
+          setStatus('failed', { _error: refusalText(err) });
         });
     },
     [socket, connectionState, conversationId, token, mergeMessages]

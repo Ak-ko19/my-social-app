@@ -137,7 +137,7 @@ module.exports = {
   'POST /users/:id/follow': op({
     tag: 'Following', auth: 'user', limited: true,
     summary: 'Follow someone (or ask to, if their account is private)',
-    description: 'They are notified (follow, or follow request).',
+    description: 'They are notified (follow, or follow request). Day 102: an account in its first day follows up to 20 people an hour (429).',
     responses: {
       201: json(s.object({ status: s.enum(['accepted', 'pending'], 'pending: a request to a private account') }), 'Followed or requested'),
       400: text('Invalid user ID / You cannot follow yourself / already following or requested'),

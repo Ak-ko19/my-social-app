@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { sendVoiceMessageRest, sendImageMessageRest } from '../services/messageService';
 import { buildReplyPreview, makeClientTempId } from '../utils/chatMessages';
+import { refusalText } from '../utils/serverError';
 
 // Day 71 (split out of useConversationMessages, which passes in its message
 // state): sending voice notes and photos. A file isn't something you emit
@@ -39,7 +40,7 @@ export function useMediaMessages({ conversationId, conversationIdNum, token, cur
           console.error(err);
           // Deliberately NOT revoking localUrl: the failed bubble still plays
           // or shows what was sent, and a retry re-uploads the same file.
-          setMessages((current) => current.map((m) => (mine(m) ? { ...m, status: 'failed', _uploadProgress: 0 } : m)));
+          setMessages((current) => current.map((m) => (mine(m) ? { ...m, status: 'failed', _uploadProgress: 0, _error: refusalText(err) } : m)));
         });
     },
     [setMessages, mergeMessages]

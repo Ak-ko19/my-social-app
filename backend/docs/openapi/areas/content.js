@@ -39,7 +39,8 @@ module.exports = {
     tag: 'Posts', auth: 'user', upload: true,
     summary: 'Publish a post (text, photos or a poll)',
     description: 'Hashtags are indexed and @mentions notified. Spam checks: posting too fast, the same post again, the same link '
-      + 'again and again (429).',
+      + 'again and again; Day 102: an account in its first day posts 3 times in 10 minutes and shares links in 3 posts or '
+      + 'comments an hour (429).',
     requestBody: multipart({
       ...POST_FIELDS,
       images: s.array(file('A photo'), 'Up to 10 photos, in order (repeat the field)'),
@@ -205,7 +206,7 @@ module.exports = {
     tag: 'Comments', auth: 'user',
     summary: 'Comment on a post, or reply to a comment',
     description: 'A restricted person\'s comment waits for the post owner\'s approval and only they two see it. The author is '
-      + 'notified, and so is the person replied to. Spam checks: commenting too fast, the same comment again (429).',
+      + 'notified, and so is the person replied to. Spam checks: commenting too fast, the same comment again; an account in its first day comments 10 times in 10 minutes (429).',
     requestBody: body({
       content: s.str('Up to 5000 characters'),
       parentCommentId: s.id('Reply to this comment (a reply to a reply joins the same thread)')

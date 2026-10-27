@@ -398,6 +398,14 @@
   opacity: 1;
 }
 
+/* Day 102: why a send was refused, under the failed bubble's Retry. */
+.messages-failed-reason {
+  margin: var(--space-xs) 0 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
 .messages-retry-btn {
   display: block;
   margin-top: var(--space-xs);

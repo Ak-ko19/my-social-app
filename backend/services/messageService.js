@@ -15,6 +15,7 @@ const cloudinary = require('../config/cloudinary');
 const { isValidReaction } = require('./reactionService');
 const { toUnicode } = require('../utils/myanmarText');
 const { STORY_REACTIONS } = require('../config/storyReactions');
+const spamService = require('./spamService');
 
 const MAX_MESSAGE_LENGTH = 5000;
 const MAX_CLIENT_TEMP_ID_LENGTH = 255;
@@ -149,6 +150,8 @@ async function createMessage({ conversationId, senderId, type, content, mediaUrl
   }
 
   await assertNotBlocked(conversationId, senderId);
+  // Day 102: a new account writes to a few strangers a day.
+  await spamService.checkMessage(conversationId, senderId);
 
   // Per (sender, conversation) rather than per-sender globally, so a burst
   // in one conversation can't be used to argue the limit is unfairly

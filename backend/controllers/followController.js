@@ -5,6 +5,7 @@ const { sendError } = require('../utils/httpError');
 const blockService = require('../services/blockService');
 const { noBlockBetweenSql } = require('../services/blockService');
 const notificationService = require('../services/notificationService');
+const spamService = require('../services/spamService');
 
 // Who may see a user's follower/following LISTS (counts stay public, like
 // Instagram): the user themselves, or anyone when the account is public.
@@ -63,6 +64,8 @@ async function followUser(req, res) {
         existingFollow.rows[0].status === 'pending' ? 'You already have a pending follow request' : 'You are already following this user'
       );
     }
+    // Day 102: a new account follows up to 20 people an hour.
+    await spamService.checkFollow(req.userId);
 
     // A private account's new follow lands as 'pending' and needs explicit
     // approval (see approveFollowRequest/denyFollowRequest below) instead

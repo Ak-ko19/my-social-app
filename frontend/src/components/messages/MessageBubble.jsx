@@ -11,6 +11,7 @@ import i18n, { formatDate } from '../../i18n';
 import LinkPreviewCard from '../common/LinkPreviewCard';
 import { renderTextWithLinks } from '../../utils/renderTextWithLinks';
 import { firstLink } from '../../utils/links';
+import { serverText } from '../../utils/serverError';
 
 const PROGRESS_BAR_DELAY_MS = 1000;
 // Mirrors the backend's MESSAGE_EDIT_WINDOW_MS (messageService) -- the
@@ -299,6 +300,8 @@ function MessageBubble({
             {t('messages.sendFailed')}
           </button>
         )}
+        {/* Day 102: why it was refused (a new account's limit, a block...). */}
+        {isFailed && message._error && <p className="messages-failed-reason">{serverText(message._error)}</p>}
         <MessageReactionChips reactions={reactions} nameOf={replyAuthorLabel} onOpen={canReact ? () => setPickerOpen(true) : undefined} />
       </div>
       {(canReply || canEdit || canReport || canReact || canForward) && !isEditing && (

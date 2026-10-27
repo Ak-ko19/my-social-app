@@ -7,6 +7,7 @@ import MessageBubble from './messages/MessageBubble';
 import CommentSection from './feed/CommentSection';
 import ErrorBoundary from './common/ErrorBoundary';
 import Modal from './ui/Modal';
+import { setLanguage } from '../i18n';
 import { submitReport } from '../services/reportService';
 import { reportClientError } from '../utils/errorReporter';
 
@@ -75,6 +76,21 @@ describe('MessageBubble actions', () => {
     expect(screen.getByText('This message was deleted')).toBeInTheDocument();
     rerender(<MessageBubble message={message({ id: null, status: 'sending', client_temp_id: 't1' })} isOwn={false} {...handlers} onReport={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'Report message' })).toBeNull();
+  });
+  // Day 102: a refused send says why, under Retry (translated); a server
+  // error just offers Retry.
+  it('a refused send shows the reason, in the app language', async () => {
+    const reason = 'New accounts can follow up to 20 people an hour. Please try again later.';
+    const failed = (extra) => message({ id: null, sender_id: 1, status: 'failed', client_temp_id: 't2', ...extra });
+    const { rerender } = render(<MessageBubble message={failed({ _error: reason })} isOwn {...handlers} />);
+    expect(screen.getByText(reason)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Failed to send · Retry' })).toBeInTheDocument();
+    await setLanguage('ar');
+    rerender(<MessageBubble message={failed({ _error: reason })} isOwn {...handlers} />);
+    expect(screen.getByText('يمكن للحسابات الجديدة متابعة 20 شخصًا في الساعة كحد أقصى. حاول مرة أخرى لاحقًا.')).toBeInTheDocument();
+    await setLanguage('en');
+    rerender(<MessageBubble message={failed({ _error: null })} isOwn {...handlers} />);
+    expect(screen.queryByText(reason)).toBeNull();
   });
 });
 

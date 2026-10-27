@@ -424,7 +424,9 @@ function Conversation() {
                 onDelete={deleteMessage}
                 replyAuthorLabel={replyAuthorLabel}
                 senderName={isGroup && message.sender_id !== userId ? membersById.get(message.sender_id)?.username || t('messages.formerMember') : null}
-                isEditing={editingId === message.id}
+                // Day 102: an unsent message has no id yet -- null === null
+                // opened every failed bubble in edit mode.
+                isEditing={editingId != null && editingId === message.id}
                 onReply={handleReply}
                 onStartEdit={handleStartEdit}
                 onSaveEdit={handleSaveEdit}

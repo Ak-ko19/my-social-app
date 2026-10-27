@@ -66,7 +66,9 @@ const aliceToken = fs.readFileSync(path.join(SP, 'alice.token'), 'utf8').trim();
     await page.getByRole('button', { name: row('help-support') }).click();
     await page.getByRole('heading', { level: 1, name: L('help.title') }).waitFor({ timeout: 8000 }).catch(() => {});
     check(`${tag} Help opens with its title`, (await page.getByRole('heading', { level: 1, name: L('help.title') }).count()) === 1);
-    check(`${tag} ...and all 8 answers`, (await page.getByRole('heading', { level: 2 }).count()) === 8);
+    // Day 102: as many as the locale has (it was 8 until then).
+    const answers = JSON.parse(fs.readFileSync(path.join(SP, '..', 'frontend', 'src', 'i18n', 'locales', 'en.json'), 'utf8')).help.sections.length;
+    check(`${tag} ...and all ${answers} answers`, (await page.getByRole('heading', { level: 2 }).count()) === answers);
     check(`${tag} ...no sideways scroll`, await fits());
     await axe('Help');
     await page.getByRole('link', { name: L('help.toAbout') }).click();

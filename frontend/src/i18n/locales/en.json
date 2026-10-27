@@ -2023,6 +2023,10 @@
         "body": "Open the ⋯ menu on a post, comment, message, group or page and choose Report. The moderators review every report."
       },
       {
+        "heading": "Why can't I post, follow or message more right now?",
+        "body": "For its first day, a new account can post 3 times in 10 minutes, comment 10 times in 10 minutes, share links in 3 posts or comments an hour, follow 20 people an hour, and message 5 people a day who don't follow it. This keeps spam accounts out. After a day the usual limits apply, and people who follow you or write to you first don't count."
+      },
+      {
         "heading": "How do I choose who can message me or comment?",
         "body": "Go to Settings → Messages and comments. You can also hide comments that contain words you choose, in Settings → Hidden words."
       },

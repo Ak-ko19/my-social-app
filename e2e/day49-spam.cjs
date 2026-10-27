@@ -28,6 +28,9 @@ const newPost = (who, content) => {
 const EXPECTED = /status of 429|status code 429|AxiosError/;
 
 (async () => {
+  // Day 102: accounts past their first day (new ones have tighter limits:
+  // day102-new-accounts).
+  sql("UPDATE users SET created_at = now() - interval '2 days' WHERE id IN (1, 2)");
   const bobPost = await (await newPost('bob', 'Our street party is on Saturday')).json();
 
   const browser = await chromium.launch({ channel: 'msedge', headless: true });

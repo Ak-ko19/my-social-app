@@ -29,6 +29,22 @@ const SAME_POST = 'You just posted this. Try writing something new.';
 const SAME_COMMENT = 'You already left this comment on this post.';
 const SAME_LINK = "You've shared this link too many times in the last hour. Please try again later.";
 
+// Day 102: an account's first day is held back further, the way Facebook
+// and Instagram do it -- most spam accounts are used the day they are
+// made. Admins never are. These come on top of the limits above.
+const NEW_ACCOUNT_HOURS = 24;
+const NEW_MAX_POSTS = 3; // in WINDOW_MINUTES
+const NEW_MAX_COMMENTS = 10; // in WINDOW_MINUTES
+const NEW_MAX_LINK_ITEMS = 3; // posts and comments with any link, in LINK_WINDOW_MINUTES
+const NEW_MAX_FOLLOWS = 20; // an hour
+const NEW_MAX_STRANGERS = 5; // people a day who don't follow you and haven't written to you
+
+const NEW_POSTING = 'New accounts can only post a few times in a short while. Please wait a few minutes and try again.';
+const NEW_COMMENTING = 'New accounts can only comment a few times in a short while. Please wait a few minutes and try again.';
+const NEW_LINKS = 'New accounts can only share a few links an hour. Please try again later.';
+const NEW_FOLLOWS = 'New accounts can follow up to 20 people an hour. Please try again later.';
+const NEW_STRANGERS = "New accounts can message up to 5 people who don't follow them in their first day. Please try again tomorrow.";
+
 class SpamError extends HttpError {
   constructor(message) {
     super(429, message);
@@ -104,6 +120,10 @@ async function checkPost(userId, content) {
   const key = sameTextKey(content);
   if (content.trim() !== '' && recent.rows.some((r) => sameTextKey(r.content) === key)) throw new SpamError(SAME_POST);
   await checkLinks(userId, content);
+  if (await isNewAccount(userId)) {
+    if (recent.rows.length >= NEW_MAX_POSTS) throw new SpamError(NEW_POSTING);
+    await checkNewAccountLinks(userId, content);
+  }
 }
 
 // Throws a SpamError (429) when this new comment on `postId` would be spam.
@@ -118,6 +138,83 @@ async function checkComment(userId, postId, content) {
   const key = sameTextKey(content);
   if (recent.rows.some((r) => r.post_id === Number(postId) && sameTextKey(r.content) === key)) throw new SpamError(SAME_COMMENT);
   await checkLinks(userId, content);
+  if (await isNewAccount(userId)) {
+    if (recent.rows.length >= NEW_MAX_COMMENTS) throw new SpamError(NEW_COMMENTING);
+    await checkNewAccountLinks(userId, content);
+  }
 }
 
-module.exports = { checkPost, checkComment, SpamError, linkKeys, linkPattern, MAX_POSTS, MAX_COMMENTS, MAX_SAME_LINK };
+// Day 102: made in the last day, and not an admin.
+async function isNewAccount(userId) {
+  const result = await db.query(
+    'SELECT created_at > now() - make_interval(hours => $2) AND NOT is_admin AS is_new FROM users WHERE id = $1',
+    [userId, NEW_ACCOUNT_HOURS]
+  );
+  return Boolean(result.rows[0]?.is_new);
+}
+
+// Day 102: a new account's posts and comments with any link, per hour.
+async function checkNewAccountLinks(userId, content) {
+  if (linkKeys(content).length === 0) return;
+  const result = await db.query(
+    `SELECT (SELECT COUNT(*) FROM posts WHERE user_id = $1 AND created_at > now() - make_interval(mins => $2) AND content ~* 'https?://')
+          + (SELECT COUNT(*) FROM comments WHERE user_id = $1 AND created_at > now() - make_interval(mins => $2) AND content ~* 'https?://') AS uses`,
+    [userId, LINK_WINDOW_MINUTES]
+  );
+  if (Number(result.rows[0].uses) >= NEW_MAX_LINK_ITEMS) throw new SpamError(NEW_LINKS);
+}
+
+// Day 102: before a new account follows someone (or asks to).
+async function checkFollow(userId) {
+  if (!enabled() || !(await isNewAccount(userId))) return;
+  const result = await db.query(
+    "SELECT COUNT(*)::int AS n FROM follows WHERE follower_id = $1 AND created_at > now() - interval '1 hour'",
+    [userId]
+  );
+  if (result.rows[0].n >= NEW_MAX_FOLLOWS) throw new SpamError(NEW_FOLLOWS);
+}
+
+// Day 102: before a new account's message in direct chat `conversationId`.
+// A stranger is someone who doesn't follow you and hasn't written to you
+// in that chat; a new account can write to NEW_MAX_STRANGERS of them a
+// day (a chat already counted goes on). Group chats don't count.
+async function checkMessage(conversationId, senderId) {
+  if (!enabled() || !(await isNewAccount(senderId))) return;
+  const result = await db.query(
+    `WITH chats AS (
+       SELECT c.id, CASE WHEN c.user_a_id = $1 THEN c.user_b_id ELSE c.user_a_id END AS other
+       FROM conversations c
+       WHERE c.type = 'direct' AND (c.user_a_id = $1 OR c.user_b_id = $1)
+     ),
+     strangers AS (
+       SELECT chats.id FROM chats
+       WHERE NOT EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = chats.other AND f.following_id = $1 AND f.status = 'accepted')
+         AND NOT EXISTS (SELECT 1 FROM messages w WHERE w.conversation_id = chats.id AND w.sender_id = chats.other)
+     )
+     SELECT EXISTS (SELECT 1 FROM strangers WHERE id = $2) AS to_stranger,
+            (SELECT COUNT(*)::int FROM strangers s WHERE s.id <> $2 AND EXISTS (
+               SELECT 1 FROM messages m WHERE m.conversation_id = s.id AND m.sender_id = $1 AND m.created_at > now() - interval '1 day'
+             )) AS others`,
+    [senderId, conversationId]
+  );
+  const { to_stranger: toStranger, others } = result.rows[0];
+  if (toStranger && others >= NEW_MAX_STRANGERS) throw new SpamError(NEW_STRANGERS);
+}
+
+module.exports = {
+  checkPost,
+  checkComment,
+  checkFollow,
+  checkMessage,
+  SpamError,
+  linkKeys,
+  linkPattern,
+  MAX_POSTS,
+  MAX_COMMENTS,
+  MAX_SAME_LINK,
+  NEW_MAX_POSTS,
+  NEW_MAX_COMMENTS,
+  NEW_MAX_LINK_ITEMS,
+  NEW_MAX_FOLLOWS,
+  NEW_MAX_STRANGERS
+};

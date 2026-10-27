@@ -1,7 +1,36 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 102 — New-account safety.
-**Step:** 0 — not started (Day 101 closed: see the Progress Log).
+**Step:** 1 — done (committed). Next: close Day 102 -- full browser run in batches of 3, then the Progress Log entry.
+
+### Plan (Day 102, step 1)
+Tighter limits in an account's first 24 hours (Facebook / Instagram hold
+new accounts back the same way), inside the existing spam checks
+(spamService, on in production, off under tests unless
+SPAM_CHECKS_IN_TESTS=1). New = users.created_at within 24 hours; admins
+are never held back.
+- **Limits for a new account** (the normal ones still apply on top):
+  - posts: 3 in 10 minutes (normally 10);
+  - comments: 10 in 10 minutes (normally 30);
+  - links: 3 posts / comments with any link in an hour (normally only
+    the same link 3 times);
+  - follows: 20 an hour (in followController; the follow limiter's 60 /
+    15 min stays);
+  - messages to strangers: 5 different people a day who don't follow you
+    and haven't written to you (in messageService.createMessage, so text,
+    voice, photos, forwards and story replies all count; group chats
+    don't).
+- **Messages (429, EN/AR):** say it's because the account is new and when
+  it eases ("New accounts can … Please try again later."). serverMessages.ar.
+- **Chat:** a refused send now says why under the failed bubble
+  (message_error's text, translated), not just "failed" -- also helps the
+  existing block / "who can message me" refusals.
+- **Tests:** spamNewAccounts (each limit at the edge, old accounts and
+  admins unaffected, strangers vs people who follow you / wrote to you,
+  groups exempt); spam.test ages its accounts (they are brand new);
+  Vitest for the failed bubble's reason; e2e day102-new-accounts in
+  SPAM_SUITES (posting, following, a stranger chat, EN/AR); day49-spam
+  ages its accounts. Help page / privacy text if they describe limits.
 
 ## Carry-over notes
 - Day 101: new-post notifications fan out inside the post request (one
