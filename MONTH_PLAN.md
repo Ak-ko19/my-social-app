@@ -3208,3 +3208,44 @@ Read-only; no application code changed. Same method as audit 3, on
   - Full browser run in batches of 3: 94/94 OK. day27-perf first stopped at
     0/0 (its seeding step, while the machine was short of memory); it
     re-ran alone, green (48/48).
+
+### 2026-10-27 — Days 103–104: Admin tools round 2
+- **Bulk actions on reports (`7f8f27f`):** Admin > Reports > Pending has a
+  checkbox on each card, "Select all on this page" and a bar that stays in
+  view: "N selected · Dismiss · Remove content" (Remove asks first). The
+  outcome in one line: "3 removed · 1 already handled · 1 couldn't be:
+  <why>".
+  - POST /admin/reports/bulk { action, reportIds (1-50) } runs the single
+    actions one by one (dismissOne / removeOne, pulled out of the
+    handlers): each its own transaction and log entry, marked bulk; owners
+    told about removed content. A report closed meanwhile (acting on one
+    closes every pending report on its target) is skipped; one that can't
+    be acted on (removing an account) fails alone.
+- **Content search for admins (`aa2a7f4`):** Admin > Search -- posts and
+  comments by their text, accounts by username or exact email (any case).
+  It sees everything (any audience, private groups, banned and deactivated
+  accounts), so each search's first page goes in the admin log with what
+  was searched for ("alice searched posts for “cheap pills”"). Searches on
+  submit, not per keystroke.
+  - GET /admin/search; migration 084 (log action 'admin_search' / target
+    'search'; idx_comments_content_trgm, idx_users_email_lower); the perf
+    suite measures all three kinds. Privacy policy (EN/AR) says moderators
+    can search and every search is recorded.
+- **Found on the way:**
+  - Every profile link on the admin report cards had always been empty:
+    the strings used <link>…</link>, an HTML void element, so the name
+    rendered after an empty link. Renamed <target>; check:i18n now rejects
+    void tag names that wrap text.
+  - Red text on the grey Remove / Suspend buttons: 4.2:1 (light), 3.3:1
+    (dark). New --color-danger-text (5.6:1 / 5.8:1). accent-3 used as text
+    elsewhere is noted for Day 112.
+  - Email search by lower(email) had no index (emails are kept as typed):
+    idx_users_email_lower added before 084 was committed.
+- **Tests:** adminBulkReports 4 (10 mutations), adminSearch 6 (12
+  mutations); Vitest +7 (428); e2e day103-bulk-reports 26/26 and
+  day104-admin-search 20/20, EN/light + AR/dark with axe.
+- **Tests at close:**
+  - Backend 1151/1151, Vitest 428/428, lint (exit 0), check:i18n (1675
+    keys), bundle 220.9 kB, npm audit 0/0, rehearsal 015 → 084 (columns
+    333, constraints 194, indexes 151), perf 51/51.
+  - Full browser run in batches of 3: 96/96 OK, first time.

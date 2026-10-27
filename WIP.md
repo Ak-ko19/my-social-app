@@ -1,42 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 103–104 — Admin tools round 2.
-**Step:** 2 of 2 — done (committed). Next: close Days 103–104 -- full browser run in batches of 3, then the Progress Log entry.
-
-### Plan (Days 103–104)
-**Step 1 — bulk actions on reports.**
-- API: POST /admin/reports/bulk { action: 'dismiss' | 'remove', reportIds }
-  (1–50 different ids). Each report runs the same code as the single
-  action (dismissOne / removeOne pulled out of the handlers): its own
-  transaction, its own audit-log entry (details.bulk = true), its owner
-  told when content is removed. Reports already handled meanwhile (acting
-  on one closes every pending report on the same target) are skipped, not
-  re-logged. Answer { done: [ids], skipped: [ids], failed: [{ id, error }] }
-  -- e.g. "remove" on an account report fails alone; the rest go on.
-- UI (Admin > Reports > Pending): a checkbox on each card, "Select all
-  (N)", a bar "N selected · Dismiss · Remove" that stays in view; Remove
-  asks first (ConfirmDialog, says it can't be undone); the result in a
-  status line ("3 removed, 1 skipped, 1 failed: <reason>"); the list
-  reloads. EN/AR, RTL, light/dark, keyboard, 375 px.
-- Tests: bulk API (both actions, mixed targets, skipped, per-item
-  failure, limits and validation, admin only, the log), Vitest for the
-  selection bar, e2e day103-bulk-reports.
-
-**Step 2 — content search for admins.**
-- API: GET /admin/search?q=&type=posts|comments|users&page= (2–100
-  characters; 20 a page). Posts and comments by text (any audience, any
-  group; deleted ones are gone), accounts by username or exact email;
-  each result with what an admin needs (author, place, date, banned).
-  Page 1 of each search is written to the audit log (action
-  'admin_search', the query as its label): admins can read private
-  content, so who looked for what is recorded.
-- Migration 084: admin_actions CHECKs take 'admin_search' / 'search';
-  idx_comments_content_trgm (posts and usernames already have one).
-- UI: Admin > Search tab: box, Posts / Comments / Accounts, results with
-  links (post, profile), Load more; the Log names searches. EN/AR.
-- Tests: search API (each type, private content found, pagination,
-  validation, admin only, logged once per search), Vitest, e2e
-  day104-admin-search, perf (the queries use the trigram indexes).
+**Day:** 105 — Profile completeness.
+**Step:** 0 — not started (Days 103–104 closed: see the Progress Log).
 
 ## Carry-over notes
 - Day 103 (for the Day 112 accessibility check): --color-accent-3 (#e11d48)
