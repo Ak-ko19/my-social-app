@@ -1,52 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 100 — Story replies and reactions.
-**Step:** 1 — done (committed). Next: close Day 100 -- full browser run in batches of 3, then the Progress Log entry.
-Changed from the plan while building: the reply is checked before the chat
-is opened (no empty chat on a refused first reply); can_reply is one query
-per tray for the distinct authors (/stories 64 ms at the perf seed, vs 191
-ms computed per story); a story reaction can't be edited; the reaction list
-lives in backend/config/storyReactions.js (the API reference reads it, and
-requiring messageService from the docs leaked the real db into
-inputTypes.test.js).
-
-### Plan (Day 100, step 1)
-Like Instagram: a story has a "Reply to NAME…" box and quick reactions;
-either goes to the author as a direct message with the story attached.
-- **Data (migration 082):** messages.story_id (stories ON DELETE SET NULL
-  -- expired stories are deleted an hour after expiry) and
-  messages.story_reply text CHECK IN ('reply','reaction') -- kept after the
-  story is gone, so the bubble still says "replied to your story" with
-  "Story unavailable" (Instagram). A reaction is an ordinary text message
-  whose content is the emoji (Instagram sends the emoji itself), so
-  previews, push, search and export need no new type.
-- **API:** POST /stories/:id/reply { text } and POST /stories/:id/react
-  { emoji } (fixed list of 8 quick emojis). Story must be visible to you
-  (VISIBLE_TO_VIEWER_SQL, else 404), not your own (400). Then find or open
-  the direct chat (shared helper extracted from createConversation,
-  race-safe on the unique pair; a NEW chat needs canMessage, an existing
-  one is re-checked by createMessage as for every send), createMessage
-  (participant, block, "who can message me", rate limit), emit
-  new_message to the room. Returns { conversationId, message }.
-- **Message shape:** history / new_message / context carry
-  story: { id, media_url } while the story still exists (author or the
-  sender only -- they're the two people in the chat) plus story_reply.
-- **Tray:** each group gets can_reply (not own, author accepts messages
-  from you) via one SQL fragment shared with canMessage (no N+1).
-- **UI:** StoryViewer footer (others' stories only, when can_reply): a
-  reply box and the 8 emojis; typing or focus pauses the timer; arrow keys
-  inside the box don't change story; Enter sends; "Sent" status (live
-  region); errors in EN/AR. MessageBubble: a story card above the text
-  ("You replied to their story" / "Replied to your story", "Reacted to …"),
-  the thumbnail or "Story unavailable"; reactions shown big.
-- **Edge cases:** expired/deleted story (404), close-friends story,
-  blocked either way, "nobody" permission, deactivated author, empty or
-  >5000 text, unknown emoji, duplicate clicks (button disabled while
-  sending), forwarding a story reply copies only the text.
-- **Tests:** backend storyReplies (success + every refusal, shape after
-  the story is deleted), Vitest for the footer and the bubble, e2e
-  day100-story-replies EN/light + AR/dark with axe; schema fixture,
-  rehearsal, OpenAPI, data export, i18n.
+**Day:** 101 — Group and page notification settings.
+**Step:** 0 — not started (Day 100 closed: see the Progress Log).
 
 ## Carry-over notes
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,

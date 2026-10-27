@@ -3082,3 +3082,49 @@ Read-only; no application code changed. Same method as audit 3, on
     day31-reactions first crashed at 0/0 because a backend Jest start reset
     the shared test database mid-batch; that batch re-ran alone, green
     (9/9, 18/18).
+
+### 2026-10-27 — Day 100: Story replies and reactions
+- **What (`175a441`):** like Instagram. Someone else's story has a "Reply
+  to NAME…" box and 8 quick reactions; either one is a direct message to
+  the author with the story attached.
+  - The story waits while you type or send; arrows typed in the box move
+    the caret; a draft belongs to its story (the next one starts empty);
+    "Sent" is announced (live region); errors in the app's language.
+  - No reply box on your own stories, or when the author takes no messages
+    from you (tray can_reply).
+  - In the chat: "Replied to your story" / "Reacted to your story" (and
+    "You replied / reacted…") with the story's photo while it is up, else
+    "Story unavailable". A reaction is its emoji: shown big, not editable.
+- **Data and API:** migration 082 (messages.story_id, SET NULL when the
+  story is deleted, indexed for the cleanup's batch deletes;
+  messages.story_reply 'reply'/'reaction', kept after the story is gone).
+  - POST /stories/:id/reply and /react: only a story you can see (404),
+    never your own (400); the text is checked before the chat is opened, so
+    a refused first reply leaves no empty chat; the direct chat comes from
+    messageService.openDirectChat (now shared with POST /conversations:
+    "who can message me" for a new chat, race-safe); every send check
+    applies (blocks, permission, rate limit).
+  - Messages carry story: { id, media_url } while it is up and not across a
+    block (one query per page for the stories, one for the blocks).
+  - The reaction list is backend/config/storyReactions.js; a test keeps
+    the app's list the same.
+- **Found on the way:**
+  - The emoji row overflowed at 375 px (8 × 44 px + gaps); the buttons now
+    share the width (24 px minimum checked by the suite).
+  - can_reply computed per story row made /stories 191 ms at the perf seed;
+    once per author, 64 ms.
+  - The API reference requiring messageService loaded the real db module
+    into inputTypes.test.js (it loads the spec before setupTestApp): its
+    first chat hit the real DATABASE_URL. The docs now read a module
+    with no requires.
+  - Privacy policy (EN/AR): a story reply is a message to the author, the
+    story shown only while it is up.
+- **Tests:** storyReplies 14 (15 mutations caught); Vitest +6 (414);
+  day100-story-replies 30/30 EN/light + AR/dark with axe.
+- **Tests at close:**
+  - Backend 1125/1125, Vitest 414/414, lint (exit 0), check:i18n (1617
+    keys), bundle 219.9 kB, npm audit 0/0, rehearsal 015 → 082 (columns
+    331, constraints 192, indexes 149).
+  - Full browser run in batches of 3: 92/92 OK. The machine slept and ran
+    low on memory during the A3 batches; a3-en-light and a3-en-dark (0/0,
+    a page-load timeout) re-ran alone, green (153 checks each).
