@@ -403,3 +403,41 @@ describe('Notifications: memories', () => {
     expect(await screen.findByText(line(/^لديك ذكريات من قبل 3 سنوات\./))).toBeInTheDocument();
   });
 });
+
+// Day 101: new posts in your groups and on the pages you follow.
+describe('Notifications: new posts in groups and pages', () => {
+  const base = { ...me, post_id: 77, comment_id: null, count: 1, actor_count: 1, actors: [] };
+  const groupPost = { ...base, id: 71, type: 'group_post', community_id: 3, community_name: 'Tea Lovers', post_content: 'Meeting on Friday' };
+  const pagePost = { ...base, id: 70, type: 'page_post', page_id: 9, page_name: 'Mingalar Cafe', post_content: 'New menu' };
+  const showBoth = () => {
+    api.get.mockResolvedValue({ data: { notifications: [groupPost, pagePost], nextCursor: null } });
+    render(
+      <MemoryRouter initialEntries={['/notifications']}>
+        <Routes>
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/posts/:id" element={<p>Post screen</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+  };
+  const line = (re) => (_, el) => Boolean(el?.classList?.contains('notif-sentence') && re.test(el.textContent));
+
+  it('names the person and the group, or the page, with the post; a tap opens the post', async () => {
+    await setLanguage('en');
+    showBoth();
+    expect(await screen.findByText(line(/^alice posted in Tea Lovers/))).toBeInTheDocument();
+    expect(screen.getByText(line(/^Mingalar Cafe has a new post/))).toBeInTheDocument();
+    expect(screen.getByText('“Meeting on Friday”')).toBeInTheDocument();
+    // A page's post shows the page (its initials), not the person.
+    expect(screen.getByText('MI')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('link', { name: /Mingalar Cafe has a new post/ }));
+    expect(await screen.findByText('Post screen')).toBeInTheDocument();
+  });
+
+  it('...in Arabic', async () => {
+    await setLanguage('ar');
+    showBoth();
+    expect(await screen.findByText(line(/^منشور جديد من alice في Tea Lovers/))).toBeInTheDocument();
+    expect(screen.getByText(line(/^منشور جديد من Mingalar Cafe/))).toBeInTheDocument();
+  });
+});

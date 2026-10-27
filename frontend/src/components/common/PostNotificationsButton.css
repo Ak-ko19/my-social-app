@@ -1,0 +1,89 @@
+/* Day 101: the bell next to Leave / Following, and its three choices (the
+   Messages and comments settings' option style, with a hint line). */
+
+.post-notif-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  padding-inline: var(--space-3);
+}
+
+.post-notif-choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: none;
+  text-align: start;
+}
+
+.post-notif-legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.post-notif-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.post-notif-option input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--color-accent);
+}
+
+.post-notif-option.is-selected {
+  border-color: var(--color-accent);
+}
+
+.post-notif-option:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.post-notif-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.post-notif-label {
+  font-weight: 700;
+}
+
+.post-notif-option.is-selected .post-notif-label {
+  color: var(--color-accent-text);
+}
+
+.post-notif-hint {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.post-notif-choices:disabled .post-notif-option {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.post-notif-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-4);
+}

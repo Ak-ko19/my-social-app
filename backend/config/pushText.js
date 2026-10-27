@@ -37,7 +37,10 @@ const TEXT = {
     // Day 84: the morning memories notification.
     memories: 'You have memories to look back on today.',
     // Days 93-94.
-    share: '{name} shared your post'
+    share: '{name} shared your post',
+    // Day 101: a new post in your group / on a page you follow.
+    group_post: '{name} posted in {group}',
+    page_post: '{page} has a new post'
   },
   ar: {
     like: 'أعجب {name} بمنشورك',
@@ -63,7 +66,9 @@ const TEXT = {
     new_login: 'تسجيل دخول جديد إلى حسابك من {device}. لست أنت؟ راجع أجهزتك.',
     content_removed: 'أزلنا شيئًا شاركته. افتح التطبيق لمعرفة السبب.',
     memories: 'لديك ذكريات تستعيدها اليوم.',
-    share: 'شارك {name} منشورك'
+    share: 'شارك {name} منشورك',
+    group_post: 'منشور جديد من {name} في {group}',
+    page_post: 'منشور جديد من {page}'
   }
 };
 

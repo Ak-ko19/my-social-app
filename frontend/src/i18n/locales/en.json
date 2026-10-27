@@ -571,6 +571,32 @@
     "removeRecent": "Remove “{{query}}” from recent searches",
     "recentFailed": "That didn’t work. Please try again."
   },
+  "postNotifications": {
+    "button": "Notifications: {{level}}",
+    "title": "Notifications for {{name}}",
+    "legend": {
+      "group": "Which new posts in this group do you want to hear about?",
+      "page": "Which new posts on this page do you want to hear about?"
+    },
+    "levels": {
+      "all": "All posts",
+      "highlights": "Highlights",
+      "off": "Off"
+    },
+    "hints": {
+      "group": {
+        "all": "Every new post in the group",
+        "highlights": "Posts by the group's admins and by people you follow",
+        "off": "No notifications about new posts"
+      },
+      "page": {
+        "all": "Every new post on the page",
+        "highlights": "At most one a day: the first new post",
+        "off": "No notifications about new posts"
+      }
+    },
+    "saveFailed": "Could not save your choice. Please try again."
+  },
   "notifications": {
     "title": "Notifications",
     "loadFailed": "Failed to load notifications",
@@ -612,6 +638,8 @@
     "types": {
       "like": "<b>{{name}}</b> liked your post",
       "share": "<b>{{name}}</b> shared your post",
+      "groupPost": "<b>{{name}}</b> posted in <b>{{group}}</b>",
+      "pagePost": "<b>{{page}}</b> has a new post",
       "comment": "<b>{{name}}</b> commented on your post",
       "follow": "<b>{{name}}</b> started following you",
       "mentionComment": "<b>{{name}}</b> mentioned you in a comment",
@@ -930,11 +958,11 @@
       },
       "groups": {
         "title": "Groups",
-        "description": "Requests to join groups you run, and when you're let into a group"
+        "description": "New posts in your groups, requests to join groups you run, and when you're let in (each group can also be set on its own)"
       },
       "pages": {
         "title": "Pages",
-        "description": "When someone makes you an admin of their page"
+        "description": "New posts on pages you follow, and when someone makes you an admin of their page (each page can also be set on its own)"
       },
       "events": {
         "title": "Events",
@@ -1500,7 +1528,7 @@
         },
         {
           "heading": "9. Your choices",
-          "body": "In Settings you can edit your profile, make your account private, choose who sees each post, choose which notifications you get, mute conversations, turn push notifications on or off, and sign out other devices. You can download a copy of your information at any time (Settings → Security & Privacy). You can deactivate your account (it stays hidden until you log in again) or delete it: deleting permanently removes your data from our database and your photos and voice messages from our media provider."
+          "body": "In Settings you can edit your profile, make your account private, choose who sees each post, choose which notifications you get (and, on each group or page, which of its new posts you hear about), mute conversations, turn push notifications on or off, and sign out other devices. You can download a copy of your information at any time (Settings → Security & Privacy). You can deactivate your account (it stays hidden until you log in again) or delete it: deleting permanently removes your data from our database and your photos and voice messages from our media provider."
         },
         {
           "heading": "10. Children",

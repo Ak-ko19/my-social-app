@@ -28,8 +28,14 @@ a.notif-main:hover .notif-sentence {
 }
 
 .notif-sentence,
+/* Day 101: at most two lines of the post (new-post notifications). */
 .notif-text .card-row-quote {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 /* Under the text, not under the faces. */

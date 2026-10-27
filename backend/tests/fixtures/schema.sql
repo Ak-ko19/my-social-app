@@ -768,3 +768,9 @@ ALTER TABLE messages ADD COLUMN story_id integer REFERENCES stories(id) ON DELET
 ALTER TABLE messages ADD COLUMN story_reply text
   CONSTRAINT chk_messages_story_reply CHECK (story_reply IN ('reply', 'reaction'));
 CREATE INDEX idx_messages_story_id ON messages (story_id) WHERE story_id IS NOT NULL;
+
+-- Day 101 (migration 083): new-post notifications per group / page.
+ALTER TABLE community_members ADD COLUMN post_notifications text NOT NULL DEFAULT 'highlights'
+  CONSTRAINT chk_community_members_post_notifications CHECK (post_notifications IN ('all', 'highlights', 'off'));
+ALTER TABLE page_follows ADD COLUMN post_notifications text NOT NULL DEFAULT 'highlights'
+  CONSTRAINT chk_page_follows_post_notifications CHECK (post_notifications IN ('all', 'highlights', 'off'));

@@ -158,7 +158,9 @@ const schemas = {
     id: s.id(),
     type: s.enum(['like', 'comment_like', 'comment', 'reply', 'mention', 'follow', 'follow_request', 'follow_accepted',
       'group_request', 'group_approved', 'page_admin', 'event_reminder', 'event_cancelled', 'scheduled_post', 'scheduled_failed',
-      'poll_ended', 'poll_ended_own', 'new_login', 'content_removed', 'memories', 'share']),
+      'poll_ended', 'poll_ended_own', 'new_login', 'content_removed', 'memories', 'share',
+      // Day 101: a new post in your group / on a page you follow.
+      'group_post', 'page_post']),
     post_id: s.nullable(s.id()),
     comment_id: s.nullable(s.id()),
     is_read: s.bool('Day 81: for a group, true only when all of it is read'),
@@ -169,7 +171,7 @@ const schemas = {
     actor_id: s.id('Who did it -- the newest in a group (you, for notifications about your own content)'),
     actor_username: s.str(),
     actor_avatar_url: s.nullable(s.str()),
-    post_content: s.nullable(s.str("The post's text, unless you may no longer see it")),
+    post_content: s.nullable(s.str("The first 200 characters of the post's text, unless you may no longer see it")),
     community_id: s.nullable(s.id()), community_name: s.nullable(s.str()),
     page_id: s.nullable(s.id()), page_name: s.nullable(s.str()),
     event_id: s.nullable(s.id()), event_name: s.nullable(s.str()), event_starts_at: s.nullable(s.time()),
@@ -349,7 +351,8 @@ const schemas = {
     created_at: s.time(), member_count: s.int(),
     my_role: s.nullable(s.enum(['admin', 'member'])), my_status: s.nullable(s.enum(['member', 'pending'])),
     is_member: s.bool(), is_admin: s.bool(),
-    can_read: s.bool('Public, or you are a member')
+    can_read: s.bool('Public, or you are a member'),
+    my_post_notifications: s.nullable(s.enum(['all', 'highlights', 'off'], 'Day 101: which of its new posts you hear about; null when not a member'))
   }),
   Page: s.object({
     id: s.id(), name: s.str(),
@@ -357,7 +360,8 @@ const schemas = {
     description: s.nullable(s.str()), created_at: s.time(),
     owner_id: s.id(), owner_username: s.str(),
     follower_count: s.int(), is_following: s.bool(),
-    is_owner: s.bool(), is_admin: s.bool('The owner or one of its admins')
+    is_owner: s.bool(), is_admin: s.bool('The owner or one of its admins'),
+    my_post_notifications: s.nullable(s.enum(['all', 'highlights', 'off'], 'Day 101: which of its new posts you hear about; null when not following'))
   }),
 
   // ---- Moderation ----

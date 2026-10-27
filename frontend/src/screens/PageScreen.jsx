@@ -4,11 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Flag, Pencil } from 'lucide-react';
 import { IconButton } from '../components/ui';
 import ReportDialog from '../components/feed/ReportDialog';
+import PostNotificationsButton from '../components/common/PostNotificationsButton';
 import { useAuth } from '../hooks/useAuth';
 import PostCard from '../components/feed/PostCard';
 import PostCardSkeleton from '../components/feed/PostCardSkeleton';
 import FeedErrorState from '../components/feed/FeedErrorState';
-import { categoryLabel, fetchPage, fetchPagePosts, followPage, unfollowPage } from '../services/pageService';
+import { categoryLabel, fetchPage, fetchPagePosts, followPage, setPagePostNotifications, unfollowPage } from '../services/pageService';
 import '../components/feed/Feed.css';
 import './GroupsScreen.css';
 
@@ -137,6 +138,15 @@ function PageScreen() {
               >
                 {page.is_following ? t('follow.following') : t('follow.follow')}
               </button>
+            )}
+            {/* Day 101: a follower's choice for its new posts. */}
+            {!page.is_admin && page.is_following && (
+              <PostNotificationsButton
+                kind="page"
+                name={page.name}
+                level={page.my_post_notifications}
+                onSave={(level) => setPagePostNotifications(id, level, token).then(() => setPage((p) => ({ ...p, my_post_notifications: level })))}
+              />
             )}
           </div>
         </div>

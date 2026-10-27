@@ -17,6 +17,8 @@ router.delete('/communities/:id', authMiddleware, c.deleteCommunity); // Day 50
 router.get('/communities/:id/posts', optionalAuth, c.listPosts);
 router.get('/communities/:id/members', optionalAuth, c.listMembers);
 router.post('/communities/:id/join', authMiddleware, c.joinCommunity);
+// Day 101: which of the group's new posts you hear about.
+router.put('/communities/:id/notifications', authMiddleware, c.setPostNotifications);
 router.delete('/communities/:id/members/:userId', authMiddleware, c.removeMember);
 router.put('/communities/:id/members/:userId/role', authMiddleware, c.setRole);
 router.get('/communities/:id/requests', authMiddleware, c.listRequests);

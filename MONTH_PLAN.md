@@ -302,7 +302,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 100 — Story replies and reactions
 - [x] Reply to a story (it arrives as a message with the story attached) and react with an emoji; respects message permissions and blocks. *(A reply box and 8 quick reactions in the story viewer; the chat shows the story while it is up — see Progress Log.)*
 ### Day 101 — Group and page notification settings
-- [ ] Turn off notifications for one group's or one page's new posts (all / highlights / off).
+- [x] Turn off notifications for one group's or one page's new posts (all / highlights / off). *(New-post notifications for groups and pages, with a bell on each — see Progress Log.)*
 ### Day 102 — New-account safety
 - [ ] Tighter limits for an account's first 24 hours (posts, links, follows, messages to strangers), in the existing spam checks; clear messages in EN/AR.
 ### Day 103–104 — Admin tools round 2

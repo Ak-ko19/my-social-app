@@ -55,6 +55,8 @@ const PAGE_COLUMNS = `p.id, p.name, p.category, p.description, p.created_at,
   u.id AS owner_id, u.username AS owner_username,
   (SELECT COUNT(*)::int FROM page_follows f WHERE f.page_id = p.id) AS follower_count,
   $2::int IS NOT NULL AND EXISTS(SELECT 1 FROM page_follows f WHERE f.page_id = p.id AND f.user_id = $2) AS is_following,
+  -- Day 101: a follower's choice for its new posts (null when not following).
+  (SELECT f.post_notifications FROM page_follows f WHERE f.page_id = p.id AND f.user_id = $2) AS my_post_notifications,
   p.owner_id = $2 AS is_owner,
   -- Day 53: the owner or one of the page's admins.
   (p.owner_id = $2 OR EXISTS(SELECT 1 FROM page_admins pa WHERE pa.page_id = p.id AND pa.user_id = $2)) AS is_admin`;
@@ -217,6 +219,21 @@ async function followPage(req, res) {
   }
 }
 
+// Day 101: PUT /pages/:id/notifications { level: all | highlights | off }
+// -- which of this page's new posts you hear about. Followers only.
+async function setPostNotifications(req, res) {
+  try {
+    const level = req.body?.level;
+    const page = await loadPage(Number(req.params.id), req.userId);
+    if (!page.is_following) throw new PageError(403, 'Follow this page first');
+    if (!notificationService.POST_LEVELS.includes(level)) throw new PageError(400, 'level must be all, highlights or off');
+    await db.query('UPDATE page_follows SET post_notifications = $3 WHERE page_id = $1 AND user_id = $2', [page.id, req.userId, level]);
+    res.json({ level });
+  } catch (err) {
+    sendError(res, err, 'Saving your notification choice failed. Please try again later.');
+  }
+}
+
 // DELETE /pages/:id/follow -- idempotent.
 async function unfollowPage(req, res) {
   try {
@@ -341,5 +358,5 @@ async function listPagePosts(req, res) {
   }
 }
 
-module.exports = { CATEGORIES, createPage, listPages, getPage, updatePage, deletePage, followPage, unfollowPage, listPagePosts,
+module.exports = { CATEGORIES, createPage, listPages, getPage, updatePage, deletePage, followPage, unfollowPage, setPostNotifications, listPagePosts,
   listAdmins, addAdmin, removeAdmin };

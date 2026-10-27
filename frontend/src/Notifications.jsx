@@ -45,6 +45,9 @@ function notificationKey(n) {
   if (n.type === 'memories') return 'memories';
   // Days 93-94: someone shared your post.
   if (n.type === 'share') return 'share';
+  // Day 101: a new post in your group / on a page you follow.
+  if (n.type === 'group_post') return 'groupPost';
+  if (n.type === 'page_post') return 'pagePost';
   return 'other';
 }
 
@@ -70,7 +73,7 @@ function removedWords(details, t) {
 function targetOf(n, myId) {
   switch (n.type) {
     case 'like': case 'comment': case 'mention': case 'reply': case 'comment_like':
-    case 'scheduled_post': case 'poll_ended': case 'poll_ended_own': case 'share':
+    case 'scheduled_post': case 'poll_ended': case 'poll_ended_own': case 'share': case 'group_post': case 'page_post':
       return n.post_id ? `/posts/${n.post_id}` : null;
     case 'follow':
       return n.actor_count > 1 ? `/profile/${myId}/connections?tab=followers` : `/profile/${n.actor_id}`;
@@ -118,8 +121,16 @@ function Sentence({ n, t }) {
   );
 }
 
-// Day 81: up to two faces for a group, one otherwise.
+// Day 81: up to two faces for a group, one otherwise. Day 101: a page's
+// post shows the page (its initials), not the person who runs it.
 function Faces({ n }) {
+  if (n.type === 'page_post') {
+    return (
+      <span className="notif-faces" aria-hidden="true">
+        <Avatar size={36} initials={(n.page_name || '?').slice(0, 2).toUpperCase()} alt="" />
+      </span>
+    );
+  }
   const actors = n.actor_count > 1 && n.actors?.length > 1 ? n.actors.slice(0, 2) : [{ id: n.actor_id, username: n.actor_username, avatar_url: n.actor_avatar_url }];
   return (
     <span className={actors.length > 1 ? 'notif-faces is-group' : 'notif-faces'} aria-hidden="true">

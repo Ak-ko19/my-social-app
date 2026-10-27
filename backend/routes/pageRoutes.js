@@ -17,6 +17,8 @@ router.delete('/pages/:id', authMiddleware, p.deletePage);
 router.get('/pages/:id/posts', optionalAuth, p.listPagePosts);
 router.post('/pages/:id/follow', authMiddleware, p.followPage);
 router.delete('/pages/:id/follow', authMiddleware, p.unfollowPage);
+// Day 101: which of the page's new posts you hear about.
+router.put('/pages/:id/notifications', authMiddleware, p.setPostNotifications);
 // Day 53: page admins.
 router.get('/pages/:id/admins', authMiddleware, p.listAdmins);
 router.post('/pages/:id/admins', authMiddleware, p.addAdmin);

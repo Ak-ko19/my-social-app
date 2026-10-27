@@ -54,7 +54,7 @@ async function loadCommunity(communityId, viewerId) {
   const result = await db.query(
     `SELECT c.id, c.name, c.description, c.privacy, c.created_at,
        (SELECT COUNT(*)::int FROM community_members m WHERE m.community_id = c.id AND m.status = 'member') AS member_count,
-       me.role AS my_role, me.status AS my_status
+       me.role AS my_role, me.status AS my_status, me.post_notifications AS my_post_notifications
      FROM communities c
      LEFT JOIN community_members me ON me.community_id = c.id AND me.user_id = $2
      WHERE c.id = $1`,
@@ -65,6 +65,8 @@ async function loadCommunity(communityId, viewerId) {
   c.is_member = c.my_status === 'member';
   c.is_admin = c.is_member && c.my_role === 'admin';
   c.can_read = c.privacy === 'public' || c.is_member;
+  // Day 101: your choice for its new posts -- members only.
+  if (!c.is_member) c.my_post_notifications = null;
   return c;
 }
 
@@ -184,6 +186,24 @@ async function getCommunity(req, res) {
     res.json(await loadCommunity(Number(req.params.id), req.userId));
   } catch (err) {
     sendError(res, err, 'Loading the group failed. Please try again later.');
+  }
+}
+
+// Day 101: PUT /communities/:id/notifications { level: all | highlights |
+// off } -- which of this group's new posts you hear about. Members only.
+async function setPostNotifications(req, res) {
+  try {
+    const level = req.body?.level;
+    const c = await loadCommunity(Number(req.params.id), req.userId);
+    if (!c.is_member) throw new CommunityError(403, 'Join this group first');
+    if (!notificationService.POST_LEVELS.includes(level)) throw new CommunityError(400, 'level must be all, highlights or off');
+    await db.query(
+      "UPDATE community_members SET post_notifications = $3 WHERE community_id = $1 AND user_id = $2 AND status = 'member'",
+      [c.id, req.userId, level]
+    );
+    res.json({ level });
+  } catch (err) {
+    sendError(res, err, 'Saving your notification choice failed. Please try again later.');
   }
 }
 
@@ -463,6 +483,7 @@ module.exports = {
   createCommunity,
   listCommunities,
   getCommunity,
+  setPostNotifications,
   updateCommunity,
   deleteCommunity,
   joinCommunity,

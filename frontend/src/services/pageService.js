@@ -22,6 +22,8 @@ export const updatePage = (id, fields, token) => api.patch(`/pages/${id}`, field
 export const deletePage = (id, token) => api.delete(`/pages/${id}`, withAuth(token)).then(data);
 export const followPage = (id, token) => api.post(`/pages/${id}/follow`, {}, withAuth(token)).then(data);
 export const unfollowPage = (id, token) => api.delete(`/pages/${id}/follow`, withAuth(token)).then(data);
+// Day 101: which of the page's new posts you hear about -- 'all' | 'highlights' | 'off'.
+export const setPagePostNotifications = (id, level, token) => api.put(`/pages/${id}/notifications`, { level }, withAuth(token)).then(data);
 export const fetchPagePosts = (id, token, { page = 1, limit = 10 } = {}) =>
   api.get(`/pages/${id}/posts`, { ...withAuth(token), params: { page, limit } }).then(data);
 // Day 53: page admins -- { owner, admins }; the owner adds / removes, an

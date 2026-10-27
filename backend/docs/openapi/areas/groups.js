@@ -7,6 +7,13 @@ const BAD_GROUP = text('Invalid group ID');
 const GROUP_ADMIN_ONLY = text('Only group admins can do that');
 const PAGE_NOT_FOUND = text('Page not found (also when its owner is deactivated or there is a block between you)');
 const BAD_PAGE = text('Invalid page ID');
+// Day 101: your choice for a group's / page's new posts.
+const POST_LEVEL_BODY = body({
+  level: s.enum(['all', 'highlights', 'off'],
+    "all: every new post; highlights (the default): a group's posts by its admins and people you follow, a page's first new post of the day; off: none")
+}, { required: ['level'] });
+const POST_LEVEL_SAVED = json(s.object({ level: s.enum(['all', 'highlights', 'off']) }), 'Saved');
+const BAD_LEVEL = 'level must be all, highlights or off';
 const GROUP_FIELDS = {
   name: s.str('Up to 100 characters'),
   description: s.str('Up to 1000 characters'),
@@ -89,6 +96,13 @@ module.exports = {
       403: text('Join this group to see its members'),
       404: GROUP_NOT_FOUND
     }
+  }),
+  'PUT /communities/:id/notifications': op({
+    tag: 'Groups', auth: 'user',
+    summary: "Choose which of the group's new posts you hear about",
+    description: 'Day 101. Members only; leaving drops the choice. The Groups switch in notification settings still turns all of them off.',
+    requestBody: POST_LEVEL_BODY,
+    responses: { 200: POST_LEVEL_SAVED, 400: text(`Invalid group ID / ${BAD_LEVEL}`), 403: text('Join this group first'), 404: GROUP_NOT_FOUND }
   }),
   'POST /communities/:id/join': op({
     tag: 'Groups', auth: 'user',
@@ -231,6 +245,13 @@ module.exports = {
       400: BAD_PAGE,
       404: PAGE_NOT_FOUND
     }
+  }),
+  'PUT /pages/:id/notifications': op({
+    tag: 'Pages', auth: 'user',
+    summary: "Choose which of the page's new posts you hear about",
+    description: 'Day 101. Followers only; unfollowing drops the choice. The Pages switch in notification settings still turns all of them off.',
+    requestBody: POST_LEVEL_BODY,
+    responses: { 200: POST_LEVEL_SAVED, 400: text(`Invalid page ID / ${BAD_LEVEL}`), 403: text('Follow this page first'), 404: PAGE_NOT_FOUND }
   }),
   'POST /pages/:id/follow': op({
     tag: 'Pages', auth: 'user',

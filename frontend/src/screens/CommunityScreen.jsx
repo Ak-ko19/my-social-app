@@ -4,11 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Flag, Globe, Lock, Settings2, UsersRound } from 'lucide-react';
 import { IconButton, ConfirmDialog } from '../components/ui';
 import ReportDialog from '../components/feed/ReportDialog';
+import PostNotificationsButton from '../components/common/PostNotificationsButton';
 import { useAuth } from '../hooks/useAuth';
 import PostCard from '../components/feed/PostCard';
 import PostCardSkeleton from '../components/feed/PostCardSkeleton';
 import FeedErrorState from '../components/feed/FeedErrorState';
-import { fetchCommunity, fetchCommunityPosts, joinCommunity, removeCommunityMember } from '../services/communityService';
+import { fetchCommunity, fetchCommunityPosts, joinCommunity, removeCommunityMember, setCommunityPostNotifications } from '../services/communityService';
 import { serverErrorText } from '../utils/serverError';
 import '../components/feed/Feed.css';
 import './GroupsScreen.css';
@@ -188,6 +189,13 @@ function CommunityScreen() {
                 <button type="button" className="btn btn-secondary" onClick={() => setConfirmLeave(true)}>
                   {t('groups.leave')}
                 </button>
+                {/* Day 101: which of its new posts you hear about. */}
+                <PostNotificationsButton
+                  kind="group"
+                  name={group.name}
+                  level={group.my_post_notifications}
+                  onSave={(level) => setCommunityPostNotifications(id, level, token).then(() => setGroup((g) => ({ ...g, my_post_notifications: level })))}
+                />
               </>
             )}
           </div>

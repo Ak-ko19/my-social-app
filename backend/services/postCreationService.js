@@ -9,6 +9,7 @@ const { toUnicode } = require('../utils/myanmarText');
 const pollService = require('./pollService');
 const hashtagService = require('./hashtagService');
 const mentionService = require('./mentionService');
+const { notifyNewPost } = require('./notificationService');
 const { managesPage } = require('./pageAdminService');
 
 // B5: keep in sync with migration 020's CHECK constraint.
@@ -195,12 +196,14 @@ async function insertPost(queryable, userId, fields, imageUrls) {
 }
 
 // After the post is saved (and committed): its hashtags and mention
-// notifications. Returns the post as POST /posts answers it.
+// notifications, and (Day 101) the group's members / the page's followers
+// hear about it. Returns the post as POST /posts answers it.
 async function finishPost(row, userId, fields, imageUrls) {
   const altTexts = fields.altTexts || [];
   await hashtagService.syncPostHashtags(row.id, row.content);
   // The post's author (a page post: the page's owner), not whoever typed it.
   await mentionService.notifyMentions({ content: row.content, authorId: row.user_id, postId: row.id });
+  await notifyNewPost(row);
   return {
     ...row,
     media: imageUrls.map((url, i) => ({ url, alt: altTexts[i] ?? null })),

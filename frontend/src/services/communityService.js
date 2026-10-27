@@ -14,6 +14,8 @@ export const createCommunity = (fields, token) => api.post('/communities', field
 export const fetchCommunity = (id, token) => api.get(`/communities/${id}`, withAuth(token)).then(data);
 export const updateCommunity = (id, fields, token) => api.patch(`/communities/${id}`, fields, withAuth(token)).then(data);
 export const joinCommunity = (id, token) => api.post(`/communities/${id}/join`, {}, withAuth(token)).then(data);
+// Day 101: which of the group's new posts you hear about -- 'all' | 'highlights' | 'off'.
+export const setCommunityPostNotifications = (id, level, token) => api.put(`/communities/${id}/notifications`, { level }, withAuth(token)).then(data);
 // Removing yourself = leaving (or cancelling a pending request).
 export const removeCommunityMember = (id, userId, token) => api.delete(`/communities/${id}/members/${userId}`, withAuth(token)).then(data);
 export const fetchCommunityPosts = (id, token, { page = 1, limit = 10 } = {}) =>

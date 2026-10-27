@@ -58,11 +58,11 @@ async function buildExport(userId) {
           WHERE f.follower_id = $1 OR f.following_id = $1 ORDER BY f.created_at`, [userId]),
     rows(`SELECT u.username, b.created_at FROM blocks b JOIN users u ON u.id = b.blocked_id
           WHERE b.blocker_id = $1 ORDER BY b.created_at`, [userId]),
-    rows(`SELECT c.id, c.name, cm.role, cm.status, cm.joined_at, c.created_by = $1 AS created_by_me
+    rows(`SELECT c.id, c.name, cm.role, cm.status, cm.joined_at, cm.post_notifications, c.created_by = $1 AS created_by_me
           FROM community_members cm JOIN communities c ON c.id = cm.community_id
           WHERE cm.user_id = $1 ORDER BY cm.joined_at`, [userId]),
     rows(`SELECT id, name, category, description, created_at FROM pages WHERE owner_id = $1 ORDER BY created_at`, [userId]),
-    rows(`SELECT pg.id, pg.name, pf.created_at FROM page_follows pf JOIN pages pg ON pg.id = pf.page_id
+    rows(`SELECT pg.id, pg.name, pf.created_at, pf.post_notifications FROM page_follows pf JOIN pages pg ON pg.id = pf.page_id
           WHERE pf.user_id = $1 ORDER BY pf.created_at`, [userId]),
     rows(`SELECT c.id, c.type, c.name, c.avatar_url, c.created_at, cp.joined_at,
             -- Days 97-98: your own pin and archive.

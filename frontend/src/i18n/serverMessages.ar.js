@@ -163,6 +163,10 @@ const AR = {
   'Only WEBM, MP4, OGG, and MPEG audio files are allowed': 'يُسمح فقط بملفات الصوت WEBM وMP4 وOGG وMPEG',
   'File is too large (max 5 MB)': 'الملف كبير جدًا (الحد الأقصى 5 ميغابايت)',
   'You can attach up to 10 images': 'يمكنك إرفاق 10 صور كحد أقصى',
+  // Day 101: your choice for a group's / page's new posts.
+  'Join this group first': 'انضم إلى هذه المجموعة أولًا',
+  'Follow this page first': 'تابع هذه الصفحة أولًا',
+  'Saving your notification choice failed. Please try again later.': 'تعذّر حفظ اختيارك للإشعارات. حاول مرة أخرى لاحقًا.',
   // Day 100: replies and reactions to a story.
   "A reaction to a story can't be edited": 'لا يمكن تعديل التفاعل مع قصة',
   "You can't reply to your own story": 'لا يمكنك الرد على قصتك',

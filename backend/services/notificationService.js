@@ -5,6 +5,7 @@ const db = require('../db');
 const { pushNotification } = require('./pushService');
 const { notRestrictedSql } = require('./restrictService');
 const { noBlockBetweenSql } = require('./blockService');
+const { notMutedSql } = require('./muteService');
 const logger = require('../utils/logger');
 
 // Day 91 (AUDIT_REPORT_4 B1): which of a person's notifications they see --
@@ -12,8 +13,13 @@ const logger = require('../utils/logger');
 // block with them, in either direction. Blocking hides the rows, counts
 // and faces; it doesn't delete them, so an unblock brings them back (like
 // Facebook). n = the notifications row's alias.
+// Day 101: and a group's new posts only while you are still a member (no
+// snippet of a private group's post after you leave; joining again brings
+// them back).
 function visibleSql(n) {
-  return `(${n}.actor_id = ${n}.user_id OR ${noBlockBetweenSql(`${n}.user_id`, `${n}.actor_id`)})`;
+  return `((${n}.actor_id = ${n}.user_id OR ${noBlockBetweenSql(`${n}.user_id`, `${n}.actor_id`)})
+    AND (${n}.type <> 'group_post' OR EXISTS (
+      SELECT 1 FROM community_members vm WHERE vm.community_id = ${n}.community_id AND vm.user_id = ${n}.user_id AND vm.status = 'member')))`;
 }
 
 // Day 81: tells the user's open apps at once, with the new unread count:
@@ -61,7 +67,10 @@ const CATEGORY_BY_TYPE = {
   event_reminder: 'events',
   event_cancelled: 'events',
   // Days 93-94: someone shared your post to their feed.
-  share: 'shares'
+  share: 'shares',
+  // Day 101: a new post in your group / on a page you follow (notifyNewPost).
+  group_post: 'groups',
+  page_post: 'pages'
 };
 
 // 'messages' (Day 23) has no notification type: it controls message pushes
@@ -161,6 +170,66 @@ async function notifySystem({ userId, type, postId = null, device = null, detail
   announce(userId);
 }
 
+// Day 101: what each member's / follower's choice lets through (migration
+// 083). $1 the author, $3 the group / page; the alias is the membership.
+const POST_LEVELS = ['all', 'highlights', 'off'];
+const GROUP_HIGHLIGHT_SQL = (cm) => `(${cm}.post_notifications = 'all' OR (${cm}.post_notifications = 'highlights' AND (
+  -- Highlights: the group's admins, and people you follow.
+  EXISTS (SELECT 1 FROM community_members ad WHERE ad.community_id = $3 AND ad.user_id = $1 AND ad.role = 'admin' AND ad.status = 'member')
+  OR EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = ${cm}.user_id AND f.following_id = $1 AND f.status = 'accepted'))))`;
+const PAGE_HIGHLIGHT_SQL = (pf) => `(${pf}.post_notifications = 'all' OR (${pf}.post_notifications = 'highlights' AND NOT EXISTS (
+  -- Highlights: the page's first new post of the day.
+  SELECT 1 FROM notifications d WHERE d.user_id = ${pf}.user_id AND d.type = 'page_post' AND d.page_id = $3
+    AND d.created_at > now() - interval '1 day')))`;
+
+// Day 101: "NAME posted in GROUP" to the group's members, "PAGE posted" to
+// the page's followers -- one INSERT ... SELECT for everyone, each with the
+// same rules as notify (their Groups / Pages setting, no block, nobody they
+// restricted) plus their choice for that group / page. Never the author; a
+// page's post never to its own admins (one of them wrote it); a group post
+// not from someone you muted (their posts left your Home). `post` is the
+// saved posts row: user_id (a page post: the page's owner), community_id,
+// page_id.
+async function notifyNewPost(post) {
+  const common = (who) => `${allowedSql(post.community_id ? 'groups' : 'pages', who)}
+    AND ${notRestrictedSql(who, '$1::int')}
+    AND ${noBlockBetweenSql(who, '$1::int')}`;
+  let result;
+  if (post.community_id) {
+    result = await db.query(
+      `INSERT INTO notifications (user_id, actor_id, type, post_id, community_id)
+       SELECT cm.user_id, $1, 'group_post', $2, $3
+       FROM community_members cm
+       WHERE cm.community_id = $3 AND cm.status = 'member' AND cm.user_id <> $1
+         AND ${GROUP_HIGHLIGHT_SQL('cm')}
+         AND ${notMutedSql('cm.user_id', '$1::int')}
+         AND ${common('cm.user_id')}
+       RETURNING user_id`,
+      [post.user_id, post.id, post.community_id]
+    );
+  } else if (post.page_id) {
+    result = await db.query(
+      `INSERT INTO notifications (user_id, actor_id, type, post_id, page_id)
+       SELECT pf.user_id, $1, 'page_post', $2, $3
+       FROM page_follows pf
+       WHERE pf.page_id = $3 AND pf.user_id <> $1
+         AND NOT EXISTS (SELECT 1 FROM page_admins pa WHERE pa.page_id = $3 AND pa.user_id = pf.user_id)
+         AND ${PAGE_HIGHLIGHT_SQL('pf')}
+         AND ${common('pf.user_id')}
+       RETURNING user_id`,
+      [post.user_id, post.id, post.page_id]
+    );
+  } else {
+    return 0;
+  }
+  const type = post.community_id ? 'group_post' : 'page_post';
+  for (const { user_id: userId } of result.rows) {
+    pushNotification({ userId, actorId: post.user_id, type, postId: post.id, communityId: post.community_id, pageId: post.page_id });
+    announce(userId);
+  }
+  return result.rowCount;
+}
+
 // { likes, comments, mentions, follows, follow_accepted, messages, groups, pages, events, memories, shares } -- all true when
 // the user never saved settings.
 async function getPreferences(userId) {
@@ -186,4 +255,4 @@ async function updatePreferences(userId, changes) {
   return next;
 }
 
-module.exports = { notify, notifySystem, announce, SYSTEM_TYPES, getPreferences, updatePreferences, allowedSql, visibleSql, CATEGORIES, CATEGORY_BY_TYPE };
+module.exports = { notify, notifySystem, notifyNewPost, POST_LEVELS, announce, SYSTEM_TYPES, getPreferences, updatePreferences, allowedSql, visibleSql, CATEGORIES, CATEGORY_BY_TYPE };
