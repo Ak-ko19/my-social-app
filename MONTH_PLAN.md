@@ -3174,3 +3174,37 @@ Read-only; no application code changed. Same method as audit 3, on
     333, constraints 194, indexes 149).
   - Full browser run in batches of 3: 93/93 OK (day101 re-ran after the
     contrast fix, green in its batch and alone).
+
+### 2026-10-27 — Day 102: New-account safety
+- **What (`39840ac`):** for its first 24 hours an account (not an admin)
+  is held back further, on top of the usual spam checks (Facebook and
+  Instagram do the same; most spam accounts are used the day they are
+  made):
+  - 3 posts in 10 minutes (usually 10), 10 comments (usually 30);
+  - links in 3 posts or comments an hour (any links);
+  - 20 follows an hour;
+  - messages to 5 people a day who don't follow it and haven't written
+    to it -- in createMessage, so text, voice, photos, forwards and story
+    replies all count; a chat already started goes on; group chats don't.
+  - Each refusal is a 429 saying it's because the account is new (EN/AR),
+    and Help has a new question explaining the first day's limits.
+- **Also:** a refused chat message now says why under the failed bubble
+  (the socket's message_error text or the REST 4xx, translated) -- the
+  existing block and "who can message me" refusals too; a server error
+  still just offers Retry.
+- **Found on the way:**
+  - linkKeys returns an array, not a Set: `.size` made every post count as
+    a link (caught by the tests before commit).
+  - A failed, unsent message has no id: editingId === message.id
+    (null === null) opened it in edit mode. Fixed; the suite checks it.
+  - spam.test and day49-spam used brand-new accounts and now age them past
+    the first day; the Help answer count was hard-coded in a Vitest and in
+    day60-settings (which now reads it from the locale).
+- **Tests:** spamNewAccounts 6 (17 mutations caught); Vitest +3 (421);
+  day102-new-accounts 24/24 EN/light + AR/dark with axe (spam stack).
+- **Tests at close:**
+  - Backend 1141/1141, Vitest 421/421, lint (exit 0), check:i18n (1635
+    keys), bundle 220.4 kB, npm audit 0/0. No migration, so no rehearsal.
+  - Full browser run in batches of 3: 94/94 OK. day27-perf first stopped at
+    0/0 (its seeding step, while the machine was short of memory); it
+    re-ran alone, green (48/48).
