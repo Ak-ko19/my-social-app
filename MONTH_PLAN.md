@@ -3249,3 +3249,29 @@ Read-only; no application code changed. Same method as audit 3, on
     keys), bundle 220.9 kB, npm audit 0/0, rehearsal 015 → 084 (columns
     333, constraints 194, indexes 151), perf 51/51.
   - Full browser run in batches of 3: 96/96 OK, first time.
+
+### 2026-10-28 — Day 105: Profile completeness
+- **What (`dac1eca`):** a "Finish your profile" card on Home, like
+  Facebook's: "2 of 4 done" with a labelled progress bar, the steps left
+  (profile photo, cover photo, bio, a link) each one tap from its field --
+  Edit profile takes ?focus=photo|cover|bio|links and puts that field in
+  view and in focus; done steps are ticked. Shown once the first-run steps
+  are done, until everything is filled in or "Don't show again".
+  - The dismissal is kept on the server (migration 085,
+    users.profile_card_dismissed_at; POST /profile/completion/dismiss,
+    idempotent), so it stays hidden on every device; /profile/me and the
+    data export include it. The steps come from /profile/me, which Home
+    already loads -- no new request.
+- **Tests:** profileCard 3 (4 mutations caught); Vitest +4 (432); e2e
+  day105-profile-card 22/22 EN/light + AR/dark with axe.
+- **Tests at close:**
+  - Backend 1154/1154, Vitest 432/432, lint (exit 0), check:i18n (1686
+    keys), bundle 222.0 kB of 225 (Home's cards ship in the first
+    download; Day 113 looks at loading them later), npm audit 0/0 in all
+    three folders, rehearsal 015 → 085.
+  - Full browser run in batches of 3 (heavy suites alone): 95/97 green
+    first time. The machine slept mid-run; day27-perf then stopped at 0/0
+    (psql could not start, 0xC0000142, memory short after waking) and
+    day80-states-en failed its very first check (Home showed the empty
+    feed under a faked 500); both re-ran alone, green (51/51, 154/154).
+    The same check passed in AR in that run and in Day 105's own run.

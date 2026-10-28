@@ -1,29 +1,36 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 105 — Profile completeness.
-**Step:** 1 — done (committed). Next: close Day 105 -- full browser run in batches of 3, then the Progress Log entry.
+**Day:** 106 — Page verification requests.
+**Step:** 1 — PLAN done; BUILD next. Parts done: none.
 
-### Plan (Day 105, step 1)
-A "Finish your profile" card on Home, like Facebook's: how far along you
-are and what's left, each step one tap from its field; dismissable.
-- **Steps (4):** profile photo, cover photo, bio, a link -- worked out from
-  GET /profile/me (no new data needed for them).
-- **Dismiss:** kept on the server (migration 085,
-  users.profile_card_dismissed_at) so it stays hidden on every device;
-  POST /profile/completion/dismiss (idempotent); /profile/me says
-  profile_card_dismissed_at. Data export includes it.
-- **When it shows:** your first-run steps are done (onboarded_at), it isn't
-  dismissed, and something is left. Below the composer, above Memories.
-- **Card:** title, "2 of 4 done" with a progress bar (role progressbar,
-  labelled), the steps left as links ("Add a profile photo" ->
-  /edit-profile?focus=photo, ...), done ones shown ticked; an X labelled
-  "Don't show again" (it stays hidden, as Facebook's). EN/AR, RTL,
-  light/dark.
-- **Edit profile:** ?focus=photo|cover|bio|links scrolls that field into
-  view and puts the keyboard focus on it.
-- **Tests:** backend (dismiss, the field, auth, export), Vitest (the card
-  in each state, dismiss, Arabic; EditProfile focus), e2e
-  day105-profile-card EN/light + AR/dark with axe.
+### Plan (Day 106, step 1)
+Facebook-like: a page's managers ask, an admin approves / declines with a
+reason, approved pages get the blue tick everywhere their name shows.
+- **Data (migration 086):** pages.verified_at; page_verification_requests
+  (page_id cascade, requested_by SET NULL, note 1-500, link optional
+  http(s) <= 300, status pending/approved/declined, decided_by SET NULL,
+  decided_at, decline_reason incomplete/not_notable/impersonation/other,
+  created_at); one pending per page (unique partial index); queue
+  indexes. admin_actions: page_verified / page_declined / page_unverified.
+- **Rules:** owner or admins ask; needs the page's About text; not while
+  one is pending or the page is verified; 30 days after a decline. They can
+  withdraw a pending request. Renaming a verified page removes the tick
+  (no swapping a verified page into someone else's name); the edit screen
+  says so first.
+- **API:** GET/POST/DELETE /pages/:id/verification (managers);
+  GET /admin/page-verifications?status=pending|reviewed&page=,
+  POST .../:id/approve, .../:id/decline { reason },
+  POST /admin/pages/:id/unverify { reason }. Each decision: one
+  transaction with its admin-log entry; the page's managers get a system
+  notification (page_verified / page_not_verified / page_unverified, no
+  off switch) + push (EN/AR).
+- **Badge:** pages JSON is_verified; post cards' page { verified }; tick on
+  PageScreen, Pages list rows, PostCard / SharedPostCard page bylines.
+- **UI:** Edit page > Verification (state card + request form);
+  Admin > Verification (Pending | Reviewed). EN/AR, RTL, light/dark.
+- **Also:** textOf + toUnicode for the note, convert-zawgyi COLUMNS,
+  openapi, server messages AR, data export (requests you made), Privacy
+  Policy (moderators read the request), Help question, e2e suite.
 
 ## Carry-over notes
 - Day 105: the first download is 222.0 kB of the 225 kB budget (Home's
