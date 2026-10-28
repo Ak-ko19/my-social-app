@@ -29,3 +29,16 @@ describe('useFeed paging', () => {
     expect(fetchFeed).toHaveBeenCalledTimes(2);
   });
 });
+
+// Days 107-108: "Unfollow #tag" on a Home post.
+describe('useFeed removePostsByTag', () => {
+  it("drops the posts that tag brought, keeping ones there for another reason (via_hashtag null) or another tag", async () => {
+    fetchFeed.mockResolvedValueOnce({ posts: [
+      { id: 4, via_hashtag: 'tea' }, { id: 3, via_hashtag: null }, { id: 2, via_hashtag: 'coffee' }, { id: 1, via_hashtag: 'tea' }
+    ], hasMore: false, nextCursor: null });
+    const { result } = renderHook(() => useFeed('tok', 7));
+    await waitFor(() => expect(result.current.posts).toHaveLength(4));
+    act(() => result.current.removePostsByTag('tea'));
+    expect(result.current.posts.map((p) => p.id)).toEqual([3, 2]);
+  });
+});

@@ -570,3 +570,14 @@
   overflow-y: auto;
   margin-bottom: var(--space-3);
 }
+
+/* Days 107-108: "#tag · You follow this hashtag" over a Home post. */
+.post-card-via a {
+  color: var(--color-accent-text);
+  text-decoration: none;
+}
+
+.post-card-via a:hover,
+.post-card-via a:focus-visible {
+  text-decoration: underline;
+}

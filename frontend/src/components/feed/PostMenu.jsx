@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { BookmarkPlus, Flag, Globe, Lock, MoreHorizontal, Pencil, Pin, PinOff, Star, Trash2, UserX, Users, VolumeX } from 'lucide-react';
+import { BookmarkPlus, Flag, Globe, Hash, Lock, MoreHorizontal, Pencil, Pin, PinOff, Star, Trash2, UserX, Users, VolumeX } from 'lucide-react';
 import { IconButton, ActionSheet, ConfirmDialog } from '../ui';
 import ReportDialog from './ReportDialog';
 // Day 46: loaded when first opened -- every feed card has this menu.
@@ -9,6 +9,7 @@ import { serverErrorText } from '../../utils/serverError';
 import { useAuth } from '../../hooks/useAuth';
 import { blockUser } from '../../services/blockService';
 import { muteUser } from '../../services/muteService';
+import { unfollowHashtag } from '../../services/hashtagService';
 import { deletePost } from '../../services/postService';
 
 // The post card's "..." menu. Report (Feature 2) and the post owner's
@@ -30,7 +31,9 @@ const AUDIENCE_ITEMS = [
 
 // saved / onSaved (Day 46): the post's Save state, for "Save to collection".
 // onMuted (Day 47): the author was muted -- Home drops their posts.
-function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, onDeleted, onEdit, onTogglePin, canModerate = false, saved = false, onSaved, onMuted, canManagePage = false }) {
+// onUnfollowedTag (Days 107-108): the hashtag that brought this post to Home
+// was unfollowed -- Home drops that tag's posts.
+function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, onDeleted, onEdit, onTogglePin, canModerate = false, saved = false, onSaved, onMuted, onUnfollowedTag, canManagePage = false }) {
   const { t } = useTranslation();
   const { token, userId } = useAuth();
   // Day 53: a page's admins handle its posts like their author.
@@ -113,7 +116,22 @@ function PostMenu({ post, visibility = 'public', onChangeVisibility, onBlocked, 
     }
   };
 
+  const handleUnfollowTag = async () => {
+    setMuteError('');
+    try {
+      await unfollowHashtag(post.via_hashtag, token);
+      onUnfollowedTag?.(post.via_hashtag);
+    } catch (err) {
+      console.error(err);
+      setMuteError(serverErrorText(err, 'feed.unfollowTagFailed'));
+    }
+  };
+
   const otherMenu = [
+        // Days 107-108: first, as it is why the post is here.
+        ...(post.via_hashtag && onUnfollowedTag
+          ? [{ key: 'unfollow-tag', label: t('feed.unfollowTag', { tag: post.via_hashtag }), icon: Hash, onSelect: handleUnfollowTag }]
+          : []),
         {
           key: 'mute',
           label: t('muted.muteName', { name: post.username }),

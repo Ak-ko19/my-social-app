@@ -80,6 +80,12 @@ UPDATE posts SET shared_post_id = posts.id - 1, is_share = true
 FROM r WHERE posts.id > r.plo AND posts.id % 20 = 0;
 
 INSERT INTO bookmarks (user_id, post_id) SELECT 1, r.plo + g * 7 FROM r, generate_series(0, 199) g;
+-- Days 107-108: the viewer follows 50 hashtags (their public posts come to
+-- Home). Not the busy #perf (1 post in 10): measured once with it, /feed
+-- read fewer rows (1336), but so dense a feed makes ?page=5 cheap too and
+-- the cursor check below no longer compares walks.
+INSERT INTO hashtag_follows (user_id, hashtag_id)
+SELECT 1, id FROM hashtags WHERE tag IN (SELECT 't' || (g * 59) FROM generate_series(0, 49) g);
 INSERT INTO stories (user_id, media_url, created_at, expires_at)
 SELECT r.ulo + (g % 30000), 'https://res.cloudinary.com/demo/image/upload/sample.jpg', now() - g * interval '1 minute',
        now() - g * interval '1 minute' + interval '24 hours'

@@ -66,3 +66,45 @@ describe('PostMenu pin item', () => {
     expect(screen.queryByText('Pin to profile')).toBeNull();
   });
 });
+
+// Days 107-108: a post a followed hashtag brought to Home -- "Unfollow #tag",
+// first in the menu, only where Home passes onUnfollowedTag.
+describe('PostMenu unfollow-hashtag item', () => {
+  const post = { id: 1, user_id: 7, username: 'ann', via_hashtag: 'tea' };
+
+  it('unfollows the tag and tells Home', async () => {
+    const spy = vi.spyOn(await import('../../services/hashtagService'), 'unfollowHashtag');
+    spy.mockResolvedValue({ tag: 'tea', is_following: false });
+    const onUnfollowedTag = vi.fn();
+    render(<PostMenu post={post} visibility="public" onUnfollowedTag={onUnfollowedTag} />);
+    await userEvent.click(screen.getByRole('button', { name: 'More options' }));
+    const items = screen.getAllByRole('menuitem').map((el) => el.textContent);
+    expect(items[1]).toBe('Unfollow #tea');
+    await userEvent.click(screen.getByText('Unfollow #tea'));
+    await vi.waitFor(() => expect(onUnfollowedTag).toHaveBeenCalledWith('tea'));
+    expect(spy).toHaveBeenCalledWith('tea', 'tok');
+    spy.mockRestore();
+  });
+
+  it('is not offered off Home, or for a post nothing tagged brought', async () => {
+    const { unmount } = render(<PostMenu post={post} visibility="public" />);
+    await userEvent.click(screen.getByRole('button', { name: 'More options' }));
+    expect(screen.queryByText('Unfollow #tea')).toBeNull();
+    unmount();
+    render(<PostMenu post={{ ...post, via_hashtag: null }} visibility="public" onUnfollowedTag={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'More options' }));
+    expect(screen.queryByText(/Unfollow #/)).toBeNull();
+  });
+
+  it('a failure is said on the card, and Home is not told', async () => {
+    const spy = vi.spyOn(await import('../../services/hashtagService'), 'unfollowHashtag');
+    spy.mockRejectedValue(new Error('down'));
+    const onUnfollowedTag = vi.fn();
+    render(<PostMenu post={post} visibility="public" onUnfollowedTag={onUnfollowedTag} />);
+    await userEvent.click(screen.getByRole('button', { name: 'More options' }));
+    await userEvent.click(screen.getByText('Unfollow #tea'));
+    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't unfollow. Please try again.");
+    expect(onUnfollowedTag).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+});

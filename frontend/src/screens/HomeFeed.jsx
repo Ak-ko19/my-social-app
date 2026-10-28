@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { followHashtag } from '../services/hashtagService';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useFeed } from '../hooks/useFeed';
@@ -35,6 +36,9 @@ function HomeFeed() {
   const stories = useStories(token);
   // Index into stories.tray of the person whose stories are open, or null.
   const [openStoryGroup, setOpenStoryGroup] = useState(null);
+  // Days 107-108: the hashtag just unfollowed from a post (with Undo).
+  const [unfollowedTag, setUnfollowedTag] = useState(null);
+  const [undoFailed, setUndoFailed] = useState(false);
   const {
     posts,
     savedAt,
@@ -46,6 +50,7 @@ function HomeFeed() {
     loadMore,
     removePost,
     removePostsByUser,
+    removePostsByTag,
     updatePostContent
   } = useFeed(token, userId);
 
@@ -61,6 +66,26 @@ function HomeFeed() {
   }
 
   const feedState = loading ? 'loading' : error ? 'error' : posts.length === 0 ? 'empty' : 'list';
+
+  // Days 107-108: "Unfollow #tag" on a post -- its posts leave Home; Undo
+  // follows it again and reloads Home.
+  const unfollowed = (tag) => {
+    removePostsByTag(tag);
+    setUndoFailed(false);
+    setUnfollowedTag(tag);
+  };
+  const undoUnfollow = () => {
+    setUndoFailed(false);
+    followHashtag(unfollowedTag, token)
+      .then(() => {
+        setUnfollowedTag(null);
+        reload();
+      })
+      .catch((err) => {
+        console.error(err);
+        setUndoFailed(true);
+      });
+  };
 
   return (
     <div>
@@ -97,6 +122,13 @@ function HomeFeed() {
       <ProfileCompletionCard completion={currentUser.completion} token={token} />
       {/* Days 83-84: "On this day", when there are memories today. */}
       <MemoriesCard token={token} userId={userId} />
+      {unfollowedTag && (
+        <div className="feed-tag-notice" role="status">
+          <span>{t('feed.unfollowedTag', { tag: unfollowedTag })}</span>
+          <button type="button" className="feed-tag-notice-undo" onClick={undoUnfollow}>{t('feed.undo')}</button>
+          {undoFailed && <span className="feed-error-text">{t('feed.undoFailed')}</span>}
+        </div>
+      )}
       {feedState === 'loading' && <FeedSkeleton />}
       {feedState === 'error' && <FeedErrorState message={error} onRetry={reload} />}
       {feedState === 'empty' && <FeedEmptyState />}
@@ -110,6 +142,7 @@ function HomeFeed() {
           onRemovePost={removePost}
           onRemovePostsByUser={removePostsByUser}
           onUpdatePost={updatePostContent}
+          onUnfollowedTag={unfollowed}
         />
       )}
     </div>

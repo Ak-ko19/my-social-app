@@ -312,7 +312,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 106 — Page verification requests
 - [x] A page admin asks for verification; an admin approves or declines; a badge on approved pages; logged. *(Edit page > Verification; Admin > Verification, with reasons and taking a tick away; the tick on the page, its row and its posts -- see Progress Log.)*
 ### Day 107–108 — Follow a hashtag
-- [ ] Follow hashtags; their public posts appear on Home (Instagram-style), with a way to unfollow from a post.
+- [x] Follow hashtags; their public posts appear on Home (Instagram-style), with a way to unfollow from a post. *(Follow on the tag page; Settings > Hashtags you follow; on Home a "#tag" line and "Unfollow #tag" with Undo -- see Progress Log.)*
 ### Day 109–110 — Comment upgrades
 - [ ] The post's author pins one comment; sort comments by Most relevant / Newest; the pin survives paging.
 ### Day 111 — Birthdays

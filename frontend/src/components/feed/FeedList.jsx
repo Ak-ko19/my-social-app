@@ -19,7 +19,8 @@ import { DURATION_FAST, EASE_STANDARD } from '../../utils/motionTokens';
 // jank, not a micro-interaction. Only the occasional "loading more"
 // indicator (which mounts/unmounts far less often than every scroll frame)
 // gets a transition.
-function FeedList({ posts, hasMore, isLoadingMore, onLoadMore, onRemovePost, onRemovePostsByUser, onUpdatePost }) {
+// onUnfollowedTag (Days 107-108, Home only): a hashtag was unfollowed from a post.
+function FeedList({ posts, hasMore, isLoadingMore, onLoadMore, onRemovePost, onRemovePostsByUser, onUpdatePost, onUnfollowedTag }) {
   const { t } = useTranslation();
   const listRef = useRef(null);
   const reduceMotion = useReducedMotion();
@@ -73,6 +74,7 @@ function FeedList({ posts, hasMore, isLoadingMore, onLoadMore, onRemovePost, onR
                 onRemovePost={onRemovePost}
                 onRemovePostsByUser={onRemovePostsByUser}
                 onUpdatePost={onUpdatePost}
+                onUnfollowedTag={onUnfollowedTag}
               />
             </li>
           );

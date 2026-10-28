@@ -58,10 +58,15 @@ module.exports = {
   'GET /feed': op({
     tag: 'Posts', auth: 'user',
     summary: 'Home: posts from you, people and pages you follow, and your groups',
-    description: 'Muted people are left out. Pass nextCursor back for the next page (faster than page, which still works).',
+    description: 'Muted people are left out. Pass nextCursor back for the next page (faster than page, which still works). '
+      + 'Days 107-108: also public posts with a hashtag you follow (never from private accounts); via_hashtag names it when nothing else brought the post.',
     query: { ...pageQuery({ defaultLimit: 10, maxLimit: 50 }), cursor: cursorQuery().cursor },
     responses: {
-      200: json(s.object({ page: s.int(), limit: s.int(), posts: s.array(ref('Post')), hasMore: s.bool(), nextCursor: s.nullable(s.str('null: no more posts')) }), 'One page'),
+      200: json(s.object({
+        page: s.int(), limit: s.int(),
+        posts: s.array({ allOf: [ref('Post'), s.object({ via_hashtag: s.nullable(s.str('The followed hashtag that brought it; null when you follow its author or page, or it is yours')) })] }),
+        hasMore: s.bool(), nextCursor: s.nullable(s.str('null: no more posts'))
+      }), 'One page'),
       400: text('Invalid cursor')
     }
   }),

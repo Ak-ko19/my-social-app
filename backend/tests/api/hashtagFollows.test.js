@@ -79,4 +79,61 @@ describe('following hashtags (Days 107-108)', () => {
     await pool.query('DELETE FROM users WHERE id = $1', [ann.id]);
     expect((await pool.query('SELECT count(*)::int AS n FROM hashtag_follows')).rows[0].n).toBe(0);
   });
+
+  // Step 2: on Home.
+  const post = async (user, content, fields = {}) => {
+    const req = request(app).post('/posts').set(auth(user)).field('content', content);
+    for (const [k, v] of Object.entries(fields)) req.field(k, String(v));
+    return (await req).body;
+  };
+  const feed = async (user) => (await request(app).get('/feed').query({ limit: 50 }).set(auth(user))).body.posts;
+  const byContent = (posts) => Object.fromEntries(posts.map((p) => [p.content, p.via_hashtag]));
+
+  it("Home gets the public posts of a tag you follow -- not private accounts', other audiences, groups, blocked, muted or gone authors", async () => {
+    const [cara, dan, eve, fay, gus] = [await registerAndLogin(app), await registerAndLogin(app), await registerAndLogin(app), await registerAndLogin(app), await registerAndLogin(app)];
+    await followTag(ann, 'tea');
+    await request(app).post(`/users/${dan.id}/follow`).set(auth(ann));
+    await request(app).put('/profile/privacy').set(auth(cara)).send({ isPrivate: true });
+    const page = (await request(app).post('/pages').set(auth(eve)).send({ name: 'Tea Shop' })).body;
+    const club = (await request(app).post('/communities').set(auth(ben)).send({ name: 'Tea club' })).body;
+
+    await post(ben, 'public #Tea');
+    await post(ben, 'followers #tea', { visibility: 'followers' });
+    await post(ben, 'no tag at all');
+    await post(cara, 'private account #tea');
+    await post(eve, 'page #tea', { pageId: page.id });
+    await post(ben, 'group #tea', { communityId: club.id });
+    await post(fay, 'blocked #tea');
+    await request(app).post(`/users/${fay.id}/block`).set(auth(ann));
+    await post(gus, 'muted #tea');
+    await request(app).post(`/users/${gus.id}/mute`).set(auth(ann));
+    await post(dan, 'followed author #tea');
+    await post(ann, 'mine #tea');
+
+    expect(byContent(await feed(ann))).toEqual({
+      'public #Tea': 'tea',
+      'page #tea': 'tea',
+      'followed author #tea': null,
+      'mine #tea': null
+    });
+    // Someone who doesn't follow the tag gets none of it.
+    expect(byContent(await feed(ben)).hasOwnProperty('page #tea')).toBe(false);
+
+    await request(app).post('/profile/deactivate').set(auth(ben)).send({ password: ben.password });
+    await unfollowTag(ann, 'tea');
+    expect(Object.keys(byContent(await feed(ann))).sort()).toEqual(['followed author #tea', 'mine #tea']);
+  });
+
+  it('a post with several followed tags comes once, named by the tag you followed first; a followed page has no tag line', async () => {
+    await followTag(ann, 'tea');
+    await followTag(ann, 'coffee');
+    await pool.query("UPDATE hashtag_follows SET created_at = now() - interval '1 day' WHERE hashtag_id = (SELECT id FROM hashtags WHERE tag = 'coffee')");
+    await post(ben, 'both #tea #coffee');
+    const page = (await request(app).post('/pages').set(auth(ben)).send({ name: 'Cafe' })).body;
+    await request(app).post(`/pages/${page.id}/follow`).set(auth(ann));
+    await post(ben, 'followed page #tea', { pageId: page.id });
+    const posts = await feed(ann);
+    expect(posts.filter((p) => p.content === 'both #tea #coffee')).toHaveLength(1);
+    expect(byContent(posts)).toEqual({ 'both #tea #coffee': 'coffee', 'followed page #tea': null });
+  });
 });

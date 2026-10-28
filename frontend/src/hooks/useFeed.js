@@ -149,6 +149,12 @@ export function useFeed(token, userId) {
     setPosts((current) => current.filter((post) => post.user_id !== userId));
   }, []);
 
+  // Days 107-108: after "Unfollow #tag" on a post -- the posts that tag
+  // brought go (posts here for another reason stay).
+  const removePostsByTag = useCallback((tag) => {
+    setPosts((current) => current.filter((post) => post.via_hashtag !== tag));
+  }, []);
+
   // Used after a successful edit (PostMenu -> PostCard) -- merges the
   // server's authoritative updated fields into the existing card rather
   // than refetching the whole feed for a one-field change.
@@ -167,6 +173,7 @@ export function useFeed(token, userId) {
     loadMore,
     removePost,
     removePostsByUser,
+    removePostsByTag,
     updatePostContent
   };
 }

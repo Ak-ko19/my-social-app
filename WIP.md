@@ -1,10 +1,8 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 107-108 -- Follow a hashtag.
-**Step:** 1 of 2 -- done (committed): migration 087, follow API, the tag
-page's Follow button, Settings > Hashtags you follow (hashtagFollows 4,
-5 mutations; Vitest 446; e2e day107-hashtag-follow 22/22). Next: step 2
-(Home) -- PLAN below.
+**Step:** 2 of 2 -- done (committed). Both steps done. Next: close Days 107-108 --
+full browser run in batches of 3, then the Progress Log entry.
 
 ### Plan (Days 107-108)
 Instagram-style: follow a hashtag and its public posts come to Home, each

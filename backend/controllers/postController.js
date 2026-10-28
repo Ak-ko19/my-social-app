@@ -113,7 +113,18 @@ async function getFeed(req, res) {
         ${shareService.shareColumnsSql('$1')},
         ${pageColumnSql()},
         EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
-        EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = posts.user_id AND follows.status = 'accepted') AS is_following
+        EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = posts.user_id AND follows.status = 'accepted') AS is_following,
+        -- Days 107-108: the hashtag that brought this post, when nothing
+        -- else did (not yours, its author or page not followed): the first
+        -- of its tags you followed. The card says so and offers "Unfollow".
+        CASE WHEN posts.user_id <> $1
+          AND NOT (posts.page_id IS NULL AND EXISTS (SELECT 1 FROM follows WHERE follows.follower_id = $1 AND follows.following_id = posts.user_id AND follows.status = 'accepted'))
+          AND NOT (posts.page_id IS NOT NULL AND EXISTS (SELECT 1 FROM page_follows pf WHERE pf.page_id = posts.page_id AND pf.user_id = $1))
+        THEN (SELECT h.tag FROM post_hashtags ph
+                JOIN hashtag_follows hf ON hf.hashtag_id = ph.hashtag_id AND hf.user_id = $1
+                JOIN hashtags h ON h.id = ph.hashtag_id
+              WHERE ph.post_id = posts.id ORDER BY hf.created_at, h.id LIMIT 1)
+        END AS via_hashtag
       FROM posts
       JOIN users ON posts.user_id = users.id
       -- B13: community posts live in their community feed only.
@@ -130,6 +141,12 @@ async function getFeed(req, res) {
         ) AND EXISTS (SELECT 1 FROM close_friends cf WHERE cf.user_id = posts.user_id AND cf.friend_id = $1))
         -- B14: posts from pages you follow.
         OR posts.page_id IN (SELECT page_id FROM page_follows WHERE user_id = $1)
+        -- Days 107-108: public posts with a hashtag you follow (Instagram-
+        -- style) -- not a private account's (pages are always public).
+        OR (posts.visibility = 'public' AND (NOT users.is_private OR posts.page_id IS NOT NULL) AND EXISTS (
+          SELECT 1 FROM post_hashtags ph JOIN hashtag_follows hf ON hf.hashtag_id = ph.hashtag_id AND hf.user_id = $1
+          WHERE ph.post_id = posts.id
+        ))
       )
       AND ${noBlockBetweenSql('$1', 'posts.user_id')}
       AND NOT users.is_deactivated

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from '../../utils/serverError';
 import { AnimatePresence } from 'motion/react';
-import { Bookmark, Globe, Lock, MessageCircle, Share2, Star, Users, Pin } from 'lucide-react';
+import { Bookmark, Globe, Hash, Lock, MessageCircle, Share2, Star, Users, Pin } from 'lucide-react';
 import ReactionButton from './ReactionButton';
 import { topReactions } from '../../utils/reactions';
 import clsx from 'clsx';
@@ -52,7 +52,7 @@ import './PostCard.css';
 // they may read it (and its comments) but not react or comment.
 // standalone (Day 49): the post page -- a post your Hidden words would
 // leave out of a list is covered there instead (you followed a link to it).
-function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTogglePin, canModerate = false, standalone = false, groupLocked = false, canManagePage = false }) {
+function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onUnfollowedTag, onTogglePin, canModerate = false, standalone = false, groupLocked = false, canManagePage = false }) {
   const { t } = useTranslation();
   const { token, userId, username } = useAuth();
   const like = useLikeToggle(
@@ -187,6 +187,14 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
 
   return (
     <article className="post-card">
+      {/* Days 107-108: on Home, the followed hashtag that brought this post. */}
+      {post.via_hashtag && (
+        <p className="post-card-pinned post-card-via">
+          <Hash size={13} aria-hidden="true" />
+          <Link to={`/hashtag/${encodeURIComponent(post.via_hashtag)}`}><bdi>#{post.via_hashtag}</bdi></Link>
+          <span>· {t('feed.viaHashtag')}</span>
+        </p>
+      )}
       {post.is_pinned && (
         <p className="post-card-pinned">
           <Pin size={13} aria-hidden="true" />
@@ -227,6 +235,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
           onChangeVisibility={changeVisibility}
           onBlocked={onRemovePostsByUser}
           onMuted={onRemovePostsByUser}
+          onUnfollowedTag={onUnfollowedTag}
           onDeleted={onRemovePost}
           onEdit={startEditing}
           canModerate={canModerate}

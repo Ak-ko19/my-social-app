@@ -209,7 +209,13 @@
     "live": "Live",
     "audienceOnlyMe": "Only me",
     "audienceCloseFriends": "Close friends",
-    "offlineSaved": "You're offline. These are the posts from your last visit."
+    "offlineSaved": "You're offline. These are the posts from your last visit.",
+    "viaHashtag": "You follow this hashtag",
+    "unfollowTag": "Unfollow #{{tag}}",
+    "unfollowTagFailed": "Couldn't unfollow. Please try again.",
+    "unfollowedTag": "You unfollowed #{{tag}}. Its posts won't come to Home.",
+    "undo": "Undo",
+    "undoFailed": "Couldn't follow it again. Please try again."
   },
   "postMenu": {
     "blockFailed": "Failed to block user",
