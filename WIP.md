@@ -1,39 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 106 — Page verification requests.
-**Step:** 1 -- done (committed). Next: close Day 106 -- full browser run in batches of 3,
-then the Progress Log entry.
-Decision: pages.verification_removed_at added so an admin's removal gets the
-same 30-day wait as a decline (and the page's screen can say which).
-
-### Plan (Day 106, step 1)
-Facebook-like: a page's managers ask, an admin approves / declines with a
-reason, approved pages get the blue tick everywhere their name shows.
-- **Data (migration 086):** pages.verified_at; page_verification_requests
-  (page_id cascade, requested_by SET NULL, note 1-500, link optional
-  http(s) <= 300, status pending/approved/declined, decided_by SET NULL,
-  decided_at, decline_reason incomplete/not_notable/impersonation/other,
-  created_at); one pending per page (unique partial index); queue
-  indexes. admin_actions: page_verified / page_declined / page_unverified.
-- **Rules:** owner or admins ask; needs the page's About text; not while
-  one is pending or the page is verified; 30 days after a decline. They can
-  withdraw a pending request. Renaming a verified page removes the tick
-  (no swapping a verified page into someone else's name); the edit screen
-  says so first.
-- **API:** GET/POST/DELETE /pages/:id/verification (managers);
-  GET /admin/page-verifications?status=pending|reviewed&page=,
-  POST .../:id/approve, .../:id/decline { reason },
-  POST /admin/pages/:id/unverify { reason }. Each decision: one
-  transaction with its admin-log entry; the page's managers get a system
-  notification (page_verified / page_not_verified / page_unverified, no
-  off switch) + push (EN/AR).
-- **Badge:** pages JSON is_verified; post cards' page { verified }; tick on
-  PageScreen, Pages list rows, PostCard / SharedPostCard page bylines.
-- **UI:** Edit page > Verification (state card + request form);
-  Admin > Verification (Pending | Reviewed). EN/AR, RTL, light/dark.
-- **Also:** textOf + toUnicode for the note, convert-zawgyi COLUMNS,
-  openapi, server messages AR, data export (requests you made), Privacy
-  Policy (moderators read the request), Help question, e2e suite.
+**Day:** 107-108 -- Follow a hashtag.
+**Step:** 1 -- PLAN (not started).
 
 ## Carry-over notes
 - Day 106 lesson (seen twice): a hint or a character counter INSIDE a

@@ -3275,3 +3275,48 @@ Read-only; no application code changed. Same method as audit 3, on
     day80-states-en failed its very first check (Home showed the empty
     feed under a faked 500); both re-ran alone, green (51/51, 154/154).
     The same check passed in AR in that run and in Day 105's own run.
+
+### 2026-10-28/29 — Day 106: Page verification requests
+- **What (`bb72664`):** the blue tick for pages, like Facebook's.
+  - A page's owner or admins ask from Edit page > Verification: who the
+    page represents (1-500 characters) and an optional official link
+    (http/https). The page needs its About text first; one request waits
+    at a time and can be withdrawn.
+  - Admin > Verification (new section): the requests oldest first, with
+    the page (category, followers, posts, age, About), its owner, who
+    asked, the note, the link (opens apart, nofollow) and earlier
+    declines. Approve, or decline with a reason (details incomplete / not
+    well known enough / impersonation / other). Under Decided, a page that
+    still has its tick can lose it (a reason, then a confirmation).
+  - Each decision is one transaction with its admin-log entry
+    (page_verified / page_declined / page_unverified); the page's owner
+    and admins then get a notification and a push (EN/AR; no off switch,
+    like "we removed your post"), and Edit page says where things stand.
+  - The tick (a shared NameWithTick) shows on the page's title, its row in
+    Pages, its posts and shared posts.
+- **Better than the plan (rule 9):**
+  - After a decline OR a removal the page waits 30 days to ask again
+    (pages.verification_removed_at), so a removed tick can't be asked
+    straight back.
+  - Renaming a verified page removes its tick (Edit page warns at the
+    name), so a verified page can't be turned into someone else's.
+- **Data:** migration 086 (pages.verified_at, verification_removed_at;
+  page_verification_requests with one pending per page; three log
+  actions). API documented; data export (requests you sent), Zawgyi
+  column, Help answer and Privacy Policy (EN/AR, 2026-10-28) updated.
+- **Found on the way:**
+  - A character counter and a hint sat inside their <label>, so screen
+    readers read them as part of the field's name; moved outside
+    (aria-describedby). Noted in WIP for later screens.
+  - The new { reason } notification details matched content_removed's
+    schema too ("other" is in both), breaking the spec's oneOf: made strict.
+  - A link sent as an object was silently dropped; now refused.
+  - In Arabic the admin's Decline button wrapped onto two lines.
+- **Tests:** pageVerification 5 (7 mutations caught); Vitest +10 (442);
+  e2e day106-page-verification 50/50 EN/light + AR/dark with axe.
+- **Tests at close:**
+  - Backend 1159/1159, Vitest 442/442, lint (exit 0), check:i18n (1756
+    keys), bundle 222.0 kB, npm audit 0/0, rehearsal 015 → 086 (columns
+    346, constraints 203, indexes 156).
+  - Full browser run in batches of 3 (heavy suites alone, in the
+    foreground): 98/98 OK, first time.
