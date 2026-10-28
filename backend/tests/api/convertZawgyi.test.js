@@ -152,7 +152,7 @@ describe('convert-zawgyi script', () => {
     expect(COLUMNS.map((c) => `${c.table}.${c.column}`)).toEqual([
       'posts.content', 'comments.content', 'messages.content', 'users.bio', 'conversations.name', 'communities.name',
       'communities.description', 'pages.name', 'pages.description', 'reports.details', 'search_history.query',
-      'post_drafts.content', 'bookmark_collections.name', 'post_media.alt_text'
+      'post_drafts.content', 'bookmark_collections.name', 'post_media.alt_text', 'page_verification_requests.note'
     ]);
     expect(parseArgs(['--apply'])).toEqual({ apply: true });
     expect(await convert(['--delete'])).toBe(2);

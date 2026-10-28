@@ -158,15 +158,18 @@ async function notify({ userId, actorId, type, postId = null, commentId = null, 
 // Day 82: 'content_removed' -- an admin removed something of yours after a
 // report (adminController); `details` is { kind, reason, excerpt }, since
 // the thing itself is gone. No off switch either: you should know.
-const SYSTEM_TYPES = ['scheduled_post', 'scheduled_failed', 'new_login', 'content_removed'];
+// Day 106: a page you run was verified ('page_verified'), its request
+// declined ('page_not_verified') or its tick taken away ('page_unverified');
+// `details` is { reason } for the last two (pageVerificationService).
+const SYSTEM_TYPES = ['scheduled_post', 'scheduled_failed', 'new_login', 'content_removed', 'page_verified', 'page_not_verified', 'page_unverified'];
 
-async function notifySystem({ userId, type, postId = null, device = null, details = null }) {
+async function notifySystem({ userId, type, postId = null, pageId = null, device = null, details = null }) {
   if (!SYSTEM_TYPES.includes(type)) throw new Error(`Unknown system notification type: ${type}`);
   await db.query(
-    'INSERT INTO notifications (user_id, actor_id, type, post_id, device, details) VALUES ($1, $1, $2, $3, $4, $5)',
-    [userId, type, postId, device, details]
+    'INSERT INTO notifications (user_id, actor_id, type, post_id, page_id, device, details) VALUES ($1, $1, $2, $3, $4, $5, $6)',
+    [userId, type, postId, pageId, device, details]
   );
-  pushNotification({ userId, actorId: userId, type, postId, device, details });
+  pushNotification({ userId, actorId: userId, type, postId, pageId, device, details });
   announce(userId);
 }
 

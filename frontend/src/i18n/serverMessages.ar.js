@@ -331,7 +331,18 @@ const AR = {
   'That user is not banned': 'هذا المستخدم غير محظور',
   'Report not found': 'البلاغ غير موجود',
   'Error not found': 'الخطأ غير موجود',
-  'Not found': 'غير موجود'
+  'Not found': 'غير موجود',
+  // Day 106: page verification
+  'Tell us who this page represents.': 'أخبرنا بمن تمثّله هذه الصفحة.',
+  'The note must be 500 characters or fewer.': 'يجب ألا تزيد الملاحظة على 500 حرف.',
+  'Enter a web address that starts with http:// or https://, up to 300 characters.': 'أدخل عنوان ويب يبدأ بـ http:// أو https://، بحد أقصى 300 حرف.',
+  'This page is already verified.': 'هذه الصفحة موثّقة بالفعل.',
+  'This page already has a request waiting for review.': 'لدى هذه الصفحة طلب ينتظر المراجعة بالفعل.',
+  'A page can ask again 30 days after a request is declined or a tick is removed.': 'يمكن للصفحة أن تطلب مجددًا بعد 30 يومًا من رفض الطلب أو إزالة علامة التوثيق.',
+  'Add an About text to the page first.': 'أضف نبذة إلى الصفحة أولًا.',
+  'Verification request not found': 'طلب التوثيق غير موجود',
+  'This request has already been decided.': 'تم البت في هذا الطلب بالفعل.',
+  'This page is not verified.': 'هذه الصفحة غير موثّقة.'
 };
 
 export default { exact: AR, failed: 'فشلت العملية. يرجى المحاولة لاحقًا.' };

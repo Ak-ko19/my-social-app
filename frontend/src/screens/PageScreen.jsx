@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Flag, Pencil } from 'lucide-react';
-import { IconButton } from '../components/ui';
+import { IconButton, NameWithTick } from '../components/ui';
 import ReportDialog from '../components/feed/ReportDialog';
 import PostNotificationsButton from '../components/common/PostNotificationsButton';
 import { useAuth } from '../hooks/useAuth';
@@ -103,7 +103,8 @@ function PageScreen() {
     <div className="screen-enter">
       <header className="screen-header">
         <IconButton icon={ChevronLeft} aria-label={t('pages.backToPages')} onClick={() => navigate('/pages')} />
-        <h1 className="screen-header-title">{page.name}</h1>
+        {/* Day 106: the blue tick once an admin verified the page. */}
+        <NameWithTick as="h1" className="screen-header-title" name={page.name} verified={page.is_verified} tickSize={18} />
         {/* Day 53: the owner or an admin. */}
         {page.is_admin ? (
           <IconButton icon={Pencil} aria-label={t('pages.edit')} onClick={() => navigate(`/pages/${id}/edit`)} />

@@ -203,6 +203,8 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onTog
               <span className="post-card-author">{post.username}</span>
             )}
             {post.is_verified && <VerifiedTick size={14} />}
+            {/* Day 106: a verified page. */}
+            {page?.verified && <VerifiedTick size={14} />}
           </div>
           <div className="post-card-meta">
             {page && <span>{t('feed.page')} · </span>}

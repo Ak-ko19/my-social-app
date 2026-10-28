@@ -1,0 +1,88 @@
+/* Day 106: Admin > Verification. Tokens only; logical properties. */
+
+.admin-verification-notice {
+  min-height: 1.4em;
+  margin: 0 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.admin-verification-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.admin-verification-item {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.admin-verification-name {
+  margin: 0 0 var(--space-1);
+  font-weight: 700;
+}
+
+.admin-verification-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-1);
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.admin-verification-flag {
+  color: var(--color-danger-text);
+  font-weight: 700;
+}
+
+.admin-verification-about {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+}
+
+.admin-verification-note {
+  margin: var(--space-2) 0;
+  padding-inline-start: var(--space-3);
+  border-inline-start: 3px solid var(--color-border);
+  white-space: pre-wrap;
+}
+
+.admin-verification-link {
+  margin: 0 0 var(--space-2);
+  font-size: 13px;
+}
+
+.admin-verification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.admin-verification-decline {
+  display: flex;
+  flex: 1 1 220px;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.admin-verification-reason {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-verification-actions .btn {
+  flex: none;
+  white-space: nowrap;
+}

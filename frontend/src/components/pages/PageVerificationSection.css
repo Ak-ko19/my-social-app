@@ -1,0 +1,61 @@
+/* Day 106: Edit page > Verification. Tokens only; logical properties. */
+
+.page-verification {
+  margin-top: var(--space-4);
+  text-align: start;
+}
+
+.page-verification-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.page-verification-card.is-declined {
+  border-inline-start: 3px solid var(--color-danger-text);
+}
+
+.page-verification-title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.page-verification-text {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.page-verification-note {
+  margin: var(--space-2) 0 var(--space-3);
+  padding-inline-start: var(--space-3);
+  border-inline-start: 3px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.page-verification-form {
+  margin-top: var(--space-3);
+}
+
+.page-verification-count {
+  align-self: flex-end;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.page-verification-status {
+  min-height: 1.4em;
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}

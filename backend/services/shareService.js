@@ -48,7 +48,7 @@ function shareColumnsSql(viewer) {
         -- real instant, so the card's time reads like every other post's.
         'id', op.id, 'content', op.content, 'created_at', op.created_at AT TIME ZONE current_setting('TimeZone'),
         'user_id', ou.id, 'username', ou.username, 'avatar_url', ou.avatar_url,
-        'page', (SELECT json_build_object('id', pg.id, 'name', pg.name) FROM pages pg WHERE pg.id = op.page_id),
+        'page', (SELECT json_build_object('id', pg.id, 'name', pg.name, 'verified', pg.verified_at IS NOT NULL) FROM pages pg WHERE pg.id = op.page_id),
         'media', (SELECT COALESCE(json_agg(json_build_object('url', pm.url, 'alt', pm.alt_text) ORDER BY pm.position), '[]'::json)
                   FROM post_media pm WHERE pm.post_id = op.id))
      FROM posts op JOIN users ou ON ou.id = op.user_id

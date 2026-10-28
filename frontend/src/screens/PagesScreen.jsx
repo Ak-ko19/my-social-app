@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Flag, Plus } from 'lucide-react';
-import { IconButton } from '../components/ui';
+import { IconButton, NameWithTick } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import { categoryLabel, fetchPages, followPage } from '../services/pageService';
@@ -25,7 +25,7 @@ function PageRow({ page, token, onChanged }) {
           <Flag size={20} />
         </span>
         <span className="group-row-text">
-          <span className="group-row-name">{page.name}</span>
+          <NameWithTick className="group-row-name" name={page.name} verified={page.is_verified} tickSize={15} />
           <span className="group-row-meta">
             {categoryLabel(page.category)} · {t('pages.followerCount', { count: page.follower_count })}
           </span>

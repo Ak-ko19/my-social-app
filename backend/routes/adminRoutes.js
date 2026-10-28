@@ -8,6 +8,7 @@ const storageController = require('../controllers/storageController');
 const statsController = require('../controllers/statsController');
 const adminLogController = require('../controllers/adminLogController');
 const adminSearchController = require('../controllers/adminSearchController');
+const pageVerificationController = require('../controllers/pageVerificationController');
 const { wholeIds } = require('../middleware/wholeIds');
 // Day 85: ids in the path are whole numbers (middleware/wholeIds).
 wholeIds(router);
@@ -34,5 +35,10 @@ router.get('/admin/overview', ...admin, statsController.getOverview);
 router.get('/admin/log', ...admin, adminLogController.getLog);
 // Days 103-104: search posts, comments and accounts (every search is logged).
 router.get('/admin/search', ...admin, adminSearchController.search);
+// Day 106: page verification requests, and taking a tick away.
+router.get('/admin/page-verifications', ...admin, pageVerificationController.listRequests);
+router.post('/admin/page-verifications/:id/approve', ...admin, pageVerificationController.approve);
+router.post('/admin/page-verifications/:id/decline', ...admin, pageVerificationController.decline);
+router.post('/admin/pages/:id/unverify', ...admin, pageVerificationController.unverify);
 
 module.exports = router;

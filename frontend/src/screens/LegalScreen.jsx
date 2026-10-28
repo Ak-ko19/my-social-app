@@ -10,7 +10,7 @@ import './LegalScreen.css';
 // Marked as a draft until the owner has it reviewed (see ROADMAP NEEDS OWNER).
 // Each document has its own date (Day 28 rewrote the privacy policy;
 // Day 36 added cover photo and links to it).
-const LAST_UPDATED = { terms: '2026-09-27', privacy: '2026-10-27' };
+const LAST_UPDATED = { terms: '2026-09-27', privacy: '2026-10-28' };
 
 function LegalScreen({ doc }) {
   const navigate = useNavigate();

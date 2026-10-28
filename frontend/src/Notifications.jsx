@@ -48,6 +48,10 @@ function notificationKey(n) {
   // Day 101: a new post in your group / on a page you follow.
   if (n.type === 'group_post') return 'groupPost';
   if (n.type === 'page_post') return 'pagePost';
+  // Day 106: a page you run was verified, declined, or lost its tick.
+  if (n.type === 'page_verified') return 'pageVerified';
+  if (n.type === 'page_not_verified') return 'pageNotVerified';
+  if (n.type === 'page_unverified') return 'pageUnverified';
   return 'other';
 }
 
@@ -62,9 +66,13 @@ function deviceWords(device, t) {
   return t('sessions.device', { browser: device.browser || t('sessions.unknownBrowser'), os: device.os || t('sessions.unknownDevice') });
 }
 
-// Day 82: what was removed and why, in words (content_removed).
-function removedWords(details, t) {
+// Day 82: what was removed and why, in words (content_removed). Day 106:
+// why a page you run wasn't verified, or lost its tick.
+function detailWords(n, t) {
+  const { details } = n;
   if (!details) return {};
+  if (n.type === 'page_not_verified' || n.type === 'page_unverified') return { reason: t(`pages.verification.reasons.${details.reason}`) };
+  if (n.type !== 'content_removed') return {};
   return { kind: t(`notifications.removedKinds.${details.kind}`), reason: t(`report.reasons.${details.reason}`) };
 }
 
@@ -87,8 +95,11 @@ function targetOf(n, myId) {
       return n.community_id ? `/groups/${n.community_id}/manage` : null;
     case 'group_approved':
       return n.community_id ? `/groups/${n.community_id}` : null;
-    case 'page_admin':
+    case 'page_admin': case 'page_verified':
       return n.page_id ? `/pages/${n.page_id}` : null;
+    // Day 106: Edit page says why, and when it can ask again.
+    case 'page_not_verified': case 'page_unverified':
+      return n.page_id ? `/pages/${n.page_id}/edit` : null;
     case 'event_reminder': case 'event_cancelled':
       return n.event_id ? `/events/${n.event_id}` : null;
     case 'new_login':
@@ -117,14 +128,16 @@ function Sentence({ n, t }) {
     );
   }
   return (
-    <Trans i18nKey={`notifications.types.${notificationKey(n)}`} count={n.type === 'memories' ? n.details?.yearsAgo : undefined} values={{ name: n.actor_username, group: n.community_name, page: n.page_name, event: n.event_name, time: n.event_starts_at ? formatDate(n.event_starts_at, 'time') : '', device: deviceWords(n.device, t), ...removedWords(n.details, t) }} components={{ b: <strong /> }} />
+    <Trans i18nKey={`notifications.types.${notificationKey(n)}`} count={n.type === 'memories' ? n.details?.yearsAgo : undefined} values={{ name: n.actor_username, group: n.community_name, page: n.page_name, event: n.event_name, time: n.event_starts_at ? formatDate(n.event_starts_at, 'time') : '', device: deviceWords(n.device, t), ...detailWords(n, t) }} components={{ b: <strong /> }} />
   );
 }
 
 // Day 81: up to two faces for a group, one otherwise. Day 101: a page's
-// post shows the page (its initials), not the person who runs it.
+// post shows the page (its initials), not the person who runs it. Day 106:
+// so does news about a page's verification.
+const PAGE_FACE_TYPES = ['page_post', 'page_verified', 'page_not_verified', 'page_unverified'];
 function Faces({ n }) {
-  if (n.type === 'page_post') {
+  if (PAGE_FACE_TYPES.includes(n.type)) {
     return (
       <span className="notif-faces" aria-hidden="true">
         <Avatar size={36} initials={(n.page_name || '?').slice(0, 2).toUpperCase()} alt="" />

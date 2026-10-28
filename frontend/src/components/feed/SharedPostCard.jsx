@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { EyeOff } from 'lucide-react';
 import { resolveImageUrl } from '../../api';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
-import { Avatar } from '../ui';
+import { Avatar, NameWithTick } from '../ui';
 import MediaCarousel from './MediaCarousel';
 import PostText from './PostText';
 
@@ -35,7 +35,7 @@ function SharedPostCard({ shared }) {
       <Link to={`/posts/${shared.id}`} className="shared-post-header">
         <Avatar size={32} src={shared.page || !shared.avatar_url ? undefined : resolveImageUrl(shared.avatar_url)} initials={(name || '?').slice(0, 2).toUpperCase()} alt="" />
         <span className="shared-post-header-text">
-          <span className="shared-post-author">{name}</span>
+          <NameWithTick className="shared-post-author" name={name} verified={Boolean(shared.page?.verified)} tickSize={14} />
           <span className="shared-post-meta">{formatRelativeTime(shared.created_at)}</span>
         </span>
       </Link>

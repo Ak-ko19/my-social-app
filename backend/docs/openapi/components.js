@@ -161,7 +161,9 @@ const schemas = {
       'group_request', 'group_approved', 'page_admin', 'event_reminder', 'event_cancelled', 'scheduled_post', 'scheduled_failed',
       'poll_ended', 'poll_ended_own', 'new_login', 'content_removed', 'memories', 'share',
       // Day 101: a new post in your group / on a page you follow.
-      'group_post', 'page_post']),
+      'group_post', 'page_post',
+      // Day 106: a page you run was verified, declined, or lost its tick.
+      'page_verified', 'page_not_verified', 'page_unverified']),
     post_id: s.nullable(s.id()),
     comment_id: s.nullable(s.id()),
     is_read: s.bool('Day 81: for a group, true only when all of it is read'),
@@ -187,6 +189,8 @@ const schemas = {
         }, { description: 'content_removed (Day 82): an admin removed something of yours after a report' }),
         s.object({ yearsAgo: s.int('The most recent year with memories, in years ago') },
           { description: 'memories (Day 84): you have posts from this day in earlier years' }),
+        s.object({ reason: s.enum(['incomplete', 'not_notable', 'impersonation', 'other']) },
+          { extra: false, description: 'page_not_verified / page_unverified (Day 106): why a page you run was not verified, or lost its tick' }),
         { type: 'null' }
       ]
     }
@@ -211,13 +215,13 @@ const schemas = {
     reaction_counts: s.object({}, { description: 'Reaction -> count, only for reactions someone used' }),
     media: s.array(MEDIA_ITEM, 'Photos in order (empty when none)'),
     poll: s.nullable(s.ref('Poll')),
-    page: s.nullable(s.object({ id: s.id(), name: s.str() }, { description: 'Set when the post was published as a page' })),
+    page: s.nullable(s.object({ id: s.id(), name: s.str(), verified: s.bool('Day 106: the page has the blue tick') }, { description: 'Set when the post was published as a page' })),
     bookmarked_by_me: s.bool(),
     comment_count: s.int('Day 85: the comments (and replies) you would see when you open them'),
     is_share: s.bool('Days 93-94: this post shares another one'),
     shared_post: s.nullable(s.object({
       id: s.id(), content: s.nullable(s.str()), created_at: s.time(), user_id: s.id('Its author'), username: s.str(), avatar_url: s.nullable(s.str()),
-      page: s.nullable(s.object({ id: s.id(), name: s.str() })), media: s.array(MEDIA_ITEM)
+      page: s.nullable(s.object({ id: s.id(), name: s.str(), verified: s.bool() })), media: s.array(MEDIA_ITEM)
     }, { description: 'The shared post, while you may see it: open to everyone (or yours), no block, its author active' })),
     share_count: s.int('How many posts share this one'),
     can_share: s.bool('Share is offered: the post (a share: its original) is open to everyone')
@@ -361,6 +365,7 @@ const schemas = {
     description: s.nullable(s.str()), created_at: s.time(),
     owner_id: s.id(), owner_username: s.str(),
     follower_count: s.int(), is_following: s.bool(),
+    is_verified: s.bool('Day 106: the blue tick (an admin approved its verification request)'),
     is_owner: s.bool(), is_admin: s.bool('The owner or one of its admins'),
     my_post_notifications: s.nullable(s.enum(['all', 'highlights', 'off'], 'Day 101: which of its new posts you hear about; null when not following'))
   }),
@@ -391,10 +396,37 @@ const schemas = {
     message: s.str(), stack: s.nullable(s.str()), status: s.nullable(s.int()), count: s.int(),
     first_seen: s.time(), last_seen: s.time(), resolved_at: s.nullable(s.time()), last_username: s.nullable(s.str())
   }),
+  // Day 106: page verification.
+  PageVerificationRequest: s.object({
+    id: s.id(), status: s.enum(['pending', 'approved', 'declined']),
+    note: s.str(), link: s.nullable(s.str()), created_at: s.time(),
+    decided_at: s.nullable(s.time()), decline_reason: s.nullable(s.enum(['incomplete', 'not_notable', 'impersonation', 'other']))
+  }),
+  PageVerificationState: s.object({
+    verified_at: s.nullable(s.time('Set while the page has the blue tick')),
+    request: s.nullable(s.ref('PageVerificationRequest', 'The latest request')),
+    removed: s.nullable(s.enum(['admin', 'renamed'], 'Approved, but the tick has since been taken away by an admin, or went when the page was renamed')),
+    can_request: s.bool(),
+    why_not: s.nullable(s.enum(['verified', 'pending', 'wait', 'no_about'], 'Why it cannot ask now')),
+    next_request_at: s.nullable(s.time('When it can ask again (30 days after a decline or a removal)'))
+  }),
+  AdminPageVerification: s.object({
+    id: s.id(), status: s.enum(['pending', 'approved', 'declined']),
+    note: s.str(), link: s.nullable(s.str()), created_at: s.time(),
+    decided_at: s.nullable(s.time()), decline_reason: s.nullable(s.enum(['incomplete', 'not_notable', 'impersonation', 'other'])),
+    requested_by_username: s.nullable(s.str('null once that account is gone')), decided_by_username: s.nullable(s.str()),
+    page: s.object({
+      id: s.id(), name: s.str(), category: s.str(), description: s.nullable(s.str('The first 300 characters')),
+      created_at: s.time(), verified_at: s.nullable(s.time()), owner_id: s.id(), owner_username: s.str(),
+      follower_count: s.int(), post_count: s.int()
+    }),
+    other_declines: s.int('Earlier declined requests for the same page')
+  }),
   AdminAction: s.object({
     id: s.str('A 64-bit id, sent as a string of digits', { pattern: '^[0-9]+$' }),
     admin_id: s.nullable(s.id('null once that admin\'s account is gone')), admin_username: s.str(),
-    action: s.enum(['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved', 'admin_search']),
+    action: s.enum(['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved', 'admin_search',
+      'page_verified', 'page_declined', 'page_unverified']),
     target_type: s.enum(['post', 'comment', 'message', 'community', 'page', 'user', 'error', 'search']),
     target_id: s.str('The id of what it was about (an error group: its fingerprint; a search: posts, comments or users)'),
     target_label: s.nullable(s.str('A name for it, kept even after it is gone (never the removed content); a search: what was searched for')),

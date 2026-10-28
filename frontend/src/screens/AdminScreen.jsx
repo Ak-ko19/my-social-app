@@ -12,6 +12,7 @@ import AdminOverviewPanel from '../components/admin/AdminOverviewPanel';
 import AdminLogPanel from '../components/admin/AdminLogPanel';
 import AdminBulkBar from '../components/admin/AdminBulkBar';
 import AdminSearchPanel from '../components/admin/AdminSearchPanel';
+import AdminVerificationPanel from '../components/admin/AdminVerificationPanel';
 import { fetchReports, dismissReport, removeReportedContent, bulkReports, banUser, suspendUser, unbanUser } from '../services/adminService';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
 import { Trans, useTranslation } from 'react-i18next';
@@ -21,8 +22,8 @@ import '../components/feed/Feed.css';
 import './AdminScreen.css';
 
 // The sections, in tab order (labels: admin.section.<key>).
-// Days 103-104: | Search.
-const SECTIONS = ['overview', 'reports', 'search', 'errors', 'storage', 'log'];
+// Days 103-104: | Search. Day 106: | Verification.
+const SECTIONS = ['overview', 'reports', 'verification', 'search', 'errors', 'storage', 'log'];
 // Labels: admin.resolution.<key>.
 const RESOLUTIONS = ['dismissed', 'content_removed', 'user_banned', 'user_suspended'];
 // Day 12: suspension lengths an admin can pick (the API accepts these).
@@ -455,6 +456,7 @@ function AdminScreen() {
         {section === 'storage' && <AdminStoragePanel token={token} />}
         {section === 'log' && <AdminLogPanel token={token} />}
         {section === 'search' && <AdminSearchPanel token={token} />}
+        {section === 'verification' && <AdminVerificationPanel token={token} />}
         {section === 'errors' && <AdminErrorsPanel token={token} />}
         {section === 'reports' && (
           <>

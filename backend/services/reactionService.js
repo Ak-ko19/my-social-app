@@ -59,7 +59,7 @@ function mediaColumnSql() {
 // table aliased as "posts".
 function pageColumnSql() {
   return `
-    (SELECT json_build_object('id', pg.id, 'name', pg.name) FROM pages pg WHERE pg.id = posts.page_id) AS page`;
+    (SELECT json_build_object('id', pg.id, 'name', pg.name, 'verified', pg.verified_at IS NOT NULL) FROM pages pg WHERE pg.id = posts.page_id) AS page`;
 }
 
 // Day 85: "12 comments" on the card, before the comments are opened -- the

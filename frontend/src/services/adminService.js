@@ -66,3 +66,22 @@ export function fetchAdminLog(token, { action = '', page = 1 } = {}) {
 export function searchAsAdmin(token, { q, type = 'posts', page = 1 }) {
   return api.get('/admin/search', { ...withAuth(token), params: { q, type, page } }).then((res) => res.data);
 }
+
+// Day 106: page verification requests -- { requests, hasMore, page }; the
+// waiting ones oldest first, the decided ones newest first.
+export function fetchPageVerifications(token, { status = 'pending', page = 1 } = {}) {
+  return api.get('/admin/page-verifications', { ...withAuth(token), params: { status, page } }).then((res) => res.data);
+}
+
+export function approvePageVerification(requestId, token) {
+  return api.post(`/admin/page-verifications/${requestId}/approve`, {}, withAuth(token)).then((res) => res.data);
+}
+
+// reason: incomplete | not_notable | impersonation | other
+export function declinePageVerification(requestId, reason, token) {
+  return api.post(`/admin/page-verifications/${requestId}/decline`, { reason }, withAuth(token)).then((res) => res.data);
+}
+
+export function unverifyPage(pageId, reason, token) {
+  return api.post(`/admin/pages/${pageId}/unverify`, { reason }, withAuth(token)).then((res) => res.data);
+}

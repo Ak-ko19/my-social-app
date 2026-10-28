@@ -30,7 +30,7 @@ async function buildExport(userId) {
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
     legacyMessages, notifications, reports, sessions, knownDevices, pushDevices, messageReactions, hiddenSuggestions, searches,
-    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends, hiddenWords, pagesAdmin, eventsHosted, eventResponses, uploads
+    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends, hiddenWords, pagesAdmin, eventsHosted, eventResponses, uploads, pageVerifications
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -61,7 +61,7 @@ async function buildExport(userId) {
     rows(`SELECT c.id, c.name, cm.role, cm.status, cm.joined_at, cm.post_notifications, c.created_by = $1 AS created_by_me
           FROM community_members cm JOIN communities c ON c.id = cm.community_id
           WHERE cm.user_id = $1 ORDER BY cm.joined_at`, [userId]),
-    rows(`SELECT id, name, category, description, created_at FROM pages WHERE owner_id = $1 ORDER BY created_at`, [userId]),
+    rows(`SELECT id, name, category, description, verified_at, created_at FROM pages WHERE owner_id = $1 ORDER BY created_at`, [userId]),
     rows(`SELECT pg.id, pg.name, pf.created_at, pf.post_notifications FROM page_follows pf JOIN pages pg ON pg.id = pf.page_id
           WHERE pf.user_id = $1 ORDER BY pf.created_at`, [userId]),
     rows(`SELECT c.id, c.type, c.name, c.avatar_url, c.created_at, cp.joined_at,
@@ -140,7 +140,11 @@ async function buildExport(userId) {
     rows(`SELECT r.event_id, e.name, r.status, r.created_at FROM event_responses r JOIN events e ON e.id = r.event_id
           WHERE r.user_id = $1 ORDER BY r.created_at`, [userId]),
     // Day 57: what you uploaded lately (kept 30 days, for the daily limit).
-    rows('SELECT kind, bytes, created_at FROM media_uploads WHERE user_id = $1 ORDER BY created_at', [userId])
+    rows('SELECT kind, bytes, created_at FROM media_uploads WHERE user_id = $1 ORDER BY created_at', [userId]),
+    // Day 106: the verification requests you sent for pages.
+    rows(`SELECT r.page_id, pg.name AS page_name, r.note, r.link, r.status, r.decline_reason, r.created_at, r.decided_at
+          FROM page_verification_requests r JOIN pages pg ON pg.id = r.page_id
+          WHERE r.requested_by = $1 ORDER BY r.created_at`, [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -200,7 +204,7 @@ async function buildExport(userId) {
       close_friends: closeFriends
     },
     groups,
-    pages: { owned: pagesOwned, admin_of: pagesAdmin, followed: pagesFollowed },
+    pages: { owned: pagesOwned, admin_of: pagesAdmin, followed: pagesFollowed, verification_requests: pageVerifications },
     events: { hosted: eventsHosted, responses: eventResponses },
     recent_uploads: uploads,
     conversations: conversations.map((c) => ({

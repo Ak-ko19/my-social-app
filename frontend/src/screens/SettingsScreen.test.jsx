@@ -58,13 +58,15 @@ describe('Help and About', () => {
   it('Help lists the answers, in Arabic too', async () => {
     render(<MemoryRouter><HelpScreen /></MemoryRouter>);
     expect(screen.getByRole('heading', { level: 1, name: 'Help & Support' })).toBeInTheDocument();
-    expect(screen.getAllByRole('heading', { level: 2 }).length).toBe(9);
+    expect(screen.getAllByRole('heading', { level: 2 }).length).toBe(10);
     expect(screen.getByRole('heading', { name: 'How do I report something?' })).toBeInTheDocument();
     // Day 102: the first day's limits, explained.
     expect(screen.getByRole('heading', { name: "Why can't I post, follow or message more right now?" })).toBeInTheDocument();
+    // Day 106: how a page gets the blue tick.
+    expect(screen.getByRole('heading', { name: 'How does a page get the blue tick?' })).toBeInTheDocument();
     await setLanguage('ar');
     expect(await screen.findByRole('heading', { level: 1, name: 'المساعدة والدعم' })).toBeInTheDocument();
-    expect(screen.getAllByRole('heading', { level: 2 }).length).toBe(9);
+    expect(screen.getAllByRole('heading', { level: 2 }).length).toBe(10);
     expect(screen.getByRole('heading', { name: 'لماذا لا يمكنني النشر أو المتابعة أو المراسلة أكثر الآن؟' })).toBeInTheDocument();
   });
 

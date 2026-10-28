@@ -53,7 +53,7 @@ for (const lang of langs) {
 
 // 3. Arabic strings that are only placeholders, numbers or an address may
 // equal the English ones; any other copy is an untranslated string.
-const SAME_OK = new Set(['follow.buttonFor', 'poll.percent', 'editProfile.linkPlaceholder']);
+const SAME_OK = new Set(['follow.buttonFor', 'poll.percent', 'editProfile.linkPlaceholder', 'pages.verification.linkPlaceholder']);
 {
   const pairs = (o, p = '') =>
     Object.entries(o).flatMap(([k, v]) => (v && typeof v === 'object' ? pairs(v, `${p}${k}.`) : [[`${p}${k}`, v]]));

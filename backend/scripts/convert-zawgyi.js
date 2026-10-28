@@ -52,6 +52,8 @@ const COLUMNS = [
   { table: 'bookmark_collections', column: 'name', maxLength: 50 },
   // Day 95: photo descriptions (a CHECK of 1000 characters).
   { table: 'post_media', column: 'alt_text', maxLength: 1000 },
+  // Day 106: a page's verification request (a CHECK of 500 characters).
+  { table: 'page_verification_requests', column: 'note', maxLength: 500 },
 ];
 
 function parseArgs(argv) {

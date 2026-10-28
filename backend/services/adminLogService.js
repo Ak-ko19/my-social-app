@@ -5,7 +5,9 @@
 const db = require('../db');
 
 // Day 103: 'admin_search' -- an admin searched posts, comments or accounts.
-const ACTIONS = ['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved', 'admin_search'];
+// Day 106: a page verified, its request declined, or its tick taken away.
+const ACTIONS = ['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved', 'admin_search',
+  'page_verified', 'page_declined', 'page_unverified'];
 const PAGE_SIZE = 30;
 const LABEL_MAX = 120;
 

@@ -3,6 +3,7 @@ const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const optionalAuth = require('../middleware/optionalAuth');
 const p = require('../controllers/pageController');
+const v = require('../controllers/pageVerificationController');
 const { wholeIds } = require('../middleware/wholeIds');
 // Day 85: ids in the path are whole numbers (middleware/wholeIds).
 wholeIds(router);
@@ -23,5 +24,9 @@ router.put('/pages/:id/notifications', authMiddleware, p.setPostNotifications);
 router.get('/pages/:id/admins', authMiddleware, p.listAdmins);
 router.post('/pages/:id/admins', authMiddleware, p.addAdmin);
 router.delete('/pages/:id/admins/:userId', authMiddleware, p.removeAdmin);
+// Day 106: asking for the blue tick (owner and admins).
+router.get('/pages/:id/verification', authMiddleware, v.getState);
+router.post('/pages/:id/verification', authMiddleware, v.requestVerification);
+router.delete('/pages/:id/verification', authMiddleware, v.withdrawRequest);
 
 module.exports = router;

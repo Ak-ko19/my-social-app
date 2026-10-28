@@ -52,6 +52,8 @@ const pageVisibleSql = (viewerParam) => `
   (u.id = ${viewerParam} OR (NOT u.is_deactivated AND (${viewerParam}::int IS NULL OR ${noBlockBetweenSql(`${viewerParam}`, 'u.id')})))`;
 
 const PAGE_COLUMNS = `p.id, p.name, p.category, p.description, p.created_at,
+  -- Day 106: the blue tick (pageVerificationService).
+  p.verified_at IS NOT NULL AS is_verified,
   u.id AS owner_id, u.username AS owner_username,
   (SELECT COUNT(*)::int FROM page_follows f WHERE f.page_id = p.id) AS follower_count,
   $2::int IS NOT NULL AND EXISTS(SELECT 1 FROM page_follows f WHERE f.page_id = p.id AND f.user_id = $2) AS is_following,
@@ -186,7 +188,9 @@ async function updatePage(req, res) {
     const fields = cleanFields(req.body || {}, { partial: true });
     const keys = Object.keys(fields);
     if (keys.length === 0) throw new PageError(400, 'Nothing to update');
-    const sets = keys.map((k, i) => `${k} = $${i + 2}`).join(', ');
+    // Day 106: a new name loses the tick -- it was given to the old one.
+    const renamed = fields.name !== undefined && fields.name !== page.name;
+    const sets = keys.map((k, i) => `${k} = $${i + 2}`).concat(renamed ? ['verified_at = NULL'] : []).join(', ');
     await db.query(`UPDATE pages SET ${sets} WHERE id = $1`, [page.id, ...keys.map((k) => fields[k])]);
     res.json(await loadPage(page.id, req.userId));
   } catch (err) {
@@ -358,5 +362,5 @@ async function listPagePosts(req, res) {
   }
 }
 
-module.exports = { CATEGORIES, createPage, listPages, getPage, updatePage, deletePage, followPage, unfollowPage, setPostNotifications, listPagePosts,
+module.exports = { CATEGORIES, loadManagedPage, createPage, listPages, getPage, updatePage, deletePage, followPage, unfollowPage, setPostNotifications, listPagePosts,
   listAdmins, addAdmin, removeAdmin };

@@ -31,3 +31,9 @@ export const fetchPagePosts = (id, token, { page = 1, limit = 10 } = {}) =>
 export const fetchPageAdmins = (id, token) => api.get(`/pages/${id}/admins`, withAuth(token)).then(data);
 export const addPageAdmin = (id, username, token) => api.post(`/pages/${id}/admins`, { username }, withAuth(token)).then(data);
 export const removePageAdmin = (id, userId, token) => api.delete(`/pages/${id}/admins/${userId}`, withAuth(token)).then(data);
+// Day 106: asking for the blue tick (owner and admins) -- each answers the
+// page's verification state { verified_at, request, removed, can_request,
+// why_not, next_request_at }.
+export const fetchPageVerification = (id, token) => api.get(`/pages/${id}/verification`, withAuth(token)).then(data);
+export const requestPageVerification = (id, fields, token) => api.post(`/pages/${id}/verification`, fields, withAuth(token)).then(data);
+export const withdrawPageVerification = (id, token) => api.delete(`/pages/${id}/verification`, withAuth(token)).then(data);

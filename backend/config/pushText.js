@@ -40,7 +40,11 @@ const TEXT = {
     share: '{name} shared your post',
     // Day 101: a new post in your group / on a page you follow.
     group_post: '{name} posted in {group}',
-    page_post: '{page} has a new post'
+    page_post: '{page} has a new post',
+    // Day 106: a page you run (why, in the app).
+    page_verified: '{page} is now verified',
+    page_not_verified: "{page} wasn't verified. Open the app to see why.",
+    page_unverified: '{page} is no longer verified. Open the app to see why.'
   },
   ar: {
     like: 'أعجب {name} بمنشورك',
@@ -68,7 +72,10 @@ const TEXT = {
     memories: 'لديك ذكريات تستعيدها اليوم.',
     share: 'شارك {name} منشورك',
     group_post: 'منشور جديد من {name} في {group}',
-    page_post: 'منشور جديد من {page}'
+    page_post: 'منشور جديد من {page}',
+    page_verified: 'أصبحت {page} موثّقة',
+    page_not_verified: 'لم يتم توثيق {page}. افتح التطبيق لمعرفة السبب.',
+    page_unverified: 'لم تعد {page} موثّقة. افتح التطبيق لمعرفة السبب.'
   }
 };
 

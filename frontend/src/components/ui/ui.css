@@ -321,3 +321,23 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Day 106: NameWithTick -- the name is cut with "…", the tick stays. */
+.name-with-tick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.name-with-tick-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name-with-tick-mark {
+  flex: none;
+}

@@ -68,7 +68,7 @@ describe('pages (B14)', () => {
 
     const fanFeed = await request(app).get('/feed').set(auth(fan));
     expect(ids(fanFeed)).toEqual([pp.id]);
-    expect(fanFeed.body.posts[0].page).toEqual({ id: page.id, name: 'Cafe' });
+    expect(fanFeed.body.posts[0].page).toEqual({ id: page.id, name: 'Cafe', verified: false });
     expect(ids(await request(app).get('/feed').set(auth(other)))).toEqual([personal.id]);
   });
 
@@ -79,16 +79,16 @@ describe('pages (B14)', () => {
     const pagePosts = await request(app).get(`/pages/${page.id}/posts`); // logged out
     expect(pagePosts.status).toBe(200);
     expect(ids(pagePosts)).toEqual([pp.id]);
-    expect(pagePosts.body.posts[0].page).toEqual({ id: page.id, name: 'Cafe' });
+    expect(pagePosts.body.posts[0].page).toEqual({ id: page.id, name: 'Cafe', verified: false });
 
     expect(ids(await request(app).get('/posts').set(auth(other)))).toContain(pp.id);
     expect(ids(await request(app).get('/hashtags/cafetag/posts').set(auth(other)))).toContain(pp.id);
     const search = await request(app).get('/search/posts').query({ q: 'pagesecretword' }).set(auth(other));
     expect(ids(search)).toContain(pp.id);
-    expect(search.body.posts[0].page).toEqual({ id: page.id, name: 'Cafe' });
+    expect(search.body.posts[0].page).toEqual({ id: page.id, name: 'Cafe', verified: false });
     const detail = await request(app).get(`/posts/${pp.id}`);
     expect(detail.status).toBe(200);
-    expect(detail.body.page).toEqual({ id: page.id, name: 'Cafe' });
+    expect(detail.body.page).toEqual({ id: page.id, name: 'Cafe', verified: false });
 
     expect(ids(await request(app).get(`/users/${owner.id}/posts`).set(auth(owner)))).not.toContain(pp.id);
   });

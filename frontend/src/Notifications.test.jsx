@@ -441,3 +441,42 @@ describe('Notifications: new posts in groups and pages', () => {
     expect(screen.getByText(line(/^منشور جديد من Mingalar Cafe/))).toBeInTheDocument();
   });
 });
+
+// Day 106: news about the verification of a page you run.
+describe('Notifications: page verification', () => {
+  const base = { ...me, post_id: null, comment_id: null, post_content: null, count: 1, actor_count: 1, actors: [], page_id: 4, page_name: 'Corner Cafe' };
+  const showOne = (n) => {
+    api.get.mockResolvedValue({ data: { notifications: [n], nextCursor: null } });
+    render(
+      <MemoryRouter initialEntries={['/notifications']}>
+        <Routes>
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/pages/:id" element={<p>Page screen</p>} />
+          <Route path="/pages/:id/edit" element={<p>Edit page screen</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+  };
+
+  it('verified opens the page', async () => {
+    await setLanguage('en');
+    showOne({ ...base, id: 70, type: 'page_verified', details: null });
+    await userEvent.click(await screen.findByRole('link', { name: /Corner Cafe is now verified\. It shows a blue tick\./ }));
+    expect(await screen.findByText('Page screen')).toBeInTheDocument();
+  });
+
+  it('declined says why and opens Edit page (where it says when to ask again)', async () => {
+    await setLanguage('en');
+    showOne({ ...base, id: 71, type: 'page_not_verified', details: { reason: 'not_notable' } });
+    await userEvent.click(await screen.findByRole('link', {
+      name: /The request to verify Corner Cafe was declined: We couldn't confirm that this page is the well-known, official one\./
+    }));
+    expect(await screen.findByText('Edit page screen')).toBeInTheDocument();
+  });
+
+  it('a removed tick, in Arabic', async () => {
+    await setLanguage('ar');
+    showOne({ ...base, id: 72, type: 'page_unverified', details: { reason: 'impersonation' } });
+    expect(await screen.findByRole('link', { name: /لم تعد Corner Cafe موثّقة: يبدو أن الصفحة لا تمثّل من تدّعي تمثيله\./ })).toBeInTheDocument();
+  });
+});

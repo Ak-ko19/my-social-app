@@ -87,7 +87,7 @@ describe('sharing a post (Days 93-94)', () => {
     const pagePost = await newPost(owner, 'new tea', { pageId: String(page.id) });
     const res = await share(fan, pagePost);
     expect(res.status).toBe(201);
-    expect((await getPost(fan, res.body.id)).shared_post.page).toEqual({ id: page.id, name: 'Tea Shop' });
+    expect((await getPost(fan, res.body.id)).shared_post.page).toEqual({ id: page.id, name: 'Tea Shop', verified: false });
 
     const club = (await request(app).post('/communities').set(auth(owner)).send({ name: 'Open club' })).body;
     const groupPost = await newPost(owner, 'hello club', { communityId: String(club.id) });

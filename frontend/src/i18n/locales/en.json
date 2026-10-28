@@ -657,6 +657,9 @@
       "share": "<b>{{name}}</b> shared your post",
       "groupPost": "<b>{{name}}</b> posted in <b>{{group}}</b>",
       "pagePost": "<b>{{page}}</b> has a new post",
+      "pageVerified": "<b>{{page}}</b> is now verified. It shows a blue tick.",
+      "pageNotVerified": "The request to verify <b>{{page}}</b> was declined: {{reason}}",
+      "pageUnverified": "<b>{{page}}</b> is no longer verified: {{reason}}",
       "comment": "<b>{{name}}</b> commented on your post",
       "follow": "<b>{{name}}</b> started following you",
       "mentionComment": "<b>{{name}}</b> mentioned you in a comment",
@@ -1086,7 +1089,46 @@
       "storage": "Storage",
       "overview": "Overview",
       "log": "Log",
-      "search": "Search"
+      "search": "Search",
+      "verification": "Verification"
+    },
+    "verification": {
+      "statusTabs": "Request status",
+      "tabs": {
+        "pending": "Waiting",
+        "reviewed": "Decided"
+      },
+      "loadFailed": "Couldn't load verification requests.",
+      "emptyPending": "No pages are waiting for verification.",
+      "emptyReviewed": "No decisions yet.",
+      "chooseReason": "Choose a reason…",
+      "reasons": {
+        "incomplete": "Details incomplete",
+        "not_notable": "Not well known enough",
+        "impersonation": "Impersonation",
+        "other": "Other"
+      },
+      "reasonNeeded": "Choose a reason first.",
+      "approved": "{{name}} is now verified.",
+      "declinedDone": "The request for {{name}} was declined.",
+      "removed": "{{name}} is no longer verified.",
+      "postCount_one": "{{count}} post",
+      "postCount_other": "{{count}} posts",
+      "pageAge": "Created {{when}}",
+      "owner": "Owner:",
+      "askedBy": "Asked by {{name}} · {{when}}",
+      "otherDeclines_one": "Declined once before",
+      "otherDeclines_other": "Declined {{count}} times before",
+      "link": "Link:",
+      "approve": "Approve",
+      "decline": "Decline",
+      "declineReasonLabel": "Reason to decline {{name}}",
+      "approvedBy": "Approved by {{name}} · {{when}}",
+      "declinedBy": "Declined by {{name}} · {{when}}: {{reason}}",
+      "removeReasonLabel": "Reason to remove {{name}}'s blue tick",
+      "remove": "Remove tick",
+      "removeTitle": "Remove the blue tick from {{name}}?",
+      "removeText": "The page's owner and admins are told why. The page can ask again in 30 days."
     },
     "errors": {
       "statusTabs": "Error status",
@@ -1229,7 +1271,10 @@
         "user_suspended": "Suspensions",
         "user_unbanned": "Bans lifted",
         "error_resolved": "Errors resolved",
-        "admin_search": "Searches"
+        "admin_search": "Searches",
+        "page_verified": "Pages verified",
+        "page_declined": "Verification declined",
+        "page_unverified": "Ticks removed"
       },
       "loadFailed": "Couldn't load the log.",
       "empty": "No moderation decisions yet.",
@@ -1253,7 +1298,10 @@
         "user_suspended_other": "{{admin}} suspended {{name}} for {{days}} days",
         "user_unbanned": "{{admin}} lifted the ban on {{name}}",
         "error_resolved": "{{admin}} marked an error as resolved: {{name}}",
-        "admin_search": "{{admin}} searched {{kind}} for “{{name}}”"
+        "admin_search": "{{admin}} searched {{kind}} for “{{name}}”",
+        "page_verified": "{{admin}} verified the page {{name}}",
+        "page_declined": "{{admin}} declined verification for the page {{name}} ({{reason}})",
+        "page_unverified": "{{admin}} removed the blue tick from the page {{name}} ({{reason}})"
       },
       "reportsClosed_one": "closed {{n}} report",
       "reportsClosed_other": "closed {{n}} reports",
@@ -1401,6 +1449,38 @@
       "other": "Other"
     },
     "report": "Report page",
+    "verification": {
+      "title": "Verification",
+      "intro": "A blue tick tells people this page is the real one for who it represents. Tell us who that is; our team reviews each request.",
+      "noteLabel": "Who does this page represent?",
+      "notePlaceholder": "For example: the official page of our tea house on 19th Street, open since 1990.",
+      "count": "{{used}}/{{max}}",
+      "linkLabel": "Official website or profile (optional)",
+      "linkPlaceholder": "https://example.com",
+      "ask": "Ask for verification",
+      "noteNeeded": "Tell us who this page represents.",
+      "sent": "Request sent. We'll let you know when it's reviewed.",
+      "withdrawn": "Request withdrawn.",
+      "failed": "That didn't work. Please try again.",
+      "loadFailed": "Couldn't load the verification status.",
+      "verified": "This page is verified",
+      "verifiedSince": "Verified on {{date}}.",
+      "renameWarning": "Changing the page's name removes its blue tick. You can ask again afterwards.",
+      "pending": "Your request is waiting for review",
+      "pendingSince": "Sent on {{date}}. Only one request can wait at a time.",
+      "withdraw": "Withdraw request",
+      "declined": "Your last request was declined",
+      "removedByAdmin": "Our team removed this page's blue tick.",
+      "removedRenamed": "The blue tick was removed when the page was renamed.",
+      "waitUntil": "You can ask again on {{date}}.",
+      "needsAbout": "Add an About text above before asking for verification.",
+      "reasons": {
+        "incomplete": "The page's details weren't complete enough to confirm who it represents.",
+        "not_notable": "We couldn't confirm that this page is the well-known, official one.",
+        "impersonation": "The page didn't appear to be who it says it is.",
+        "other": "It didn't meet our verification requirements."
+      }
+    },
     "admins": {
       "title": "Admins",
       "explainOwner": "Admins can edit this page, post as it and manage its posts. Only you can delete the page or change who's an admin.",
@@ -1569,7 +1649,7 @@
       "sections": [
         {
           "heading": "1. What we collect",
-          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted or restricted, your close friends list, the words you chose to hide, events you host and your answers to events, the size and time of the files you upload (kept 30 days, for the daily upload limit), muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports. We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active. If we remove something you shared after a report, the notification that tells you keeps its first 100 characters and the reason, for 90 days. We keep your device's time zone (for example Europe/London) so the memories reminder comes in your morning; you can turn that reminder off in Settings."
+          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted or restricted, your close friends list, the words you chose to hide, events you host and your answers to events, the size and time of the files you upload (kept 30 days, for the daily upload limit), muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports, and the verification requests you send for a page (your note and link, and what was decided). We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active. If we remove something you shared after a report, the notification that tells you keeps its first 100 characters and the reason, for 90 days. We keep your device's time zone (for example Europe/London) so the memories reminder comes in your morning; you can turn that reminder off in Settings."
         },
         {
           "heading": "2. How we use it",
@@ -1577,7 +1657,7 @@
         },
         {
           "heading": "3. Who can see what",
-          "body": "Public posts, public profiles and pages can be seen by anyone. Anyone may share a post that everyone can see (a public post of a public account, a page's post or a public group's post) to their own audience; a share shows your post only while it is still open to everyone, so changing its audience or deleting it removes it from every share. Followers-only posts, private accounts and private groups are limited to the people allowed in, and \"Only me\" posts are visible only to you. Stories disappear after 24 hours. A reply or reaction to a story is a message to its author: the chat shows the story only while it is still up, and keeps the message after it is gone. Direct and group messages are visible only to the people in that conversation, who can also see when you are online or were last active. Blocking someone hides you from each other. Our moderators can see content that has been reported, so they can review it. When looking into abuse they can also search posts, comments and accounts, including private ones; every search is recorded with who searched, for what and when. Each moderation decision (for example removing a post or suspending an account) is recorded with which moderator made it, when, and the account, group or page it concerned — not the removed content itself. Poll votes are anonymous: everyone, including the poll's author, sees only how many votes each option has."
+          "body": "Public posts, public profiles and pages can be seen by anyone. Anyone may share a post that everyone can see (a public post of a public account, a page's post or a public group's post) to their own audience; a share shows your post only while it is still open to everyone, so changing its audience or deleting it removes it from every share. Followers-only posts, private accounts and private groups are limited to the people allowed in, and \"Only me\" posts are visible only to you. Stories disappear after 24 hours. A reply or reaction to a story is a message to its author: the chat shows the story only while it is still up, and keeps the message after it is gone. Direct and group messages are visible only to the people in that conversation, who can also see when you are online or were last active. Blocking someone hides you from each other. Our moderators can see content that has been reported, so they can review it, and the verification requests sent for pages. When looking into abuse they can also search posts, comments and accounts, including private ones; every search is recorded with who searched, for what and when. Each moderation decision (for example removing a post or suspending an account) is recorded with which moderator made it, when, and the account, group or page it concerned — not the removed content itself. Poll votes are anonymous: everyone, including the poll's author, sees only how many votes each option has."
         },
         {
           "heading": "4. Links and sharing",
@@ -2114,6 +2194,10 @@
       {
         "heading": "How do I change the language?",
         "body": "Go to Settings → Language and choose English or العربية. Your choice is saved to your account."
+      },
+      {
+        "heading": "How does a page get the blue tick?",
+        "body": "The page's owner or an admin opens Edit page → Verification and tells us who the page represents (the page needs its About text first). Our team reviews each request and tells you the answer. If it is declined, the page can ask again after 30 days. Changing a verified page's name removes its tick."
       }
     ]
   },

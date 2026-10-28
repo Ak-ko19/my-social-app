@@ -310,7 +310,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 105 — Profile completeness
 - [x] A "finish your profile" card (photo, cover, bio, links), dismissable, like Facebook's. *(On Home; each step opens its field; hidden for good on the server — see Progress Log.)*
 ### Day 106 — Page verification requests
-- [ ] A page admin asks for verification; an admin approves or declines; a badge on approved pages; logged.
+- [x] A page admin asks for verification; an admin approves or declines; a badge on approved pages; logged. *(Edit page > Verification; Admin > Verification, with reasons and taking a tick away; the tick on the page, its row and its posts -- see Progress Log.)*
 ### Day 107–108 — Follow a hashtag
 - [ ] Follow hashtags; their public posts appear on Home (Instagram-style), with a way to unfollow from a post.
 ### Day 109–110 — Comment upgrades

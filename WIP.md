@@ -1,7 +1,10 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 106 — Page verification requests.
-**Step:** 1 — PLAN done; BUILD next. Parts done: none.
+**Step:** 1 -- done (committed). Next: close Day 106 -- full browser run in batches of 3,
+then the Progress Log entry.
+Decision: pages.verification_removed_at added so an admin's removal gets the
+same 30-day wait as a decline (and the page's screen can say which).
 
 ### Plan (Day 106, step 1)
 Facebook-like: a page's managers ask, an admin approves / declines with a
@@ -33,6 +36,13 @@ reason, approved pages get the blue tick everywhere their name shows.
   Policy (moderators read the request), Help question, e2e suite.
 
 ## Carry-over notes
+- Day 106 lesson (seen twice): a hint or a character counter INSIDE a
+  <label> becomes part of the field's accessible name ("Page name Changing
+  the page's name..."). Put it after the label (htmlFor + id) and point
+  aria-describedby at it.
+- Day 106: a page's tick is pages.verified_at (PAGE_COLUMNS is_verified,
+  pageColumnSql / shareService page.verified). A new place that shows a
+  page's name should show NameWithTick.
 - Day 105: the first download is 222.0 kB of the 225 kB budget (Home's
   cards ship with it). Day 113 (performance round 3): look for what can
   load later (e.g. the Memories and profile cards, the story viewer).

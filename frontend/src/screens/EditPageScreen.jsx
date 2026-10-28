@@ -8,6 +8,7 @@ import FeedErrorState from '../components/feed/FeedErrorState';
 import { categoryLabel, deletePage, fetchPage, PAGE_CATEGORIES, updatePage } from '../services/pageService';
 import { serverErrorText } from '../utils/serverError';
 import PageAdminsSection from '../components/pages/PageAdminsSection';
+import PageVerificationSection from '../components/pages/PageVerificationSection';
 import './GroupsScreen.css';
 
 // B14: /pages/:id/edit -- owner only (the API enforces it too). Day 53:
@@ -101,10 +102,21 @@ function EditPageScreen() {
     <div className="screen-enter">
       {header}
       <form className="screen-body form-stack" onSubmit={save}>
-        <label className="form-field">
-          <span className="form-label">{t('pages.name')}</span>
-          <input className="form-input" maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-        </label>
+        {/* Day 106: a new name loses the tick -- said under the field (outside
+            the label, so it isn't read as part of the field's name). */}
+        <div className="form-field">
+          <label className="form-label" htmlFor="page-name">{t('pages.name')}</label>
+          <input
+            id="page-name"
+            className="form-input"
+            maxLength={100}
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+            aria-describedby={page.is_verified ? 'page-name-hint' : undefined}
+          />
+          {page.is_verified && <span id="page-name-hint" className="form-hint">{t('pages.verification.renameWarning')}</span>}
+        </div>
         <label className="form-field">
           <span className="form-label">{t('pages.category')}</span>
           <select className="form-input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
@@ -123,6 +135,7 @@ function EditPageScreen() {
       </form>
 
       <div className="screen-body form-stack">
+        <PageVerificationSection page={page} token={token} />
         <PageAdminsSection page={page} token={token} userId={userId} onLeft={() => navigate(`/pages/${id}`, { replace: true })} />
         {page.is_owner && (
           <>

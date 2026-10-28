@@ -295,6 +295,46 @@ module.exports = {
     responses: { 200: json(s.object({ removed: { const: true } }), 'Removed'), 400: text('Invalid ids'), 403: text("Only the page owner can do that (or you don't run this page)"), 404: PAGE_NOT_FOUND }
   }),
 
+  // Day 106: asking for the blue tick.
+  'GET /pages/:id/verification': op({
+    tag: 'Pages', auth: 'user',
+    summary: "A page's verification status (its owner and admins)",
+    responses: {
+      200: json(ref('PageVerificationState'), 'The status'),
+      400: BAD_PAGE,
+      403: text("Only the page's owner and admins can do that"),
+      404: PAGE_NOT_FOUND
+    }
+  }),
+  'POST /pages/:id/verification': op({
+    tag: 'Pages', auth: 'user',
+    summary: 'Ask for the blue tick (its owner and admins)',
+    description: 'The page needs its About text. One request at a time; after a decline, or after an admin took the tick away, '
+      + 'the page can ask again 30 days later. An admin reviews it in Admin > Verification.',
+    requestBody: body({
+      note: s.str('Who the page represents and why it should be verified: 1 to 500 characters'),
+      link: s.str('Optional: an official website or profile, http:// or https://, up to 300 characters')
+    }, { required: ['note'] }),
+    responses: {
+      201: json(ref('PageVerificationState'), 'Sent'),
+      400: text('Tell us who this page represents. / The note must be 500 characters or fewer. / Enter a web address that starts with http:// or https://, up to 300 characters. / Add an About text to the page first. / Invalid page ID'),
+      403: text("Only the page's owner and admins can do that"),
+      404: PAGE_NOT_FOUND,
+      409: text('This page is already verified. / This page already has a request waiting for review. / A page can ask again 30 days after a request is declined or a tick is removed.')
+    }
+  }),
+  'DELETE /pages/:id/verification': op({
+    tag: 'Pages', auth: 'user',
+    summary: 'Withdraw a request still waiting for review (its owner and admins)',
+    description: 'Nothing waiting is fine.',
+    responses: {
+      200: json(ref('PageVerificationState'), 'The status'),
+      400: BAD_PAGE,
+      403: text("Only the page's owner and admins can do that"),
+      404: PAGE_NOT_FOUND
+    }
+  }),
+
   // ---- Reports ----
   'POST /reports': op({
     tag: 'Moderation', auth: 'user', limited: true,
@@ -463,12 +503,63 @@ module.exports = {
       400: text('Search for 2 to 100 characters. / type must be one of: posts, comments, users / page must be 1 to 50')
     }
   }),
+  // Day 106: page verification requests.
+  'GET /admin/page-verifications': op({
+    tag: 'Admin', auth: 'admin',
+    summary: 'Page verification requests: waiting (oldest first) or decided (newest first), 20 a page',
+    query: {
+      status: q(s.enum(['pending', 'reviewed'], 'Default pending')),
+      page: q(s.int('From 1', { default: 1 }))
+    },
+    responses: {
+      200: json(s.object({ requests: s.array(ref('AdminPageVerification')), hasMore: s.bool(), page: s.int() }), 'One page'),
+      400: text('status must be pending or reviewed / page must be a whole number from 1')
+    }
+  }),
+  'POST /admin/page-verifications/:id/approve': op({
+    tag: 'Admin', auth: 'admin',
+    summary: 'Verify the page (the blue tick); its owner and admins are told',
+    description: 'Logged (page_verified).',
+    pathParams: { id: s.id('The request') },
+    responses: {
+      200: json(s.object({ id: s.id(), status: { const: 'approved' } }), 'Approved'),
+      400: text('Invalid ids'),
+      404: text('Verification request not found'),
+      409: text('This request has already been decided.')
+    }
+  }),
+  'POST /admin/page-verifications/:id/decline': op({
+    tag: 'Admin', auth: 'admin',
+    summary: 'Decline a request with a reason; its owner and admins are told why',
+    description: 'Logged (page_declined). The page can ask again 30 days later.',
+    pathParams: { id: s.id('The request') },
+    requestBody: body({ reason: s.enum(['incomplete', 'not_notable', 'impersonation', 'other']) }, { required: ['reason'] }),
+    responses: {
+      200: json(s.object({ id: s.id(), status: { const: 'declined' }, decline_reason: s.enum(['incomplete', 'not_notable', 'impersonation', 'other']) }), 'Declined'),
+      400: text('reason must be one of: incomplete, not_notable, impersonation, other / Invalid ids'),
+      404: text('Verification request not found'),
+      409: text('This request has already been decided.')
+    }
+  }),
+  'POST /admin/pages/:id/unverify': op({
+    tag: 'Admin', auth: 'admin',
+    summary: "Take a page's blue tick away, with a reason; its owner and admins are told why",
+    description: 'Logged (page_unverified). The page can ask again 30 days later.',
+    requestBody: body({ reason: s.enum(['incomplete', 'not_notable', 'impersonation', 'other']) }, { required: ['reason'] }),
+    responses: {
+      200: json(s.object({ id: s.id(), verified_at: { type: 'null' } }), 'Removed'),
+      400: text('reason must be one of: incomplete, not_notable, impersonation, other / Invalid ids'),
+      404: text('Page not found'),
+      409: text('This page is not verified.')
+    }
+  }),
   'GET /admin/log': op({
     tag: 'Admin', auth: 'admin',
     summary: 'Every moderation decision, newest first, 30 a page',
     query: {
       page: q(s.int('From 1', { default: 1 })),
-      action: q(s.enum(['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved', 'admin_search']))
+      action: q(s.enum(['report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved', 'admin_search',
+        'page_verified', 'page_declined', 'page_unverified']))
     },
     responses: {
       200: json(s.object({ actions: s.array(ref('AdminAction')), hasMore: s.bool(), page: s.int() }), 'One page'),
