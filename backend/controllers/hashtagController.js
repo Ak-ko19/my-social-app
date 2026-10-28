@@ -7,7 +7,8 @@ const { pollColumnSql } = require('../services/pollService');
 const { popularityScoreSql } = require('../services/popularity');
 const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
-const { normalizeTag } = require('../services/hashtagService');
+const hashtagService = require('../services/hashtagService');
+const { normalizeTag } = hashtagService;
 const { toUnicode } = require('../utils/myanmarText');
 
 // Day 40: Top ranks only the tag's newest TOP_CANDIDATES visible posts, so
@@ -102,4 +103,47 @@ async function getPostsByHashtag(req, res) {
   }
 }
 
-module.exports = { getPostsByHashtag, TOP_CANDIDATES };
+// Days 107-108: following a hashtag (services/hashtagService.js).
+
+// GET /hashtags/:tag -> { tag, is_following } (false when logged out).
+async function getHashtag(req, res) {
+  try {
+    const tag = hashtagService.cleanTag(req.params.tag);
+    res.json({ tag, is_following: await hashtagService.isFollowing(req.userId, tag) });
+  } catch (err) {
+    sendError(res, err, 'Loading the hashtag failed. Please try again later.');
+  }
+}
+
+// PUT /hashtags/:tag/follow -> { tag, is_following: true }
+async function followHashtag(req, res) {
+  try {
+    const tag = hashtagService.cleanTag(req.params.tag);
+    await hashtagService.follow(req.userId, tag);
+    res.json({ tag, is_following: true });
+  } catch (err) {
+    sendError(res, err, 'Following the hashtag failed. Please try again later.');
+  }
+}
+
+// DELETE /hashtags/:tag/follow -> { tag, is_following: false }
+async function unfollowHashtag(req, res) {
+  try {
+    const tag = hashtagService.cleanTag(req.params.tag);
+    await hashtagService.unfollow(req.userId, tag);
+    res.json({ tag, is_following: false });
+  } catch (err) {
+    sendError(res, err, 'Unfollowing the hashtag failed. Please try again later.');
+  }
+}
+
+// GET /followed-hashtags -> { hashtags: [{ tag, followed_at }], max }
+async function listFollowedHashtags(req, res) {
+  try {
+    res.json({ hashtags: await hashtagService.listFollowed(req.userId), max: hashtagService.MAX_FOLLOWS });
+  } catch (err) {
+    sendError(res, err, 'Loading the hashtags you follow failed. Please try again later.');
+  }
+}
+
+module.exports = { getPostsByHashtag, getHashtag, followHashtag, unfollowHashtag, listFollowedHashtags, TOP_CANDIDATES };

@@ -1,7 +1,40 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 107-108 -- Follow a hashtag.
-**Step:** 1 -- PLAN (not started).
+**Step:** 1 of 2 -- done (committed): migration 087, follow API, the tag
+page's Follow button, Settings > Hashtags you follow (hashtagFollows 4,
+5 mutations; Vitest 446; e2e day107-hashtag-follow 22/22). Next: step 2
+(Home) -- PLAN below.
+
+### Plan (Days 107-108)
+Instagram-style: follow a hashtag and its public posts come to Home, each
+saying which tag brought it, with "Unfollow #tag" right on the post.
+Two vertical slices:
+- **Step 1 -- follow / unfollow, and the list.**
+  - Data (migration 087): hashtag_follows (user_id, hashtag_id cascade both,
+    created_at; PK (user_id, hashtag_id); index on hashtag_id). At most 200
+    tags per account (bounds the Home query; Instagram caps follows too).
+  - API: GET /hashtags/:tag (tag, is_following -- optionalAuth),
+    PUT / DELETE /hashtags/:tag/follow (idempotent; a valid tag shape --
+    letters/marks/digits/_ , not only digits, <= 100 -- is created if no
+    post has it yet), GET /hashtags/following (yours, newest first).
+    Tags normalised like posts' (toUnicode + NFC + lower case).
+  - UI: Follow / Following on the hashtag screen (logged in);
+    Settings > Hashtags you follow (/settings/hashtags; unfollow each;
+    empty state; authOnly + day30-guard + day80-states ROUTES).
+  - Also: openapi (+ public op for GET /hashtags/:tag), data export,
+    Privacy Policy (what you follow), EN/AR, tests (API + Vitest + e2e).
+- **Step 2 -- on Home.**
+  - getFeed: also public posts (postAudienceSql: not a private account's;
+    pages count) carrying a tag you follow; not group posts; blocks,
+    deactivated and muted as today. via_hashtag = the tag, only when the
+    post is there for no other reason (not yours, author / page not
+    followed).
+  - Post card: "#tag" line (a link to the tag) over the header; the ⋯
+    menu gets "Unfollow #tag": unfollows and takes that tag's posts off
+    Home at once. Perf suite: /feed with tag follows; index check.
+  - e2e: follow from the tag screen -> post on Home with the label ->
+    unfollow from the post -> gone; EN/light + AR/dark, axe.
 
 ## Carry-over notes
 - Day 106 lesson (seen twice): a hint or a character counter INSIDE a

@@ -400,6 +400,43 @@ module.exports = {
       400: text('A hashtag is required / Sort must be recent or top')
     }
   }),
+  // Days 107-108: following a hashtag.
+  'GET /hashtags/:tag': op({
+    tag: 'Explore', auth: 'optional',
+    summary: 'A hashtag, and whether you follow it',
+    pathParams: { tag: s.str('The hashtag, with or without # (any language)') },
+    responses: {
+      200: json(s.object({ tag: s.str('As stored (lower-case)'), is_following: s.bool('false when logged out') }), 'The hashtag'),
+      400: text('That is not a hashtag. Use letters, numbers and _ only.')
+    }
+  }),
+  'PUT /hashtags/:tag/follow': op({
+    tag: 'Explore', auth: 'user',
+    summary: 'Follow a hashtag: its public posts come to your Home (up to 200 hashtags)',
+    description: 'Following again is fine. A hashtag no post has used yet can be followed too.',
+    pathParams: { tag: s.str('The hashtag, with or without # (any language)') },
+    responses: {
+      200: json(s.object({ tag: s.str(), is_following: { const: true } }), 'Following'),
+      400: text('That is not a hashtag. Use letters, numbers and _ only. / You can follow up to 200 hashtags.')
+    }
+  }),
+  'DELETE /hashtags/:tag/follow': op({
+    tag: 'Explore', auth: 'user',
+    summary: 'Stop following a hashtag',
+    description: 'Not following it is fine.',
+    pathParams: { tag: s.str('The hashtag, with or without # (any language)') },
+    responses: {
+      200: json(s.object({ tag: s.str(), is_following: { const: false } }), 'Not following'),
+      400: text('That is not a hashtag. Use letters, numbers and _ only.')
+    }
+  }),
+  'GET /followed-hashtags': op({
+    tag: 'Explore', auth: 'user',
+    summary: 'The hashtags you follow, latest followed first (all of them)',
+    responses: {
+      200: json(s.object({ hashtags: s.array(s.object({ tag: s.str(), followed_at: s.time() })), max: s.int('How many you may follow') }), 'Yours')
+    }
+  }),
   'GET /explore/hashtags': op({
     tag: 'Explore', auth: 'optional',
     summary: 'Trending hashtags (the 10 most used in the last week, in posts you may see)',

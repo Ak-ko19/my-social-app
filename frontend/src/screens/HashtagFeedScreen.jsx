@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { IconButton } from '../components/ui';
@@ -8,6 +8,8 @@ import FeedSkeleton from '../components/feed/FeedSkeleton';
 import FeedErrorState from '../components/feed/FeedErrorState';
 import { useAuth } from '../hooks/useAuth';
 import { useHashtagFeed } from '../hooks/useHashtagFeed';
+import { fetchHashtag, followHashtag, unfollowHashtag } from '../services/hashtagService';
+import { serverErrorText } from '../utils/serverError';
 import { arrowStep } from '../utils/direction';
 import '../components/feed/Feed.css';
 import '../components/profile/ProfileTabs.css';
@@ -26,6 +28,33 @@ function HashtagFeedScreen() {
   const tabRefs = useRef({});
   const { token } = useAuth();
   const { posts, loading, loadingMore, error, hasMore, loadMore, reload } = useHashtagFeed(tag, token, sort);
+  // Days 107-108: Follow / Following (logged in) -- the tag's public posts
+  // then come to Home. null until known.
+  const [following, setFollowing] = useState(null);
+  const [followBusy, setFollowBusy] = useState(false);
+  const [followError, setFollowError] = useState('');
+  useEffect(() => {
+    if (!token) return undefined;
+    let cancelled = false;
+    fetchHashtag(tag, token)
+      .then((h) => { if (!cancelled) setFollowing(h.is_following); })
+      .catch((err) => console.error(err));
+    return () => {
+      cancelled = true;
+    };
+  }, [tag, token]);
+  const toggleFollow = () => {
+    if (followBusy) return;
+    setFollowBusy(true);
+    setFollowError('');
+    (following ? unfollowHashtag : followHashtag)(tag, token)
+      .then((h) => setFollowing(h.is_following))
+      .catch((err) => {
+        console.error(err);
+        setFollowError(serverErrorText(err, 'hashtag.followFailed'));
+      })
+      .finally(() => setFollowBusy(false));
+  };
 
   const state = loading ? 'loading' : error ? 'error' : posts.length === 0 ? 'empty' : 'list';
 
@@ -50,7 +79,20 @@ function HashtagFeedScreen() {
       <header className="hashtag-feed-header">
         <IconButton icon={ChevronLeft} aria-label={t('common.back')} onClick={() => navigate(-1)} />
         <h1 className="hashtag-feed-header-title"><bdi>#{tag}</bdi></h1>
+        {token && following !== null && (
+          <button
+            type="button"
+            className={following ? 'btn btn-secondary btn-sm' : 'btn btn-primary btn-sm'}
+            aria-pressed={following}
+            onClick={toggleFollow}
+            disabled={followBusy}
+          >
+            {following ? t('hashtag.following') : t('hashtag.follow')}
+          </button>
+        )}
       </header>
+      {followError && <p className="hashtag-feed-error" role="alert">{followError}</p>}
+      {following && <p className="hashtag-feed-note">{t('hashtag.followingNote')}</p>}
       <div role="tablist" aria-label={t('hashtag.sections')} className="profile-tablist">
         {SORTS.map((s, i) => (
           <button

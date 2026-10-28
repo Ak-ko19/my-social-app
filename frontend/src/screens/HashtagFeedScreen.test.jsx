@@ -3,9 +3,10 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import HashtagFeedScreen from './HashtagFeedScreen';
-import { fetchPostsByHashtag } from '../services/hashtagService';
+import { fetchHashtag, fetchPostsByHashtag, followHashtag, unfollowHashtag } from '../services/hashtagService';
+import { setLanguage } from '../i18n';
 
-vi.mock('../services/hashtagService', () => ({ fetchPostsByHashtag: vi.fn() }));
+vi.mock('../services/hashtagService', () => ({ fetchPostsByHashtag: vi.fn(), fetchHashtag: vi.fn(), followHashtag: vi.fn(), unfollowHashtag: vi.fn() }));
 vi.mock('../components/feed/FeedList', () => ({
   default: ({ posts }) => <ul>{posts.map((p) => <li key={p.id}>{p.content}</li>)}</ul>
 }));
@@ -63,5 +64,42 @@ describe('HashtagFeedScreen tabs', () => {
     await userEvent.keyboard('{ArrowRight}');
     expect(screen.getByRole('tab', { name: 'Top' })).toHaveFocus();
     expect(screen.getByRole('tab', { name: 'Top' })).toHaveAttribute('aria-selected', 'true');
+  });
+});
+
+// Days 107-108: Follow / Following (only when logged in).
+describe('HashtagFeedScreen follow', () => {
+  beforeEach(async () => {
+    for (const fn of [fetchHashtag, followHashtag, unfollowHashtag]) fn.mockReset();
+    localStorage.clear();
+    await setLanguage('en');
+  });
+
+  it('is not offered when logged out', async () => {
+    renderAt('/hashtag/tea');
+    await screen.findByText('most liked');
+    expect(fetchHashtag).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Follow' })).not.toBeInTheDocument();
+  });
+
+  it('follows and unfollows, saying what following does; a refusal shows its words', async () => {
+    localStorage.setItem('token', 'tok');
+    localStorage.setItem('userId', '5');
+    fetchHashtag.mockResolvedValue({ tag: 'tea', is_following: false });
+    followHashtag.mockResolvedValueOnce({ tag: 'tea', is_following: true }).mockRejectedValueOnce({ response: { status: 400, data: 'You can follow up to 200 hashtags.' } });
+    unfollowHashtag.mockResolvedValue({ tag: 'tea', is_following: false });
+    renderAt('/hashtag/tea');
+    const follow = await screen.findByRole('button', { name: 'Follow' });
+    expect(follow).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(follow);
+    expect(followHashtag).toHaveBeenCalledWith('tea', 'tok');
+    const following = await screen.findByRole('button', { name: 'Following' });
+    expect(following).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Public posts with this hashtag show up on your Home.')).toBeInTheDocument();
+    await userEvent.click(following);
+    expect(unfollowHashtag).toHaveBeenCalledWith('tea', 'tok');
+    await userEvent.click(await screen.findByRole('button', { name: 'Follow' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('You can follow up to 200 hashtags.');
+    expect(screen.getByRole('button', { name: 'Follow' })).toBeInTheDocument();
   });
 });

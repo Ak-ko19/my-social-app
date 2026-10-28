@@ -24,6 +24,7 @@ const MenuScreen = lazyScreen(() => import('./screens/MenuScreen'));
 const SettingsScreen = lazyScreen(() => import('./screens/SettingsScreen'));
 const BlockedUsersScreen = lazyScreen(() => import('./screens/BlockedUsersScreen'));
 const MutedUsersScreen = lazyScreen(() => import('./screens/MutedUsersScreen'));
+const FollowedHashtagsScreen = lazyScreen(() => import('./screens/FollowedHashtagsScreen'));
 const RestrictedUsersScreen = lazyScreen(() => import('./screens/RestrictedUsersScreen'));
 const CloseFriendsScreen = lazyScreen(() => import('./screens/CloseFriendsScreen'));
 const InteractionsScreen = lazyScreen(() => import('./screens/InteractionsScreen'));
@@ -187,6 +188,8 @@ function App() {
         <Route path="/drafts" element={authOnly(<PhoneShell><DraftsScreen /></PhoneShell>)} />
         {/* Day 47: muted accounts. */}
         <Route path="/settings/muted" element={authOnly(<PhoneShell><MutedUsersScreen /></PhoneShell>)} />
+        {/* Days 107-108: hashtags you follow. */}
+        <Route path="/settings/hashtags" element={authOnly(<PhoneShell><FollowedHashtagsScreen /></PhoneShell>)} />
         <Route path="/settings/restricted" element={authOnly(<PhoneShell><RestrictedUsersScreen /></PhoneShell>)} />
         <Route path="/settings/close-friends" element={authOnly(<PhoneShell><CloseFriendsScreen /></PhoneShell>)} />
         <Route path="/settings/interactions" element={authOnly(<PhoneShell><InteractionsScreen /></PhoneShell>)} />

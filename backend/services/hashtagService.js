@@ -2,6 +2,9 @@
 // hashtags/post_hashtags tables in sync -- both createPost and updatePost
 // call into this instead of duplicating the parse/upsert logic.
 const db = require('../db');
+const { HttpError } = require('../utils/httpError');
+const { textOf } = require('../utils/bodyText');
+const { toUnicode } = require('../utils/myanmarText');
 
 const MAX_TAG_LENGTH = 100;
 // Letters, marks, digits and underscore -- the common hashtag convention
@@ -71,4 +74,66 @@ async function syncPostHashtags(postId, content) {
   );
 }
 
-module.exports = { parseHashtags, syncPostHashtags, normalizeTag };
+// Days 107-108: following hashtags (migration 087). Instagram-style: a
+// tag's public posts come to your Home. MAX_FOLLOWS also bounds that query.
+const MAX_FOLLOWS = 200;
+const TAG_SHAPE = /^[\p{L}\p{M}\p{N}_]+$/u;
+
+class HashtagError extends HttpError {}
+
+// A tag as typed in a URL or a request ("#Tea", "tea", Zawgyi too) -> the
+// stored spelling, or a 400 when it couldn't be a hashtag (the same rule
+// parseHashtags uses for posts).
+function cleanTag(raw) {
+  const tag = normalizeTag(toUnicode(textOf(raw).trim()).replace(/^#/, ''));
+  if (!tag || !TAG_SHAPE.test(tag) || /^\p{N}+$/u.test(tag) || [...tag].length > MAX_TAG_LENGTH) {
+    throw new HashtagError(400, 'That is not a hashtag. Use letters, numbers and _ only.');
+  }
+  return tag;
+}
+
+async function isFollowing(userId, tag) {
+  if (!userId) return false;
+  const result = await db.query(
+    `SELECT 1 FROM hashtag_follows hf JOIN hashtags h ON h.id = hf.hashtag_id
+     WHERE hf.user_id = $1 AND LOWER(h.tag) = $2`,
+    [userId, tag]
+  );
+  return result.rows.length > 0;
+}
+
+// Idempotent. A tag no post has used yet can be followed too (its row is
+// made now). At most MAX_FOLLOWS: following one more is refused.
+async function follow(userId, tag) {
+  await db.query('INSERT INTO hashtags (tag) VALUES ($1) ON CONFLICT (LOWER(tag)) DO NOTHING', [tag]);
+  const added = await db.query(
+    `INSERT INTO hashtag_follows (user_id, hashtag_id)
+     SELECT $1, h.id FROM hashtags h
+     WHERE LOWER(h.tag) = $2 AND (SELECT COUNT(*) FROM hashtag_follows WHERE user_id = $1) < $3
+     ON CONFLICT DO NOTHING RETURNING hashtag_id`,
+    [userId, tag, MAX_FOLLOWS]
+  );
+  if (added.rows.length === 0 && !(await isFollowing(userId, tag))) {
+    throw new HashtagError(400, `You can follow up to ${MAX_FOLLOWS} hashtags.`);
+  }
+}
+
+// Idempotent.
+async function unfollow(userId, tag) {
+  await db.query(
+    'DELETE FROM hashtag_follows WHERE user_id = $1 AND hashtag_id = (SELECT id FROM hashtags WHERE LOWER(tag) = $2)',
+    [userId, tag]
+  );
+}
+
+// The tags you follow, latest followed first (all of them: at most MAX_FOLLOWS).
+async function listFollowed(userId) {
+  const result = await db.query(
+    `SELECT h.tag, hf.created_at AS followed_at FROM hashtag_follows hf JOIN hashtags h ON h.id = hf.hashtag_id
+     WHERE hf.user_id = $1 ORDER BY hf.created_at DESC, h.id DESC`,
+    [userId]
+  );
+  return result.rows;
+}
+
+module.exports = { parseHashtags, syncPostHashtags, normalizeTag, cleanTag, isFollowing, follow, unfollow, listFollowed, MAX_FOLLOWS };

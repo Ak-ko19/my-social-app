@@ -1,0 +1,22 @@
+/* Days 107-108: Settings > Hashtags you follow (rows: BlockedUsersScreen.css). */
+
+.followed-tag-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+}
+
+.followed-tag-link {
+  text-decoration: none;
+}
+
+.followed-tag-link:hover,
+.followed-tag-link:focus-visible {
+  text-decoration: underline;
+}

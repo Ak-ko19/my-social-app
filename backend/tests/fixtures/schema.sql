@@ -824,3 +824,12 @@ ALTER TABLE admin_actions ADD CONSTRAINT chk_admin_actions_action CHECK (action 
   'report_dismissed', 'content_removed', 'user_banned', 'user_suspended', 'user_unbanned', 'error_resolved', 'admin_search',
   'page_verified', 'page_declined', 'page_unverified'
 ));
+
+-- Days 107-108 (migration 087): hashtags you follow.
+CREATE TABLE hashtag_follows (
+  user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  hashtag_id integer NOT NULL REFERENCES hashtags(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, hashtag_id)
+);
+CREATE INDEX idx_hashtag_follows_hashtag ON hashtag_follows (hashtag_id);

@@ -31,7 +31,8 @@ import {
   FileText,
   ScrollText,
   Info,
-  MonitorSmartphone
+  MonitorSmartphone,
+  Hash
 } from 'lucide-react';
 import { IconButton, SectionLabel, Badge } from '../components/ui';
 import ProfileSummaryRow from '../components/layout/ProfileSummaryRow';
@@ -80,6 +81,8 @@ const SETTINGS_SECTIONS = [
       { key: 'muted-accounts', icon: VolumeX, to: '/settings/muted' },
       { key: 'restricted-accounts', icon: ShieldMinus, to: '/settings/restricted' },
       { key: 'close-friends', icon: Star, to: '/settings/close-friends' },
+      // Days 107-108: hashtags whose public posts come to Home.
+      { key: 'followed-hashtags', icon: Hash, to: '/settings/hashtags' },
       { key: 'follow-requests', icon: Users, to: '/settings/follow-requests' },
       // B15/B16: English / Arabic.
       { key: 'language', icon: Globe, to: '/settings/language' },

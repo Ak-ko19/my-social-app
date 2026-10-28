@@ -342,7 +342,10 @@ const AR = {
   'Add an About text to the page first.': 'أضف نبذة إلى الصفحة أولًا.',
   'Verification request not found': 'طلب التوثيق غير موجود',
   'This request has already been decided.': 'تم البت في هذا الطلب بالفعل.',
-  'This page is not verified.': 'هذه الصفحة غير موثّقة.'
+  'This page is not verified.': 'هذه الصفحة غير موثّقة.',
+  // Days 107-108: following hashtags
+  'That is not a hashtag. Use letters, numbers and _ only.': 'هذا ليس وسمًا. استخدم الحروف والأرقام و_ فقط.',
+  'You can follow up to 200 hashtags.': 'يمكنك متابعة 200 وسم كحد أقصى.'
 };
 
 export default { exact: AR, failed: 'فشلت العملية. يرجى المحاولة لاحقًا.' };

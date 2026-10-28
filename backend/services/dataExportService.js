@@ -30,7 +30,7 @@ async function buildExport(userId) {
     prefs, posts, media, comments, reactions, commentLikes, bookmarks, stories, storyViews,
     follows, blocked, groups, pagesOwned, pagesFollowed, conversations, participants, messages,
     legacyMessages, notifications, reports, sessions, knownDevices, pushDevices, messageReactions, hiddenSuggestions, searches,
-    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends, hiddenWords, pagesAdmin, eventsHosted, eventResponses, uploads, pageVerifications
+    pollOptions, pollVotes, drafts, collections, muted, restricted, closeFriends, hiddenWords, pagesAdmin, eventsHosted, eventResponses, uploads, pageVerifications, followedTags
   ] = await Promise.all([
     getPreferences(userId),
     rows(`SELECT p.id, p.content, p.visibility, p.image_url, p.created_at,
@@ -144,7 +144,10 @@ async function buildExport(userId) {
     // Day 106: the verification requests you sent for pages.
     rows(`SELECT r.page_id, pg.name AS page_name, r.note, r.link, r.status, r.decline_reason, r.created_at, r.decided_at
           FROM page_verification_requests r JOIN pages pg ON pg.id = r.page_id
-          WHERE r.requested_by = $1 ORDER BY r.created_at`, [userId])
+          WHERE r.requested_by = $1 ORDER BY r.created_at`, [userId]),
+    // Days 107-108: the hashtags you follow.
+    rows(`SELECT h.tag, hf.created_at AS since FROM hashtag_follows hf JOIN hashtags h ON h.id = hf.hashtag_id
+          WHERE hf.user_id = $1 ORDER BY hf.created_at`, [userId])
   ]);
 
   const groupBy = (list, key) => list.reduce((map, row) => {
@@ -204,6 +207,7 @@ async function buildExport(userId) {
       close_friends: closeFriends
     },
     groups,
+    followed_hashtags: followedTags,
     pages: { owned: pagesOwned, admin_of: pagesAdmin, followed: pagesFollowed, verification_requests: pageVerifications },
     events: { hosted: eventsHosted, responses: eventResponses },
     recent_uploads: uploads,

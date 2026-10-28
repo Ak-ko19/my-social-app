@@ -90,6 +90,7 @@
       "privacy-policy": "Privacy Policy",
       "about": "About MySocialApp",
       "muted-accounts": "Muted accounts",
+      "followed-hashtags": "Hashtags you follow",
       "restricted-accounts": "Restricted accounts",
       "close-friends": "Close friends",
       "interactions": "Messages and comments",
@@ -706,12 +707,26 @@
     "empty": "You haven't saved any posts yet."
   },
   "hashtag": {
+    "follow": "Follow",
+    "following": "Following",
+    "followFailed": "Couldn't update. Please try again.",
+    "followingNote": "Public posts with this hashtag show up on your Home.",
     "empty": "No posts yet for #{{tag}}.",
     "sections": "Posts with this hashtag",
     "tabs": {
       "top": "Top",
       "recent": "Recent"
     }
+  },
+  "followedTags": {
+    "title": "Hashtags you follow",
+    "loadFailed": "Couldn't load the hashtags you follow.",
+    "empty": "You don't follow any hashtags yet. Open a hashtag and tap Follow to see its public posts on Home.",
+    "explain": "Public posts with these hashtags show up on your Home.",
+    "unfollow": "Unfollow",
+    "unfollowing": "Unfollowing…",
+    "unfollowTag": "Unfollow #{{tag}}",
+    "unfollowFailed": "Couldn't unfollow. Please try again."
   },
   "postDetail": {
     "title": "Post",
@@ -1649,7 +1664,7 @@
       "sections": [
         {
           "heading": "1. What we collect",
-          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted or restricted, your close friends list, the words you chose to hide, events you host and your answers to events, the size and time of the files you upload (kept 30 days, for the daily upload limit), muted conversations, people you hid from suggestions, your recent searches (the last 20, which you can remove) and reports, and the verification requests you send for a page (your note and link, and what was decided). We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active. If we remove something you shared after a report, the notification that tells you keeps its first 100 characters and the reason, for 90 days. We keep your device's time zone (for example Europe/London) so the memories reminder comes in your morning; you can turn that reminder off in Settings."
+          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted or restricted, your close friends list, the words you chose to hide, events you host and your answers to events, the size and time of the files you upload (kept 30 days, for the daily upload limit), muted conversations, people you hid from suggestions, the hashtags you follow, your recent searches (the last 20, which you can remove) and reports, and the verification requests you send for a page (your note and link, and what was decided). We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active. If we remove something you shared after a report, the notification that tells you keeps its first 100 characters and the reason, for 90 days. We keep your device's time zone (for example Europe/London) so the memories reminder comes in your morning; you can turn that reminder off in Settings."
         },
         {
           "heading": "2. How we use it",
