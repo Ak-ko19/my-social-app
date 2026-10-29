@@ -2,10 +2,16 @@
 // (liked twice, with 4 replies), then Max's, then Ned's. Opening them shows
 // "Most relevant" chosen, Liv's first with 2 of its replies and "View 2
 // more replies" (which brings the other two and goes). "Newest" puts Ned's
-// first. A new comment goes to the top. axe on the comments. EN/light
-// 390 px and AR/dark 375 px (RTL). Throwaway stack from e2e-up.sh.
+// first. A new comment goes to the top. Pia pins Max's comment: it goes to
+// the top, says "Pinned by the author", and is still first after a reload
+// (on Most relevant, ahead of the liked one). On a busy post (23 comments)
+// the oldest, pinned, starts the first page and is not on the next.
+// axe on the comments. EN/light 390 px and AR/dark 375 px (RTL).
+// Throwaway stack from e2e-up.sh.
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
+const { PSQL } = require('./pg.cjs');
 const { chromium } = require('./node_modules/playwright-core');
 const EN = require('../frontend/src/i18n/locales/en.json');
 const AR = require('../frontend/src/i18n/locales/ar.json');
@@ -18,6 +24,7 @@ const AXE = fs.readFileSync(path.join(SP, 'node_modules', 'axe-core', 'axe.min.j
 const results = [];
 const errors = [];
 const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  -- ' + extra : ''}`);
+const sql = (q) => execSync(`${PSQL} -h localhost -p 55433 -U testuser -d mysocialapp_e2e -At -c "${q}"`).toString().trim().replace(/\r/g, '');
 const shows = (locator, timeout = 10000) => locator.waitFor({ timeout }).then(() => true, () => false);
 const json = { 'Content-Type': 'application/json' };
 const as = (user) => ({ Authorization: `Bearer ${user.token}` });
@@ -101,6 +108,44 @@ async function axe(page, tag, what) {
     check(`${tag}: a new comment goes to the top`, (await firstWords())[0] === 'New one', JSON.stringify(await firstWords()));
     await axe(page, tag, 'comments, Newest');
     await page.locator('.feed-comment-section').screenshot({ path: path.join(SP, `day109-newest-${c.lang}-${c.theme}.png`) });
+
+    // Step 2: Pia pins Max's comment.
+    const maxThread = threads.filter({ hasText: 'Milk tea' }).first();
+    await maxThread.getByRole('button', { name: fill(C.pinAria, { name: max.username }), exact: true }).click();
+    await page.waitForTimeout(300);
+    check(`${tag}: Pin puts it at the top, marked`, (await firstWords())[0] === 'Milk tea'
+      && await shows(threads.first().getByText(C.pinned, { exact: true })), JSON.stringify(await firstWords()));
+    await page.waitForTimeout(500);
+    const pinnedId = sql(`SELECT pinned_comment_id FROM posts WHERE id = ${post.id}`);
+    check(`${tag}: ...kept on the server`, pinnedId === sql(`SELECT id FROM comments WHERE post_id = ${post.id} AND content = 'Milk tea'`), pinnedId);
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.locator('article.post-card').first().getByRole('button', { name: c.L.feed.comment, exact: true }).click();
+    await threads.nth(3).waitFor();
+    check(`${tag}: after a reload it is still first on Most relevant (ahead of the liked one)`,
+      (await firstWords())[0] === 'Milk tea' && (await firstWords())[1] === 'Green tea, always'
+      && (await threads.first().getByRole('button', { name: fill(C.unpinAria, { name: max.username }), exact: true }).count()) === 1, JSON.stringify(await firstWords()));
+    await axe(page, tag, 'comments, one pinned');
+    await page.locator('.feed-comment-section').screenshot({ path: path.join(SP, `day109-pinned-${c.lang}-${c.theme}.png`) });
+
+    // The pin across pages: the oldest of 23, pinned, starts page 1 only.
+    const bform = new FormData();
+    bform.append('content', `Busy (${c.lang})`);
+    const busy = await (await fetch(`${API}/posts`, { method: 'POST', headers: as(pia), body: bform })).json();
+    const firstOne = await comment(max, busy.id, 'n1');
+    for (let i = 2; i <= 23; i += 1) await comment(max, busy.id, `n${i}`);
+    await fetch(`${API}/posts/${busy.id}/pinned-comment`, { method: 'PUT', headers: { ...as(pia), ...json }, body: JSON.stringify({ commentId: firstOne.id }) });
+    await page.goto(`${WEB}/posts/${busy.id}`, { waitUntil: 'networkidle' });
+    await page.locator('article.post-card').first().getByRole('button', { name: c.L.feed.comment, exact: true }).click();
+    await page.getByRole('radio', { name: C.sort.newest, exact: true }).click();
+    await page.getByText('n23', { exact: true }).waitFor();
+    const nWords = async () => (await threads.allInnerTexts()).map((t) => (t.match(/\bn\d+\b/) || [''])[0]);
+    const firstPage = await nWords();
+    check(`${tag}: busy post, Newest: the pinned oldest first, then 20 newest`, firstPage.length === 21 && firstPage[0] === 'n1' && firstPage[1] === 'n23' && firstPage[20] === 'n4', JSON.stringify(firstPage));
+    await page.getByRole('button', { name: C.viewMore, exact: true }).click();
+    await page.getByText('n2', { exact: true }).waitFor({ timeout: 8000 }).catch(() => {});
+    const all = await nWords();
+    check(`${tag}: ...the next page brings the other 2, and not the pinned one again`, all.length === 23 && all.filter((w) => w === 'n1').length === 1
+      && JSON.stringify(all.slice(-2)) === JSON.stringify(['n3', 'n2']), JSON.stringify(all));
     await ctx.close();
   }
   await browser.close();

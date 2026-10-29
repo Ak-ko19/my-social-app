@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useComments } from './useComments';
-import { createComment, fetchComments, fetchReplies, updateComment } from '../services/postService';
+import { createComment, fetchComments, fetchReplies, pinComment, unpinComment, updateComment } from '../services/postService';
 
 vi.mock('../services/postService', () => ({
   fetchComments: vi.fn(),
   fetchReplies: vi.fn(),
+  pinComment: vi.fn(),
+  unpinComment: vi.fn(),
   createComment: vi.fn(),
   updateComment: vi.fn(),
   likeComment: vi.fn(),
@@ -134,5 +136,40 @@ describe('useComments threads', () => {
     act(() => result.current.submitComment());
     await waitFor(() => expect(result.current.submitError).toBeTruthy());
     expect(result.current.comments.find((c) => c.id === 1).reply_count).toBe(1);
+  });
+});
+
+// Days 109-110: the post's author pins a comment.
+describe('useComments pin', () => {
+  const top = (id, extra = {}) => ({ id, content: `t${id}`, user_id: 2, username: 'bo', parent_comment_id: null, reply_count: 0, is_pinned: false, ...extra });
+  const open = async () => {
+    fetchComments.mockReset();
+    fetchComments.mockResolvedValueOnce({ sort: 'relevant', comments: [top(1, { is_pinned: true }), top(2), top(3), { id: 9, parent_comment_id: 3, content: 'r', user_id: 2, username: 'bo' }], nextCursor: null });
+    const hook = renderHook(() => useComments(7, 'tok', { userId: 1, username: 'ann' }));
+    act(() => hook.result.current.toggleVisible());
+    await waitFor(() => expect(hook.result.current.loaded).toBe(true));
+    return hook;
+  };
+  const shape = (list) => list.map((c) => `${c.id}${c.is_pinned ? '*' : ''}`);
+
+  it('pinning moves it to the top and unmarks the old one; unpinning leaves it in place', async () => {
+    pinComment.mockResolvedValue({ pinned_comment_id: 3 });
+    unpinComment.mockResolvedValue({ pinned_comment_id: null });
+    const { result } = await open();
+    act(() => { result.current.setPinned(3); });
+    expect(shape(result.current.comments)).toEqual(['3*', '1', '2', '9']);
+    expect(pinComment).toHaveBeenCalledWith(7, 3, 'tok');
+    act(() => { result.current.setPinned(null); });
+    expect(shape(result.current.comments)).toEqual(['3', '1', '2', '9']);
+    expect(unpinComment).toHaveBeenCalledWith(7, 'tok');
+  });
+
+  it('puts everything back and says so when the server refuses', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    pinComment.mockRejectedValue({ response: { status: 403, data: "Only the post's author can pin a comment." } });
+    const { result } = await open();
+    act(() => { result.current.setPinned(2); });
+    await waitFor(() => expect(result.current.actionError).toBe("Only the post's author can pin a comment."));
+    expect(shape(result.current.comments)).toEqual(['1*', '2', '3', '9']);
   });
 });

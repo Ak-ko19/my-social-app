@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { fetchComments, fetchReplies, createComment, updateComment, likeComment, unlikeComment, deleteComment, approveComment } from '../services/postService';
+import { fetchComments, fetchReplies, pinComment, unpinComment, createComment, updateComment, likeComment, unlikeComment, deleteComment, approveComment } from '../services/postService';
 import { serverErrorText } from '../utils/serverError';
 
 let tempIdSeq = 0;
@@ -304,6 +304,25 @@ export function useComments(postId, token, currentUser) {
       });
   };
 
+  // Days 109-110: pin a comment to the top (the post's author) -- at once on
+  // screen, put back if the server says no; unpinning leaves it where it is.
+  const setPinned = (commentId) => {
+    setActionError(null);
+    const before = comments;
+    setComments((current) => {
+      const marked = current.map((c) => (c.parent_comment_id == null ? { ...c, is_pinned: c.id === commentId } : c));
+      if (commentId === null) return marked;
+      const pinned = marked.find((c) => c.id === commentId);
+      return [pinned, ...marked.filter((c) => c.id !== commentId)];
+    });
+    return (commentId === null ? unpinComment(postId, token) : pinComment(postId, commentId, token))
+      .catch((err) => {
+        console.error(err);
+        setComments(before);
+        setActionError(serverErrorText(err, 'comments.pinFailed'));
+      });
+  };
+
   const approve = (commentId) => {
     setActionError(null);
     return approveComment(commentId, token)
@@ -328,6 +347,7 @@ export function useComments(postId, token, currentUser) {
     repliesError,
     removeComment,
     approve,
+    setPinned,
     actionError,
     comments,
     replyingTo,

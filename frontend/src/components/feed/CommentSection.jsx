@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'motion/react';
 import * as m from 'motion/react-m';
-import { Heart, X } from 'lucide-react';
+import { Heart, Pin, X } from 'lucide-react';
 import clsx from 'clsx';
 import { Trans, useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
@@ -36,7 +36,8 @@ function buildThreads(list) {
 // postOwnerId (Day 47): the post's owner may delete any comment on it, and
 // approve a restricted person's comment waiting for them.
 // locked (Day 50): read only -- not a member of this post's group.
-function CommentItem({ c, comments, currentUserId, postOwnerId, onReply, onReport, onDelete, locked = false }) {
+// canPin (Days 109-110): you may pin a comment to the top of this post.
+function CommentItem({ c, comments, currentUserId, postOwnerId, onReply, onReport, onDelete, locked = false, canPin = false }) {
   const { t } = useTranslation();
   // Day 49: someone else's comment with one of your Hidden words (warn).
   const hiddenWords = useHiddenWords();
@@ -70,6 +71,12 @@ function CommentItem({ c, comments, currentUserId, postOwnerId, onReply, onRepor
   const likeCount = c.like_count || 0;
   return (
     <div className="comment-body">
+      {c.is_pinned && (
+        <p className="comment-pinned">
+          <Pin size={12} aria-hidden="true" />
+          {t('comments.pinned')}
+        </p>
+      )}
       <p className="feed-comment-text">
         <Username>{c.username}</Username>:{' '}
         {covered ? <HiddenContentCover kind="comment" onShow={() => setRevealed(true)} /> : <bdi>{renderTextWithLinks(c.content)}</bdi>}
@@ -124,6 +131,17 @@ function CommentItem({ c, comments, currentUserId, postOwnerId, onReply, onRepor
               {t('common.delete')}
             </button>
           )}
+          {/* Days 109-110: the post's author pins a comment (not a reply). */}
+          {canPin && c.parent_comment_id == null && (
+            <button
+              type="button"
+              className="comment-action"
+              onClick={() => comments.setPinned(c.is_pinned ? null : c.id)}
+              aria-label={t(c.is_pinned ? 'comments.unpinAria' : 'comments.pinAria', { name: c.username })}
+            >
+              {c.is_pinned ? t('comments.unpin') : t('comments.pin')}
+            </button>
+          )}
           {/* Day 12: someone else's comment can be reported. */}
           {currentUserId && c.user_id !== currentUserId && (
             <button type="button" className="comment-action" onClick={() => onReport(c)} aria-label={t('comments.reportAria', { name: c.username })}>
@@ -145,7 +163,8 @@ function CommentItem({ c, comments, currentUserId, postOwnerId, onReply, onRepor
 // animating height would make that observer fire continuously for the
 // whole animation, reflowing every row below on every frame.
 // groupLocked (Day 50): not in this post's group -- read only.
-function CommentSection({ postId, postOwnerId, comments, groupLocked = false }) {
+// canPin (Days 109-110): you may pin one comment to the top.
+function CommentSection({ postId, postOwnerId, comments, groupLocked = false, canPin = false }) {
   const { t } = useTranslation();
   const { userId: currentUserId } = useAuth();
   const reduceMotion = useReducedMotion();
@@ -224,7 +243,7 @@ function CommentSection({ postId, postOwnerId, comments, groupLocked = false }) 
         <ul className="feed-comment-list">
           {threads.map(({ comment: c, replies }) => (
             <li key={c.id} className={c.pending ? 'feed-comment-pending' : undefined}>
-              <CommentItem c={c} comments={comments} currentUserId={currentUserId} onReply={handleReply} onReport={setReporting} postOwnerId={postOwnerId} onDelete={setDeleting} locked={groupLocked} />
+              <CommentItem c={c} comments={comments} currentUserId={currentUserId} onReply={handleReply} onReport={setReporting} postOwnerId={postOwnerId} onDelete={setDeleting} locked={groupLocked} canPin={canPin} />
               {replies.length > 0 && (
                 <ul className="comment-replies" aria-label={t('comments.repliesTo', { name: c.username })}>
                   {replies.map((r) => (

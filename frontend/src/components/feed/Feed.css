@@ -560,3 +560,14 @@
   margin-block: var(--space-xs) 0;
   margin-inline-start: calc(var(--space-md) + 2px);
 }
+
+/* Days 109-110: "Pinned by the author" over a pinned comment. */
+.comment-pinned {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 2px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}

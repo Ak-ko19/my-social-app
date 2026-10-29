@@ -314,7 +314,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 107–108 — Follow a hashtag
 - [x] Follow hashtags; their public posts appear on Home (Instagram-style), with a way to unfollow from a post. *(Follow on the tag page; Settings > Hashtags you follow; on Home a "#tag" line and "Unfollow #tag" with Undo -- see Progress Log.)*
 ### Day 109–110 — Comment upgrades
-- [ ] The post's author pins one comment; sort comments by Most relevant / Newest; the pin survives paging.
+- [x] The post's author pins one comment; sort comments by Most relevant / Newest; the pin survives paging. *(Comments by thread with replies on demand; Pin / Unpin; the pinned one starts page 1 in both orders -- see Progress Log.)*
 ### Day 111 — Birthdays
 - [ ] An optional birthday with who can see it (only me / friends / public); a notification to friends on the day, in their time zone.
 ### Day 112 — Accessibility + translations check

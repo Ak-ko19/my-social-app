@@ -229,7 +229,8 @@ module.exports = {
     summary: "A post's comments by thread, a page at a time: Most relevant or Newest",
     description: 'Days 109-110. A page is `limit` top-level comments in the chosen order (each with reply_count), followed by '
       + 'the first 2 replies of each, oldest first; GET /comments/{id}/replies has the rest. Most relevant ranks by reactions, '
-      + 'replies and age (ranks move, so a later page can repeat a comment). Comments from people you have a block with are left out.',
+      + 'replies and age (ranks move, so a later page can repeat a comment). The pinned comment (is_pinned) starts the first page, '
+      + 'on top of the limit, and is never part of the order. Comments from people you have a block with are left out.',
     query: {
       sort: q(s.enum(['relevant', 'newest'], 'Default relevant')),
       cursor: q(s.str('The nextCursor of the page before (a whole number)')),
@@ -238,6 +239,29 @@ module.exports = {
     responses: {
       200: json(s.object({ sort: s.enum(['relevant', 'newest']), comments: s.array(ref('Comment')), nextCursor: s.nullable(s.str('null: no more comments')) }), 'One page'),
       400: text('Invalid post ID / Invalid cursor / sort must be relevant or newest'),
+      404: POST_NOT_FOUND
+    }
+  }),
+  'PUT /posts/:id/pinned-comment': op({
+    tag: 'Comments', auth: 'user',
+    summary: 'Pin a comment to the top of your post (one at a time; a page\'s post: its owner and admins)',
+    description: 'Days 109-110. A comment, not a reply, on this post and not waiting for approval. Pinning another replaces it.',
+    requestBody: body({ commentId: s.id() }, { required: ['commentId'] }),
+    responses: {
+      200: json(s.object({ pinned_comment_id: s.id() }), 'Pinned'),
+      400: text('Invalid comment ID / That comment is not on this post. / Only a comment, not a reply, can be pinned. / Approve the comment before pinning it. / Invalid ids'),
+      403: text("Only the post's author can pin a comment."),
+      404: POST_NOT_FOUND
+    }
+  }),
+  'DELETE /posts/:id/pinned-comment': op({
+    tag: 'Comments', auth: 'user',
+    summary: 'Unpin the comment at the top of your post',
+    description: 'Nothing pinned is fine.',
+    responses: {
+      200: json(s.object({ pinned_comment_id: { type: 'null' } }), 'Unpinned'),
+      400: text('Invalid ids'),
+      403: text("Only the post's author can pin a comment."),
       404: POST_NOT_FOUND
     }
   }),

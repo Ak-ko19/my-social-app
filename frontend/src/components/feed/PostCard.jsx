@@ -55,6 +55,9 @@ import './PostCard.css';
 function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onUnfollowedTag, onTogglePin, canModerate = false, standalone = false, groupLocked = false, canManagePage = false }) {
   const { t } = useTranslation();
   const { token, userId, username } = useAuth();
+  // Days 109-110: who pins a comment -- the post's author; a page's post:
+  // the page's owner (its author) and admins (the server checks too).
+  const canPinComment = Boolean(userId) && (post.user_id === userId || (Boolean(post.page) && canManagePage));
   const like = useLikeToggle(
     post.id,
     {
@@ -349,7 +352,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onUnf
       />
 
       <AnimatePresence initial={false}>
-        {comments.visible && <CommentSection key="comments" postId={post.id} postOwnerId={post.user_id} comments={comments} groupLocked={groupLocked} />}
+        {comments.visible && <CommentSection key="comments" postId={post.id} postOwnerId={post.user_id} comments={comments} groupLocked={groupLocked} canPin={canPinComment} />}
       </AnimatePresence>
     </article>
   );

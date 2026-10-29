@@ -345,7 +345,12 @@ const AR = {
   'This page is not verified.': 'هذه الصفحة غير موثّقة.',
   // Days 107-108: following hashtags
   'That is not a hashtag. Use letters, numbers and _ only.': 'هذا ليس وسمًا. استخدم الحروف والأرقام و_ فقط.',
-  'You can follow up to 200 hashtags.': 'يمكنك متابعة 200 وسم كحد أقصى.'
+  'You can follow up to 200 hashtags.': 'يمكنك متابعة 200 وسم كحد أقصى.',
+  // Days 109-110: a pinned comment
+  "Only the post's author can pin a comment.": 'وحده صاحب المنشور يمكنه تثبيت تعليق.',
+  'That comment is not on this post.': 'هذا التعليق ليس على هذا المنشور.',
+  'Only a comment, not a reply, can be pinned.': 'يمكن تثبيت تعليق فقط، لا رد.',
+  'Approve the comment before pinning it.': 'وافق على التعليق قبل تثبيته.'
 };
 
 export default { exact: AR, failed: 'فشلت العملية. يرجى المحاولة لاحقًا.' };

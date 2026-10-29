@@ -838,3 +838,7 @@ CREATE INDEX idx_hashtag_follows_hashtag ON hashtag_follows (hashtag_id);
 CREATE INDEX idx_comments_top ON comments (post_id, id) WHERE parent_comment_id IS NULL;
 CREATE INDEX idx_comments_replies ON comments (parent_comment_id, id);
 DROP INDEX idx_comments_parent_comment_id;
+
+-- Days 109-110 (migration 089): a post's pinned comment.
+ALTER TABLE posts ADD COLUMN pinned_comment_id integer REFERENCES comments(id) ON DELETE SET NULL;
+CREATE INDEX idx_posts_pinned_comment ON posts (pinned_comment_id) WHERE pinned_comment_id IS NOT NULL;

@@ -250,8 +250,9 @@ const schemas = {
     user_id: s.id(), username: s.str(),
     like_count: s.int(), liked_by_me: s.bool(),
     awaiting_approval: s.nullable(s.bool('Only shown to the post owner: a restricted person\'s comment waiting for approval')),
-    reply_count: s.int('Days 109-110, top-level comments in a list: the replies you may see')
-  }, { optional: ['reply_count'] }),
+    reply_count: s.int('Days 109-110, top-level comments in a list: the replies you may see'),
+    is_pinned: s.bool('Days 109-110, top-level comments in a list: the one the post\'s author pinned')
+  }, { optional: ['reply_count', 'is_pinned'] }),
   CommentRow: s.object({
     id: s.id(), post_id: s.id(), user_id: s.id(), content: s.str(), created_at: s.time(),
     parent_comment_id: s.nullable(s.id())

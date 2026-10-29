@@ -1,12 +1,8 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 109-110 -- Comment upgrades.
-**Step:** 1 of 2 -- done (committed): threads, Most relevant / Newest,
-replies on demand (migration 088; comment 8 + commentReplies 3, 7
-mutations; Vitest 455; e2e day109-comments 20/20; perf 54/54). Found: the
-Arabic like counts for 1 and 2 had no digit (axe label-content-name-
-mismatch on a liked comment); day47-privacy deleted by place (.last()),
-which the new order turned into the wrong comment. Next: step 2 (pin).
+**Step:** 2 of 2 -- done (committed). Both steps done. Next: close Days 109-110 --
+full browser run in batches of 3, then the Progress Log entry.
 
 ### Plan (Days 109-110)
 Facebook-style comments: Most relevant (default) / Newest, threads paged

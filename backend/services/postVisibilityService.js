@@ -18,11 +18,11 @@
 const db = require('../db');
 const blockService = require('./blockService');
 
-// Returns { id, user_id, community_id } for a visible post, or null if it
+// Returns { id, user_id, community_id, page_id, pinned_comment_id, ... } for a visible post, or null if it
 // doesn't exist or the viewer (null = logged out) isn't allowed to see it.
 async function getVisiblePost(postId, viewerId) {
   const result = await db.query(
-    `SELECT posts.id, posts.user_id, posts.visibility, posts.community_id, posts.page_id,
+    `SELECT posts.id, posts.user_id, posts.visibility, posts.community_id, posts.page_id, posts.pinned_comment_id,
        users.is_private, users.is_deactivated,
        $2::int IS NOT NULL AND EXISTS(
          SELECT 1 FROM follows
@@ -50,7 +50,9 @@ async function getVisiblePost(postId, viewerId) {
   // a group (communityService.assertCanInteract).
   const summary = {
     id: post.id, user_id: post.user_id, community_id: post.community_id, page_id: post.page_id,
-    viewer_is_community_member: post.viewer_is_community_member
+    viewer_is_community_member: post.viewer_is_community_member,
+    // Days 109-110: the comment its author pinned (the comment list).
+    pinned_comment_id: post.pinned_comment_id
   };
   const isAuthor = viewerId != null && viewerId === post.user_id;
   if (isAuthor) return summary;

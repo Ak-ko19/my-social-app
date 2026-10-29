@@ -42,6 +42,15 @@ export function fetchComments(postId, token, { cursor, sort = 'relevant' } = {})
   return api.get(`/posts/${postId}/comments`, config).then((res) => res.data);
 }
 
+// Days 109-110: the post's author pins one comment to the top (another
+// replaces it) -> { pinned_comment_id }.
+export function pinComment(postId, commentId, token) {
+  return api.put(`/posts/${postId}/pinned-comment`, { commentId }, authHeaders(token)).then((res) => res.data);
+}
+export function unpinComment(postId, token) {
+  return api.delete(`/posts/${postId}/pinned-comment`, authHeaders(token)).then((res) => res.data);
+}
+
 // Days 109-110: more replies of a top-level comment, oldest first, after
 // the reply id `cursor` -> { replies, nextCursor }.
 export function fetchReplies(commentId, token, { cursor } = {}) {

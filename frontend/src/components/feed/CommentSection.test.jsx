@@ -80,3 +80,36 @@ describe('CommentSection: order and more replies', () => {
     await setLanguage('en');
   });
 });
+
+// Days 109-110: Pin / Unpin for the post's author, on comments (not replies).
+describe('CommentSection: pin', () => {
+  it('the author can pin a comment or unpin the pinned one; replies and other people get no button', async () => {
+    me = 1;
+    await setLanguage('en');
+    const comments = bag([
+      c(10, 5, 'ann', { is_pinned: true }), c(11, 6, 'bo'), c(20, 7, 'cy', { parent_comment_id: 11 })
+    ], { setPinned: vi.fn() });
+    const { unmount } = render(<CommentSection postId={3} postOwnerId={1} comments={comments} canPin />);
+    expect(screen.getByText('Pinned by the author')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: "Pin bo's comment to the top" }));
+    expect(comments.setPinned).toHaveBeenCalledWith(11);
+    await userEvent.click(screen.getByRole('button', { name: "Unpin ann's comment" }));
+    expect(comments.setPinned).toHaveBeenCalledWith(null);
+    expect(screen.queryByRole('button', { name: "Pin cy's comment to the top" })).toBeNull();
+    unmount();
+
+    me = 6;
+    render(<CommentSection postId={3} postOwnerId={1} comments={bag([c(10, 5, 'ann', { is_pinned: true })])} />);
+    expect(screen.getByText('Pinned by the author')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Pin |^Unpin / })).toBeNull();
+  });
+
+  it('in Arabic', async () => {
+    me = 1;
+    await setLanguage('ar');
+    render(<CommentSection postId={3} postOwnerId={1} comments={bag([c(10, 5, 'ann', { is_pinned: true }), c(11, 6, 'bo')], { setPinned: vi.fn() })} canPin />);
+    expect(screen.getByText('ثبّته صاحب المنشور')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'تثبيت تعليق bo في الأعلى' })).toBeInTheDocument();
+    await setLanguage('en');
+  });
+});

@@ -1,6 +1,6 @@
 const db = require('../db');
 const { getLimit } = require('../utils/cursorPagination');
-const { sendError } = require('../utils/httpError');
+const { HttpError, sendError } = require('../utils/httpError');
 const mentionService = require('../services/mentionService');
 const { getVisiblePost } = require('../services/postVisibilityService');
 const blockService = require('../services/blockService');
@@ -12,6 +12,7 @@ const interactionService = require('../services/interactionService');
 const spamService = require('../services/spamService');
 const communityService = require('../services/communityService');
 const { popularityScoreSql } = require('../services/popularity');
+const { managesPage } = require('../services/pageAdminService');
 
 // Day 43: comments had no length limit; same as a chat message.
 const MAX_COMMENT_LENGTH = 5000;
@@ -146,7 +147,9 @@ const commentColumnsSql = (c, v, o) => `
 const visibleReplyCountSql = (t, v, o) => `(
   SELECT COUNT(*)::int FROM comments r WHERE r.parent_comment_id = ${t}.id AND ${commentVisibleSql('r', v, o)})`;
 
-// $1 post, $2 viewer, $3 the post's owner, $4 cursor, $5 limit + 1.
+// $1 post, $2 viewer, $3 the post's owner, $4 cursor, $5 limit + 1, $6 the
+// pinned comment (step 2: it is never part of the order -- page 1 starts
+// with it).
 // Newest: by id, after the cursor's id. Most relevant: the Explore score
 // (reactions, replies, age -- services/popularity.js); the cursor is how
 // many threads were sent before (ranks move as people react; the app
@@ -156,6 +159,7 @@ const TOP_LEVEL_SQL = {
     SELECT ${commentColumnsSql('c', '$2', '$3')}, ${visibleReplyCountSql('c', '$2', '$3')} AS reply_count
     FROM comments c JOIN users u ON u.id = c.user_id
     WHERE c.post_id = $1 AND c.parent_comment_id IS NULL AND ${commentVisibleSql('c', '$2', '$3')}
+      AND c.id IS DISTINCT FROM $6::int
       AND ($4 = 0 OR c.id < $4)
     ORDER BY c.id DESC
     LIMIT $5`,
@@ -163,6 +167,7 @@ const TOP_LEVEL_SQL = {
     SELECT ${commentColumnsSql('c', '$2', '$3')}, ${visibleReplyCountSql('c', '$2', '$3')} AS reply_count
     FROM comments c JOIN users u ON u.id = c.user_id
     WHERE c.post_id = $1 AND c.parent_comment_id IS NULL AND ${commentVisibleSql('c', '$2', '$3')}
+      AND c.id IS DISTINCT FROM $6::int
     ORDER BY ${popularityScoreSql(
       '(SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id)',
       visibleReplyCountSql('c', '$2', '$3'),
@@ -170,6 +175,13 @@ const TOP_LEVEL_SQL = {
     )} DESC, c.id DESC
     OFFSET $4 LIMIT $5`
 };
+
+// Step 2: the pinned comment as a thread ($1 it, $2 viewer, $3 owner, $4
+// post), when the viewer may see it.
+const PINNED_SQL = `
+  SELECT ${commentColumnsSql('c', '$2', '$3')}, ${visibleReplyCountSql('c', '$2', '$3')} AS reply_count
+  FROM comments c JOIN users u ON u.id = c.user_id
+  WHERE c.id = $1 AND c.post_id = $4 AND c.parent_comment_id IS NULL AND ${commentVisibleSql('c', '$2', '$3')}`;
 
 // The first REPLY_PREVIEW replies of each of these top-level comments.
 const REPLY_PREVIEW_SQL = `
@@ -190,8 +202,9 @@ function readCursor(raw) {
 
 // GET /posts/:id/comments?sort=relevant|newest&cursor=&limit= (limit:
 // threads, default 20, max 50) -> { sort, comments, nextCursor }:
-// comments are the page's top-level comments (each with reply_count),
-// then their first replies.
+// comments are the page's top-level comments (each with reply_count and
+// is_pinned), then their first replies. The pinned one starts page 1, on
+// top of the limit, and isn't part of any page's order.
 async function getComments(req, res) {
   try {
     if (isNaN(req.params.id)) {
@@ -208,12 +221,15 @@ async function getComments(req, res) {
       return res.status(404).send('Post not found');
     }
     const viewerId = req.userId ?? null;
-    const top = await db.query(TOP_LEVEL_SQL[sort], [post.id, viewerId, post.user_id, cursor, limit + 1]);
-    const threads = top.rows.slice(0, limit);
+    const pinnedId = post.pinned_comment_id ?? null;
+    const top = await db.query(TOP_LEVEL_SQL[sort], [post.id, viewerId, post.user_id, cursor, limit + 1, pinnedId]);
+    const pinned = pinnedId && cursor === 0 ? (await db.query(PINNED_SQL, [pinnedId, viewerId, post.user_id, post.id])).rows : [];
+    const page = top.rows.slice(0, limit);
+    const threads = [...pinned, ...page].map((c) => ({ ...c, is_pinned: c.id === pinnedId }));
     const replies = threads.length === 0 ? { rows: [] }
       : await db.query(REPLY_PREVIEW_SQL, [threads.map((c) => c.id), viewerId, post.user_id]);
     let nextCursor = null;
-    if (top.rows.length > limit) nextCursor = sort === 'newest' ? String(threads[threads.length - 1].id) : String(cursor + limit);
+    if (top.rows.length > limit) nextCursor = sort === 'newest' ? String(page[page.length - 1].id) : String(cursor + limit);
     res.json({ sort, comments: [...threads, ...replies.rows], nextCursor });
   } catch (err) {
     sendError(res, err, 'Fetch comments failed. Please try again later.');
@@ -250,6 +266,48 @@ async function getReplies(req, res) {
     res.json({ replies, nextCursor: result.rows.length > limit ? String(replies[replies.length - 1].id) : null });
   } catch (err) {
     sendError(res, err, 'Loading replies failed. Please try again later.');
+  }
+}
+
+// Days 109-110: the post's author pins one comment (Facebook-style); a
+// page's post: its owner and admins. A top-level comment on this post that
+// isn't waiting for approval; pinning another replaces it.
+class PinError extends HttpError {}
+
+async function loadPinnablePost(req) {
+  const post = await getVisiblePost(req.params.id, req.userId);
+  if (!post) throw new PinError(404, 'Post not found');
+  const mine = post.page_id ? await managesPage(post.page_id, req.userId) : post.user_id === req.userId;
+  if (!mine) throw new PinError(403, 'Only the post\'s author can pin a comment.');
+  return post;
+}
+
+// PUT /posts/:id/pinned-comment { commentId } -> { pinned_comment_id }
+async function pinComment(req, res) {
+  try {
+    const post = await loadPinnablePost(req);
+    const commentId = Number(req.body?.commentId);
+    if (!Number.isInteger(commentId) || commentId < 1) throw new PinError(400, 'Invalid comment ID');
+    const found = (await db.query('SELECT id, post_id, parent_comment_id, awaiting_approval FROM comments WHERE id = $1', [commentId])).rows[0];
+    if (!found || found.post_id !== post.id) throw new PinError(400, 'That comment is not on this post.');
+    if (found.parent_comment_id) throw new PinError(400, 'Only a comment, not a reply, can be pinned.');
+    if (found.awaiting_approval) throw new PinError(400, 'Approve the comment before pinning it.');
+    await db.query('UPDATE posts SET pinned_comment_id = $2 WHERE id = $1', [post.id, commentId]);
+    res.json({ pinned_comment_id: commentId });
+  } catch (err) {
+    sendError(res, err, 'Pinning the comment failed. Please try again later.');
+  }
+}
+
+// DELETE /posts/:id/pinned-comment -> { pinned_comment_id: null }. Nothing
+// pinned is fine.
+async function unpinComment(req, res) {
+  try {
+    const post = await loadPinnablePost(req);
+    await db.query('UPDATE posts SET pinned_comment_id = NULL WHERE id = $1', [post.id]);
+    res.json({ pinned_comment_id: null });
+  } catch (err) {
+    sendError(res, err, 'Unpinning the comment failed. Please try again later.');
   }
 }
 
@@ -390,4 +448,4 @@ async function unlikeComment(req, res) {
   }
 }
 
-module.exports = { createComment, getComments, getReplies, updateComment, deleteComment, likeComment, unlikeComment, approveComment };
+module.exports = { createComment, getComments, getReplies, pinComment, unpinComment, updateComment, deleteComment, likeComment, unlikeComment, approveComment };
