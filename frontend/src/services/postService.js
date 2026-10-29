@@ -34,10 +34,19 @@ export function unfollowUser(userId, token) {
 
 // Token required for a private account's post: GET comments applies the
 // same visibility rules as GET /posts/:id, so an anonymous request 404s.
-// Day 70: oldest first, a page at a time -> { comments, nextCursor }.
-export function fetchComments(postId, token, { cursor } = {}) {
-  const config = { ...(token ? authHeaders(token) : {}), params: cursor ? { cursor } : undefined };
+// Days 109-110: by thread -> { sort, comments, nextCursor }: a page of
+// top-level comments (each with reply_count) in the chosen order
+// ('relevant' | 'newest'), then each one's first replies.
+export function fetchComments(postId, token, { cursor, sort = 'relevant' } = {}) {
+  const config = { ...(token ? authHeaders(token) : {}), params: { sort, ...(cursor ? { cursor } : {}) } };
   return api.get(`/posts/${postId}/comments`, config).then((res) => res.data);
+}
+
+// Days 109-110: more replies of a top-level comment, oldest first, after
+// the reply id `cursor` -> { replies, nextCursor }.
+export function fetchReplies(commentId, token, { cursor } = {}) {
+  const config = { ...(token ? authHeaders(token) : {}), params: cursor ? { cursor } : undefined };
+  return api.get(`/comments/${commentId}/replies`, config).then((res) => res.data);
 }
 
 // parentCommentId (optional, B4) makes it a reply; the server attaches

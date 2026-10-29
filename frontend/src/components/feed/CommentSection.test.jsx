@@ -11,7 +11,8 @@ const bag = (list, extra = {}) => ({
   comments: list, commentInput: '', setCommentInput: vi.fn(), submitPending: false, submitError: null, editError: null, likeError: null,
   replyingTo: null, startReply: vi.fn(), cancelReply: vi.fn(), submitComment: vi.fn(), editingCommentId: null, editText: '',
   setEditText: vi.fn(), startEdit: vi.fn(), cancelEdit: vi.fn(), saveEdit: vi.fn(), toggleCommentLike: vi.fn(),
-  removeComment: vi.fn(async () => {}), approve: vi.fn(async () => {}), actionError: null, ...extra
+  removeComment: vi.fn(async () => {}), approve: vi.fn(async () => {}), actionError: null,
+  sort: 'relevant', changeSort: vi.fn(), loadReplies: vi.fn(), repliesLoading: new Set(), repliesError: null, ...extra
 });
 const c = (id, userId, username, extra = {}) => ({ id, user_id: userId, username, content: `${username} says hi`, created_at: new Date().toISOString(), parent_comment_id: null, like_count: 0, liked_by_me: false, ...extra });
 
@@ -47,5 +48,35 @@ describe('CommentSection: delete and approve', () => {
     render(<CommentSection postId={3} postOwnerId={1} comments={bag([c(10, 5, 'troll', { awaiting_approval: true })])} />);
     expect(screen.getByText(/مقيّد: لا يرى هذا التعليق إلا troll وأنت\./)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'موافقة' })).toBeInTheDocument();
+  });
+});
+
+// Days 109-110: Most relevant / Newest, and "View N more replies".
+describe('CommentSection: order and more replies', () => {
+  it('offers both orders (the chosen one checked) and how many replies are still to come', async () => {
+    me = 1;
+    await setLanguage('en');
+    const comments = bag([
+      c(10, 5, 'ann', { reply_count: 4 }), c(20, 6, 'bo', { parent_comment_id: 10 }), c(21, 7, 'cy', { parent_comment_id: 10 }),
+      c(11, 6, 'bo', { reply_count: 1 }), c(22, 5, 'ann', { parent_comment_id: 11 })
+    ]);
+    render(<CommentSection postId={3} postOwnerId={1} comments={comments} />);
+    const order = screen.getByRole('radiogroup', { name: 'Order of comments' });
+    expect(within(order).getByRole('radio', { name: 'Most relevant' })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(within(order).getByRole('radio', { name: 'Newest' }));
+    expect(comments.changeSort).toHaveBeenCalledWith('newest');
+    // ann's thread has 2 of its 4 replies here; bo's has its only one.
+    await userEvent.click(screen.getByRole('button', { name: 'View 2 more replies' }));
+    expect(comments.loadReplies).toHaveBeenCalledWith(10);
+    expect(screen.getAllByRole('button', { name: /more repl/ })).toHaveLength(1);
+  });
+
+  it('in Arabic', async () => {
+    me = 1;
+    await setLanguage('ar');
+    render(<CommentSection postId={3} postOwnerId={1} comments={bag([c(10, 5, 'ann', { reply_count: 3 })], { sort: 'newest' })} />);
+    expect(screen.getByRole('radio', { name: 'الأحدث' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('button', { name: 'عرض 3 ردود أخرى' })).toBeInTheDocument();
+    await setLanguage('en');
   });
 });

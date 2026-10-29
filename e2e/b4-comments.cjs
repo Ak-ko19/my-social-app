@@ -101,7 +101,9 @@ const api = (method, url, token, body) => fetch(API + url, {
   check('375px dark: no horizontal scroll with threads open', !hScroll);
   await small.locator('.feed-comment-section').screenshot({ path: path.join(SP, 'b4-thread-dark-375.png') });
 
-  // Day 70: comments come 50 at a time; "View more comments" brings the rest.
+  // Day 70: comments come a page at a time; "View more comments" brings the
+  // rest. Days 109-110: 20 threads a page, Most relevant first (with no
+  // reactions or replies yet that is the newest first).
   const busy = await api('POST', '/posts', bobToken, { content: 'A busy post' });
   for (let i = 1; i <= 55; i += 1) await api('POST', `/posts/${busy.id}/comments`, bobToken, { content: `note ${i}` });
   const AR = require('../frontend/src/i18n/locales/ar.json');
@@ -116,15 +118,18 @@ const api = (method, url, token, body) => fetch(API + url, {
     await card.waitFor();
     check(`${lang}: the card says "${count}" before they are opened`, (await stats()).includes(count), await stats());
     await card.locator('.feed-action-btn, button').filter({ hasText: lang === 'en' ? /^Comment$/ : AR.feed.comment }).first().click();
-    await reader.getByText('note 50', { exact: true }).waitFor();
-    const shown = () => reader.locator('.feed-comment-list > li').count();
-    check(`${lang}: the first 50 comments, oldest first, then "${more}"`, (await shown()) === 50
-      && (await reader.getByText('note 51', { exact: true }).count()) === 0 && (await reader.getByRole('button', { name: more }).count()) === 1);
-    // ...and still all of them (not the 50 loaded so far) once open.
-    check(`${lang}: ...still "${count}" with 50 loaded`, (await stats()).includes(count), await stats());
-    await reader.getByRole('button', { name: more }).click();
     await reader.getByText('note 55', { exact: true }).waitFor();
-    check(`${lang}: ...which brings the other 5, and goes away`, (await shown()) === 55 && (await reader.getByRole('button', { name: more }).count()) === 0);
+    const shown = () => reader.locator('.feed-comment-list > li').count();
+    check(`${lang}: the first 20, newest first, then "${more}"`, (await shown()) === 20
+      && (await reader.getByText('note 36', { exact: true }).count()) === 1 && (await reader.getByText('note 35', { exact: true }).count()) === 0
+      && (await reader.getByRole('button', { name: more }).count()) === 1);
+    // ...and still all of them (not the 20 loaded so far) once open.
+    check(`${lang}: ...still "${count}" with 20 loaded`, (await stats()).includes(count), await stats());
+    await reader.getByRole('button', { name: more }).click();
+    await reader.getByText('note 16', { exact: true }).waitFor();
+    await reader.getByRole('button', { name: more }).click();
+    await reader.getByText('note 1', { exact: true }).waitFor();
+    check(`${lang}: ...which brings the rest, 20 at a time, and goes away`, (await shown()) === 55 && (await reader.getByRole('button', { name: more }).count()) === 0);
   }
 
   await browser.close();

@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useComments } from './useComments';
-import { fetchComments, updateComment } from '../services/postService';
+import { createComment, fetchComments, fetchReplies, updateComment } from '../services/postService';
 
 vi.mock('../services/postService', () => ({
   fetchComments: vi.fn(),
+  fetchReplies: vi.fn(),
   createComment: vi.fn(),
   updateComment: vi.fn(),
   likeComment: vi.fn(),
@@ -59,7 +60,7 @@ describe('useComments pages', () => {
     act(() => result.current.loadMore());
     await waitFor(() => expect(result.current.comments.map((x) => x.id)).toEqual([1, 2, 3]));
     expect(result.current.nextCursor).toBeNull();
-    expect(fetchComments).toHaveBeenLastCalledWith(9, 'tok', { cursor: '2' });
+    expect(fetchComments).toHaveBeenLastCalledWith(9, 'tok', { cursor: '2', sort: 'relevant' });
   });
 
   it('keeps what it has and says so when the next page fails', async () => {
@@ -74,5 +75,64 @@ describe('useComments pages', () => {
     expect(result.current.comments.map((x) => x.id)).toEqual([1]);
     expect(result.current.nextCursor).toBe('1'); // can try again
     expect(result.current.loadingMore).toBe(false);
+  });
+});
+
+// Days 109-110: threads, Most relevant / Newest, more replies.
+describe('useComments threads', () => {
+  const top = (id, extra = {}) => ({ id, content: `t${id}`, user_id: 2, username: 'bo', parent_comment_id: null, reply_count: 0, ...extra });
+  const reply = (id, parent) => ({ id, content: `r${id}`, user_id: 3, username: 'cy', parent_comment_id: parent });
+  const open = async (page) => {
+    fetchComments.mockReset();
+    fetchReplies.mockReset();
+    createComment.mockReset();
+    fetchComments.mockResolvedValueOnce(page);
+    const hook = renderHook(() => useComments(9, 'tok', { userId: 1, username: 'ann' }));
+    act(() => hook.result.current.toggleVisible());
+    await waitFor(() => expect(hook.result.current.loaded).toBe(true));
+    return hook;
+  };
+
+  it('starts on Most relevant; Newest starts the list again in that order', async () => {
+    const { result } = await open({ sort: 'relevant', comments: [top(1)], nextCursor: '1' });
+    expect(fetchComments).toHaveBeenLastCalledWith(9, 'tok', { sort: 'relevant' });
+    fetchComments.mockResolvedValueOnce({ sort: 'newest', comments: [top(2), top(1)], nextCursor: null });
+    act(() => result.current.changeSort('newest'));
+    expect(result.current.sort).toBe('newest');
+    expect(result.current.comments).toEqual([]);
+    await waitFor(() => expect(result.current.comments.map((c) => c.id)).toEqual([2, 1]));
+    expect(fetchComments).toHaveBeenLastCalledWith(9, 'tok', { sort: 'newest' });
+    expect(result.current.nextCursor).toBeNull();
+  });
+
+  it("more replies go on after the server's last one, not after a reply you just wrote", async () => {
+    const { result } = await open({ sort: 'relevant', comments: [top(1, { reply_count: 4 }), reply(10, 1), reply(11, 1)], nextCursor: null });
+    createComment.mockResolvedValue({ id: 99, content: 'mine', user_id: 1, parent_comment_id: 1 });
+    act(() => result.current.startReply(result.current.comments[0]));
+    act(() => result.current.setCommentInput('mine'));
+    act(() => result.current.submitComment());
+    await waitFor(() => expect(result.current.comments.some((c) => c.id === 99)).toBe(true));
+    expect(result.current.comments[0].reply_count).toBe(5);
+
+    fetchReplies.mockResolvedValue({ replies: [reply(12, 1), reply(13, 1)], nextCursor: null });
+    act(() => result.current.loadReplies(1));
+    expect(fetchReplies).toHaveBeenCalledWith(1, 'tok', { cursor: 11 });
+    await waitFor(() => expect(result.current.comments.map((c) => c.id)).toEqual([1, 10, 11, 99, 12, 13]));
+  });
+
+  it('a new comment goes to the top; a failed reply gives its count back', async () => {
+    const { result } = await open({ sort: 'relevant', comments: [top(1, { reply_count: 1 }), reply(10, 1)], nextCursor: null });
+    createComment.mockResolvedValueOnce({ id: 50, content: 'new', user_id: 1, parent_comment_id: null });
+    act(() => result.current.setCommentInput('new'));
+    act(() => result.current.submitComment());
+    await waitFor(() => expect(result.current.comments[0].id).toBe(50));
+
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    createComment.mockRejectedValueOnce(new Error('offline'));
+    act(() => result.current.startReply(result.current.comments[1]));
+    act(() => result.current.setCommentInput('oops'));
+    act(() => result.current.submitComment());
+    await waitFor(() => expect(result.current.submitError).toBeTruthy());
+    expect(result.current.comments.find((c) => c.id === 1).reply_count).toBe(1);
   });
 });

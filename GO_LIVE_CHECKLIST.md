@@ -1,7 +1,7 @@
 # GO LIVE checklist
 
 How to put the current `dev` branch live: back up the production
-database, run migrations 015 → 087, check the environment variables,
+database, run migrations 015 → 088, check the environment variables,
 deploy the backend and then the frontend, and test the live site. There
 is also a rollback plan for when something goes wrong.
 
@@ -99,7 +99,7 @@ failed and keeps the old version running. It's still better to check now.
   **Auto-Deploy** is on for the `master` branch. You'll need that in
   step 4.
 
-## 3. Run migrations 015 → 087 on production
+## 3. Run migrations 015 → 088 on production
 
 Every migration only **adds** things (tables, columns, indexes). No
 existing data is removed, so the old code on `master` keeps working while
@@ -156,7 +156,7 @@ account as past the first-run steps, so only new sign-ups see them.)
            078_add_session_login_challenge 079_add_post_shares 080_add_photo_alt_text \
            081_add_chat_pin_archive 082_add_story_replies 083_add_post_notification_levels \
            084_add_admin_search 085_add_profile_card_dismissed 086_add_page_verification \
-           087_add_hashtag_follows; do
+           087_add_hashtag_follows 088_add_comment_thread_indexes; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```
@@ -169,7 +169,7 @@ account as past the first-run steps, so only new sign-ups see them.)
   "/c/Program Files/PostgreSQL/17/bin/psql.exe" "$PROD_DB" -At -c \
     "SELECT count(*) FROM pg_indexes WHERE indexname IN ('idx_messages_conversation_id','idx_post_hashtags_hashtag','idx_participants_last_read','idx_story_views_viewer','idx_posts_content_fts','idx_hashtags_tag_trgm','idx_search_history_user_recent','idx_poll_votes_user','idx_post_drafts_due','idx_polls_end_queue','idx_bookmark_collections_user_name','idx_users_created_at','idx_comments_created_at','idx_reports_created_at','idx_admin_actions_created','idx_known_devices_last_seen','idx_notifications_user_type_created','idx_posts_month_day','idx_sessions_login_challenge','idx_posts_shared_post_id')"
   ```
-  - 039, 047, 048, 059, 075, 077, 078 and 079 build indexes, which briefly holds back writes to each
+  - 039, 047, 048, 059, 075, 077, 078, 079 and 088 build indexes, which briefly holds back writes to each
     table while they run: seconds at today's size, another reason for a
     quiet hour.
 

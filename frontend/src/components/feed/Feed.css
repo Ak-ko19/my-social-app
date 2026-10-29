@@ -524,3 +524,39 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Days 109-110: Most relevant / Newest over the comments. */
+.comment-sort {
+  display: flex;
+  gap: var(--space-xs);
+  margin-block-end: var(--space-sm);
+}
+
+.comment-sort-option {
+  padding: 4px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.comment-sort-option.is-active {
+  border-color: transparent;
+  background: var(--color-subtle-bg);
+  color: var(--color-text);
+}
+
+.comment-sort-option:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* Days 109-110: "View 3 more replies", in line with the replies. */
+.comment-more-replies {
+  margin-block: var(--space-xs) 0;
+  margin-inline-start: calc(var(--space-md) + 2px);
+}

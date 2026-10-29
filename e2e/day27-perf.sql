@@ -43,6 +43,22 @@ INSERT INTO comments (post_id, user_id, content, created_at)
 SELECT r.plo + (random() * 149999)::int, r.ulo + (random() * 29999)::int, 'Perf comment ' || g, now() - g * interval '15 seconds'
 FROM r, generate_series(1, 150000) g;
 
+-- Days 109-110: one busy discussion -- the measured post (plo + 70000) gets
+-- 2,000 comments, the first with 500 replies, and comment likes, so both
+-- orders and the replies list are measured at size.
+INSERT INTO comments (post_id, user_id, content, created_at)
+SELECT r.plo + 70000, r.ulo + (g % 30000), 'Thread ' || g, now() - g * interval '1 minute'
+FROM r, generate_series(1, 2000) g;
+INSERT INTO comments (post_id, user_id, content, parent_comment_id, created_at)
+SELECT r.plo + 70000, r.ulo + (g % 30000), 'Reply ' || g,
+       (SELECT min(c.id) FROM comments c WHERE c.post_id = r.plo + 70000 AND c.content = 'Thread 1'),
+       now() + g * interval '1 second'
+FROM r, generate_series(1, 500) g;
+INSERT INTO comment_likes (comment_id, user_id)
+SELECT c.id, r.ulo + (random() * 29999)::int FROM r, comments c, generate_series(1, 3)
+WHERE c.post_id = r.plo + 70000 AND c.parent_comment_id IS NULL
+ON CONFLICT DO NOTHING;
+
 INSERT INTO follows (follower_id, following_id)
 SELECT r.ulo + (random() * 29999)::int, r.ulo + (random() * 29999)::int FROM r, generate_series(1, 300000)
 ON CONFLICT DO NOTHING;

@@ -11,6 +11,7 @@ const { isRestricted } = require('../services/restrictService');
 const interactionService = require('../services/interactionService');
 const spamService = require('../services/spamService');
 const communityService = require('../services/communityService');
+const { popularityScoreSql } = require('../services/popularity');
 
 // Day 43: comments had no length limit; same as a chat message.
 const MAX_COMMENT_LENGTH = 5000;
@@ -116,51 +117,139 @@ async function createComment(req, res) {
   }
 }
 
-// Day 70: GET /posts/:id/comments?cursor=&limit= -- oldest first, a page
-// at a time ({ comments, nextCursor }). A reply is always newer than the
-// comment it answers, so each page threads onto the ones before it. The
-// cursor is the last comment's id: ids are handed out as comments are
-// created, and unlike created_at they survive the trip through JSON exactly.
+// Days 109-110: comments come by thread, like Facebook's. A page is a
+// number of top-level comments in the chosen order, each followed by its
+// first REPLY_PREVIEW replies; more replies come from GET
+// /comments/:id/replies. (Day 70's single list, oldest first, threaded on
+// the client because a reply is always newer than its parent -- which only
+// holds in that one order.)
+const SORTS = ['relevant', 'newest'];
+const REPLY_PREVIEW = 2;
+
+// "Viewer $v may see comment c on a post owned by $o": not waiting for
+// approval (Day 47) unless it's the viewer's or the viewer owns the post,
+// and no block either way.
+const commentVisibleSql = (c, v, o) => `
+  (NOT ${c}.awaiting_approval OR ${c}.user_id = ${v} OR ${v}::int = ${o}::int)
+  AND (${v}::int IS NULL OR ${noBlockBetweenSql(v, `${c}.user_id`)})`;
+
+// One comment as the list shows it ($v the viewer, $o the post's owner).
+const commentColumnsSql = (c, v, o) => `
+  ${c}.id, ${c}.content, ${c}.created_at, ${c}.parent_comment_id,
+  u.id AS user_id, u.username,
+  (SELECT COUNT(*)::int FROM comment_likes cl WHERE cl.comment_id = ${c}.id) AS like_count,
+  ${v}::int IS NOT NULL AND EXISTS(SELECT 1 FROM comment_likes cl WHERE cl.comment_id = ${c}.id AND cl.user_id = ${v}) AS liked_by_me,
+  -- Day 47: only the post's owner learns a comment is waiting.
+  (${c}.awaiting_approval AND ${v}::int = ${o}::int) AS awaiting_approval`;
+
+// The replies to top-level comment t that the viewer may see.
+const visibleReplyCountSql = (t, v, o) => `(
+  SELECT COUNT(*)::int FROM comments r WHERE r.parent_comment_id = ${t}.id AND ${commentVisibleSql('r', v, o)})`;
+
+// $1 post, $2 viewer, $3 the post's owner, $4 cursor, $5 limit + 1.
+// Newest: by id, after the cursor's id. Most relevant: the Explore score
+// (reactions, replies, age -- services/popularity.js); the cursor is how
+// many threads were sent before (ranks move as people react; the app
+// skips a comment it already has).
+const TOP_LEVEL_SQL = {
+  newest: `
+    SELECT ${commentColumnsSql('c', '$2', '$3')}, ${visibleReplyCountSql('c', '$2', '$3')} AS reply_count
+    FROM comments c JOIN users u ON u.id = c.user_id
+    WHERE c.post_id = $1 AND c.parent_comment_id IS NULL AND ${commentVisibleSql('c', '$2', '$3')}
+      AND ($4 = 0 OR c.id < $4)
+    ORDER BY c.id DESC
+    LIMIT $5`,
+  relevant: `
+    SELECT ${commentColumnsSql('c', '$2', '$3')}, ${visibleReplyCountSql('c', '$2', '$3')} AS reply_count
+    FROM comments c JOIN users u ON u.id = c.user_id
+    WHERE c.post_id = $1 AND c.parent_comment_id IS NULL AND ${commentVisibleSql('c', '$2', '$3')}
+    ORDER BY ${popularityScoreSql(
+      '(SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id)',
+      visibleReplyCountSql('c', '$2', '$3'),
+      'c.created_at'
+    )} DESC, c.id DESC
+    OFFSET $4 LIMIT $5`
+};
+
+// The first REPLY_PREVIEW replies of each of these top-level comments.
+const REPLY_PREVIEW_SQL = `
+  SELECT r.* FROM unnest($1::int[]) AS t(id)
+  CROSS JOIN LATERAL (
+    SELECT ${commentColumnsSql('c', '$2', '$3')}
+    FROM comments c JOIN users u ON u.id = c.user_id
+    WHERE c.parent_comment_id = t.id AND ${commentVisibleSql('c', '$2', '$3')}
+    ORDER BY c.id
+    LIMIT ${REPLY_PREVIEW}
+  ) r`;
+
+// A cursor: a whole number from 0 ('' or none: the start).
+function readCursor(raw) {
+  const value = raw === undefined || raw === '' ? 0 : Number(raw);
+  return Number.isInteger(value) && value >= 0 ? value : null;
+}
+
+// GET /posts/:id/comments?sort=relevant|newest&cursor=&limit= (limit:
+// threads, default 20, max 50) -> { sort, comments, nextCursor }:
+// comments are the page's top-level comments (each with reply_count),
+// then their first replies.
 async function getComments(req, res) {
   try {
     if (isNaN(req.params.id)) {
       return res.status(400).send('Invalid post ID');
     }
-    const after = req.query.cursor === undefined || req.query.cursor === '' ? 0 : Number(req.query.cursor);
-    if (!Number.isInteger(after) || after < 0) return res.status(400).send('Invalid cursor');
-    const limit = getLimit(req, { defaultLimit: 50, maxLimit: 100 });
+    const sort = req.query.sort === undefined ? 'relevant' : String(req.query.sort);
+    if (!SORTS.includes(sort)) return res.status(400).send('sort must be relevant or newest');
+    const cursor = readCursor(req.query.cursor);
+    if (cursor === null) return res.status(400).send('Invalid cursor');
+    const limit = getLimit(req, { defaultLimit: 20, maxLimit: 50 });
     // Same visibility rules as GET /posts/:id -- see postVisibilityService.
     const post = await getVisiblePost(req.params.id, req.userId);
     if (!post) {
       return res.status(404).send('Post not found');
     }
-    // Also hide individual comments from anyone the viewer has a block with
-    // (either direction), same mutual-invisibility rule as everywhere else.
     const viewerId = req.userId ?? null;
-    const result = await db.query(`
-      SELECT comments.id, comments.content, comments.created_at, comments.parent_comment_id,
-        users.id AS user_id, users.username,
-        (SELECT COUNT(*)::int FROM comment_likes cl WHERE cl.comment_id = comments.id) AS like_count,
-        $2::int IS NOT NULL AND EXISTS(
-          SELECT 1 FROM comment_likes cl WHERE cl.comment_id = comments.id AND cl.user_id = $2
-        ) AS liked_by_me,
-        -- Day 47: only the post's owner learns a comment is waiting.
-        (comments.awaiting_approval AND $2::int = $3::int) AS awaiting_approval
-      FROM comments
-      JOIN users ON comments.user_id = users.id
-      WHERE comments.post_id = $1
-        -- Waiting for approval: seen by its author and the post's owner only.
-        AND (NOT comments.awaiting_approval OR comments.user_id = $2 OR $2::int = $3::int)
-        AND ($2::int IS NULL OR ${noBlockBetweenSql('$2', 'comments.user_id')})
-        AND comments.id > $4
-      ORDER BY comments.id ASC
-      LIMIT $5
-    `, [req.params.id, viewerId, post.user_id, after, limit + 1]);
-    const comments = result.rows.slice(0, limit);
-    const nextCursor = result.rows.length > limit ? String(comments[comments.length - 1].id) : null;
-    res.json({ comments, nextCursor });
+    const top = await db.query(TOP_LEVEL_SQL[sort], [post.id, viewerId, post.user_id, cursor, limit + 1]);
+    const threads = top.rows.slice(0, limit);
+    const replies = threads.length === 0 ? { rows: [] }
+      : await db.query(REPLY_PREVIEW_SQL, [threads.map((c) => c.id), viewerId, post.user_id]);
+    let nextCursor = null;
+    if (top.rows.length > limit) nextCursor = sort === 'newest' ? String(threads[threads.length - 1].id) : String(cursor + limit);
+    res.json({ sort, comments: [...threads, ...replies.rows], nextCursor });
   } catch (err) {
     sendError(res, err, 'Fetch comments failed. Please try again later.');
+  }
+}
+
+// GET /comments/:id/replies?cursor=&limit= -> { replies, nextCursor }: a
+// top-level comment's replies, oldest first, after the cursor's id (the
+// list's first REPLY_PREVIEW are the first page's). Not found when you may
+// not see the post or the comment.
+async function getReplies(req, res) {
+  try {
+    const commentId = Number(req.params.id);
+    const cursor = readCursor(req.query.cursor);
+    if (cursor === null) return res.status(400).send('Invalid cursor');
+    const limit = getLimit(req, { defaultLimit: 20, maxLimit: 50 });
+    const viewerId = req.userId ?? null;
+    const parent = (await db.query('SELECT id, post_id, user_id, parent_comment_id, awaiting_approval FROM comments WHERE id = $1', [commentId])).rows[0];
+    const post = parent && !parent.parent_comment_id ? await getVisiblePost(parent.post_id, req.userId) : null;
+    const seen = post && (await db.query(
+      `SELECT 1 FROM comments c WHERE c.id = $1 AND ${commentVisibleSql('c', '$2', '$3')}`,
+      [parent.id, viewerId, post.user_id]
+    )).rows.length > 0;
+    if (!seen) return res.status(404).send('Comment not found');
+    const result = await db.query(
+      `SELECT ${commentColumnsSql('c', '$2', '$3')}
+       FROM comments c JOIN users u ON u.id = c.user_id
+       WHERE c.parent_comment_id = $1 AND ${commentVisibleSql('c', '$2', '$3')} AND c.id > $4
+       ORDER BY c.id
+       LIMIT $5`,
+      [parent.id, viewerId, post.user_id, cursor, limit + 1]
+    );
+    const replies = result.rows.slice(0, limit);
+    res.json({ replies, nextCursor: result.rows.length > limit ? String(replies[replies.length - 1].id) : null });
+  } catch (err) {
+    sendError(res, err, 'Loading replies failed. Please try again later.');
   }
 }
 
@@ -301,4 +390,4 @@ async function unlikeComment(req, res) {
   }
 }
 
-module.exports = { createComment, getComments, updateComment, deleteComment, likeComment, unlikeComment, approveComment };
+module.exports = { createComment, getComments, getReplies, updateComment, deleteComment, likeComment, unlikeComment, approveComment };

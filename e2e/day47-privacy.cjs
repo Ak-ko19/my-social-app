@@ -146,11 +146,13 @@ const api = (who, method, url, body) => fetch(API + url, {
   await api('bob', 'POST', `/posts/${myPost.id}/comments`, { content: 'and another thing' });
   await owner.reload({ waitUntil: 'networkidle' });
   await myCard(owner).getByRole('button', { name: 'Comment', exact: true }).click();
-  await owner.getByRole('button', { name: "Delete bob's comment" }).last().waitFor({ timeout: 8000 }).catch(() => {});
-  await owner.getByRole('button', { name: "Delete bob's comment" }).last().click();
+  // By its words, not its place (Days 109-110: the newest comes first).
+  const another = owner.locator('.feed-comment-list > li', { hasText: 'and another thing' }).getByRole('button', { name: "Delete bob's comment" });
+  await another.waitFor({ timeout: 8000 }).catch(() => {});
+  await another.click();
   await owner.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
   await owner.getByText('and another thing').waitFor({ state: 'detached', timeout: 8000 }).catch(() => {});
-  check('the post owner deletes his other comment', sql(`SELECT COUNT(*) FROM comments WHERE post_id = ${myPost.id}`) === '1');
+  check('the post owner deletes his other comment', JSON.stringify(sql(`SELECT string_agg(content, '|') FROM comments WHERE post_id = ${myPost.id}`)) === JSON.stringify('Mine, obviously'));
   await axe(owner, 'en/light, post with comments');
   await owner.context().close();
 

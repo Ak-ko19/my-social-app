@@ -34,8 +34,9 @@ describe('comments', () => {
     expect(res.status).toBe(400);
   });
 
-  // Day 70: a page at a time.
-  it('pages through the comments with no gaps or repeats; replies come after their comment', async () => {
+  // Day 70: a page at a time. Days 109-110: a page is a number of threads
+  // (top-level comments), each followed by its first replies.
+  it('pages through the threads with no gaps or repeats, in either order; replies come with their comment', async () => {
     const author = await registerAndLogin(app);
     const post = await makePost(author.token);
     const say = (content, parentCommentId) => request(app).post(`/posts/${post.id}/comments`)
@@ -45,42 +46,55 @@ describe('comments', () => {
     await say('reply to c1', first.id);
     await say('c5');
 
-    const seen = [];
-    let cursor = '';
-    let pages = 0;
-    do {
-      const res = await request(app).get(`/posts/${post.id}/comments?limit=2&cursor=${cursor}`);
-      expect(res.status).toBe(200);
-      expect(res.body.comments.length).toBeLessThanOrEqual(2);
-      seen.push(...res.body.comments.map((c) => c.content));
-      cursor = res.body.nextCursor;
-      pages += 1;
-    } while (cursor);
-    expect(pages).toBe(3);
-    expect(seen).toEqual(['c1', 'c2', 'c3', 'c4', 'reply to c1', 'c5']);
+    const walk = async (sort) => {
+      const seen = [];
+      let cursor = '';
+      let pages = 0;
+      do {
+        const res = await request(app).get(`/posts/${post.id}/comments?sort=${sort}&limit=2&cursor=${cursor}`);
+        expect(res.status).toBe(200);
+        expect(res.body.sort).toBe(sort);
+        expect(res.body.comments.filter((c) => c.parent_comment_id === null).length).toBeLessThanOrEqual(2);
+        seen.push(...res.body.comments.map((c) => c.content));
+        cursor = res.body.nextCursor;
+        pages += 1;
+      } while (cursor);
+      return { seen, pages };
+    };
+    expect(await walk('newest')).toEqual({ seen: ['c5', 'c4', 'c3', 'c2', 'c1', 'reply to c1'], pages: 3 });
+    // Most relevant: c1 has a reply, so it ranks first; the rest are equal (newest first).
+    expect(await walk('relevant')).toEqual({ seen: ['c1', 'c5', 'reply to c1', 'c4', 'c3', 'c2'], pages: 3 });
 
     const all = await request(app).get(`/posts/${post.id}/comments`);
-    expect([all.body.comments.length, all.body.nextCursor]).toEqual([6, null]);
+    expect([all.body.sort, all.body.comments.length, all.body.nextCursor]).toEqual(['relevant', 6, null]);
+    expect(all.body.comments[0]).toMatchObject({ content: 'c1', reply_count: 1 });
   });
 
-  it('refuses a bad cursor; a huge limit is not an error (the server caps it at 100)', async () => {
+  it('refuses a bad cursor or sort; a huge limit is not an error (the server caps it)', async () => {
     const author = await registerAndLogin(app);
     const post = await makePost(author.token);
     for (const cursor of ['abc', '-1', '1.5']) {
       expect([cursor, (await request(app).get(`/posts/${post.id}/comments?cursor=${cursor}`)).status]).toEqual([cursor, 400]);
     }
+    const badSort = await request(app).get(`/posts/${post.id}/comments?sort=oldest`);
+    expect([badSort.status, badSort.text]).toEqual([400, 'sort must be relevant or newest']);
     expect((await request(app).get(`/posts/${post.id}/comments?limit=5000`)).status).toBe(200);
   });
 
-  it('lists comments oldest-first', async () => {
+  // Days 109-110: Most relevant (the default) puts liked comments first;
+  // Newest is newest first.
+  it('lists the most relevant first by default, or the newest', async () => {
     const author = await registerAndLogin(app);
     const post = await makePost(author.token);
-    await request(app).post(`/posts/${post.id}/comments`).set('Authorization', `Bearer ${author.token}`).send({ content: 'first' });
+    const first = (await request(app).post(`/posts/${post.id}/comments`).set('Authorization', `Bearer ${author.token}`).send({ content: 'first' })).body;
     await request(app).post(`/posts/${post.id}/comments`).set('Authorization', `Bearer ${author.token}`).send({ content: 'second' });
+    await request(app).post(`/comments/${first.id}/like`).set('Authorization', `Bearer ${author.token}`);
 
     const res = await request(app).get(`/posts/${post.id}/comments`);
     expect(res.status).toBe(200);
     expect(res.body.comments.map((c) => c.content)).toEqual(['first', 'second']);
+    const newest = await request(app).get(`/posts/${post.id}/comments?sort=newest`);
+    expect(newest.body.comments.map((c) => c.content)).toEqual(['second', 'first']);
   });
 
   it('rejects editing someone else\'s comment with 403', async () => {

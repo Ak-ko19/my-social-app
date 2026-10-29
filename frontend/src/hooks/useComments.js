@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { fetchComments, createComment, updateComment, likeComment, unlikeComment, deleteComment, approveComment } from '../services/postService';
+import { fetchComments, fetchReplies, createComment, updateComment, likeComment, unlikeComment, deleteComment, approveComment } from '../services/postService';
 import { serverErrorText } from '../utils/serverError';
 
 let tempIdSeq = 0;
@@ -18,9 +18,16 @@ function makeTempId() {
 export function useComments(postId, token, currentUser) {
   const [visible, setVisible] = useState(false);
   const [comments, setComments] = useState([]);
-  // Day 70: comments come a page at a time (oldest first); nextCursor is
-  // null once they are all here.
+  // Day 70: comments come a page at a time; nextCursor is null once they
+  // are all here. Days 109-110: by thread, Most relevant or Newest.
   const [nextCursor, setNextCursor] = useState(null);
+  const [sort, setSort] = useState('relevant');
+  // Per thread: the last reply id the server sent (where "View more
+  // replies" goes on -- not a reply you just wrote, which is newer than
+  // the ones not loaded yet), and which threads are loading more.
+  const replyCursorRef = useRef(new Map());
+  const [repliesLoading, setRepliesLoading] = useState(() => new Set());
+  const [repliesError, setRepliesError] = useState(null);
   // Day 85: the first page has arrived (until then the list says nothing
   // about how many there are).
   const [loaded, setLoaded] = useState(false);
@@ -46,14 +53,61 @@ export function useComments(postId, token, currentUser) {
   const [actionError, setActionError] = useState(null);
   const likePendingRef = useRef(new Set());
 
-  const load = () => {
-    fetchComments(postId, token)
+  // Remembers how far the server's replies go in each thread.
+  const noteReplies = (list) => {
+    for (const c of list) {
+      if (c.parent_comment_id == null) continue;
+      const before = replyCursorRef.current.get(c.parent_comment_id) || 0;
+      replyCursorRef.current.set(c.parent_comment_id, Math.max(before, c.id));
+    }
+  };
+
+  const load = (order = sort) => {
+    fetchComments(postId, token, { sort: order })
       .then((page) => {
+        replyCursorRef.current = new Map();
+        noteReplies(page.comments);
         setComments(page.comments);
         setNextCursor(page.nextCursor);
         setLoaded(true);
       })
       .catch((err) => console.error(err));
+  };
+
+  // Days 109-110: Most relevant <-> Newest starts the list again.
+  const changeSort = (next) => {
+    if (next === sort) return;
+    setSort(next);
+    setComments([]);
+    setNextCursor(null);
+    setLoaded(false);
+    setLoadMoreError(null);
+    load(next);
+  };
+
+  // Days 109-110: the next replies of one thread (after the ones the server
+  // sent so far); a reply already on screen isn't added twice.
+  const loadReplies = (topId) => {
+    if (repliesLoading.has(topId)) return;
+    setRepliesLoading((current) => new Set(current).add(topId));
+    setRepliesError(null);
+    fetchReplies(topId, token, { cursor: replyCursorRef.current.get(topId) || 0 })
+      .then((page) => {
+        noteReplies(page.replies);
+        setComments((current) => {
+          const have = new Set(current.map((c) => c.id));
+          return [...current, ...page.replies.filter((c) => !have.has(c.id))];
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+        setRepliesError(serverErrorText(err, 'comments.repliesFailed'));
+      })
+      .finally(() => setRepliesLoading((current) => {
+        const next = new Set(current);
+        next.delete(topId);
+        return next;
+      }));
   };
 
   // The next page, after the ones on screen. A comment already here (your
@@ -62,8 +116,9 @@ export function useComments(postId, token, currentUser) {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
     setLoadMoreError(null);
-    fetchComments(postId, token, { cursor: nextCursor })
+    fetchComments(postId, token, { cursor: nextCursor, sort })
       .then((page) => {
+        noteReplies(page.comments);
         setComments((current) => {
           const have = new Set(current.map((c) => c.id));
           return [...current, ...page.comments.filter((c) => !have.has(c.id))];
@@ -111,7 +166,10 @@ export function useComments(postId, token, currentUser) {
       liked_by_me: false,
       pending: true
     };
-    setComments((current) => [...current, optimisticComment]);
+    // Days 109-110: a new comment goes to the top (Facebook does the same);
+    // a reply goes to the end of its thread, which now has one more.
+    const bumpReplies = (list, by) => list.map((c) => (target && c.id === target.topId ? { ...c, reply_count: Math.max(0, (c.reply_count || 0) + by) } : c));
+    setComments((current) => (target ? [...bumpReplies(current, 1), optimisticComment] : [optimisticComment, ...current]));
 
     createComment(postId, content, token, target ? target.id : null)
       .then((created) => {
@@ -126,7 +184,7 @@ export function useComments(postId, token, currentUser) {
       })
       .catch((err) => {
         console.error(err);
-        setComments((current) => current.filter((c) => c.id !== tempId));
+        setComments((current) => bumpReplies(current.filter((c) => c.id !== tempId), -1));
         setCommentInput(content); // give the text back so nothing is lost
         setReplyingTo(target); // ...and the reply target
         setSubmitError(serverErrorText(err, 'errors.postComment'));
@@ -232,10 +290,14 @@ export function useComments(postId, token, currentUser) {
   };
 
   // The comment and (a top-level one's) replies go -- the server cascades.
+  // A reply leaves its thread one shorter.
   const removeComment = (commentId) => {
     setActionError(null);
+    const parentId = comments.find((c) => c.id === commentId)?.parent_comment_id ?? null;
     return deleteComment(commentId, token)
-      .then(() => setComments((current) => current.filter((c) => c.id !== commentId && c.parent_comment_id !== commentId)))
+      .then(() => setComments((current) => current
+        .filter((c) => c.id !== commentId && c.parent_comment_id !== commentId)
+        .map((c) => (parentId !== null && c.id === parentId ? { ...c, reply_count: Math.max(0, (c.reply_count || 0) - 1) } : c))))
       .catch((err) => {
         console.error(err);
         setActionError(serverErrorText(err, 'comments.deleteFailed'));
@@ -259,6 +321,11 @@ export function useComments(postId, token, currentUser) {
     loadMore,
     loadingMore,
     loadMoreError,
+    sort,
+    changeSort,
+    loadReplies,
+    repliesLoading,
+    repliesError,
     removeComment,
     approve,
     actionError,

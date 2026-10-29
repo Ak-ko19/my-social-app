@@ -172,6 +172,15 @@ function CommentSection({ postId, postOwnerId, comments, groupLocked = false }) 
     () => buildThreads(list.filter((c) => c.user_id === currentUserId || hiddenWords.check(c.content) !== 'hide')),
     [list, currentUserId, hiddenWords]
   );
+  // Days 109-110: how many replies of each thread are here (all of them,
+  // hidden or not), for "View N more replies".
+  const loadedReplies = useMemo(() => {
+    const counts = new Map();
+    for (const c of list) {
+      if (c.parent_comment_id != null) counts.set(c.parent_comment_id, (counts.get(c.parent_comment_id) || 0) + 1);
+    }
+    return counts;
+  }, [list]);
   const [reporting, setReporting] = useState(null); // the comment being reported
   const [deleting, setDeleting] = useState(null); // the comment about to be deleted
 
@@ -194,6 +203,23 @@ function CommentSection({ postId, postOwnerId, comments, groupLocked = false }) 
       exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
       transition={{ duration: reduceMotion ? 0 : DURATION_NORMAL, ease: EASE_STANDARD }}
     >
+      {/* Days 109-110: Most relevant (the default) or Newest. */}
+      {(threads.length > 0 || comments.sort !== 'relevant') && (
+        <div role="radiogroup" aria-label={t('comments.sortLabel')} className="comment-sort">
+          {['relevant', 'newest'].map((value) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={comments.sort === value}
+              className={clsx('comment-sort-option', comments.sort === value && 'is-active')}
+              onClick={() => comments.changeSort(value)}
+            >
+              {t(`comments.sort.${value}`)}
+            </button>
+          ))}
+        </div>
+      )}
       {threads.length > 0 && (
         <ul className="feed-comment-list">
           {threads.map(({ comment: c, replies }) => (
@@ -208,12 +234,25 @@ function CommentSection({ postId, postOwnerId, comments, groupLocked = false }) 
                   ))}
                 </ul>
               )}
+              {(c.reply_count || 0) > (loadedReplies.get(c.id) || 0) && (
+                <button
+                  type="button"
+                  className="comment-action comment-more-replies"
+                  onClick={() => comments.loadReplies(c.id)}
+                  disabled={comments.repliesLoading.has(c.id)}
+                >
+                  {comments.repliesLoading.has(c.id)
+                    ? t('common.loading')
+                    : t('comments.moreReplies', { count: c.reply_count - (loadedReplies.get(c.id) || 0) })}
+                </button>
+              )}
             </li>
           ))}
         </ul>
       )}
+      {comments.repliesError && <p className="feed-error-text" role="alert">{comments.repliesError}</p>}
 
-      {/* Day 70: older comments come first; the next page follows on. */}
+      {/* Day 70: the next page follows on (Days 109-110: in the chosen order). */}
       {comments.nextCursor && (
         <button type="button" className="comment-action comment-load-more" onClick={comments.loadMore} disabled={comments.loadingMore}>
           {comments.loadingMore ? t('common.loading') : t('comments.viewMore')}

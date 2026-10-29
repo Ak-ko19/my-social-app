@@ -226,14 +226,31 @@ module.exports = {
   }),
   'GET /posts/:id/comments': op({
     tag: 'Comments', auth: 'optional',
-    summary: "A post's comments and replies, oldest first, a page at a time",
-    description: 'A reply is always newer than the comment it answers, so each page threads onto the ones before it. '
-      + 'Comments from people you have a block with are left out.',
-    query: cursorQuery({ defaultLimit: 50, maxLimit: 100 }),
+    summary: "A post's comments by thread, a page at a time: Most relevant or Newest",
+    description: 'Days 109-110. A page is `limit` top-level comments in the chosen order (each with reply_count), followed by '
+      + 'the first 2 replies of each, oldest first; GET /comments/{id}/replies has the rest. Most relevant ranks by reactions, '
+      + 'replies and age (ranks move, so a later page can repeat a comment). Comments from people you have a block with are left out.',
+    query: {
+      sort: q(s.enum(['relevant', 'newest'], 'Default relevant')),
+      cursor: q(s.str('The nextCursor of the page before (a whole number)')),
+      limit: q(s.int('Threads per page, 1 to 50', { default: 20 }))
+    },
     responses: {
-      200: json(s.object({ comments: s.array(ref('Comment')), nextCursor: s.nullable(s.str('null: no more comments')) }), 'One page'),
-      400: text('Invalid post ID / Invalid cursor'),
+      200: json(s.object({ sort: s.enum(['relevant', 'newest']), comments: s.array(ref('Comment')), nextCursor: s.nullable(s.str('null: no more comments')) }), 'One page'),
+      400: text('Invalid post ID / Invalid cursor / sort must be relevant or newest'),
       404: POST_NOT_FOUND
+    }
+  }),
+  'GET /comments/:id/replies': op({
+    tag: 'Comments', auth: 'optional',
+    summary: "A comment's replies, oldest first, a page at a time",
+    description: 'Days 109-110. The same comments the list would show you. Not found when you may not see the post or the comment.',
+    pathParams: { id: s.id('A top-level comment') },
+    query: cursorQuery({ defaultLimit: 20, maxLimit: 50 }),
+    responses: {
+      200: json(s.object({ replies: s.array(ref('Comment')), nextCursor: s.nullable(s.str('null: no more replies')) }), 'One page'),
+      400: text('Invalid cursor / Invalid ids'),
+      404: text('Comment not found')
     }
   }),
   'PUT /comments/:id': op({

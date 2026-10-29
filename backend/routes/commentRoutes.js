@@ -9,6 +9,8 @@ wholeIds(router);
 
 router.post('/posts/:id/comments', authMiddleware, commentController.createComment);
 router.get('/posts/:id/comments', optionalAuth, commentController.getComments);
+// Days 109-110: a comment's replies, a page at a time.
+router.get('/comments/:id/replies', optionalAuth, commentController.getReplies);
 router.put('/comments/:id', authMiddleware, commentController.updateComment);
 router.delete('/comments/:id', authMiddleware, commentController.deleteComment);
 router.post('/comments/:id/like', authMiddleware, commentController.likeComment);

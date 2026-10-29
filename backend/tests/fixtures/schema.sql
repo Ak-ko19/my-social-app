@@ -833,3 +833,8 @@ CREATE TABLE hashtag_follows (
   PRIMARY KEY (user_id, hashtag_id)
 );
 CREATE INDEX idx_hashtag_follows_hashtag ON hashtag_follows (hashtag_id);
+
+-- Days 109-110 (migration 088): comments listed by thread.
+CREATE INDEX idx_comments_top ON comments (post_id, id) WHERE parent_comment_id IS NULL;
+CREATE INDEX idx_comments_replies ON comments (parent_comment_id, id);
+DROP INDEX idx_comments_parent_comment_id;

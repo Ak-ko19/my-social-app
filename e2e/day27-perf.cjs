@@ -63,9 +63,12 @@ async function publishServerCounters() {
   const perfUser = sql("SELECT min(id) FROM users WHERE username LIKE 'perf%'");
   const perfPost = sql("SELECT min(id) + 70000 FROM posts WHERE content LIKE 'Perf post %'");
   const conv = sql(`SELECT min(id) FROM conversations WHERE user_a_id = 1 AND user_b_id >= ${perfUser}`);
+  // Days 109-110: the busy thread (500 replies) on the measured post.
+  const busyThread = sql(`SELECT min(id) FROM comments WHERE post_id = ${perfPost} AND content = 'Thread 1'`);
 
   const endpoints = [
-    '/feed', '/feed?page=5', '/posts?page=1&limit=10', `/posts/${perfPost}`, `/posts/${perfPost}/comments`, `/posts/${perfPost}/likes`,
+    '/feed', '/feed?page=5', '/posts?page=1&limit=10', `/posts/${perfPost}`, `/posts/${perfPost}/comments`, `/posts/${perfPost}/comments?sort=newest`, `/posts/${perfPost}/comments?sort=newest&cursor=${busyThread}`,
+    `/comments/${busyThread}/replies?cursor=0`, `/posts/${perfPost}/likes`,
     `/profile/${perfUser}`, '/profile/me', `/users/${perfUser}/posts`, `/users/${perfUser}/follow-counts`,
     '/users/suggestions', '/follow-requests',
     // Day 37: friends (mutual follows) and connections.

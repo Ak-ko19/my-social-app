@@ -291,6 +291,11 @@
     "likeCountOnly_one": "{{count}} like",
     "likeCountOnly_other": "{{count}} likes",
     "viewMore": "View more comments",
+    "sortLabel": "Order of comments",
+    "sort": { "relevant": "Most relevant", "newest": "Newest" },
+    "moreReplies_one": "View 1 more reply",
+    "moreReplies_other": "View {{count}} more replies",
+    "repliesFailed": "Couldn't load the replies. Please try again.",
     "loadMoreFailed": "Couldn't load more comments. Please try again."
   },
   "reactions": {
