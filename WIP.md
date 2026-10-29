@@ -1,40 +1,13 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 107-108 -- Follow a hashtag.
-**Step:** 2 of 2 -- done (committed). Both steps done. Next: close Days 107-108 --
-full browser run in batches of 3, then the Progress Log entry.
-
-### Plan (Days 107-108)
-Instagram-style: follow a hashtag and its public posts come to Home, each
-saying which tag brought it, with "Unfollow #tag" right on the post.
-Two vertical slices:
-- **Step 1 -- follow / unfollow, and the list.**
-  - Data (migration 087): hashtag_follows (user_id, hashtag_id cascade both,
-    created_at; PK (user_id, hashtag_id); index on hashtag_id). At most 200
-    tags per account (bounds the Home query; Instagram caps follows too).
-  - API: GET /hashtags/:tag (tag, is_following -- optionalAuth),
-    PUT / DELETE /hashtags/:tag/follow (idempotent; a valid tag shape --
-    letters/marks/digits/_ , not only digits, <= 100 -- is created if no
-    post has it yet), GET /hashtags/following (yours, newest first).
-    Tags normalised like posts' (toUnicode + NFC + lower case).
-  - UI: Follow / Following on the hashtag screen (logged in);
-    Settings > Hashtags you follow (/settings/hashtags; unfollow each;
-    empty state; authOnly + day30-guard + day80-states ROUTES).
-  - Also: openapi (+ public op for GET /hashtags/:tag), data export,
-    Privacy Policy (what you follow), EN/AR, tests (API + Vitest + e2e).
-- **Step 2 -- on Home.**
-  - getFeed: also public posts (postAudienceSql: not a private account's;
-    pages count) carrying a tag you follow; not group posts; blocks,
-    deactivated and muted as today. via_hashtag = the tag, only when the
-    post is there for no other reason (not yours, author / page not
-    followed).
-  - Post card: "#tag" line (a link to the tag) over the header; the ⋯
-    menu gets "Unfollow #tag": unfollows and takes that tag's posts off
-    Home at once. Perf suite: /feed with tag follows; index check.
-  - e2e: follow from the tag screen -> post on Home with the label ->
-    unfollow from the post -> gone; EN/light + AR/dark, axe.
+**Day:** 109-110 -- Comment upgrades.
+**Step:** 1 -- PLAN (not started).
 
 ## Carry-over notes
+- Days 107-108: Home posts carry via_hashtag (the followed tag that brought
+  them). A new Home source should say why a post is there the same way.
+- Mutation checks: edit through a script file that counts its matches
+  (shell quoting silently skipped one whose regex had a Unicode class).
 - Day 106 lesson (seen twice): a hint or a character counter INSIDE a
   <label> becomes part of the field's accessible name ("Page name Changing
   the page's name..."). Put it after the label (htmlFor + id) and point

@@ -3320,3 +3320,39 @@ Read-only; no application code changed. Same method as audit 3, on
     346, constraints 203, indexes 156).
   - Full browser run in batches of 3 (heavy suites alone, in the
     foreground): 98/98 OK, first time.
+
+### 2026-10-29 — Days 107–108: Follow a hashtag
+- **Follow (`37b6d11`):** Instagram-style. A hashtag's page has Follow /
+  Following (logged in) and says its public posts come to Home. Settings >
+  Hashtags you follow lists them (each opens its posts) with Unfollow. Any
+  spelling works (#Tea, tea, Zawgyi, Burmese, Arabic); a tag no post has
+  used yet can be followed; at most 200 per account (also bounds Home).
+  - Migration 087 hashtag_follows; GET /hashtags/:tag, PUT/DELETE
+    /hashtags/:tag/follow (idempotent), GET /followed-hashtags. Data export
+    and Privacy Policy (EN/AR, 2026-10-29) updated.
+- **On Home (`a3fff8e`):** the public posts carrying a tag you follow --
+  never a private account's or a group's; blocks, mutes and deactivated
+  accounts apply as for every Home post. A post that is there only because
+  of a tag says so ("#tag · You follow this hashtag", the tag a link); one
+  you'd see anyway (yours, a person or page you follow) has no line. Its ⋯
+  menu offers "Unfollow #tag" first: that tag's posts leave Home at once,
+  and Home says so with Undo.
+- **Better than the plan (rule 9):** the Undo (Instagram has one); and
+  "Unfollow" removes every post that tag brought, not just the one card.
+- **Found on the way:**
+  - A test file that required a service at the top opened the database
+    pool before the test setup chose the database ("client password must
+    be a string"): tests take such constants as literals.
+  - Shell quoting silently skipped a mutation (a regex with \p): mutation
+    edits now go through a script file, which counts its matches.
+  - The perf seed first followed the busy #perf (1 post in 10): /feed read
+    fewer rows, but the dense feed made ?page=5 cheap too, so the cursor
+    check stopped comparing walks; the seed follows 50 ordinary tags.
+- **Tests:** hashtagFollows 6 (10 mutations caught); Vitest +8 (450); e2e
+  day107-hashtag-follow 38/38 EN/light + AR/dark, axe on the whole of Home.
+- **Tests at close:**
+  - Backend 1165/1165, Vitest 450/450, lint (exit 0), check:i18n (1775
+    keys), bundle 222.0 kB, npm audit 0/0, rehearsal 015 → 087 (columns
+    349, constraints 206, indexes 158); perf 51/51 (/feed 1706 rows).
+  - Full browser run in batches of 3 (heavy suites alone, in the
+    foreground): 99/99 OK, first time.
