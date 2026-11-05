@@ -8,7 +8,10 @@
 //      (it's not his post);
 //   4. Ola's story with its reply box and reactions (Day 100);
 //   5. their chat's search, with results (Day 99);
-//   6. the notifications choice of a group he's in (Day 101).
+//   6. the notifications choice of a group he's in (Day 101);
+//   7. (step 3) the "verify your email" banner on Home -- shown only when
+//      sending email is on, which this stack can't do, so /config is
+//      answered with emailEnabled: true for that page alone.
 // Throwaway stack from e2e-up.sh.
 const fs = require('fs');
 const path = require('path');
@@ -133,6 +136,24 @@ async function axe(page, tag, what) {
     if (lang === 'ar' && theme === 'light') await page.screenshot({ path: path.join(SP, `day112-bell-${tag.replace('/', '-')}.png`) });
     check(`${tag}: html dir`, (await page.getAttribute('html', 'dir')) === (lang === 'ar' ? 'rtl' : 'ltr'));
     await ctx.close();
+
+    // 7. The email banner (Fin's address is not verified).
+    const bctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await bctx.addInitScript(([t, id, name, l, th]) => {
+      localStorage.setItem('token', t); localStorage.setItem('userId', String(id)); localStorage.setItem('username', name);
+      localStorage.setItem('emailVerified', 'false'); localStorage.setItem('lang', l); localStorage.setItem('theme', th);
+    }, [fin.token, fin.id, fin.username, lang, theme]);
+    const bpage = await bctx.newPage();
+    bpage.on('pageerror', (e) => errors.push(`${tag} banner: ${e.message}`));
+    await bpage.route(`${API}/config`, async (route) => {
+      const real = await (await route.fetch()).json();
+      await route.fulfill({ json: { ...real, emailEnabled: true } });
+    });
+    await bpage.goto(WEB, { waitUntil: 'networkidle' });
+    check(`${tag}: the verify-your-email banner shows`, await shows(bpage.locator('.email-verify-banner')));
+    await axe(bpage, tag, 'the email banner');
+    if (lang === 'ar' && theme === 'dark') await bpage.locator('.email-verify-banner').screenshot({ path: path.join(SP, `day112-banner-${tag.replace('/', '-')}.png`) });
+    await bctx.close();
   }
   await browser.close();
   console.log(results.join('\n'));

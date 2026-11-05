@@ -318,7 +318,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 111 — Birthdays
 - [x] An optional birthday with who can see it (only me / friends / public); a notification to friends on the day, in their time zone. *(Month and day only, never a year; Edit profile > Birthday; "Today is X's birthday" from 08:00 in each friend's zone -- see Progress Log.)*
 ### Day 112 — Accessibility + translations check
-- [ ] Every screen from Days 91–111 translated (EN/AR), RTL-correct, axe 0 serious/critical.
+- [x] Every screen from Days 91–111 translated (EN/AR), RTL-correct, axe 0 serious/critical. *(Routes and overlays in all four language x theme combinations; two real bugs fixed -- see Progress Log.)*
 ### Day 113 — Performance round 3
 - [ ] Explore's popular posts at scale (AUDIT_REPORT_4 §6), the new lists' indexes, the perf suite at the larger seed.
 ### Day 114–115 — Security round 3

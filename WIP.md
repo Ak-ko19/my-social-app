@@ -1,12 +1,8 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 112 -- Accessibility + translations check.
-**Step:** 2 of 3 -- done (committed): day112-overlays 52/52 (six overlays x four
-combinations). Found + fixed: the stories tray buttons read the initials as
-their text (label-content-name-mismatch, all four); --color-accent-3 as
-text (3.3:1 on dark) in 10 places incl. the post menu's danger item ->
---color-danger-text; StoriesRow error margin now logical. Next: step 3
-(the amber email banner; anything left of the parked notes).
+**Step:** 3 of 3 -- done (committed). All steps done. Next: close Day 112 --
+full browser run in batches of 3, then the Progress Log entry.
 
 ### Plan (Day 112)
 Every Day 91-111 screen translated, RTL-correct, axe 0 serious/critical.
@@ -28,6 +24,9 @@ pages, dark only.
   Fix, and make sure a suite sees each.
 
 ## Carry-over notes
+- Day 112: text in red uses --color-danger-text, never --color-accent-3
+  (3.3:1 on dark; fine for icons and fills). New overlays go in
+  e2e/day112-overlays (all four language x theme combinations).
 - Day 113: e2e/day27-perf.cjs counts users as small by name
   (SMALL_ON_PURPOSE) -- grow the seed so users is big for real, then drop it.
 - Edit profile has two role=status regions (the form and Birthday): browser
@@ -55,10 +54,6 @@ pages, dark only.
 - Day 105: the first download is 222.0 kB of the 225 kB budget (Home's
   cards ship with it). Day 113 (performance round 3): look for what can
   load later (e.g. the Memories and profile cards, the story viewer).
-- Day 103 (for the Day 112 accessibility check): --color-accent-3 (#e11d48)
-  is not redefined for dark and is used as TEXT in PollView, PostCard,
-  StoriesRow and ui.css -- 3.3:1 on dark grey. Admin buttons now use
-  --color-danger-text; check the others with axe on screens where they show.
 - Day 101: new-post notifications fan out inside the post request (one
   INSERT ... SELECT, then a push + badge update per recipient). Fine at
   prototype scale; for groups / pages with many thousands of members, move
@@ -204,8 +199,6 @@ pages, dark only.
   timestamp from a JS Date in a cursor (it drops microseconds; Day 70 bug).
   Errors: throw an HttpError subclass, end handlers with sendError.
   Two-way block checks in SQL: blockService.noBlockBetweenSql.
-- To look at (Day 70): in Arabic the new-group screen's back button sits
-  on the left -- check the app's header convention in RTL.
 - Offline (Day 72): data kept on the device goes through utils/offlineStore
   (keys offline:*, wiped by clearLocalSession) and the Privacy Policy
   section 6 must say so. Browser suites that go offline: ignore console
@@ -215,7 +208,6 @@ pages, dark only.
   on failure its last line is blank, like a clean run (Day 74: two lint
   errors from Day 73 went out unseen).
 - Bundle 211.2/225 kB after Day 75 (React 19.3 +8.3 kB).
-- EmailVerificationBanner amber text ~2.9:1 (below AA), no dark tokens.
 - Follow-up (seen Day 66): when an admin removes your post/comment/message
   nothing tells you (FB/IG notify "we removed your post"). A system
   notification type (notifySystem) -- for Day 81–82 notifications upgrade
