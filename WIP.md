@@ -1,43 +1,17 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 109-110 -- Comment upgrades.
-**Step:** 2 of 2 -- done (committed). Both steps done. Next: close Days 109-110 --
-full browser run in batches of 3, then the Progress Log entry.
-
-### Plan (Days 109-110)
-Facebook-style comments: Most relevant (default) / Newest, threads paged
-by their top-level comment, replies on demand; the post's author pins one.
-Today GET /posts/:id/comments is one flat list oldest first (replies mixed
-in, threaded on the client since a reply is newer than its parent) --
-that breaks as soon as the order is anything else.
-- **Step 1 -- sort, threads, replies on demand.**
-  - GET /posts/:id/comments?sort=relevant|newest&cursor=&limit= (limit =
-    threads, default 20, max 50) -> { sort, comments, nextCursor }: the
-    page's top-level comments (each with reply_count -- the replies YOU
-    may see) followed by each one's first 2 replies (oldest first).
-    Newest: by id, cursor = last id. Most relevant: popularityScoreSql
-    (likes, replies, age), cursor = how many threads already sent (ranks
-    move; the client already de-dupes by id).
-  - GET /comments/:id/replies?cursor=&limit= -> { replies, nextCursor },
-    oldest first; same rules as the list (blocks, awaiting approval, the
-    post visible to you).
-  - Migration 088: idx_comments_top (post_id, id) WHERE parent IS NULL;
-    idx_comments_replies (parent_comment_id, id).
-  - UI: "Most relevant / Newest" control over the list (a radiogroup);
-    "View N more replies" under a thread; your new comment goes to the top
-    (Facebook does the same), a new reply to its thread.
-  - Perf suite: both sorts and the replies list.
-- **Step 2 -- pin one comment.**
-  - Migration 089: posts.pinned_comment_id (SET NULL when it goes).
-  - PUT / DELETE /posts/:id/pinned-comment { commentId }: the post's
-    author (a page's managers for a page post); a top-level comment on
-    this post, not waiting for approval; pinning another replaces it.
-  - Listing: page 1 starts with it (is_pinned) in both sorts, unless you
-    can't see it (block); it never comes again on later pages.
-  - UI: "Pin" / "Unpin" for the author; "Pinned by the author" label.
-  - e2e: sort, more replies, pin across pages; EN/light + AR/dark, axe.
+**Day:** 111 -- Birthdays.
+**Step:** 1 -- PLAN (not started).
 
 ## Carry-over notes
+- Days 109-110: comments come by thread (sort, replies on demand, a pinned
+  one first). A new posts column used by the comment list goes in
+  getVisiblePost's summary object too. Most relevant ranks every thread of
+  a post per request -- Day 113.
+- A browser run that fails with the offline banner everywhere or
+  net::ERR_NETWORK_CHANGED is the machine's network: re-run that part.
+- Backend package.json has an overrides entry (@sentry/bundler-plugins ->
+  glob ^14.0.3); drop it once Sentry ships a fixed glob itself.
 - Days 107-108: Home posts carry via_hashtag (the followed tag that brought
   them). A new Home source should say why a post is there the same way.
 - Mutation checks: edit through a script file that counts its matches

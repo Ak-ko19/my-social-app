@@ -3356,3 +3356,48 @@ Read-only; no application code changed. Same method as audit 3, on
     349, constraints 206, indexes 158); perf 51/51 (/feed 1706 rows).
   - Full browser run in batches of 3 (heavy suites alone, in the
     foreground): 99/99 OK, first time.
+
+### 2026-10-29/11-05 — Days 109–110: Comment upgrades
+- **Threads, Most relevant / Newest (`2116140`):** comments open on "Most
+  relevant" (reactions, replies and age -- Explore's score), with "Newest"
+  beside it. A page is 20 threads, each with its first 2 replies and "View
+  N more replies" (oldest first, a page at a time). Your new comment goes
+  to the top; a reply joins its thread.
+  - The old list (every comment oldest first, threaded on the client since
+    a reply is newer than its parent) only worked in that one order.
+  - GET /posts/:id/comments?sort=; GET /comments/:id/replies (blocks and
+    held comments as in the list). Migration 088: idx_comments_top,
+    idx_comments_replies (replaces idx_comments_parent_comment_id).
+- **Pin a comment (`9fe50d2`):** the post's author (a page's post: its
+  owner and admins) pins one comment: "Pinned by the author", first on page
+  1 in both orders, never again on a later page; pinning another replaces
+  it. Not a reply, not one waiting for approval; hidden across a block.
+  Migration 089: posts.pinned_comment_id (SET NULL) + its index, so
+  deleting a comment doesn't scan posts.
+- **Found on the way:**
+  - The Arabic like counts for 1 and 2 had no digit, so a liked comment's
+    button name didn't contain what it shows (axe, Arabic only).
+  - day47-privacy deleted "the last" comment; the new order made that the
+    wrong one and its count check didn't notice. It now picks it by its
+    words and checks which one is left.
+  - getVisiblePost returns a summary object: a new posts column must be
+    added there too (the pin was invisible until it was).
+- **Dependencies (at close, a week later):** npm audit found new advisories.
+  Frontend: follow-redirects (high, via axios) -> 1.16.2 (npm audit fix).
+  Backend: glob / minimatch (moderate) inside @sentry/node's bundler
+  plugins; npm only offered a Sentry major downgrade. A scoped override
+  (@sentry/bundler-plugins -> glob ^14.0.3, minimatch 11.0.4) instead: the
+  plugin only calls glob.glob(), and the server never loads it.
+- **Tests:** comment 8 + commentReplies 3 + pinnedComment 4 (14 mutations
+  caught); Vitest +9 (459); e2e day109-comments 32/32 EN/light + AR/dark
+  with axe; perf 54/54 (a 2,000-comment post: Newest 22 rows, Most
+  relevant 3503 rows / 80 ms -- it ranks every thread; Day 113).
+- **Tests at close:**
+  - Backend 1172/1172, Vitest 459/459, lint (exit 0), check:i18n (1786
+    keys), bundle 222.0 kB, npm audit 0/0 after the fixes, rehearsal 015 →
+    089 (columns 350, constraints 207, indexes 160).
+  - Full browser run in batches of 3: 98/100 first time. a3-en-dark and
+    a3-ar-dark failed with the offline banner on every page and
+    net::ERR_NETWORK_CHANGED (the machine's connection changing); both
+    re-ran green (153/153 each). After the dependency fixes: journeys-core,
+    day10-errors, day19-links green.
