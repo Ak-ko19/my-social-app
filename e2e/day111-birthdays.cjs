@@ -1,9 +1,11 @@
 // Day 111: birthdays. Ann and Bea follow each other (friends); Cal only
 // follows Ann. Ann sets 29 February, Friends, in Edit profile > Birthday:
 // Bea sees "Birthday: February 29" on Ann's profile, Cal doesn't. Ann
-// makes it Everyone: Cal sees it; then Only me: Bea doesn't. axe on Edit
-// profile and the profile. EN/light 390 px and AR/dark 375 px (RTL).
-// Throwaway stack from e2e-up.sh.
+// makes it Everyone: Cal sees it; then Only me: Bea doesn't. On the day
+// (Bea's own morning; the job runs in-process) Bea is told "Today is Ann's
+// birthday", which opens Ann's profile; Notification settings has a
+// Birthdays switch. axe on Edit profile, the profile and Notifications.
+// EN/light 390 px and AR/dark 375 px (RTL). Throwaway stack from e2e-up.sh.
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -11,6 +13,15 @@ const { chromium } = require('./node_modules/playwright-core');
 const { PSQL } = require('./pg.cjs');
 const EN = require('../frontend/src/i18n/locales/en.json');
 const AR = require('../frontend/src/i18n/locales/ar.json');
+
+// Day 111 step 2: the birthday job, in-process against the e2e database.
+process.env.DATABASE_URL = 'postgresql://testuser@localhost:55433/mysocialapp_e2e';
+const birthdayNotifications = require('../backend/services/birthdayNotificationService');
+// A fixed-offset zone where it is now between 09:00 and 22:00, and its date.
+const ZONES = ['Etc/GMT+11', 'Etc/GMT+8', 'Etc/GMT+5', 'Etc/GMT+2', 'Etc/GMT-1', 'Etc/GMT-4', 'Etc/GMT-7', 'Etc/GMT-10', 'Etc/GMT-13'];
+const hourIn = (zone) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: zone, hour: '2-digit', hourCycle: 'h23' }).format(new Date()));
+const MORNING = ZONES.find((z) => hourIn(z) >= 9 && hourIn(z) <= 22);
+const [MONTH, DAY] = new Intl.DateTimeFormat('en-CA', { timeZone: MORNING, month: '2-digit', day: '2-digit' }).format(new Date()).split('-').map(Number);
 
 const SP = __dirname;
 const WEB = 'http://localhost:5173';
@@ -103,6 +114,24 @@ async function axe(page, tag, what) {
     await section.getByRole('button', { name: B.save, exact: true }).click();
     await a.page.waitForTimeout(500);
     check(`${tag}: Only me: not even the friend`, !(await sees(b.page)) && await sees(a.page));
+
+    // Step 2: the day itself, in Bea's morning.
+    sql(`UPDATE users SET time_zone = '${MORNING}' WHERE id = ${bea.id}`);
+    await fetch(`${API}/profile/birthday`, { method: 'PUT', headers: { ...as(ann), ...json }, body: JSON.stringify({ month: MONTH, day: DAY, audience: 'friends' }) });
+    const sent = await birthdayNotifications.notifyDue({ force: true });
+    check(`${tag}: on the day, the job tells her friend (not the one who only follows)`, sent.people >= 1
+      && sql(`SELECT count(*) FROM notifications WHERE type = 'birthday' AND actor_id = ${ann.id} AND user_id = ${bea.id}`) === '1'
+      && sql(`SELECT count(*) FROM notifications WHERE type = 'birthday' AND actor_id = ${ann.id} AND user_id = ${cal.id}`) === '0');
+    await b.page.goto(`${WEB}/notifications`, { waitUntil: 'networkidle' });
+    const told = fill(c.L.notifications.types.birthday, { name: ann.username }).replace(/<\/?b>/g, '');
+    const note = b.page.getByRole('link', { name: told });
+    check(`${tag}: Bea reads "${told}"`, await shows(note));
+    await axe(b.page, tag, 'Notifications with a birthday');
+    await note.click();
+    await b.page.waitForURL(`**/profile/${ann.id}`);
+    check(`${tag}: ...which opens Ann's profile`, await shows(b.page.getByRole('heading', { name: ann.username }).first()));
+    await b.page.goto(`${WEB}/settings/notifications`, { waitUntil: 'networkidle' });
+    check(`${tag}: Notification settings has "${c.L.notifSettings.items.birthdays.title}"`, await shows(b.page.getByText(c.L.notifSettings.items.birthdays.title, { exact: true })));
     await Promise.all([a.ctx.close(), b.ctx.close(), k.ctx.close()]);
   }
   await browser.close();

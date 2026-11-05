@@ -852,3 +852,6 @@ ALTER TABLE users ADD COLUMN birthday_audience varchar(10) NOT NULL DEFAULT 'fri
   CONSTRAINT chk_users_birthday_audience CHECK (birthday_audience IN ('only_me', 'friends', 'public'));
 ALTER TABLE users ADD CONSTRAINT chk_users_birthday_both CHECK ((birthday_month IS NULL) = (birthday_day IS NULL));
 CREATE INDEX idx_users_birthday ON users (birthday_month, birthday_day) WHERE birthday_month IS NOT NULL;
+
+-- Day 111 (migration 091): the birthday notification setting.
+ALTER TABLE notification_preferences ADD COLUMN birthdays boolean NOT NULL DEFAULT true;

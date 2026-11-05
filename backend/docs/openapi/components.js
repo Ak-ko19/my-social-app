@@ -166,7 +166,9 @@ const schemas = {
       // Day 101: a new post in your group / on a page you follow.
       'group_post', 'page_post',
       // Day 106: a page you run was verified, declined, or lost its tick.
-      'page_verified', 'page_not_verified', 'page_unverified']),
+      'page_verified', 'page_not_verified', 'page_unverified',
+      // Day 111: a friend's birthday (the actor is the friend).
+      'birthday']),
     post_id: s.nullable(s.id()),
     comment_id: s.nullable(s.id()),
     is_read: s.bool('Day 81: for a group, true only when all of it is read'),
@@ -199,7 +201,7 @@ const schemas = {
     }
   }),
   NotificationPreferences: s.object(Object.fromEntries(
-    ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events', 'memories', 'shares'].map((c) => [c, s.bool()])
+    ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events', 'memories', 'shares', 'birthdays'].map((c) => [c, s.bool()])
   ), { description: 'Each category on (true) or off; everything starts on' }),
 
   // ---- Posts ----

@@ -316,7 +316,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 109–110 — Comment upgrades
 - [x] The post's author pins one comment; sort comments by Most relevant / Newest; the pin survives paging. *(Comments by thread with replies on demand; Pin / Unpin; the pinned one starts page 1 in both orders -- see Progress Log.)*
 ### Day 111 — Birthdays
-- [ ] An optional birthday with who can see it (only me / friends / public); a notification to friends on the day, in their time zone.
+- [x] An optional birthday with who can see it (only me / friends / public); a notification to friends on the day, in their time zone. *(Month and day only, never a year; Edit profile > Birthday; "Today is X's birthday" from 08:00 in each friend's zone -- see Progress Log.)*
 ### Day 112 — Accessibility + translations check
 - [ ] Every screen from Days 91–111 translated (EN/AR), RTL-correct, axe 0 serious/critical.
 ### Day 113 — Performance round 3

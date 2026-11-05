@@ -480,3 +480,32 @@ describe('Notifications: page verification', () => {
     expect(await screen.findByRole('link', { name: /لم تعد Corner Cafe موثّقة: يبدو أن الصفحة لا تمثّل من تدّعي تمثيله\./ })).toBeInTheDocument();
   });
 });
+
+// Day 111: a friend's birthday.
+describe('Notifications: birthday', () => {
+  const showOne = (n) => {
+    api.get.mockResolvedValue({ data: { notifications: [n], nextCursor: null } });
+    render(
+      <MemoryRouter initialEntries={['/notifications']}>
+        <Routes>
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/profile/:id" element={<p>Profile screen</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+  };
+  const n = { id: 80, type: 'birthday', actor_id: 7, actor_username: 'ann', actor_avatar_url: null, is_read: false, created_at: '2026-11-05T08:00:00Z', post_id: null, comment_id: null, post_content: null, count: 1, actor_count: 1, actors: [], details: null };
+
+  it("says whose birthday it is and opens their profile", async () => {
+    await setLanguage('en');
+    showOne(n);
+    await userEvent.click(await screen.findByRole('link', { name: /Today is ann's birthday\. Wish them a happy birthday!/ }));
+    expect(await screen.findByText('Profile screen')).toBeInTheDocument();
+  });
+
+  it('...in Arabic', async () => {
+    await setLanguage('ar');
+    showOne(n);
+    expect(await screen.findByRole('link', { name: /اليوم عيد ميلاد ann\./ })).toBeInTheDocument();
+  });
+});

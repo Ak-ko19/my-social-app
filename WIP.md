@@ -1,10 +1,8 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 111 -- Birthdays.
-**Step:** 1 of 2 -- done (committed): migration 090, PUT /profile/birthday,
-the birthday on the profile by audience, Edit profile > Birthday (birthday 3,
-5 mutations; Vitest 462; e2e day111-birthdays 22/22). Found: .form-success
-used --badge-green-fg (3.3:1 as text) -> --color-success. Next: step 2.
+**Step:** 2 of 2 -- done (committed). Both steps done. Next: close Day 111 -- full
+browser run in batches of 3, then the Progress Log entry.
 
 ### Plan (Day 111)
 Facebook-style birthdays, privacy first: only the month and the day are

@@ -44,7 +44,9 @@ const TEXT = {
     // Day 106: a page you run (why, in the app).
     page_verified: '{page} is now verified',
     page_not_verified: "{page} wasn't verified. Open the app to see why.",
-    page_unverified: '{page} is no longer verified. Open the app to see why.'
+    page_unverified: '{page} is no longer verified. Open the app to see why.',
+    // Day 111.
+    birthday: "Today is {name}'s birthday. Wish them a happy birthday!"
   },
   ar: {
     like: 'أعجب {name} بمنشورك',
@@ -75,7 +77,8 @@ const TEXT = {
     page_post: 'منشور جديد من {page}',
     page_verified: 'أصبحت {page} موثّقة',
     page_not_verified: 'لم يتم توثيق {page}. افتح التطبيق لمعرفة السبب.',
-    page_unverified: 'لم تعد {page} موثّقة. افتح التطبيق لمعرفة السبب.'
+    page_unverified: 'لم تعد {page} موثّقة. افتح التطبيق لمعرفة السبب.',
+    birthday: 'اليوم عيد ميلاد {name}. تمنَّ له عيد ميلاد سعيدًا!'
   }
 };
 

@@ -12,6 +12,7 @@ const scheduledPostService = require('./scheduledPostService');
 const pollEndService = require('./pollEndService');
 const eventNotificationService = require('./eventNotificationService');
 const memoryNotificationService = require('./memoryNotificationService');
+const birthdayNotificationService = require('./birthdayNotificationService');
 
 const STORY_GRACE = '1 hour'; // past expires_at (stories already vanish from reads at expiry)
 const NOTIFICATION_RETENTION = '90 days';
@@ -109,12 +110,15 @@ async function run({ dryRun = false } = {}) {
   const eventReminders = await eventNotificationService.remindDue();
   // Day 84: and for the morning memories notification.
   const memories = await memoryNotificationService.notifyDue({ force: true });
+  // Day 111: and for the birthday notifications.
+  const birthdays = await birthdayNotificationService.notifyDue({ force: true });
   return {
     dryRun: false, stories, storyMedia, notifications, sessions, errorGroups, suspensionsLifted, linkPreviews, uploadLedger, adminLog, knownDevices,
     scheduledPostsPublished: scheduledPosts.published, scheduledPostsFailed: scheduledPosts.failed,
     endedPollsNotified: endedPolls.polls,
     eventRemindersSent: eventReminders.events,
     memoriesNotified: memories.people,
+    birthdaysNotified: birthdays.people,
     durationMs: Date.now() - started
   };
 }

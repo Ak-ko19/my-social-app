@@ -70,14 +70,16 @@ const CATEGORY_BY_TYPE = {
   share: 'shares',
   // Day 101: a new post in your group / on a page you follow (notifyNewPost).
   group_post: 'groups',
-  page_post: 'pages'
+  page_post: 'pages',
+  // Day 111: a friend's birthday (birthdayNotificationService).
+  birthday: 'birthdays'
 };
 
 // 'messages' (Day 23) has no notification type: it controls message pushes
 // (pushService.pushNewMessage).
 // Day 84: 'memories' has no actor type either: it controls the morning
 // memories notification (memoryNotificationService).
-const CATEGORIES = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events', 'memories', 'shares'];
+const CATEGORIES = ['likes', 'comments', 'mentions', 'follows', 'follow_accepted', 'messages', 'groups', 'pages', 'events', 'memories', 'shares', 'birthdays'];
 
 function categoryFor(type) {
   const category = CATEGORY_BY_TYPE[type];

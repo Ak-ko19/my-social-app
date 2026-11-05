@@ -676,6 +676,7 @@
       "share": "<b>{{name}}</b> shared your post",
       "groupPost": "<b>{{name}}</b> posted in <b>{{group}}</b>",
       "pagePost": "<b>{{page}}</b> has a new post",
+      "birthday": "Today is <b>{{name}}</b>'s birthday. Wish them a happy birthday!",
       "pageVerified": "<b>{{page}}</b> is now verified. It shows a blue tick.",
       "pageNotVerified": "The request to verify <b>{{page}}</b> was declined: {{reason}}",
       "pageUnverified": "<b>{{page}}</b> is no longer verified: {{reason}}",
@@ -1043,6 +1044,10 @@
       "memories": {
         "title": "Memories",
         "description": "A morning reminder when you have posts from this day in earlier years"
+      },
+      "birthdays": {
+        "title": "Birthdays",
+        "description": "A morning reminder on a friend's birthday"
       }
     },
     "push": {

@@ -52,6 +52,8 @@ function notificationKey(n) {
   if (n.type === 'page_verified') return 'pageVerified';
   if (n.type === 'page_not_verified') return 'pageNotVerified';
   if (n.type === 'page_unverified') return 'pageUnverified';
+  // Day 111: a friend's birthday.
+  if (n.type === 'birthday') return 'birthday';
   return 'other';
 }
 
@@ -85,7 +87,7 @@ function targetOf(n, myId) {
       return n.post_id ? `/posts/${n.post_id}` : null;
     case 'follow':
       return n.actor_count > 1 ? `/profile/${myId}/connections?tab=followers` : `/profile/${n.actor_id}`;
-    case 'follow_accepted':
+    case 'follow_accepted': case 'birthday':
       return `/profile/${n.actor_id}`;
     case 'follow_request':
       return '/settings/follow-requests';
