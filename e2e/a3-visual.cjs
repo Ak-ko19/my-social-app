@@ -28,7 +28,9 @@ const AUTHED = [
   '/create-post', '/edit-profile', '/notifications', '/messages', '/messages/1', '/search', '/explore', '/profile/1', '/messages/new-group', '/settings/notifications', '/admin',
   '/groups', '/groups/new', '/groups/1', '/groups/1/manage',
   '/pages', '/pages/new', '/pages/1', '/pages/1/edit', '/settings/language',
-  '/settings/sessions', '/drafts', '/saved/collections/1', '/settings/muted', '/settings/restricted', '/settings/close-friends', '/settings/interactions', '/settings/hidden-words', '/settings/two-factor', '/get-started', '/memories', '/activity', '/events', '/events/new'
+  '/settings/sessions', '/drafts', '/saved/collections/1', '/settings/muted', '/settings/restricted', '/settings/close-friends', '/settings/interactions', '/settings/hidden-words', '/settings/two-factor', '/get-started', '/memories', '/activity', '/events', '/events/new',
+  // Day 112: the screens of Days 91-111 not listed yet.
+  '/messages/archived', '/settings/hashtags', '/admin?section=reports', '/admin?section=search', '/admin?section=verification'
 ];
 const PUBLIC = ['/login', '/signup', '/forgot-password', '/reset-password/sometoken', '/terms', '/privacy', '/welcome'];
 const WIDTHS = [375, 390, 430];
@@ -58,6 +60,17 @@ let checks = 0;
     await fetch('http://localhost:3000/pages', { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Mingalar Tea House', category: 'business', description: 'Tea leaf salad' }) });
     const pf = new FormData(); pf.append('content', 'Grand opening'); pf.append('pageId', '1');
     await fetch('http://localhost:3000/posts', { method: 'POST', headers: auth, body: pf });
+  }
+  // Day 112: alice is an admin here (Admin's sections), follows a tag, has
+  // a birthday, asked to verify her page, and archived a group chat.
+  require('child_process').execSync(`${require('./pg.cjs').PSQL} -h localhost -p 55433 -U testuser -d mysocialapp_e2e -c "UPDATE users SET is_admin = true WHERE id = 1"`);
+  const json = { ...auth, 'Content-Type': 'application/json' };
+  await fetch('http://localhost:3000/hashtags/welcome/follow', { method: 'PUT', headers: auth });
+  await fetch('http://localhost:3000/profile/birthday', { method: 'PUT', headers: json, body: JSON.stringify({ month: 3, day: 5, audience: 'friends' }) });
+  await fetch('http://localhost:3000/pages/1/verification', { method: 'POST', headers: json, body: JSON.stringify({ note: 'The tea house on 19th Street', link: 'https://tea.example' }) });
+  if (!JSON.stringify(await (await fetch('http://localhost:3000/conversations?archived=1', { headers: auth })).json()).includes('Tea club')) {
+    const group = await (await fetch('http://localhost:3000/conversations/groups', { method: 'POST', headers: json, body: JSON.stringify({ name: 'Tea club', userIds: [2] }) })).json();
+    await fetch(`http://localhost:3000/conversations/${group.id}/archive`, { method: 'PUT', headers: json, body: JSON.stringify({ archived: true }) });
   }
   const browser = await chromium.launch({ channel: 'msedge', headless: true });
 
@@ -168,7 +181,8 @@ let checks = 0;
           if (errors.length) failures.push(`${tag}: console -> ${errors.slice(0, 2).join(' | ')}`);
 
           if (width === 390) {
-            const name = `${theme}${route.replace(/[/:]/g, '_') || '_root'}.png`;
+            // Day 112: ? and = (Admin's ?section=) aren't allowed in Windows file names.
+            const name = `${theme}${route.replace(/[/:?=&]/g, '_') || '_root'}.png`;
             await page.screenshot({ path: path.join(OUT, name), fullPage: false });
           }
         }

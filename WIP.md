@@ -1,7 +1,29 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 112 -- Accessibility + translations check.
-**Step:** 1 -- PLAN (not started).
+**Step:** 1 of 3 -- done (committed): day26-a11y + a3 cover the Day 91-111
+routes (Arabic in both themes), with their content seeded and checked;
+0 serious/critical, a3 168/168 x4. The Day 70 back-button note is resolved
+(at the start, mirrored). Next: step 2 (overlays, four combinations).
+
+### Plan (Day 112)
+Every Day 91-111 screen translated, RTL-correct, axe 0 serious/critical.
+Today: each Day 91-111 feature suite runs axe in EN/light + AR/dark only,
+scoped to the feature; day26-a11y misses /settings/hashtags,
+/messages/archived, Admin > Search and > Verification; its Arabic pass is 7
+pages, dark only.
+- **Step 1 -- routes.** day26-a11y: the missing routes (EN light + dark),
+  and a Day 91-111 set in Arabic, dark AND light; seed what they need
+  (a followed tag, an archived chat, a verification request, a birthday).
+  Fix what it finds.
+- **Step 2 -- overlays in all four combinations.** A day112-overlays suite:
+  comments open (sort, more replies, pinned), the share sheet, the post
+  menu, the story viewer with its reply box, chat search, post
+  notifications sheet -- axe in EN/light, EN/dark, AR/light, AR/dark.
+- **Step 3 -- the parked notes.** --color-accent-3 as text in dark
+  (PollView, PostCard, StoriesRow, ui.css); EmailVerificationBanner amber
+  2.9:1; the Arabic back button on the new-group screen (Day 70 note).
+  Fix, and make sure a suite sees each.
 
 ## Carry-over notes
 - Day 113: e2e/day27-perf.cjs counts users as small by name

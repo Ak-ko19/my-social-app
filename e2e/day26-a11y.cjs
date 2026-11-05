@@ -31,10 +31,20 @@ const AUTHED = [
   // Day 47: privacy controls.
   '/settings/muted', '/settings/restricted', '/settings/close-friends', '/settings/interactions', '/settings/hidden-words', '/settings/two-factor', '/get-started', '/memories', '/events', '/events/new',
   // Day 48: the activity log.
-  '/activity', '/activity?tab=comments', '/activity?tab=searches'
+  '/activity', '/activity?tab=comments', '/activity?tab=searches',
+  // Day 112: the screens of Days 91-111 not listed yet (archived chats,
+  // Admin > Search and > Verification, hashtags you follow).
+  '/messages/archived', '/admin?section=search', '/admin?section=verification', '/settings/hashtags'
 ];
 const PUBLIC = ['/welcome', '/login', '/signup', '/forgot-password', '/reset-password/sometoken', '/terms', '/privacy', '/help', '/about'];
 const LANG_PAGES = ['/', '/messages/1', '/profile/2', '/settings', '/login', '/welcome', '/drafts'];
+// Day 112: every screen Days 91-111 added or changed, in Arabic, in BOTH
+// themes (the feature suites check Arabic in dark only).
+const DAYS_91_111 = [
+  '/', '/posts/1', '/hashtag/welcome', '/notifications', '/messages', '/messages/archived', '/messages/1',
+  '/edit-profile', '/profile/1', '/settings/notifications', '/settings/hashtags', '/pages/1', '/pages/1/edit',
+  '/admin?section=reports', '/admin?section=search', '/admin?section=verification'
+];
 const SERIOUS = new Set(['serious', 'critical']);
 // Day 66 (AUDIT_REPORT_3 A3): A11Y_PART=light|dark|ar runs one part, so
 // run-all.sh can run the audit in three short parts: English light, English
@@ -76,6 +86,26 @@ function record(result, label) {
   if ((await fetch(`${API}/pages/1`, { headers: auth })).status === 404) {
     await fetch(`${API}/pages`, { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Mingalar Tea House', category: 'business', description: 'Tea leaf salad' }) });
   }
+  // Day 112: what the Day 91-111 screens show -- a followed tag, a birthday,
+  // a page waiting for verification, an archived group chat. (Repeats are
+  // harmless: each is idempotent or refused the second time.)
+  const json = { ...auth, 'Content-Type': 'application/json' };
+  await fetch(`${API}/hashtags/welcome/follow`, { method: 'PUT', headers: auth });
+  await fetch(`${API}/profile/birthday`, { method: 'PUT', headers: json, body: JSON.stringify({ month: 3, day: 5, audience: 'friends' }) });
+  await fetch(`${API}/pages/1/verification`, { method: 'POST', headers: json, body: JSON.stringify({ note: 'The tea house on 19th Street', link: 'https://tea.example' }) });
+  const chats = await (await fetch(`${API}/conversations?archived=1`, { headers: auth })).json();
+  if (!JSON.stringify(chats).includes('Tea club')) {
+    const group = await (await fetch(`${API}/conversations/groups`, { method: 'POST', headers: json, body: JSON.stringify({ name: 'Tea club', userIds: [2] }) })).json();
+    await fetch(`${API}/conversations/${group.id}/archive`, { method: 'PUT', headers: json, body: JSON.stringify({ archived: true }) });
+  }
+  // ...and it is really there (else those screens are audited empty).
+  const seeded = {
+    'a followed tag': (await (await fetch(`${API}/followed-hashtags`, { headers: auth })).json()).hashtags.length > 0,
+    'a birthday': (await (await fetch(`${API}/profile/me`, { headers: auth })).json()).birthday_month === 3,
+    'a verification request': (await (await fetch(`${API}/pages/1/verification`, { headers: auth })).json()).why_not === 'pending',
+    'an archived chat': JSON.stringify(await (await fetch(`${API}/conversations?archived=1`, { headers: auth })).json()).includes('Tea club')
+  };
+  const missing = Object.keys(seeded).filter((k) => !seeded[k]);
 
   const browser = await chromium.launch({ channel: 'msedge', headless: true });
   async function audit(routes, { authed, theme, lang }) {
@@ -109,6 +139,8 @@ function record(result, label) {
   if (PARTS.includes('ar')) {
     await audit(LANG_PAGES.filter((r) => !PUBLIC.includes(r)), { authed: true, theme: 'dark', lang: 'ar' });
     await audit(LANG_PAGES.filter((r) => PUBLIC.includes(r)), { authed: false, theme: 'light', lang: 'ar' });
+    // Day 112: the Day 91-111 screens, Arabic, both themes.
+    for (const theme of ['dark', 'light']) await audit(DAYS_91_111, { authed: true, theme, lang: 'ar' });
   }
   // Keyboard: Tab through a few screens; every stop must show a focus ring
   // (an outline or a box-shadow), and focus must never fall back to <body>.
@@ -151,6 +183,7 @@ function record(result, label) {
     console.log(`${bad.length ? 'FAIL' : 'PASS'}  keyboard ${route}: ${stops} Tab stops${bad.length ? ', no visible focus on: ' + bad.join('; ') : ', all with a visible focus ring'}`);
   }
   const keyboardFailed = keyboard.some(([, , bad]) => bad.length);
+  console.log(`${missing.length ? 'FAIL' : 'PASS'}  the Day 91-111 screens have their content${missing.length ? ' -- missing: ' + missing.join(', ') : ''}`);
 
   const rules = [...byRule.entries()].sort((a, b) => (SERIOUS.has(b[1].impact) - SERIOUS.has(a[1].impact)) || b[1].pages.size - a[1].pages.size);
   for (const [id, r] of rules) {
@@ -163,5 +196,5 @@ function record(result, label) {
   if (process.env.AXE_DETAIL) for (const [k, route] of contrast) console.log(`  contrast: ${k}  [${route}]`);
   if (!rules.some(([, r]) => SERIOUS.has(r.impact))) console.log('PASS  no serious or critical accessibility violations');
   console.log(`\n${pagesChecked} page checks`);
-  process.exit(keyboardFailed || rules.some(([, r]) => SERIOUS.has(r.impact)) ? 1 : 0);
+  process.exit(keyboardFailed || missing.length || rules.some(([, r]) => SERIOUS.has(r.impact)) ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(2); });
