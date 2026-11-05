@@ -89,7 +89,8 @@ async function findsPerson(page, name) {
   await uma.goto(`${WEB}/edit-profile`, { waitUntil: 'networkidle' });
   await uma.getByLabel('Bio').fill('مرحبا، أنا أحب القراءة والسفر');
   await uma.getByRole('button', { name: 'Save Changes' }).click();
-  await uma.getByRole('status').waitFor({ timeout: 10000 });
+  // The status that says something (Day 111: the Birthday section keeps an empty one).
+  await uma.getByRole('status').filter({ hasText: /\S/ }).waitFor({ timeout: 10000 });
   await openProfile(uma, 'uma');
   const bio = uma.locator('.profile-screen-bio');
   check('J13 her Arabic bio is on her profile, right to left in the English app',

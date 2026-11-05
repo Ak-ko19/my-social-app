@@ -3401,3 +3401,49 @@ Read-only; no application code changed. Same method as audit 3, on
     net::ERR_NETWORK_CHANGED (the machine's connection changing); both
     re-ran green (153/153 each). After the dependency fixes: journeys-core,
     day10-errors, day19-links green.
+
+### 2026-11-05 — Day 111: Birthdays
+- **On the profile (`f2f4c95`):** Edit profile > Birthday: a month and a
+  day -- never a year -- and who sees it: Only me, Friends (people who
+  follow each other; the default) or Everyone. The profile says "Birthday:
+  March 5" (localised) to whoever may see it, never across a block. Feb 29
+  works; a day the month doesn't have is let go when the month changes.
+  - Migration 090 (birthday_month/_day, both or neither; birthday_audience;
+    idx_users_birthday). PUT /profile/birthday; /profile/me and
+    GET /profile/:id carry it. Data export and Privacy Policy (EN/AR,
+    2026-11-05) updated.
+- **On the day (`c955e56`):** "Today is Ann's birthday. Wish them a happy
+  birthday!" to Ann's friends from 08:00 in each FRIEND's own time zone,
+  once -- only when Ann shows it to friends or everyone; 29 February on the
+  28th in other years; never across a block, from someone the friend
+  restricted, or for gone accounts. It opens Ann's profile. Notification
+  settings: Birthdays (migration 091). Built like Day 84's memories job
+  (ticker + daily cleanup, advisory lock).
+- **Better than the plan (rule 9):** no year is collected at all -- nothing
+  here needs an age, so the safest data is none (Facebook only hides it).
+- **Found on the way:**
+  - Every "Saved" message (.form-success) used the green meant for icons:
+    3.3:1 as text on white. Now --color-success (AA in both themes).
+  - A mutation survived: removing "follows back" from the friendship check.
+    The test covered someone following Ann, not someone Ann follows who
+    doesn't follow back -- the direction that change lets through. Covered.
+  - day36-profile and journeys-safety waited for "the" status on Edit
+    profile; the Birthday section keeps an empty live region (right for
+    screen readers), so they now look for the one that says something.
+  - day27-perf failed 9 endpoints with "full scan of users". Not a new
+    plan: the suite counts only tables of 500+ pages, and users (30k rows)
+    grew from 492 to 518 pages with the new columns, so its usual, correct
+    hash joins started counting. Found with auto_explain and by rewriting
+    the table. users is now counted as small by name (raising the line to
+    1024 would also stop checking post_hashtags and notifications), until
+    Day 113 grows the seed.
+  - A background Jest run started in the wrong folder ("No tests found");
+    run with --rootDir.
+- **Tests:** birthday 3 + birthdayNotifications 5 (12 mutations caught);
+  Vitest +5 (464); e2e day111-birthdays 32/32 EN/light + AR/dark with axe.
+- **Tests at close:**
+  - Backend 1180/1180, Vitest 464/464, lint (exit 0), check:i18n (1805
+    keys), bundle 222.0 kB, npm audit 0/0, rehearsal 015 → 091 (columns
+    354, constraints 211, indexes 161), perf 54/54.
+  - Full browser run in batches of 3: 99/101 first time; journeys-safety and
+    day27-perf (above) fixed and green.

@@ -1,35 +1,14 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 111 -- Birthdays.
-**Step:** 2 of 2 -- done (committed). Both steps done. Next: close Day 111 -- full
-browser run in batches of 3, then the Progress Log entry.
-
-### Plan (Day 111)
-Facebook-style birthdays, privacy first: only the month and the day are
-kept -- never the year (no feature here needs an age; Facebook lets you
-hide the year, we don't collect it).
-- **Step 1 -- the birthday on the profile.**
-  - Migration 090: users.birthday_month / birthday_day (smallint, both or
-    neither, 1-12 / 1-31), birthday_audience only_me | friends (default) |
-    public; idx_users_birthday (month, day) WHERE set (step 2's job).
-  - PUT /profile/birthday { month, day, audience } (month/day null clears;
-    the day must exist in that month, Feb 29 allowed). /profile/me has
-    them; GET /profile/:id has birthday { month, day } only when the viewer
-    may see it (you; public; friends = mutual follows, Day 37).
-  - UI: Edit profile > Birthday (month + day selects, who sees it, Remove);
-    the profile says "Birthday: March 5" (localised). EN/AR, RTL.
-  - Also: data export, Privacy Policy, openapi, Zawgyi n/a.
-- **Step 2 -- the day itself.**
-  - services/birthdayNotificationService (like memories, Day 84): from
-    08:00 in each FRIEND's own time zone on the birthday (Feb 29 -> Feb 28
-    in other years), "Today is X's birthday" to X's friends -- only when
-    X's audience is friends or public; no block, not restricted, not
-    deactivated/banned; once a year. Ticker job + cleanup backstop.
-  - notification_preferences.birthdays (migration 091) + the setting;
-    push text EN/AR; the notification opens X's profile.
-  - Tests: the job across zones, Feb 29, audiences, blocks, repeats; e2e.
+**Day:** 112 -- Accessibility + translations check.
+**Step:** 1 -- PLAN (not started).
 
 ## Carry-over notes
+- Day 113: e2e/day27-perf.cjs counts users as small by name
+  (SMALL_ON_PURPOSE) -- grow the seed so users is big for real, then drop it.
+- Edit profile has two role=status regions (the form and Birthday): browser
+  checks look for the one with text.
+- A background Jest run can start in the wrong folder: pass --rootDir.
 - Days 109-110: comments come by thread (sort, replies on demand, a pinned
   one first). A new posts column used by the comment list goes in
   getVisiblePost's summary object too. Most relevant ranks every thread of
