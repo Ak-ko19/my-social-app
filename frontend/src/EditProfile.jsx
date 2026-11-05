@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { serverErrorText } from './utils/serverError';
 import { MAX_BIO_LENGTH } from './utils/textLimits';
 import CoverPhoto from './components/profile/CoverPhoto';
+import BirthdaySection from './components/profile/BirthdaySection';
 import { removeCoverPhoto, setCoverPhoto } from './services/profileService';
 import { compressImage } from './utils/compressImage';
 
@@ -24,6 +25,8 @@ function EditProfile() {
   const [coverUrl, setCoverUrl] = useState(null);
   const [coverBusy, setCoverBusy] = useState(false);
   const [coverError, setCoverError] = useState('');
+  // Day 111: { month, day, audience } as saved (null until loaded).
+  const [birthday, setBirthday] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -56,6 +59,7 @@ function EditProfile() {
       setLinks(response.data.links?.length ? response.data.links : ['']);
       setCoverUrl(response.data.cover_url || null);
       setAvatarUrl(response.data.avatar_url || null);
+      setBirthday({ month: response.data.birthday_month, day: response.data.birthday_day, audience: response.data.birthday_audience });
       // Changing the email resets verification server-side -- sync it so
       // the verify-email banner reappears without a reload.
       setEmailVerified(Boolean(response.data.email_verified));
@@ -232,6 +236,8 @@ function EditProfile() {
         {success && <p className="form-success" role="status">{success}</p>}
         <button type="submit" className="btn btn-primary btn-block">{t('common.saveChanges')}</button>
       </form>
+      {/* Day 111: saved on its own, like the cover photo. */}
+      {birthday && <BirthdaySection initial={birthday} token={token} />}
     </div>
   );
 }

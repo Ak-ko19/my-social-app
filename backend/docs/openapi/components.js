@@ -121,7 +121,8 @@ const schemas = {
     is_blocked_by_me: s.bool(),
     is_muted_by_me: s.bool(),
     is_restricted_by_me: s.bool(),
-    can_message: s.bool('Their message setting lets you start a chat (false when logged out or for yourself)')
+    can_message: s.bool('Their message setting lets you start a chat (false when logged out or for yourself)'),
+    birthday: s.nullable({ ...s.object({ month: s.int('1-12'), day: s.int('1-31') }, { extra: false }), description: 'Day 111: month and day (never a year); null unless they show it to you (public, or friends and you are one)' })
   }, { description: "Someone's public profile, with the viewer's relationship to them. Never includes the email." }),
   MyProfile: s.object({
     id: s.id(),
@@ -139,6 +140,8 @@ const schemas = {
     comment_permission: s.enum(['everyone', 'followers', 'following'], 'Who may comment on your posts'),
     onboarded_at: s.nullable(s.time('When the first-run steps were finished or skipped (null: not yet)')),
     profile_card_dismissed_at: s.nullable(s.time('Day 105: when the Finish-your-profile card was hidden for good (null: not hidden)')),
+    birthday_month: s.nullable(s.int('Day 111: 1-12')), birthday_day: s.nullable(s.int('Day 111: 1-31')),
+    birthday_audience: s.enum(['only_me', 'friends', 'public'], 'Day 111: who sees your birthday'),
     created_at: s.time()
   }, { description: 'Your own account, as only you see it' }),
   UpdatedProfile: s.object({

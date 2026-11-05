@@ -45,8 +45,11 @@ const thisMonth = new Date().toLocaleDateString('en-US', { year: 'numeric', mont
   await alice.getByRole('button', { name: 'Add a link' }).click();
   await alice.getByRole('textbox', { name: 'Link 2' }).fill('https://shop.example.org/menu');
   await alice.getByRole('button', { name: 'Save Changes' }).click();
-  await alice.getByRole('status').waitFor({ timeout: 8000 }).catch(() => {});
-  check('saving two links succeeds', (await alice.getByRole('status').count()) === 1);
+  // Day 111: the Birthday section keeps an empty status of its own; count
+  // the ones that say something.
+  const saidSaved = alice.getByRole('status').filter({ hasText: /\S/ });
+  await saidSaved.first().waitFor({ timeout: 8000 }).catch(() => {});
+  check('saving two links succeeds', (await saidSaved.count()) === 1);
   check('up to 3: after a third, "Add a link" goes away', await (async () => {
     await alice.getByRole('button', { name: 'Add a link' }).click();
     return (await alice.getByRole('button', { name: 'Add a link' }).count()) === 0;

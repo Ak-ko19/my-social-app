@@ -99,7 +99,9 @@ const INTL_OPTIONS = {
   long: { dateStyle: 'long' },
   monthYear: { year: 'numeric', month: 'long' },
   time: { hour: '2-digit', minute: '2-digit' },
-  dayMonth: { day: 'numeric', month: 'long', timeZone: 'UTC' }
+  dayMonth: { day: 'numeric', month: 'long', timeZone: 'UTC' },
+  // Day 111: a month's name (a birthday's month picker).
+  month: { month: 'long', timeZone: 'UTC' }
 };
 
 export function formatDate(value, style = 'datetime') {
@@ -112,6 +114,7 @@ export function formatDate(value, style = 'datetime') {
   if (style === 'date') return d.toLocaleDateString(locale);
   if (style === 'long') return d.toLocaleDateString(locale, INTL_OPTIONS.long);
   if (style === 'monthYear') return d.toLocaleDateString(locale, INTL_OPTIONS.monthYear);
+  if (style === 'month') return d.toLocaleDateString(locale, INTL_OPTIONS.month);
   if (style === 'dayMonth') return d.toLocaleDateString(locale, INTL_OPTIONS.dayMonth);
   if (style === 'time') return d.toLocaleTimeString(locale || [], INTL_OPTIONS.time);
   return d.toLocaleString(locale);

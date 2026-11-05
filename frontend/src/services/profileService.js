@@ -77,3 +77,9 @@ export function fetchConnections(userId, type, token, { page = 1, limit = 30 } =
 export function fetchMutualFriends(userId, token) {
   return api.get(`/users/${userId}/mutual-friends`, token ? authHeaders(token) : undefined).then((res) => res.data);
 }
+
+// Day 111: your birthday -- { month, day, audience }; month and day null
+// remove it. -> { birthday: { month, day } | null, birthday_audience }.
+export function saveBirthday(body, token) {
+  return api.put('/profile/birthday', body, authHeaders(token)).then((res) => res.data);
+}

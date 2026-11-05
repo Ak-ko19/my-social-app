@@ -350,7 +350,10 @@ const AR = {
   "Only the post's author can pin a comment.": 'وحده صاحب المنشور يمكنه تثبيت تعليق.',
   'That comment is not on this post.': 'هذا التعليق ليس على هذا المنشور.',
   'Only a comment, not a reply, can be pinned.': 'يمكن تثبيت تعليق فقط، لا رد.',
-  'Approve the comment before pinning it.': 'وافق على التعليق قبل تثبيته.'
+  'Approve the comment before pinning it.': 'وافق على التعليق قبل تثبيته.',
+  // Day 111: birthdays
+  'Choose a month.': 'اختر شهرًا.',
+  'Choose a day that is in that month.': 'اختر يومًا موجودًا في ذلك الشهر.'
 };
 
 export default { exact: AR, failed: 'فشلت العملية. يرجى المحاولة لاحقًا.' };

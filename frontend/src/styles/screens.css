@@ -122,7 +122,9 @@ textarea.form-input {
 .form-success {
   margin: 0;
   font-size: 13px;
-  color: var(--badge-green-fg);
+  /* Day 111: the text-safe green (4.5:1+ in both themes); --badge-green-fg
+     is for icons and fills (3.3:1 as text on white). */
+  color: var(--color-success);
 }
 
 /* Day 11 optional Turnstile widget: 300px wide from Cloudflare; the box
@@ -904,4 +906,26 @@ textarea.form-input {
 /* Day 42: room between the search tabs and the first result. */
 .search-panel {
   padding-top: var(--space-3);
+}
+
+/* Day 111: Edit profile > Birthday. */
+.edit-profile-birthday {
+  padding: 0 var(--space-4) var(--space-6);
+  text-align: start;
+}
+
+.edit-profile-birthday-row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.edit-profile-birthday-row .form-field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.edit-profile-birthday-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }

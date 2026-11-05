@@ -19,7 +19,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function getMyProfile(req, res) {
   try {
-    const result = await db.query('SELECT id, username, email, bio, links, avatar_url, cover_url, is_private, email_verified, is_admin, language, message_permission, comment_permission, onboarded_at, profile_card_dismissed_at, created_at FROM users WHERE id = $1', [req.userId]);
+    const result = await db.query('SELECT id, username, email, bio, links, avatar_url, cover_url, is_private, email_verified, is_admin, language, message_permission, comment_permission, onboarded_at, profile_card_dismissed_at, birthday_month, birthday_day, birthday_audience, created_at FROM users WHERE id = $1', [req.userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).send('User not found');
@@ -69,7 +69,15 @@ async function getProfile(req, res) {
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = users.id) AS is_blocked_by_me,
         -- Day 47: only ever about the viewer's own choice.
         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM user_mutes WHERE muter_id = $1 AND muted_id = users.id) AS is_muted_by_me,
-        $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM user_restrictions WHERE restricter_id = $1 AND restricted_id = users.id) AS is_restricted_by_me
+        $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM user_restrictions WHERE restricter_id = $1 AND restricted_id = users.id) AS is_restricted_by_me,
+        -- Day 111: the birthday (month and day), when the viewer may see it:
+        -- the owner, anyone when public, friends (following each other).
+        CASE WHEN birthday_month IS NOT NULL AND (
+          users.id = $1 OR birthday_audience = 'public'
+          OR (birthday_audience = 'friends' AND $1::int IS NOT NULL
+              AND EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = users.id AND status = 'accepted')
+              AND EXISTS(SELECT 1 FROM follows WHERE follower_id = users.id AND following_id = $1 AND status = 'accepted'))
+        ) THEN json_build_object('month', birthday_month, 'day', birthday_day) END AS birthday
       FROM users WHERE ${isUsername ? 'LOWER(username) = LOWER($2)' : 'id = $2::int'}
     `, [viewerId, id]);
 
@@ -341,4 +349,38 @@ async function updateTimeZone(req, res) {
   }
 }
 
-module.exports = { getMyProfile, getProfile, updateProfile, updatePrivacy, updateLanguage, updateTimeZone, exportMyData, setCover, removeCover, setAvatar, finishOnboarding, dismissProfileCard, pinPost, unpinPost, updateInteractions };
+// Day 111: PUT /profile/birthday { month, day, audience } -> { birthday:
+// { month, day } | null, birthday_audience }. Month and day only (no year);
+// month and day null clear it; audience only_me | friends | public (kept
+// as it was when left out). Feb 29 is a birthday too.
+const BIRTHDAY_AUDIENCES = ['only_me', 'friends', 'public'];
+const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+async function updateBirthday(req, res) {
+  try {
+    const { month = null, day = null, audience } = req.body || {};
+    const clearing = month === null && day === null;
+    if (!clearing) {
+      if (!Number.isInteger(month) || month < 1 || month > 12) return res.status(400).send('Choose a month.');
+      if (!Number.isInteger(day) || day < 1 || day > DAYS_IN_MONTH[month - 1]) return res.status(400).send('Choose a day that is in that month.');
+    }
+    if (audience !== undefined && !BIRTHDAY_AUDIENCES.includes(audience)) {
+      return res.status(400).send('audience must be only_me, friends or public');
+    }
+    const result = await db.query(
+      `UPDATE users SET birthday_month = $2, birthday_day = $3, birthday_audience = COALESCE($4, birthday_audience)
+       WHERE id = $1 RETURNING birthday_month, birthday_day, birthday_audience`,
+      [req.userId, month, day, audience ?? null]
+    );
+    if (result.rows.length === 0) return res.status(404).send('User not found');
+    const row = result.rows[0];
+    res.json({
+      birthday: row.birthday_month ? { month: row.birthday_month, day: row.birthday_day } : null,
+      birthday_audience: row.birthday_audience
+    });
+  } catch (err) {
+    sendError(res, err, 'Saving your birthday failed. Please try again later.');
+  }
+}
+
+module.exports = { getMyProfile, updateBirthday, getProfile, updateProfile, updatePrivacy, updateLanguage, updateTimeZone, exportMyData, setCover, removeCover, setAvatar, finishOnboarding, dismissProfileCard, pinPost, unpinPost, updateInteractions };

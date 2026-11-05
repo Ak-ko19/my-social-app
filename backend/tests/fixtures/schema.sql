@@ -842,3 +842,13 @@ DROP INDEX idx_comments_parent_comment_id;
 -- Days 109-110 (migration 089): a post's pinned comment.
 ALTER TABLE posts ADD COLUMN pinned_comment_id integer REFERENCES comments(id) ON DELETE SET NULL;
 CREATE INDEX idx_posts_pinned_comment ON posts (pinned_comment_id) WHERE pinned_comment_id IS NOT NULL;
+
+-- Day 111 (migration 090): a birthday (month and day only) and who sees it.
+ALTER TABLE users ADD COLUMN birthday_month smallint
+  CONSTRAINT chk_users_birthday_month CHECK (birthday_month BETWEEN 1 AND 12);
+ALTER TABLE users ADD COLUMN birthday_day smallint
+  CONSTRAINT chk_users_birthday_day CHECK (birthday_day BETWEEN 1 AND 31);
+ALTER TABLE users ADD COLUMN birthday_audience varchar(10) NOT NULL DEFAULT 'friends'
+  CONSTRAINT chk_users_birthday_audience CHECK (birthday_audience IN ('only_me', 'friends', 'public'));
+ALTER TABLE users ADD CONSTRAINT chk_users_birthday_both CHECK ((birthday_month IS NULL) = (birthday_day IS NULL));
+CREATE INDEX idx_users_birthday ON users (birthday_month, birthday_day) WHERE birthday_month IS NOT NULL;

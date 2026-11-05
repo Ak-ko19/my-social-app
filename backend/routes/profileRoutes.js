@@ -29,6 +29,8 @@ router.put('/profile/privacy', authMiddleware, profileController.updatePrivacy);
 router.put('/profile/language', authMiddleware, profileController.updateLanguage);
 // Day 84: the app's time zone (memories in your own morning).
 router.put('/profile/time-zone', authMiddleware, profileController.updateTimeZone);
+// Day 111: your birthday (month and day) and who sees it.
+router.put('/profile/birthday', authMiddleware, profileController.updateBirthday);
 // Day 47: who can message you / comment on your posts.
 router.put('/profile/interactions', authMiddleware, profileController.updateInteractions);
 

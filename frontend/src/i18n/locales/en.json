@@ -500,6 +500,7 @@
     "sections": "Profile sections",
     "links": "Links",
     "joined": "Joined {{date}}",
+    "birthday": "Birthday: {{date}}",
     "pinned": "Pinned",
     "pinFailed": "Couldn't change the pinned post. Please try again.",
     "friendsCount_one": "<b>{{count}}</b> friend",
@@ -744,6 +745,25 @@
     "unfollowing": "Unfollowing…",
     "unfollowTag": "Unfollow #{{tag}}",
     "unfollowFailed": "Couldn't unfollow. Please try again."
+  },
+  "birthday": {
+    "title": "Birthday",
+    "explain": "Only the month and the day -- never the year. Friends (people who follow each other) are told on the day.",
+    "month": "Month",
+    "day": "Day",
+    "choose": "Choose…",
+    "audience": "Who can see it",
+    "audiences": {
+      "only_me": "Only me",
+      "friends": "Friends",
+      "public": "Everyone"
+    },
+    "save": "Save birthday",
+    "remove": "Remove",
+    "saved": "Birthday saved.",
+    "removed": "Birthday removed.",
+    "failed": "Couldn't save your birthday. Please try again.",
+    "pickBoth": "Choose a month and a day."
   },
   "postDetail": {
     "title": "Post",
@@ -1681,7 +1701,7 @@
       "sections": [
         {
           "heading": "1. What we collect",
-          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted or restricted, your close friends list, the words you chose to hide, events you host and your answers to events, the size and time of the files you upload (kept 30 days, for the daily upload limit), muted conversations, people you hid from suggestions, the hashtags you follow, your recent searches (the last 20, which you can remove) and reports, and the verification requests you send for a page (your note and link, and what was decided). We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active. If we remove something you shared after a report, the notification that tells you keeps its first 100 characters and the reason, for 90 days. We keep your device's time zone (for example Europe/London) so the memories reminder comes in your morning; you can turn that reminder off in Settings."
+          "body": "Your username, email address and a securely hashed password; the profile details you add (bio, profile picture, cover photo, links, private-account setting, language); and what you create or do: posts and who can see them, drafts and scheduled posts (only you can see them until they are posted), photos, stories, comments and replies, reactions, polls and your votes in polls, messages and voice messages, groups, pages, follows, saved posts and the collections you sort them into, blocks, people you muted or restricted, your close friends list, the words you chose to hide, events you host and your answers to events, the size and time of the files you upload (kept 30 days, for the daily upload limit), muted conversations, people you hid from suggestions, the hashtags you follow, your birthday if you add one (the month and day only, never the year), your recent searches (the last 20, which you can remove) and reports, and the verification requests you send for a page (your note and link, and what was decided). We also keep a list of the devices you are signed in on (the browser name and sign-in times) so you can sign them out, and when you were last active. If we remove something you shared after a report, the notification that tells you keeps its first 100 characters and the reason, for 90 days. We keep your device's time zone (for example Europe/London) so the memories reminder comes in your morning; you can turn that reminder off in Settings."
         },
         {
           "heading": "2. How we use it",
@@ -1689,7 +1709,7 @@
         },
         {
           "heading": "3. Who can see what",
-          "body": "Public posts, public profiles and pages can be seen by anyone. Anyone may share a post that everyone can see (a public post of a public account, a page's post or a public group's post) to their own audience; a share shows your post only while it is still open to everyone, so changing its audience or deleting it removes it from every share. Followers-only posts, private accounts and private groups are limited to the people allowed in, and \"Only me\" posts are visible only to you. Stories disappear after 24 hours. A reply or reaction to a story is a message to its author: the chat shows the story only while it is still up, and keeps the message after it is gone. Direct and group messages are visible only to the people in that conversation, who can also see when you are online or were last active. Blocking someone hides you from each other. Our moderators can see content that has been reported, so they can review it, and the verification requests sent for pages. When looking into abuse they can also search posts, comments and accounts, including private ones; every search is recorded with who searched, for what and when. Each moderation decision (for example removing a post or suspending an account) is recorded with which moderator made it, when, and the account, group or page it concerned — not the removed content itself. Poll votes are anonymous: everyone, including the poll's author, sees only how many votes each option has."
+          "body": "Public posts, public profiles and pages can be seen by anyone. Anyone may share a post that everyone can see (a public post of a public account, a page's post or a public group's post) to their own audience; a share shows your post only while it is still open to everyone, so changing its audience or deleting it removes it from every share. Followers-only posts, private accounts and private groups are limited to the people allowed in, and \"Only me\" posts are visible only to you. Stories disappear after 24 hours. A reply or reaction to a story is a message to its author: the chat shows the story only while it is still up, and keeps the message after it is gone. Direct and group messages are visible only to the people in that conversation, who can also see when you are online or were last active. Blocking someone hides you from each other. Your birthday is seen only by who you choose (only you, your friends or everyone), and your friends are told on the day unless you choose only you. Our moderators can see content that has been reported, so they can review it, and the verification requests sent for pages. When looking into abuse they can also search posts, comments and accounts, including private ones; every search is recorded with who searched, for what and when. Each moderation decision (for example removing a post or suspending an account) is recorded with which moderator made it, when, and the account, group or page it concerned — not the removed content itself. Poll votes are anonymous: everyone, including the poll's author, sees only how many votes each option has."
         },
         {
           "heading": "4. Links and sharing",

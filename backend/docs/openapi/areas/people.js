@@ -70,6 +70,20 @@ module.exports = {
     requestBody: body({ timeZone: s.str('An IANA time zone, e.g. Europe/London') }, { required: ['timeZone'] }),
     responses: { 200: json(s.object({ timeZone: s.str() }), 'Saved'), 400: text('Not a time zone name'), 404: text('User not found') }
   }),
+  'PUT /profile/birthday': op({
+    tag: 'Profiles', auth: 'user',
+    summary: 'Your birthday (month and day, never a year) and who sees it',
+    description: 'Day 111. month and day null clear it; audience is kept when left out. Friends (people who follow each other) are told on the day.',
+    requestBody: body({
+      month: s.nullable(s.int('1-12')), day: s.nullable(s.int('1-31, a day of that month (Feb 29 too)')),
+      audience: s.enum(['only_me', 'friends', 'public'])
+    }),
+    responses: {
+      200: json(s.object({ birthday: s.nullable(s.object({ month: s.int('1-12'), day: s.int('1-31') }, { extra: false })), birthday_audience: s.enum(['only_me', 'friends', 'public']) }), 'Saved'),
+      400: text('Choose a month. / Choose a day that is in that month. / audience must be only_me, friends or public'),
+      404: text('User not found')
+    }
+  }),
   'PUT /profile/avatar': op({
     tag: 'Profiles', auth: 'user', upload: true,
     summary: 'Set your profile photo (and nothing else)',

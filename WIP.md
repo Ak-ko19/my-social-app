@@ -1,7 +1,35 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 111 -- Birthdays.
-**Step:** 1 -- PLAN (not started).
+**Step:** 1 of 2 -- done (committed): migration 090, PUT /profile/birthday,
+the birthday on the profile by audience, Edit profile > Birthday (birthday 3,
+5 mutations; Vitest 462; e2e day111-birthdays 22/22). Found: .form-success
+used --badge-green-fg (3.3:1 as text) -> --color-success. Next: step 2.
+
+### Plan (Day 111)
+Facebook-style birthdays, privacy first: only the month and the day are
+kept -- never the year (no feature here needs an age; Facebook lets you
+hide the year, we don't collect it).
+- **Step 1 -- the birthday on the profile.**
+  - Migration 090: users.birthday_month / birthday_day (smallint, both or
+    neither, 1-12 / 1-31), birthday_audience only_me | friends (default) |
+    public; idx_users_birthday (month, day) WHERE set (step 2's job).
+  - PUT /profile/birthday { month, day, audience } (month/day null clears;
+    the day must exist in that month, Feb 29 allowed). /profile/me has
+    them; GET /profile/:id has birthday { month, day } only when the viewer
+    may see it (you; public; friends = mutual follows, Day 37).
+  - UI: Edit profile > Birthday (month + day selects, who sees it, Remove);
+    the profile says "Birthday: March 5" (localised). EN/AR, RTL.
+  - Also: data export, Privacy Policy, openapi, Zawgyi n/a.
+- **Step 2 -- the day itself.**
+  - services/birthdayNotificationService (like memories, Day 84): from
+    08:00 in each FRIEND's own time zone on the birthday (Feb 29 -> Feb 28
+    in other years), "Today is X's birthday" to X's friends -- only when
+    X's audience is friends or public; no block, not restricted, not
+    deactivated/banned; once a year. Ticker job + cleanup backstop.
+  - notification_preferences.birthdays (migration 091) + the setting;
+    push text EN/AR; the notification opens X's profile.
+  - Tests: the job across zones, Feb 29, audiences, blocks, repeats; e2e.
 
 ## Carry-over notes
 - Days 109-110: comments come by thread (sort, replies on demand, a pinned
