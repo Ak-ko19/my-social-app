@@ -193,7 +193,7 @@
 .two-factor-error {
   margin: 0;
   font-size: 12.5px;
-  color: var(--color-accent-3);
+  color: var(--color-danger-text); /* Day 112: accent-3 is 3.3:1 as text on dark */
 }
 
 .two-factor-success {

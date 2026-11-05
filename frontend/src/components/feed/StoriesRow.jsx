@@ -98,6 +98,9 @@ function StoriesRow({ tray = [], currentUser, uploading, error, onAddStory, onOp
                 initials={initialsOf(group.username)}
                 ring={ringFor(group)}
                 alt=""
+                // Day 112: as your own (Day 75) -- the label names them, so
+                // the initials aren't read as the button's text.
+                decorative
               />
             </button>
             <span className="stories-label">{group.username}</span>

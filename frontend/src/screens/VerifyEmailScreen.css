@@ -25,7 +25,7 @@
 }
 
 .verify-email-error {
-  color: var(--color-accent-3);
+  color: var(--color-danger-text); /* Day 112: accent-3 is 3.3:1 as text on dark */
   font-weight: 700;
   margin-bottom: var(--space-4);
 }

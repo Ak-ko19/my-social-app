@@ -1,10 +1,12 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 112 -- Accessibility + translations check.
-**Step:** 1 of 3 -- done (committed): day26-a11y + a3 cover the Day 91-111
-routes (Arabic in both themes), with their content seeded and checked;
-0 serious/critical, a3 168/168 x4. The Day 70 back-button note is resolved
-(at the start, mirrored). Next: step 2 (overlays, four combinations).
+**Step:** 2 of 3 -- done (committed): day112-overlays 52/52 (six overlays x four
+combinations). Found + fixed: the stories tray buttons read the initials as
+their text (label-content-name-mismatch, all four); --color-accent-3 as
+text (3.3:1 on dark) in 10 places incl. the post menu's danger item ->
+--color-danger-text; StoriesRow error margin now logical. Next: step 3
+(the amber email banner; anything left of the parked notes).
 
 ### Plan (Day 112)
 Every Day 91-111 screen translated, RTL-correct, axe 0 serious/critical.

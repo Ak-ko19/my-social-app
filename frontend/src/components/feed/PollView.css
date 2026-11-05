@@ -115,7 +115,7 @@
 .poll-error {
   margin: var(--space-2) 0 0;
   font-size: 13px;
-  color: var(--color-accent-3);
+  color: var(--color-danger-text); /* Day 112: accent-3 is 3.3:1 as text on dark */
 }
 
 .poll-footer {

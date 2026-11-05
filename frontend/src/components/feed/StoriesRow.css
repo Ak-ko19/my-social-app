@@ -87,8 +87,9 @@
 .stories-error {
   flex: 0 0 auto;
   align-self: center;
-  margin: 0 var(--space-4) 0 0;
+  margin: 0;
+  margin-inline-end: var(--space-4); /* Day 112: at the end in either direction */
   max-width: 180px;
   font-size: 12px;
-  color: var(--color-accent-3);
+  color: var(--color-danger-text); /* Day 112: accent-3 is 3.3:1 as text on dark */
 }
