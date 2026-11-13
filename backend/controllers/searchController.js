@@ -1,6 +1,6 @@
 const db = require('../db');
 const { noBlockBetweenSql } = require('../services/blockService');
-const { postAudienceSql } = require('../services/postVisibilityService');
+const { postAudienceSql, authorLookupSql } = require('../services/postVisibilityService');
 const { pageColumnSql } = require('../services/reactionService');
 const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
@@ -73,7 +73,7 @@ async function searchPosts(req, res) {
       WITH candidates AS (
         SELECT posts.id
         FROM posts
-        JOIN users ON posts.user_id = users.id
+        ${authorLookupSql()}
         -- B13: community posts live in their community feed only.
         WHERE posts.community_id IS NULL
           AND (to_tsvector('english', posts.content) @@ websearch_to_tsquery('english', $1)

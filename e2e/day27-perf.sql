@@ -1,5 +1,5 @@
--- Day 27: bulk data for the performance suite (day27-perf.cjs). About 1.4
--- million rows: 30,000 users, 200k posts over a year,
+-- Day 27: bulk data for the performance suite (day27-perf.cjs). About 1.6
+-- million rows: 150,000 users (30,000 active), 200k posts over a year,
 -- likes, comments, follows, notifications, conversations and messages,
 -- groups, pages, events and reports (Day 113) -- enough that a missing
 -- index shows up as a sequential scan. alice (id 1) gets a realistic share:
@@ -12,6 +12,13 @@ SELECT 'perf' || g, 'perf' || g || '@example.test', 'x', true FROM generate_seri
 
 CREATE TEMP TABLE r AS
 SELECT (SELECT min(id) FROM users WHERE username LIKE 'perf%') AS ulo;
+
+-- Day 113: most accounts on a real site are quiet -- they signed up and
+-- read. 120k of them (150k users in all) make users a big table for real
+-- (about 2,600 pages), so a join that reads every account is caught like
+-- any other full scan. They post, follow and like nothing.
+INSERT INTO users (username, email, password, email_verified)
+SELECT 'quiet' || g, 'quiet' || g || '@example.test', 'x', true FROM generate_series(1, 120000) g;
 
 INSERT INTO posts (user_id, content, created_at, visibility)
 SELECT r.ulo + (random() * 29999)::int, 'Perf post ' || g || ' #perf', now() - (150001 - g) * interval '210 seconds',

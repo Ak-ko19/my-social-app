@@ -1,7 +1,7 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 113 -- Performance round 3.
-**Step:** 3 of 5 -- done (committed). Next: step 4 PLAN.
+**Step:** 4 of 5 -- done (committed). Next: step 5 PLAN.
 
 ### Step 3 plan (Most relevant comments)
 - Migration 094: comments.like_count (comment_likes rows) and
@@ -98,8 +98,9 @@ ordered so every commit keeps the suite green:
 - Day 112: text in red uses --color-danger-text, never --color-accent-3
   (3.3:1 on dark; fine for icons and fills). New overlays go in
   e2e/day112-overlays (all four language x theme combinations).
-- Day 113: e2e/day27-perf.cjs counts users as small by name
-  (SMALL_ON_PURPOSE) -- grow the seed so users is big for real, then drop it.
+- Day 113: lists that read many posts and filter on their authors use
+  postVisibilityService.authorLookupSql() (author by id), never a plain JOIN
+  users -- that merge-walked users_pkey (grows with every account).
 - Edit profile has two role=status regions (the form and Birthday): browser
   checks look for the one with text.
 - A background Jest run can start in the wrong folder: pass --rootDir.

@@ -104,4 +104,14 @@ function communityVisibleSql(viewerParam) {
   ))`;
 }
 
-module.exports = { getVisiblePost, communityVisibleSql, postAudienceSql };
+// Day 113: each post's author, looked up by id, as the table alias users.
+// For lists that read many posts and then filter on their authors (the
+// week's posts for trending and Explore's ranking, search candidates). A
+// plain JOIN let Postgres pick a merge join that walks users_pkey up to the
+// highest author id -- a cost that grows with every account ever made, not
+// with the posts read (the perf suite at 150k accounts). OFFSET 0 keeps it
+// from being flattened back into that join.
+const authorLookupSql = (posts = 'posts') =>
+  `CROSS JOIN LATERAL (SELECT * FROM users au WHERE au.id = ${posts}.user_id OFFSET 0) users`;
+
+module.exports = { getVisiblePost, communityVisibleSql, postAudienceSql, authorLookupSql };

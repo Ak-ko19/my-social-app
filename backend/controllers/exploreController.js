@@ -1,5 +1,6 @@
 const db = require('../db');
 const { noBlockBetweenSql } = require('../services/blockService');
+const { authorLookupSql } = require('../services/postVisibilityService');
 const { notMutedSql } = require('../services/muteService');
 const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
@@ -28,7 +29,7 @@ async function queryTrending(viewerId) {
   const result = await db.query(
     `SELECT hashtags.tag, COUNT(DISTINCT posts.id)::int AS post_count, MAX(posts.created_at) AS last_used_at
      FROM posts
-     JOIN users ON users.id = posts.user_id
+     ${authorLookupSql()}
      -- Day 42: each recent post's tags, looked up by post. OFFSET 0 keeps
      -- Postgres from turning this into a plain join, which it plans as a
      -- read of ALL of post_hashtags whenever the table hasn't been vacuumed

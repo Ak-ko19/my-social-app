@@ -16,6 +16,7 @@
 // at a time (advisory lock); the others keep serving the list they have.
 const db = require('../db');
 const { popularityScoreSql } = require('./popularity');
+const { authorLookupSql } = require('./postVisibilityService');
 
 const DEFAULT_REFRESH_MS = 2 * 60 * 1000;
 // The ranking holds at most this many posts: Explore's pages end there.
@@ -42,7 +43,7 @@ const RANK_SQL = `
       (SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id) AS reactions,
       (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id AND NOT comments.awaiting_approval) AS comment_total
     FROM posts
-    JOIN users ON users.id = posts.user_id
+    ${authorLookupSql()}
     WHERE posts.created_at > now() - ${WINDOW}
       AND posts.community_id IS NULL
       AND posts.visibility = 'public'
