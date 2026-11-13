@@ -52,6 +52,9 @@ const screenText = (page) => page.evaluate(() => {
   return clone.innerText.replace(/\s+/g, ' ').trim();
 });
 const hasRetry = (page) => page.getByRole('button', { name: /try again|retry|إعادة المحاولة|حاول مرة أخرى/i }).count().then((n) => n > 0);
+// forceLogout clears the token: a page that lost it shows the login screen,
+// which would pass "says something" -- every check below needs it kept.
+const signedIn = (page) => page.evaluate(() => Boolean(localStorage.getItem('token'))).catch(() => false);
 const hasMessage = (page) => page.locator('[role=alert], [role=status]:not(.offline-banner)').filter({ hasText: /\S/ }).count().then((n) => n > 0);
 
 async function runLanguage(browser, LANG) {
@@ -74,7 +77,7 @@ async function runLanguage(browser, LANG) {
       await page.waitForTimeout(600);
       const text = await screenText(page);
       report.push(`${LANG} EMPTY   ${route.padEnd(40)} ${text.slice(0, 110)}`);
-      check(`${route}: says something when there's nothing to show`, text.length >= 10, text.slice(0, 80));
+      check(`${route}: says something when there's nothing to show`, text.length >= 10 && await signedIn(page), text.slice(0, 80));
       await page.close();
     }
     // 2. Error: every API read fails.
@@ -86,7 +89,7 @@ async function runLanguage(browser, LANG) {
       await page.waitForTimeout(600);
       const [message, retry, text] = [await hasMessage(page), await hasRetry(page), await screenText(page)];
       report.push(`${LANG} ERROR   ${route.padEnd(40)} message=${message} retry=${retry} | ${text.slice(0, 80)}`);
-      check(`${route}: a failed load says so and offers to try again`, message && retry, text.slice(0, 80));
+      check(`${route}: a failed load says so and offers to try again`, message && retry && await signedIn(page), text.slice(0, 80));
       await page.close();
     }
     // 3. Offline, in the app: "cold" -- the screen's code was never
@@ -111,7 +114,7 @@ async function runLanguage(browser, LANG) {
       const [message, text] = [await hasMessage(page), await screenText(page)];
       report.push(`${LANG} ${mode.padEnd(15)} ${route.padEnd(40)} banner=${banner} message=${message} crashed=${crashed} | ${text.slice(0, 70)}`);
       check(`${route}: ${mode} shows the banner and a message or saved content, never the crash screen`,
-        banner && !crashed && (message || text.length >= 10), text.slice(0, 80));
+        banner && !crashed && (message || text.length >= 10) && await signedIn(page), text.slice(0, 80));
       await context.setOffline(false);
       await page.close();
     }

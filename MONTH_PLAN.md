@@ -3447,3 +3447,51 @@ Read-only; no application code changed. Same method as audit 3, on
     354, constraints 211, indexes 161), perf 54/54.
   - Full browser run in batches of 3: 99/101 first time; journeys-safety and
     day27-perf (above) fixed and green.
+
+### 2026-11-13/14 — Day 112: Accessibility + translations check
+- **Every Day 91-111 screen audited (`56d77c7`):** day26-a11y now also
+  opens archived chats, Admin > Search and > Verification and Hashtags you
+  follow, and every Day 91-111 screen in Arabic in BOTH themes (66 + 66 +
+  39 page checks), seeding what each shows (a followed tag, a birthday, a
+  page waiting for verification, an archived group chat) and failing if it
+  is missing, so nothing is audited empty. The a3 visual matrix covers the
+  same routes (168 checks per part). 0 serious/critical.
+- **Overlays in all four language x theme combinations (`b877dcf`):** a new
+  suite, day112-overlays: comments (pinned, more replies), the share sheet,
+  the post menu, the story viewer with its reply box, chat search, a
+  group's notification choice. Two real problems found and fixed:
+  - the stories tray read each avatar's initials inside "View Ola's story"
+    (label-content-name-mismatch): avatars there are decorative now;
+  - --color-accent-3 as text is 3.3:1 on dark: the post menu's Block/Delete
+    and the error texts of a dozen screens now use --color-danger-text.
+- **Parked notes closed (`6eddfed`):** the email-verification banner is now
+  audited (the test stack can't send email, so no suite had shown it) --
+  clean, the 2.9:1 note was stale; the Arabic back button is fine.
+- **Found by the close run -- a real bug, fixed:** the socket's sign-in
+  check put the database lookup and the token check in one try/catch, so
+  when the database was briefly unreachable a socket (re)connect was
+  refused as a dead token (AUTH_FAILED) and the app SIGNED THE PERSON OUT.
+  On Neon (connections drop, the free compute sleeps) every user whose
+  socket reconnected at that moment would have been logged out. Now only a
+  bad/expired token or a refused session is AUTH_FAILED; a database error
+  is a plain error (logged), the app keeps retrying, and the person stays
+  signed in -- as the REST middleware already did (500, not 401).
+  docs/REALTIME.md says how a client tells the two apart. Test in
+  sessions.test (real socket server; the old code fails it).
+  - How it showed: the test Postgres crashed mid-run (a server process
+    died with 0xC0000142 -- this 8 GB machine was low on memory), and
+    day80-states then ran 36 checks on the login screen. 31 of them PASSED,
+    because "says something" and "offline shows a message" are true of the
+    login screen too. Every per-route check in day80-states now also needs
+    the account to be still signed in.
+  - Seen once and not reproduced: in an earlier day80-states-ar run under
+    the same strain (Postgres wrote one checkpoint for 93 s), Home's
+    failed-load check saw the empty feed instead of the error, and the last
+    "loads by itself when back online" timed out. Both passed on the clean
+    re-run and in every earlier full run; watch for it.
+- **Tests at close:**
+  - Backend 1181/1181, Vitest 464/464, frontend lint (exit 0), check:i18n
+    (1805 keys), bundle 222.0 kB, npm audit 0/0/0. No migration today.
+  - Full browser run in batches of 3 (41 batches): all green; day80-states
+    en and ar re-run alone after the database crash (158/158 each, with the
+    new signed-in guard); a3 all four parts 168/168.

@@ -294,5 +294,23 @@ describe('sessions', () => {
       expect(err.data).toEqual({ code: 'AUTH_FAILED' });
       a.close();
     });
+
+    it('a database error while connecting is not a dead token: the app retries, nobody is signed out', async () => {
+      const db = require('../../db');
+      const user = await registerAndLogin(app);
+      // The connection drops just as the socket's sign-in check runs.
+      const spy = jest.spyOn(db, 'query').mockRejectedValueOnce(Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }));
+      const err = await open(user.token).catch((e) => e);
+      spy.mockRestore();
+      expect(err).toBeInstanceOf(Error);
+      expect(err.data).toBeUndefined(); // no AUTH_FAILED: the app keeps the session
+      // Once the database answers again, the same token connects.
+      const socket = await open(user.token);
+      expect(socket.connected).toBe(true);
+      socket.close();
+      // A token that really is bad is still turned away for good.
+      const bad = await open('not-a-token').catch((e) => e);
+      expect(bad.data).toEqual({ code: 'AUTH_FAILED' });
+    });
   });
 });

@@ -18,7 +18,10 @@ const socket = io(API_URL, { auth: { token } }); // the token from POST /login
 
 - The token is checked like a REST request's: a missing, invalid or expired
   token, a signed-out session, or a banned or suspended account refuses the
-  connection (`connect_error`).
+  connection (`connect_error` with `err.data.code === 'AUTH_FAILED'`): stop
+  retrying and sign out. A `connect_error` WITHOUT that code (the server
+  couldn't check the token, e.g. its database was briefly unreachable) says
+  nothing about the token: keep the session and let the client reconnect.
 - On connect, the socket joins a room for each of your chats, and a personal
   room. A chat created, or a group you are added to, later joins the room at
   once (no reconnect needed). Removed from a group, you leave its room.

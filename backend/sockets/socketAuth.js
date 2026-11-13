@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
 const { authorize } = require('../services/sessionService');
+const logger = require('../utils/logger');
 
 // Socket.io handshake middleware -- mirrors middleware/authMiddleware.js, but
 // reads the token from handshake.auth (set by the client as
@@ -25,31 +26,42 @@ async function socketAuthMiddleware(socket, next) {
     return next(authFailure('No token provided'));
   }
 
+  let decoded;
   try {
     // jwt.verify enforces the token's exp claim by default (every token
     // this app issues has one -- see authController's jwt.sign), throwing
-    // TokenExpiredError for an expired one, which lands in this same catch.
-    const decoded = jwt.verify(token, JWT_SECRET);
-    // B12 ban / Day 8 revoked session: same code as a dead token, so the
-    // client stops retrying and logs out instead of reconnecting forever.
-    const verdict = await authorize(decoded);
-    if (verdict === 'banned') {
-      return next(authFailure('This account has been banned'));
-    }
-    if (verdict === 'suspended') {
-      return next(authFailure('This account is suspended'));
-    }
-    if (verdict !== 'ok') {
-      return next(authFailure('Invalid or expired token'));
-    }
-    socket.userId = decoded.userId;
-    // socket.data survives fetchSockets(), so "sign out other devices" can
-    // tell this device's socket apart from the others.
-    socket.data.sessionId = decoded.sid || null;
-    next();
-  } catch (err) {
-    next(authFailure('Invalid or expired token'));
+    // TokenExpiredError for an expired one, which lands in this catch.
+    decoded = jwt.verify(token, JWT_SECRET);
+  } catch {
+    return next(authFailure('Invalid or expired token'));
   }
+  let verdict;
+  try {
+    verdict = await authorize(decoded);
+  } catch (err) {
+    // The database couldn't answer (a dropped connection, a restart): that
+    // says nothing about the token. A plain error -- no AUTH_FAILED -- so
+    // the app keeps retrying and the person stays signed in, the same as
+    // the REST middleware's 500 for this case.
+    logger.error('socket sign-in check failed', { err });
+    return next(new Error('Server error'));
+  }
+  // B12 ban / Day 8 revoked session: same code as a dead token, so the
+  // client stops retrying and logs out instead of reconnecting forever.
+  if (verdict === 'banned') {
+    return next(authFailure('This account has been banned'));
+  }
+  if (verdict === 'suspended') {
+    return next(authFailure('This account is suspended'));
+  }
+  if (verdict !== 'ok') {
+    return next(authFailure('Invalid or expired token'));
+  }
+  socket.userId = decoded.userId;
+  // socket.data survives fetchSockets(), so "sign out other devices" can
+  // tell this device's socket apart from the others.
+  socket.data.sessionId = decoded.sid || null;
+  next();
 }
 
 module.exports = socketAuthMiddleware;
