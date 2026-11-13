@@ -1,7 +1,21 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 113 -- Performance round 3.
-**Step:** 2 of 5 -- done (committed). Next: step 3 PLAN.
+**Step:** 3 of 5 -- done (committed). Next: step 4 PLAN.
+
+### Step 3 plan (Most relevant comments)
+- Migration 094: comments.like_count (comment_likes rows) and
+  comments.reply_count (replies NOT awaiting approval), statement-level
+  triggers like 092 (comment_likes ins/del; comments ins/del/upd -- an
+  update of the counters themselves nets 0 and stops there). Backfill.
+- Ranking uses the stored counts (one row per thread, no subqueries): the
+  signal is global, as on Facebook; the reply count SHOWN stays the one the
+  viewer may see. The ranked ids are picked first, then the page's rows get
+  their authors and columns (no join over users for every thread).
+  commentColumnsSql's like_count is the stored one (same number).
+- Tests: counts through like/unlike, reply, reply awaiting approval then
+  approved, delete reply, delete thread, deleted account; Most relevant
+  order unchanged (existing tests); mutations.
 
 ### Step 2 plan (Explore's popular posts)
 - Migration 093: UNLOGGED explore_ranking (post_id PK -> posts ON DELETE
@@ -58,6 +72,10 @@ ordered so every commit keeps the suite green:
   a queue the ticker drains (SKIP LOCKED); same notifications/settings.
 
 ## Carry-over notes
+- Day 113: a statement-level trigger fires even for an UPDATE of no rows: a
+  trigger that updates its OWN table must return early when nothing it
+  counts changed (094 recursed to "stack depth limit exceeded"), and in
+  plpgsql old_rows may only be named inside the UPDATE branch.
 - Day 113: Explore reads explore_ranking (exploreRankingService; unlogged,
   rebuilt every EXPLORE_RANKING_MS, 0 = every read under NODE_ENV=test).
   A new rule for who may see a post in Explore goes in BOTH the rebuild

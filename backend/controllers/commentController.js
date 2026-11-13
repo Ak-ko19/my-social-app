@@ -138,7 +138,7 @@ const commentVisibleSql = (c, v, o) => `
 const commentColumnsSql = (c, v, o) => `
   ${c}.id, ${c}.content, ${c}.created_at, ${c}.parent_comment_id,
   u.id AS user_id, u.username,
-  (SELECT COUNT(*)::int FROM comment_likes cl WHERE cl.comment_id = ${c}.id) AS like_count,
+  ${c}.like_count, -- Day 113: stored (migration 094)
   ${v}::int IS NOT NULL AND EXISTS(SELECT 1 FROM comment_likes cl WHERE cl.comment_id = ${c}.id AND cl.user_id = ${v}) AS liked_by_me,
   -- Day 47: only the post's owner learns a comment is waiting.
   (${c}.awaiting_approval AND ${v}::int = ${o}::int) AS awaiting_approval`;
@@ -163,17 +163,24 @@ const TOP_LEVEL_SQL = {
       AND ($4 = 0 OR c.id < $4)
     ORDER BY c.id DESC
     LIMIT $5`,
+  // Day 113: ranked by the stored counts (migration 094) -- one row per
+  // thread, no counting -- and only the page's threads then get their
+  // author and columns (looked up by id: OFFSET 0 keeps it that way). The
+  // signal is everyone's reactions and replies, as on Facebook; the reply
+  // count SHOWN is still the one this viewer may see.
   relevant: `
     SELECT ${commentColumnsSql('c', '$2', '$3')}, ${visibleReplyCountSql('c', '$2', '$3')} AS reply_count
-    FROM comments c JOIN users u ON u.id = c.user_id
-    WHERE c.post_id = $1 AND c.parent_comment_id IS NULL AND ${commentVisibleSql('c', '$2', '$3')}
-      AND c.id IS DISTINCT FROM $6::int
-    ORDER BY ${popularityScoreSql(
-      '(SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id)',
-      visibleReplyCountSql('c', '$2', '$3'),
-      'c.created_at'
-    )} DESC, c.id DESC
-    OFFSET $4 LIMIT $5`
+    FROM (
+      SELECT t.id, ${popularityScoreSql('t.like_count', 't.reply_count', 't.created_at')} AS score
+      FROM comments t
+      WHERE t.post_id = $1 AND t.parent_comment_id IS NULL AND ${commentVisibleSql('t', '$2', '$3')}
+        AND t.id IS DISTINCT FROM $6::int
+      ORDER BY score DESC, t.id DESC
+      OFFSET $4 LIMIT $5
+    ) ranked
+    CROSS JOIN LATERAL (SELECT * FROM comments x WHERE x.id = ranked.id OFFSET 0) c
+    CROSS JOIN LATERAL (SELECT * FROM users x WHERE x.id = c.user_id OFFSET 0) u
+    ORDER BY ranked.score DESC, ranked.id DESC`
 };
 
 // Step 2: the pinned comment as a thread ($1 it, $2 viewer, $3 owner, $4

@@ -977,3 +977,77 @@ CREATE UNLOGGED TABLE explore_ranking_state (
   id boolean PRIMARY KEY DEFAULT true CONSTRAINT chk_explore_ranking_state_one CHECK (id),
   refreshed_at timestamptz NOT NULL
 );
+
+-- Day 113 (migration 094): stored comment reaction and reply counts.
+ALTER TABLE comments ADD COLUMN like_count integer NOT NULL DEFAULT 0;
+ALTER TABLE comments ADD COLUMN reply_count integer NOT NULL DEFAULT 0;
+
+CREATE OR REPLACE FUNCTION comment_like_count_sync() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE comments c SET like_count = c.like_count + d.n
+    FROM (SELECT comment_id, count(*)::int AS n FROM new_rows GROUP BY comment_id) d
+    WHERE c.id = d.comment_id;
+  ELSE
+    UPDATE comments c SET like_count = c.like_count - d.n
+    FROM (SELECT comment_id, count(*)::int AS n FROM old_rows GROUP BY comment_id) d
+    WHERE c.id = d.comment_id;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER trg_comment_likes_count_ins AFTER INSERT ON comment_likes
+  REFERENCING NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION comment_like_count_sync();
+CREATE TRIGGER trg_comment_likes_count_del AFTER DELETE ON comment_likes
+  REFERENCING OLD TABLE AS old_rows FOR EACH STATEMENT EXECUTE FUNCTION comment_like_count_sync();
+
+-- A reply counts for its thread while it isn't waiting for approval.
+-- This updates comments itself, and a statement-level trigger fires even
+-- for an UPDATE of no rows: so an UPDATE that changed no reply's thread or
+-- approval (the counters' own, the one above) stops here at once --
+-- otherwise it would fire itself without end.
+CREATE OR REPLACE FUNCTION comment_reply_count_sync() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE comments c SET reply_count = c.reply_count + d.n
+    FROM (SELECT parent_comment_id, count(*)::int AS n FROM new_rows
+          WHERE parent_comment_id IS NOT NULL AND NOT awaiting_approval GROUP BY parent_comment_id) d
+    WHERE c.id = d.parent_comment_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE comments c SET reply_count = c.reply_count - d.n
+    FROM (SELECT parent_comment_id, count(*)::int AS n FROM old_rows
+          WHERE parent_comment_id IS NOT NULL AND NOT awaiting_approval GROUP BY parent_comment_id) d
+    WHERE c.id = d.parent_comment_id;
+  ELSE
+    -- (Inside this branch: old_rows exists only for an UPDATE.)
+    IF NOT EXISTS (
+      SELECT 1 FROM new_rows n JOIN old_rows o ON o.id = n.id
+      WHERE n.parent_comment_id IS DISTINCT FROM o.parent_comment_id
+         OR n.awaiting_approval IS DISTINCT FROM o.awaiting_approval
+    ) THEN
+      RETURN NULL;
+    END IF;
+    UPDATE comments c SET reply_count = c.reply_count + d.n
+    FROM (
+      SELECT parent_comment_id, sum(n)::int AS n FROM (
+        SELECT parent_comment_id, 1 AS n FROM new_rows WHERE parent_comment_id IS NOT NULL AND NOT awaiting_approval
+        UNION ALL
+        SELECT parent_comment_id, -1 FROM old_rows WHERE parent_comment_id IS NOT NULL AND NOT awaiting_approval
+      ) t GROUP BY parent_comment_id HAVING sum(n) <> 0
+    ) d
+    WHERE c.id = d.parent_comment_id;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER trg_comments_reply_count_ins AFTER INSERT ON comments
+  REFERENCING NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION comment_reply_count_sync();
+CREATE TRIGGER trg_comments_reply_count_del AFTER DELETE ON comments
+  REFERENCING OLD TABLE AS old_rows FOR EACH STATEMENT EXECUTE FUNCTION comment_reply_count_sync();
+CREATE TRIGGER trg_comments_reply_count_upd AFTER UPDATE ON comments
+  REFERENCING OLD TABLE AS old_rows NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION comment_reply_count_sync();
+
