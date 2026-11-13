@@ -49,6 +49,12 @@ async function getSuggestions(req, res) {
        ),
        my_followers AS (
          SELECT follower_id AS user_id FROM follows WHERE following_id = $1 AND status = 'accepted'
+       ),
+       -- Day 113: start from the candidates and look each one up. Filtering
+       -- every account by "a friend of a friend OR follows me" read every
+       -- row of users, however many there are.
+       candidates AS (
+         SELECT user_id FROM friends_of_friends UNION SELECT user_id FROM my_followers
        )
        SELECT u.id, u.username, u.avatar_url, u.bio, u.is_private,
          COALESCE(fof.mutual_count, 0) AS mutual_count,
@@ -59,10 +65,10 @@ async function getSuggestions(req, res) {
              AND f2.follower_id IN (SELECT user_id FROM my_follows)
            ORDER BY mu.username LIMIT 2
          ) AS mutual_sample
-       FROM users u
+       FROM candidates c
+       JOIN users u ON u.id = c.user_id
        LEFT JOIN friends_of_friends fof ON fof.user_id = u.id
-       WHERE (fof.user_id IS NOT NULL OR EXISTS (SELECT 1 FROM my_followers mf WHERE mf.user_id = u.id))
-         AND ${ELIGIBLE_SQL}
+       WHERE ${ELIGIBLE_SQL}
        ORDER BY COALESCE(fof.mutual_count, 0)
                 + CASE WHEN EXISTS (SELECT 1 FROM my_followers mf WHERE mf.user_id = u.id) THEN 2 ELSE 0 END DESC,
                 u.id DESC
@@ -77,11 +83,12 @@ async function getSuggestions(req, res) {
       const popular = await db.query(
         `SELECT u.id, u.username, u.avatar_url, u.bio, u.is_private,
            0 AS mutual_count, false AS follows_you, ARRAY[]::text[] AS mutual_sample,
-           (SELECT COUNT(*) FROM follows f WHERE f.following_id = u.id AND f.status = 'accepted')::int AS follower_count
+           -- Day 113: stored (migration 092); idx_users_popular is this order.
+           u.follower_count
          FROM users u
          WHERE NOT u.is_private AND u.id <> ALL($2::int[])
            AND ${ELIGIBLE_SQL}
-         ORDER BY follower_count DESC, u.id DESC
+         ORDER BY u.follower_count DESC, u.id DESC
          LIMIT $3`,
         [viewerId, exclude, LIMIT - suggestions.length]
       );

@@ -23,7 +23,7 @@ const BIG_PAGES = 500;
 // hash join reading it whole is right at this size). Counted as small by
 // name rather than by raising BIG_PAGES, which would also stop checking
 // post_hashtags (731) and notifications (935). Day 113 grows the seed so
-// users is big for real; drop this then.
+// users is big for real (its step 4); drop this then.
 const SMALL_ON_PURPOSE = new Set(['users']);
 // A request may read at most this many rows of those big tables in all
 // (from table scans or index lookups). Catches a plan that walks a whole
@@ -72,6 +72,11 @@ async function publishServerCounters() {
   const conv = sql(`SELECT min(id) FROM conversations WHERE user_a_id = 1 AND user_b_id >= ${perfUser}`);
   // Days 109-110: the busy thread (500 replies) on the measured post.
   const busyThread = sql(`SELECT min(id) FROM comments WHERE post_id = ${perfPost} AND content = 'Thread 1'`);
+  // Day 113: the busy group (20k members) and page (20k followers), and an
+  // event alice is going to.
+  const busyGroup = sql("SELECT min(id) FROM communities WHERE name LIKE 'Perf group %'");
+  const busyPage = sql("SELECT min(id) FROM pages WHERE name LIKE 'Perf page %'");
+  const event = sql("SELECT min(e.id) FROM events e JOIN event_responses r ON r.event_id = e.id AND r.user_id = 1");
 
   const endpoints = [
     '/feed', '/feed?page=5', '/posts?page=1&limit=10', `/posts/${perfPost}`, `/posts/${perfPost}/comments`, `/posts/${perfPost}/comments?sort=newest`, `/posts/${perfPost}/comments?sort=newest&cursor=${busyThread}`,
@@ -96,7 +101,15 @@ async function publishServerCounters() {
     '/admin/overview?days=90',
     // Days 103-104: the admin search -- posts and comments through their
     // trigram indexes (002, 084), accounts by username or exact email.
-    '/admin/search?q=shwedagon&type=posts', '/admin/search?q=mohinga&type=comments', '/admin/search?q=perf12&type=users'
+    '/admin/search?q=shwedagon&type=posts', '/admin/search?q=mohinga&type=comments', '/admin/search?q=perf12&type=users',
+    // Day 113: lists that had no rows here before -- groups, pages, events
+    // (Days 50-56), archived chats (97), followed tags (107), Admin >
+    // Reports and > Verification (103, 106).
+    '/communities', '/communities?q=perf', `/communities/${busyGroup}`, `/communities/${busyGroup}/posts`, `/communities/${busyGroup}/members`,
+    '/pages', '/pages?q=perf', `/pages/${busyPage}`, `/pages/${busyPage}/posts`,
+    '/events', '/events?section=discover', `/events/${event}`, `/events/${event}/guests`,
+    '/conversations?archived=1', '/followed-hashtags',
+    '/admin/reports', '/admin/reports?status=reviewed', '/admin/page-verifications', '/admin/page-verifications?status=reviewed'
   ];
 
   const results = [];
@@ -129,12 +142,14 @@ async function publishServerCounters() {
     const isBig = (t) => after[t].pages >= BIG_PAGES && !SMALL_ON_PURPOSE.has(t);
     const scanned = Object.keys(after).filter((t) => isBig(t) && after[t].seq > (before[t]?.seq ?? 0));
     const big = Object.keys(after).filter(isBig);
-    const rowsRead = big.reduce((sum, t) => sum + after[t].rows - (before[t]?.rows ?? 0), 0);
+    const rowsByTable = big.map((t) => [t, after[t].rows - (before[t]?.rows ?? 0)]).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+    const rowsRead = rowsByTable.reduce((sum, [, n]) => sum + n, 0);
     rowsOf[ep] = rowsRead;
     const status = res.status !== 200 || scanned.length || rowsRead > MAX_ROWS ? 'FAIL' : 'PASS';
     results.push(`${status}  ${ep.padEnd(38)} ${String(res.status)} ${String(ms).padStart(5)} ms ${String(rowsRead).padStart(7)} rows`
       + (scanned.length ? `  -- full scan of: ${scanned.join(', ')}` : '')
-      + (rowsRead > MAX_ROWS ? `  -- read over ${MAX_ROWS} rows` : ''));
+      // Which tables, so a failure says where to look.
+      + (rowsRead > MAX_ROWS ? `  -- read over ${MAX_ROWS} rows: ${rowsByTable.slice(0, 4).map(([t, n]) => `${t} ${n}`).join(', ')}` : ''));
   }
   // Day 74: ?page=5 walks the posts of pages 1 to 5; the cursor starts the
   // index scan at its post and walks page 5's only -- a share of the same

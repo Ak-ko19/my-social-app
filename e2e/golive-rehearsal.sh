@@ -41,6 +41,10 @@ CONS="SELECT table_name||' '||constraint_type||' '||constraint_name FROM informa
 # Day 27: indexes too (name, table, definition). The dev fixture had gone
 # without 001/002/015's indexes for weeks; this keeps the two in step.
 IDX="SELECT tablename||' '||indexname||' '||regexp_replace(indexdef, '^.* USING ', '') FROM pg_indexes WHERE schemaname='public' ORDER BY 1"
+# Day 113: triggers and the app's own functions too (092's counts live in
+# them): name, table, when, and a hash of each function's source.
+# Extension functions (pg_trgm) are left out.
+TRG="SELECT event_object_table||' '||trigger_name||' '||action_timing||' '||event_manipulation||' '||action_orientation FROM information_schema.triggers WHERE trigger_schema='public' UNION ALL SELECT 'function '||p.proname||' '||md5(p.prosrc) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname='public' AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype = 'e') ORDER BY 1"
 
 "$PG/pg_ctl.exe" -D "$B/tests/.pgdata_test_cluster" status >/dev/null 2>&1 || \
   "$PG/pg_ctl.exe" -D "$B/tests/.pgdata_test_cluster" -l "$B/tests/.pgdata_test_cluster.log" -o '-p 55433 -k ""' -w start >/dev/null 2>&1 </dev/null
@@ -130,7 +134,7 @@ CHECKLIST_LIST=$(awk '/^  for m in 015/,/; do$/' "$REPO/GO_LIVE_CHECKLIST.md" | 
   || { bad "GO_LIVE_CHECKLIST's migration list differs:"; echo "  checklist: $CHECKLIST_LIST"; }
 # 1-3. Migrate a live-shaped copy and compare with the dev schema.
 fresh_db $DB live
-psql_ "$URL" -At -c "$COLS" > "$WORK/cols-live.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-live.txt"; psql_ "$URL" -At -c "$IDX" > "$WORK/idx-live.txt"
+psql_ "$URL" -At -c "$COLS" > "$WORK/cols-live.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-live.txt"; psql_ "$URL" -At -c "$IDX" > "$WORK/idx-live.txt"; psql_ "$URL" -At -c "$TRG" > "$WORK/trg-live.txt"
 [ "$(psql_ "$URL" -At -c "SELECT count(*) FROM information_schema.columns WHERE table_name='users' AND column_name='verification_token'")" = 1 ] \
   && ok "base is the live schema (migration 014)" || bad "base schema"
 run_migrations up
@@ -138,10 +142,12 @@ fresh_db schema_dev dev
 psql_ postgresql://testuser@localhost:55433/schema_dev -At -c "$COLS" > "$WORK/cols-dev.txt"
 psql_ postgresql://testuser@localhost:55433/schema_dev -At -c "$CONS" > "$WORK/cons-dev.txt"
 psql_ postgresql://testuser@localhost:55433/schema_dev -At -c "$IDX" > "$WORK/idx-dev.txt"
-psql_ "$URL" -At -c "$COLS" > "$WORK/cols-migrated.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-migrated.txt"; psql_ "$URL" -At -c "$IDX" > "$WORK/idx-migrated.txt"
+psql_ postgresql://testuser@localhost:55433/schema_dev -At -c "$TRG" > "$WORK/trg-dev.txt"
+psql_ "$URL" -At -c "$COLS" > "$WORK/cols-migrated.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-migrated.txt"; psql_ "$URL" -At -c "$IDX" > "$WORK/idx-migrated.txt"; psql_ "$URL" -At -c "$TRG" > "$WORK/trg-migrated.txt"
 diff -q "$WORK/cols-migrated.txt" "$WORK/cols-dev.txt" >/dev/null && ok "columns match the dev schema ($(wc -l < "$WORK/cols-dev.txt"))" || { bad "columns differ from dev schema:"; diff "$WORK/cols-migrated.txt" "$WORK/cols-dev.txt" | head -20; }
 diff -q "$WORK/cons-migrated.txt" "$WORK/cons-dev.txt" >/dev/null && ok "constraints match the dev schema ($(wc -l < "$WORK/cons-dev.txt"))" || { bad "constraints differ from dev schema:"; diff "$WORK/cons-migrated.txt" "$WORK/cons-dev.txt" | head -20; }
 diff -q "$WORK/idx-migrated.txt" "$WORK/idx-dev.txt" >/dev/null && ok "indexes match the dev schema ($(wc -l < "$WORK/idx-dev.txt"))" || { bad "indexes differ from dev schema (< migrated, > dev):"; diff "$WORK/idx-migrated.txt" "$WORK/idx-dev.txt" | head -30; }
+diff -q "$WORK/trg-migrated.txt" "$WORK/trg-dev.txt" >/dev/null && ok "triggers and functions match the dev schema ($(wc -l < "$WORK/trg-dev.txt"))" || { bad "triggers/functions differ from dev schema (< migrated, > dev):"; diff "$WORK/trg-migrated.txt" "$WORK/trg-dev.txt" | head -20; }
 [ "$(psql_ "$URL" -At -c "SELECT (SELECT count(*) FROM users)||'/'||(SELECT count(*) FROM posts)||'/'||(SELECT count(*) FROM likes)||'/'||(SELECT count(*) FROM comments)||'/'||(SELECT count(*) FROM messages)")" = "3/3/3/2/3" ] \
   && ok "all 014-era rows kept" || bad "rows lost"
 # Day 75: 071 turns the old sanitizer's entities back into the text as typed.
@@ -154,9 +160,9 @@ diff -q "$WORK/idx-migrated.txt" "$WORK/idx-dev.txt" >/dev/null && ok "indexes m
 
 # 5. Rollback A: down to exactly the live schema, data kept, then up again.
 run_migrations down
-psql_ "$URL" -At -c "$COLS" > "$WORK/cols-down.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-down.txt"; psql_ "$URL" -At -c "$IDX" > "$WORK/idx-down.txt"
+psql_ "$URL" -At -c "$COLS" > "$WORK/cols-down.txt"; psql_ "$URL" -At -c "$CONS" > "$WORK/cons-down.txt"; psql_ "$URL" -At -c "$IDX" > "$WORK/idx-down.txt"; psql_ "$URL" -At -c "$TRG" > "$WORK/trg-down.txt"
 diff -q "$WORK/cols-down.txt" "$WORK/cols-live.txt" >/dev/null && diff -q "$WORK/cons-down.txt" "$WORK/cons-live.txt" >/dev/null \
-  && diff -q "$WORK/idx-down.txt" "$WORK/idx-live.txt" >/dev/null \
+  && diff -q "$WORK/idx-down.txt" "$WORK/idx-live.txt" >/dev/null && diff -q "$WORK/trg-down.txt" "$WORK/trg-live.txt" >/dev/null \
   && ok "rollback A: downs restore the live schema exactly" || bad "rollback A: schema after downs differs from live"
 [ "$(psql_ "$URL" -At -c "SELECT (SELECT count(*) FROM users)||'/'||(SELECT count(*) FROM posts)||'/'||(SELECT count(*) FROM messages)")" = "3/3/3" ] \
   && ok "rollback A: data kept" || bad "rollback A: rows lost"

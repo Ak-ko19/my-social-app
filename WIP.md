@@ -1,7 +1,39 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 113 -- Performance round 3.
-**Step:** not started (Day 112 closed 2026-11-14).
+**Step:** 1 of 5 -- done (committed). Next: step 2 PLAN.
+
+### Plan (Day 113)
+Goal: the perf suite says the truth at a bigger seed, and the per-request
+work that grows with the site stops growing with it. Measured first (the
+suite now prints which tables a failing endpoint read): with 150k users,
+10 endpoints read over 20k rows -- groups (every membership counted),
+suggestions (every account), and a merge join walking users_pkey for
+"author not deactivated" in Explore, comments, search, trending. Steps
+ordered so every commit keeps the suite green:
+- **Step 1 -- groups, pages, events at size; stored counts.** Seed: 3k
+  groups (one of 20k members), 2k pages (one of 20k followers), 5k events,
+  22k reports, verification requests, archived chats; the suite calls their
+  lists + followed tags. Migration 092: communities.member_count,
+  pages.follower_count, users.follower_count (accepted), kept by
+  statement-level triggers (transition tables); Discover / popular indexes;
+  the group member list index. Suggestions start from their candidates.
+  Rehearsal now compares triggers + functions. DONE: perf 73/73, backend
+  1187, rehearsal, 9 related browser suites.
+- **Step 2 -- Explore's popular posts.** Per request it scores every post of
+  7 days. A ranked candidate table (public posts, refreshed by the ticker,
+  advisory lock), filtered per viewer at read time (blocks, mutes,
+  deactivated, still public). Better than now: only public posts (as IG/FB
+  Explore), which is also the privacy-safe choice.
+- **Step 3 -- Most relevant comments.** Scores every thread per request with
+  per-thread subqueries: stored like/reply counts on comments (triggers),
+  so ranking reads one row per thread.
+- **Step 4 -- users big for real.** 120k quiet accounts in the seed (saved:
+  scratchpad day27-perf.step4.sql), drop SMALL_ON_PURPOSE; search and
+  trending look authors up by id (LATERAL) instead of a merge join over
+  users_pkey.
+- **Step 5 -- new-post notifications off the request** (Day 101 fan-out):
+  a queue the ticker drains (SKIP LOCKED); same notifications/settings.
 
 ## Carry-over notes
 - Day 112 close: socket sign-in errors -- AUTH_FAILED only for a bad token
@@ -13,7 +45,10 @@
   signedIn). Before calling a run red, read e2e/backend.log for
   ECONNREFUSED and backend/tests/.pgdata_test_cluster.log for a crash.
 - Never run `run-all.sh` with an unknown flag to "see help": it runs the
-  WHOLE browser suite (Day 112 slip, stopped at once).
+  WHOLE browser suite (Day 112 slip). Stopping its Claude task does NOT stop
+  run-all.sh (it kept running 75 min and broke two perf seeds by restarting
+  the test DB). Look for it by `run-all` in the command line (it can be
+  `e2e/../e2e/run-all.sh`, without "Mysocialapp") and kill its whole tree.
 - Day 112: text in red uses --color-danger-text, never --color-accent-3
   (3.3:1 on dark; fine for icons and fills). New overlays go in
   e2e/day112-overlays (all four language x theme combinations).

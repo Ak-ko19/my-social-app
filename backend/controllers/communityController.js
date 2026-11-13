@@ -53,7 +53,7 @@ async function loadCommunity(communityId, viewerId) {
   if (!Number.isInteger(communityId)) throw new CommunityError(400, 'Invalid group ID');
   const result = await db.query(
     `SELECT c.id, c.name, c.description, c.privacy, c.created_at,
-       (SELECT COUNT(*)::int FROM community_members m WHERE m.community_id = c.id AND m.status = 'member') AS member_count,
+       c.member_count, -- Day 113: stored (migration 092 keeps it right)
        me.role AS my_role, me.status AS my_status, me.post_notifications AS my_post_notifications
      FROM communities c
      LEFT JOIN community_members me ON me.community_id = c.id AND me.user_id = $2
@@ -141,13 +141,13 @@ async function listSection(section, userId, q, { limit, offset }) {
   const mine = section === 'mine';
   const result = await db.query(
     `SELECT c.id, c.name, c.description, c.privacy,
-       (SELECT COUNT(*)::int FROM community_members m WHERE m.community_id = c.id AND m.status = 'member') AS member_count,
+       c.member_count,
        me.role AS my_role, me.status AS my_status
      FROM communities c
      LEFT JOIN community_members me ON me.community_id = c.id AND me.user_id = $1
      WHERE ($2 = '' OR c.name ILIKE '%' || $2 || '%')
        AND ${mine ? 'me.user_id IS NOT NULL' : 'me.user_id IS NULL'}
-     ORDER BY ${mine ? 'me.joined_at DESC, c.id DESC' : 'member_count DESC, c.id DESC'}
+     ORDER BY ${mine ? 'me.joined_at DESC, c.id DESC' : 'c.member_count DESC, c.id DESC'}
      LIMIT $3 OFFSET $4`,
     [userId, escapeLike(q), limit + 1, offset]
   );
@@ -297,7 +297,7 @@ async function listMembers(req, res) {
       `SELECT u.id, u.username, u.avatar_url, m.role, m.joined_at
        FROM community_members m JOIN users u ON u.id = m.user_id
        WHERE m.community_id = $1 AND m.status = 'member'
-       ORDER BY (m.role = 'admin') DESC, m.joined_at ASC, u.id ASC
+       ORDER BY (m.role = 'admin') DESC, m.joined_at ASC, m.user_id ASC
        LIMIT $2 OFFSET $3`,
       [c.id, limit + 1, offset]
     );

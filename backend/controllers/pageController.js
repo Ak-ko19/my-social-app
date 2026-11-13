@@ -55,7 +55,7 @@ const PAGE_COLUMNS = `p.id, p.name, p.category, p.description, p.created_at,
   -- Day 106: the blue tick (pageVerificationService).
   p.verified_at IS NOT NULL AS is_verified,
   u.id AS owner_id, u.username AS owner_username,
-  (SELECT COUNT(*)::int FROM page_follows f WHERE f.page_id = p.id) AS follower_count,
+  p.follower_count, -- Day 113: stored (migration 092 keeps it right)
   $2::int IS NOT NULL AND EXISTS(SELECT 1 FROM page_follows f WHERE f.page_id = p.id AND f.user_id = $2) AS is_following,
   -- Day 101: a follower's choice for its new posts (null when not following).
   (SELECT f.post_notifications FROM page_follows f WHERE f.page_id = p.id AND f.user_id = $2) AS my_post_notifications,
@@ -122,7 +122,7 @@ const PAGE_SECTIONS = {
   discover: {
     where: `p.owner_id <> $2 AND NOT EXISTS (SELECT 1 FROM page_admins pa WHERE pa.page_id = p.id AND pa.user_id = $2)
       AND NOT EXISTS (SELECT 1 FROM page_follows f WHERE f.page_id = p.id AND f.user_id = $2)`,
-    order: 'follower_count DESC, p.id DESC'
+    order: 'p.follower_count DESC, p.id DESC'
   }
 };
 

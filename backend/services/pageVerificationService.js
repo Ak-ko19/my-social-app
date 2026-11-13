@@ -122,7 +122,7 @@ async function list({ status, page }) {
          'id', p.id, 'name', p.name, 'category', p.category, 'description', left(p.description, 300),
          'created_at', p.created_at, 'verified_at', p.verified_at,
          'owner_id', o.id, 'owner_username', o.username,
-         'follower_count', (SELECT COUNT(*) FROM page_follows f WHERE f.page_id = p.id),
+         'follower_count', p.follower_count,
          'post_count', (SELECT COUNT(*) FROM posts WHERE posts.page_id = p.id)
        ) AS page,
        (SELECT COUNT(*)::int FROM page_verification_requests d

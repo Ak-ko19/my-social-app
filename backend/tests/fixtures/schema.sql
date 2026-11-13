@@ -855,3 +855,112 @@ CREATE INDEX idx_users_birthday ON users (birthday_month, birthday_day) WHERE bi
 
 -- Day 111 (migration 091): the birthday notification setting.
 ALTER TABLE notification_preferences ADD COLUMN birthdays boolean NOT NULL DEFAULT true;
+
+-- Day 113 (migration 092): stored group member, page follower and person
+-- follower counts, kept right by statement-level triggers.
+ALTER TABLE communities ADD COLUMN member_count integer NOT NULL DEFAULT 0;
+ALTER TABLE pages ADD COLUMN follower_count integer NOT NULL DEFAULT 0;
+
+-- Group members: only status = 'member' counts (not pending requests).
+CREATE OR REPLACE FUNCTION community_member_count_sync() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE communities c SET member_count = c.member_count + d.n
+    FROM (SELECT community_id, count(*)::int AS n FROM new_rows WHERE status = 'member' GROUP BY community_id) d
+    WHERE c.id = d.community_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE communities c SET member_count = c.member_count - d.n
+    FROM (SELECT community_id, count(*)::int AS n FROM old_rows WHERE status = 'member' GROUP BY community_id) d
+    WHERE c.id = d.community_id;
+  ELSE
+    UPDATE communities c SET member_count = c.member_count + d.n
+    FROM (
+      SELECT community_id, sum(n)::int AS n FROM (
+        SELECT community_id, 1 AS n FROM new_rows WHERE status = 'member'
+        UNION ALL
+        SELECT community_id, -1 FROM old_rows WHERE status = 'member'
+      ) t GROUP BY community_id HAVING sum(n) <> 0
+    ) d
+    WHERE c.id = d.community_id;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER trg_community_members_count_ins AFTER INSERT ON community_members
+  REFERENCING NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION community_member_count_sync();
+CREATE TRIGGER trg_community_members_count_del AFTER DELETE ON community_members
+  REFERENCING OLD TABLE AS old_rows FOR EACH STATEMENT EXECUTE FUNCTION community_member_count_sync();
+CREATE TRIGGER trg_community_members_count_upd AFTER UPDATE ON community_members
+  REFERENCING OLD TABLE AS old_rows NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION community_member_count_sync();
+
+-- Page followers: every row counts.
+CREATE OR REPLACE FUNCTION page_follower_count_sync() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE pages p SET follower_count = p.follower_count + d.n
+    FROM (SELECT page_id, count(*)::int AS n FROM new_rows GROUP BY page_id) d
+    WHERE p.id = d.page_id;
+  ELSE
+    UPDATE pages p SET follower_count = p.follower_count - d.n
+    FROM (SELECT page_id, count(*)::int AS n FROM old_rows GROUP BY page_id) d
+    WHERE p.id = d.page_id;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER trg_page_follows_count_ins AFTER INSERT ON page_follows
+  REFERENCING NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION page_follower_count_sync();
+CREATE TRIGGER trg_page_follows_count_del AFTER DELETE ON page_follows
+  REFERENCING OLD TABLE AS old_rows FOR EACH STATEMENT EXECUTE FUNCTION page_follower_count_sync();
+
+-- A person's followers: accepted follows only (not pending requests).
+-- "People you may know" falls back to the most-followed public accounts,
+-- which counted every account's followers per request.
+ALTER TABLE users ADD COLUMN follower_count integer NOT NULL DEFAULT 0;
+
+CREATE OR REPLACE FUNCTION user_follower_count_sync() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE users u SET follower_count = u.follower_count + d.n
+    FROM (SELECT following_id, count(*)::int AS n FROM new_rows WHERE status = 'accepted' GROUP BY following_id) d
+    WHERE u.id = d.following_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE users u SET follower_count = u.follower_count - d.n
+    FROM (SELECT following_id, count(*)::int AS n FROM old_rows WHERE status = 'accepted' GROUP BY following_id) d
+    WHERE u.id = d.following_id;
+  ELSE
+    UPDATE users u SET follower_count = u.follower_count + d.n
+    FROM (
+      SELECT following_id, sum(n)::int AS n FROM (
+        SELECT following_id, 1 AS n FROM new_rows WHERE status = 'accepted'
+        UNION ALL
+        SELECT following_id, -1 FROM old_rows WHERE status = 'accepted'
+      ) t GROUP BY following_id HAVING sum(n) <> 0
+    ) d
+    WHERE u.id = d.following_id;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER trg_follows_count_ins AFTER INSERT ON follows
+  REFERENCING NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION user_follower_count_sync();
+CREATE TRIGGER trg_follows_count_del AFTER DELETE ON follows
+  REFERENCING OLD TABLE AS old_rows FOR EACH STATEMENT EXECUTE FUNCTION user_follower_count_sync();
+CREATE TRIGGER trg_follows_count_upd AFTER UPDATE ON follows
+  REFERENCING OLD TABLE AS old_rows NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION user_follower_count_sync();
+
+-- Discover: most members / followers first.
+CREATE INDEX idx_communities_member_count ON communities (member_count DESC, id DESC);
+CREATE INDEX idx_pages_follower_count ON pages (follower_count DESC, id DESC);
+-- "Popular" suggestions: public, active accounts, most followed first.
+CREATE INDEX idx_users_popular ON users (follower_count DESC, id DESC) WHERE NOT is_private AND NOT is_deactivated;
+-- A group's member list, in its own order (admins first, then by joining),
+-- so a page of it reads that page and not every member.
+CREATE INDEX idx_community_members_list
+  ON community_members (community_id, (role = 'admin') DESC, joined_at, user_id) WHERE status = 'member';

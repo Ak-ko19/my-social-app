@@ -1,7 +1,8 @@
--- Day 27: bulk data for the performance suite (day27-perf.cjs). About a
--- million rows: 30,000 users, 150k posts over a year, likes, comments, follows,
--- notifications, conversations and messages -- enough that a missing index
--- shows up as a sequential scan. alice (id 1) gets a realistic share:
+-- Day 27: bulk data for the performance suite (day27-perf.cjs). About 1.4
+-- million rows: 30,000 users, 200k posts over a year,
+-- likes, comments, follows, notifications, conversations and messages,
+-- groups, pages, events and reports (Day 113) -- enough that a missing
+-- index shows up as a sequential scan. alice (id 1) gets a realistic share:
 -- follows and followers, notifications, conversations, bookmarks.
 \set ON_ERROR_STOP on
 SET client_min_messages = warning;
@@ -106,6 +107,79 @@ INSERT INTO stories (user_id, media_url, created_at, expires_at)
 SELECT r.ulo + (g % 30000), 'https://res.cloudinary.com/demo/image/upload/sample.jpg', now() - g * interval '1 minute',
        now() - g * interval '1 minute' + interval '24 hours'
 FROM r, generate_series(1, 5000) g;
+
+-- Day 113: groups, pages and events at size (they had no rows here).
+-- 3,000 groups (1 in 5 private) of about 50 members; the first one is busy:
+-- 20,000 members and 1 in 10 of the 30k group posts. alice is in 30.
+INSERT INTO communities (name, privacy, created_by)
+SELECT 'Perf group ' || g, CASE WHEN g % 5 = 0 THEN 'private' ELSE 'public' END, r.ulo + (g % 30000)
+FROM r, generate_series(1, 3000) g;
+ALTER TABLE r ADD COLUMN glo int;
+UPDATE r SET glo = (SELECT min(id) FROM communities WHERE name LIKE 'Perf group %');
+INSERT INTO community_members (community_id, user_id, role)
+SELECT id, created_by, 'admin' FROM communities WHERE name LIKE 'Perf group %';
+INSERT INTO community_members (community_id, user_id)
+SELECT r.glo + (random() * 2999)::int, r.ulo + (random() * 29999)::int FROM r, generate_series(1, 150000)
+ON CONFLICT DO NOTHING;
+INSERT INTO community_members (community_id, user_id) SELECT r.glo, r.ulo + g FROM r, generate_series(0, 19999) g ON CONFLICT DO NOTHING;
+INSERT INTO community_members (community_id, user_id) SELECT r.glo + g * 97, 1 FROM r, generate_series(0, 29) g ON CONFLICT DO NOTHING;
+INSERT INTO posts (user_id, community_id, content, created_at, visibility)
+SELECT r.ulo + (random() * 29999)::int, CASE WHEN g % 10 = 0 THEN r.glo ELSE r.glo + (g % 3000) END,
+       'Group post ' || g, now() - (30001 - g) * interval '1050 seconds', 'public'
+FROM r, generate_series(1, 30000) g;
+
+-- 2,000 pages, ten posts each, about 75 followers; the first is busy (20k
+-- followers). alice follows 50. 300 wait for verification, 1,000 were
+-- decided (every other one approved, so they show the tick).
+INSERT INTO pages (name, owner_id) SELECT 'Perf page ' || g, r.ulo + (g % 30000) FROM r, generate_series(1, 2000) g;
+ALTER TABLE r ADD COLUMN pglo int;
+UPDATE r SET pglo = (SELECT min(id) FROM pages WHERE name LIKE 'Perf page %');
+INSERT INTO page_admins (page_id, user_id) SELECT id, owner_id FROM pages WHERE name LIKE 'Perf page %';
+INSERT INTO page_follows (page_id, user_id)
+SELECT r.pglo + (random() * 1999)::int, r.ulo + (random() * 29999)::int FROM r, generate_series(1, 150000)
+ON CONFLICT DO NOTHING;
+INSERT INTO page_follows (page_id, user_id) SELECT r.pglo, r.ulo + g FROM r, generate_series(0, 19999) g ON CONFLICT DO NOTHING;
+INSERT INTO page_follows (page_id, user_id) SELECT r.pglo + g * 37, 1 FROM r, generate_series(0, 49) g ON CONFLICT DO NOTHING;
+INSERT INTO posts (user_id, page_id, content, created_at, visibility)
+SELECT p.owner_id, p.id, 'Page post ' || g, now() - (p.id % 1000) * interval '1 hour' - g * interval '1 day', 'public'
+FROM pages p, generate_series(1, 10) g WHERE p.name LIKE 'Perf page %';
+INSERT INTO page_verification_requests (page_id, requested_by, note, created_at)
+SELECT r.pglo + 100 + g, r.ulo + ((100 + g) % 30000), 'Perf verification ' || g, now() - g * interval '1 hour'
+FROM r, generate_series(0, 299) g;
+INSERT INTO page_verification_requests (page_id, requested_by, note, status, decided_by, decided_at, decline_reason, created_at)
+SELECT r.pglo + 500 + g, r.ulo + ((500 + g) % 30000), 'Perf decided ' || g,
+       CASE WHEN g % 2 = 0 THEN 'approved' ELSE 'declined' END, 1, now() - g * interval '1 hour',
+       CASE WHEN g % 2 = 0 THEN NULL ELSE 'incomplete' END, now() - g * interval '1 hour' - interval '1 day'
+FROM r, generate_series(0, 999) g;
+UPDATE pages SET verified_at = now() - interval '1 day'
+WHERE id IN (SELECT page_id FROM page_verification_requests WHERE status = 'approved');
+
+-- 5,000 events from 50 days ago to 50 days ahead, about 10 answers each;
+-- alice is going to 20.
+INSERT INTO events (host_id, name, starts_at, audience)
+SELECT r.ulo + (g % 30000), 'Perf event ' || g, now() + (g - 2500) * interval '29 minutes',
+       CASE WHEN g % 10 = 0 THEN 'followers' ELSE 'public' END
+FROM r, generate_series(1, 5000) g;
+INSERT INTO event_responses (event_id, user_id, status)
+SELECT e.id, r.ulo + (random() * 29999)::int, CASE WHEN random() < 0.5 THEN 'going' ELSE 'interested' END
+FROM r, events e, generate_series(1, 10) WHERE e.name LIKE 'Perf event %'
+ON CONFLICT DO NOTHING;
+INSERT INTO event_responses (event_id, user_id, status)
+SELECT id, 1, 'going' FROM events WHERE name LIKE 'Perf event %' AND starts_at > now() ORDER BY id LIMIT 20
+ON CONFLICT DO NOTHING;
+
+-- Reports: 20,000 handled over the year, 2,000 waiting.
+INSERT INTO reports (reporter_id, target_type, target_id, reason, status, resolved_by, resolved_at, resolution, created_at)
+SELECT r.ulo + (random() * 29999)::int, 'post', r.plo + (random() * 149999)::int, 'spam',
+       CASE WHEN g <= 2000 THEN 'pending' ELSE 'reviewed' END::report_status,
+       CASE WHEN g <= 2000 THEN NULL ELSE 1 END, CASE WHEN g <= 2000 THEN NULL ELSE now() - g * interval '20 minutes' END,
+       CASE WHEN g <= 2000 THEN NULL ELSE 'dismissed' END, now() - g * interval '20 minutes' - interval '1 hour'
+FROM r, generate_series(1, 22000) g;
+
+-- Days 97-98: alice has archived 50 of her chats.
+UPDATE conversation_participants SET archived_at = now() - interval '1 day'
+WHERE user_id = 1 AND conversation_id IN (
+  SELECT conversation_id FROM conversation_participants WHERE user_id = 1 ORDER BY conversation_id LIMIT 50);
 
 -- Day 74: VACUUM too, not just ANALYZE: like a database that has been
 -- running a while (autovacuum), the tables' visibility maps are set, so an
