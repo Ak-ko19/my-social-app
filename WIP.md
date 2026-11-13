@@ -1,7 +1,29 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 113 -- Performance round 3.
-**Step:** 1 of 5 -- done (committed). Next: step 2 PLAN.
+**Step:** 2 of 5 -- done (committed). Next: step 3 PLAN.
+
+### Step 2 plan (Explore's popular posts)
+- Migration 093: UNLOGGED explore_ranking (post_id PK -> posts ON DELETE
+  CASCADE, rank, score; index on rank) + explore_ranking_state (one row,
+  refreshed_at). Unlogged: a recomputable cache -- no WAL every refresh
+  (Neon's 0.5 GB counts history); emptied on a crash/restart, and then the
+  first read rebuilds it.
+- services/exploreRankingService: refresh() in one transaction with
+  pg_try_advisory_xact_lock (one instance at a time; a busy one keeps the
+  old list); the top 1,000 public posts of 7 days with engagement (same
+  score, services/popularity). ensureFresh(): one SELECT of refreshed_at;
+  rebuild only if older than 2.5 x EXPLORE_RANKING_MS (default 120 s; 0
+  under NODE_ENV=test unless set -- like TRENDING_CACHE_MS). Ticker job.
+- GET /explore/posts: page of the ranking in rank order, every rule checked
+  again live (still public, author not private/deactivated, not in a
+  group, inside 7 days, blocks, mutes); counts live for the page's rows.
+- Behaviour change (rule 9): followers-only posts no longer appear in a
+  follower's Explore -- Explore is public content (IG/FB); they're on Home.
+- Tests: ranking + stale/fresh rules with the env set; a post deleted /
+  made followers-only / author blocked / muted / deactivated vanishes at
+  once; busy lock keeps the old list. Perf: a `perf` stack with a long max
+  age, the suite refreshes in-process before measuring, and times the job.
 
 ### Plan (Day 113)
 Goal: the perf suite says the truth at a bigger seed, and the per-request
@@ -36,6 +58,12 @@ ordered so every commit keeps the suite green:
   a queue the ticker drains (SKIP LOCKED); same notifications/settings.
 
 ## Carry-over notes
+- Day 113: Explore reads explore_ranking (exploreRankingService; unlogged,
+  rebuilt every EXPLORE_RANKING_MS, 0 = every read under NODE_ENV=test).
+  A new rule for who may see a post in Explore goes in BOTH the rebuild
+  (RANK_SQL) and the read's live checks. Ticker jobs open a connection each:
+  scheduledPosts.test counts them. Jest's teardown STOPS the shared test
+  cluster: never run Jest while a browser stack is up.
 - Day 112 close: socket sign-in errors -- AUTH_FAILED only for a bad token
   or a refused session; a server/database error is a plain error so the
   app retries and keeps the session (sockets/socketAuth.js). Any new auth

@@ -14,6 +14,7 @@ const eventNotificationService = require('./eventNotificationService');
 const statsService = require('./statsService');
 const memoryNotificationService = require('./memoryNotificationService');
 const birthdayNotificationService = require('./birthdayNotificationService');
+const exploreRankingService = require('./exploreRankingService');
 
 const TICK_MS = 30 * 1000;
 
@@ -28,7 +29,10 @@ const JOBS = [
   // Day 84: "You have memories", in each person's morning.
   ['memories', () => memoryNotificationService.notifyDue(), (r) => r.people],
   // Day 111: "Today is Ann's birthday", in each friend's morning.
-  ['birthdays', () => birthdayNotificationService.notifyDue(), (r) => r.people]
+  ['birthdays', () => birthdayNotificationService.notifyDue(), (r) => r.people],
+  // Day 113: Explore's ranked list, every couple of minutes (not logged:
+  // it's routine; a failure is).
+  ['explore ranking', () => exploreRankingService.refreshIfDue(), () => false]
 ];
 
 let timer = null;

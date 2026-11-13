@@ -56,7 +56,7 @@ for name in $E2E_ONLY; do
 done
 
 # The stack's own output goes to stack.log (kept by CI when a run fails).
-fresh_stack() { # [dist|bots|turnstile|push|spam|media]
+fresh_stack() { # [dist|bots|turnstile|push|spam|media|perf]
   bash e2e-down.sh >/dev/null 2>&1
   case "$1" in
     dist) E2E_FRONTEND=dist bash e2e-up.sh > stack.log 2>&1 ;;
@@ -65,6 +65,9 @@ fresh_stack() { # [dist|bots|turnstile|push|spam|media]
     push) E2E_PUSH=1 E2E_FRONTEND=dist bash e2e-up.sh > stack.log 2>&1 ;;
     spam) SPAM_CHECKS_IN_TESTS=1 bash e2e-up.sh > stack.log 2>&1 ;;
     media) E2E_MEDIA=1 bash e2e-up.sh > stack.log 2>&1 ;;
+    # Day 113: Explore's ranking rebuilt by its job, as in production (not
+    # on every read, as for the other suites).
+    perf) EXPLORE_RANKING_MS=3600000 bash e2e-up.sh > stack.log 2>&1 ;;
     *) bash e2e-up.sh > stack.log 2>&1 ;;
   esac
 }
@@ -97,7 +100,7 @@ for s in $SUITES; do
     continue
   fi
   wanted "$s" || continue
-  fresh_stack
+  if [ "$s" = day27-perf ]; then fresh_stack perf; else fresh_stack; fi
   node "$s.cjs" > "out-$s.txt" 2>&1
   report "$s" $? "out-$s.txt"
 done

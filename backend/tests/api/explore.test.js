@@ -117,7 +117,9 @@ describe('explore (B7)', () => {
       expect((await request(app).get('/explore/posts')).body.posts).toEqual([]);
     });
 
-    it('respects visibility: followers-only posts only for followers; blocks hide authors', async () => {
+    // Day 113: Explore is public posts only (as on Instagram / Facebook) --
+    // a followers-only post reaches followers on Home, never Explore.
+    it('respects visibility: followers-only posts never (not even for followers); blocks hide authors', async () => {
       const author = await registerAndLogin(app);
       const follower = await registerAndLogin(app);
       const stranger = await registerAndLogin(app);
@@ -126,7 +128,7 @@ describe('explore (B7)', () => {
       await like(follower, hidden);
 
       const contents = async (user) => (await request(app).get('/explore/posts').set(user ? auth(user) : {})).body.posts.map((p) => p.content);
-      expect(await contents(follower)).toEqual(['followers only']);
+      expect(await contents(follower)).toEqual([]);
       expect(await contents(stranger)).toEqual([]);
       expect(await contents(null)).toEqual([]);
 

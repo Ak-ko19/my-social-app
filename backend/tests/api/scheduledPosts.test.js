@@ -197,11 +197,12 @@ describe('scheduled posts (Day 45)', () => {
       }
       // A tick while one is running does nothing: one pass = a connection
       // for the post, one finding no more posts, one finding no ended poll,
-      // one finding no event reminder due (Day 55).
+      // one finding no event reminder due (Day 55), and (Day 113) one
+      // rebuilding Explore's ranking (due on every pass under test).
       const connect = jest.spyOn(require('../../db'), 'connect');
       try {
         await Promise.all([ticker.tick(), ticker.tick()]);
-        expect(connect).toHaveBeenCalledTimes(4);
+        expect(connect).toHaveBeenCalledTimes(5);
       } finally {
         connect.mockRestore();
       }

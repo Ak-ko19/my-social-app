@@ -964,3 +964,16 @@ CREATE INDEX idx_users_popular ON users (follower_count DESC, id DESC) WHERE NOT
 -- so a page of it reads that page and not every member.
 CREATE INDEX idx_community_members_list
   ON community_members (community_id, (role = 'admin') DESC, joined_at, user_id) WHERE status = 'member';
+
+-- Day 113 (migration 093): Explore's ranked list (unlogged: a cache).
+CREATE UNLOGGED TABLE explore_ranking (
+  post_id integer PRIMARY KEY REFERENCES posts(id) ON DELETE CASCADE,
+  rank integer NOT NULL,
+  score double precision NOT NULL
+);
+CREATE INDEX idx_explore_ranking_rank ON explore_ranking (rank);
+-- One row: when the list was last rebuilt (none yet = never).
+CREATE UNLOGGED TABLE explore_ranking_state (
+  id boolean PRIMARY KEY DEFAULT true CONSTRAINT chk_explore_ranking_state_one CHECK (id),
+  refreshed_at timestamptz NOT NULL
+);

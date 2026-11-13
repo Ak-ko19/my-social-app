@@ -1,13 +1,12 @@
 const db = require('../db');
 const { noBlockBetweenSql } = require('../services/blockService');
-const { postAudienceSql } = require('../services/postVisibilityService');
 const { notMutedSql } = require('../services/muteService');
 const { sendError } = require('../utils/httpError');
 const { getPagination } = require('../utils/pagination');
 const { reactionColumnsSql, mediaColumnSql, pageColumnSql, commentCountColumnSql } = require('../services/reactionService');
 const { shareColumnsSql } = require('../services/shareService');
 const { pollColumnSql } = require('../services/pollService');
-const { popularityScoreSql } = require('../services/popularity');
+const exploreRankingService = require('../services/exploreRankingService');
 
 // B7 Explore. Both lists look at the last EXPLORE_WINDOW of activity.
 const EXPLORE_WINDOW = "INTERVAL '7 days'";
@@ -107,51 +106,50 @@ async function getTrendingHashtags(req, res) {
   }
 }
 
-// GET /explore/posts -- popular recent posts the viewer can see, ranked by
-// engagement with time decay (services/popularity.js). Only posts with at
-// least one reaction or comment qualify ("popular", not "recent").
+// GET /explore/posts -- the week's popular public posts, best first.
+// Day 113: a page of the ranking the server keeps (exploreRankingService:
+// engagement with time decay, services/popularity.js -- only posts with a
+// reaction or comment). Each rule is checked again here, for this viewer
+// and as things are now: a post made followers-only, an author who went
+// private, deactivated or got blocked, a muted one -- gone at once, not at
+// the next rebuild. Reaction and comment counts are live, for this page.
 async function getPopularPosts(req, res) {
   try {
     const viewerId = req.userId ?? null;
     const { page, limit, offset } = getPagination(req, { defaultLimit: 10, maxLimit: 30 });
+    await exploreRankingService.ensureFresh();
     const result = await db.query(
-      `WITH scored AS (
-         SELECT posts.id,
-           (SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id) AS reactions,
-           (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id AND NOT comments.awaiting_approval) AS comment_total
-         FROM posts
-         JOIN users ON users.id = posts.user_id
-         WHERE posts.community_id IS NULL -- B13: not in global explore
-         AND posts.created_at > now() - ${EXPLORE_WINDOW}
-           AND ${NOT_BLOCKED_SQL}
-           AND NOT users.is_deactivated
-           -- Day 47: not from people the viewer muted.
-           AND ($1::int IS NULL OR ${notMutedSql('$1', 'posts.user_id', 'posts.page_id')})
-           AND ${postAudienceSql('$1')}
-       )
-       SELECT posts.id, posts.content, posts.visibility, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url,
+      `SELECT posts.id, posts.content, posts.visibility, posts.image_url, posts.created_at, users.id AS user_id, users.username, users.avatar_url,
          $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = $1) AS liked_by_me,
          ${reactionColumnsSql('$1')},
          ${mediaColumnSql()},
          ${pollColumnSql('$1')},
          ${commentCountColumnSql('$1')},
          ${shareColumnsSql('$1')},
-        ${pageColumnSql()},
-         scored.reactions::int AS like_count,
-         scored.comment_total::int AS comment_count,
-         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me,
-         ${popularityScoreSql('scored.reactions', 'scored.comment_total', 'posts.created_at')} AS score
-       FROM scored
-       JOIN posts ON posts.id = scored.id
-       JOIN users ON users.id = posts.user_id
-       WHERE scored.reactions + scored.comment_total > 0
-       ORDER BY score DESC, posts.created_at DESC
+         ${pageColumnSql()},
+         (SELECT COUNT(*)::int FROM likes WHERE likes.post_id = posts.id) AS like_count,
+         (SELECT COUNT(*)::int FROM comments WHERE comments.post_id = posts.id AND NOT comments.awaiting_approval) AS comment_count,
+         $1::int IS NOT NULL AND EXISTS(SELECT 1 FROM bookmarks WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = $1) AS bookmarked_by_me
+       -- The ranking in order, each post and author looked up by id. OFFSET
+       -- 0 keeps Postgres from flattening these into joins, which for a
+       -- deep page it planned as a read of every post (a hash join).
+       FROM explore_ranking er
+       CROSS JOIN LATERAL (SELECT * FROM posts p WHERE p.id = er.post_id OFFSET 0) posts
+       CROSS JOIN LATERAL (SELECT * FROM users u WHERE u.id = posts.user_id OFFSET 0) users
+       -- The 7-day window is the rebuild's (a post may stay a couple of
+       -- minutes past it); checking it here again made Postgres read every
+       -- post of the week instead of the page.
+       WHERE posts.community_id IS NULL -- B13: not in global explore
+         AND ${PUBLICLY_VISIBLE_SQL}
+         AND ${NOT_BLOCKED_SQL}
+         -- Day 47: not from people the viewer muted.
+         AND ($1::int IS NULL OR ${notMutedSql('$1', 'posts.user_id', 'posts.page_id')})
+       ORDER BY er.rank
        LIMIT $2 OFFSET $3`,
       [viewerId, limit + 1, offset]
     );
     const hasMore = result.rows.length > limit;
-    const posts = (hasMore ? result.rows.slice(0, limit) : result.rows).map(({ score, ...post }) => post);
-    res.json({ posts, currentPage: page, hasMore });
+    res.json({ posts: hasMore ? result.rows.slice(0, limit) : result.rows, currentPage: page, hasMore });
   } catch (err) {
     sendError(res, err, 'Loading popular posts failed. Please try again later.');
   }

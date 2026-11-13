@@ -127,6 +127,26 @@ async function publishServerCounters() {
   const rowsOf = {};
   // The set-up requests above must not count against the first endpoint.
   await publishServerCounters();
+  // Day 113: Explore reads a ranking its job rebuilds (every 2 minutes in
+  // production; this stack only rebuilds when told -- run-all's perf
+  // stack). Rebuild it now, as a running server has, and measure the job
+  // itself: a batch over the week's posts, never a full scan of a big table.
+  {
+    process.env.DATABASE_URL = 'postgresql://testuser@localhost:55433/mysocialapp_e2e';
+    const exploreRanking = require('../backend/services/exploreRankingService');
+    const before = seqScans();
+    const start = Date.now();
+    const { refreshed, posts } = await exploreRanking.refresh();
+    const ms = Date.now() - start;
+    await require('../backend/db').end(); // its connection's counters are published as it ends
+    await sleep(200);
+    const after = seqScans();
+    const scanned = Object.keys(after).filter((t) => after[t].pages >= BIG_PAGES && !SMALL_ON_PURPOSE.has(t) && after[t].seq > (before[t]?.seq ?? 0));
+    const rows = Object.keys(after).filter((t) => after[t].pages >= BIG_PAGES && !SMALL_ON_PURPOSE.has(t))
+      .reduce((sum, t) => sum + after[t].rows - (before[t]?.rows ?? 0), 0);
+    results.push(`${refreshed && posts > 0 && !scanned.length ? 'PASS' : 'FAIL'}  Explore ranking job (${posts} posts ranked) ${String(ms).padStart(5)} ms ${String(rows).padStart(7)} rows`
+      + (scanned.length ? `  -- full scan of: ${scanned.join(', ')}` : ''));
+  }
   for (const ep of endpoints) {
     const before = seqScans();
     const start = Date.now();

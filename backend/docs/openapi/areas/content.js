@@ -490,8 +490,8 @@ module.exports = {
   }),
   'GET /explore/posts': op({
     tag: 'Explore', auth: 'optional',
-    summary: 'Popular posts of the last week that you may see',
-    description: 'Ranked by reactions and comments, with newer posts ahead. Muted people are left out.',
+    summary: 'Popular public posts of the last week',
+    description: 'Ranked by reactions and comments, with newer posts ahead. Public posts only (followers-only and close-friends posts are on Home, never here). The ranking is rebuilt every couple of minutes; blocks, mutes and changes to a post or its author apply at once. Up to 1,000 posts.',
     query: pageQuery({ defaultLimit: 10, maxLimit: 30 }),
     responses: { 200: postPage('currentPage') }
   }),
