@@ -64,10 +64,39 @@ them at startup with a clear message.
   `EMAIL_PASS`, and `EMAIL_FROM`; push: `VAPID_PUBLIC_KEY`,
   `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`; `TURNSTILE_SITE_KEY` /
   `TURNSTILE_SECRET_KEY` (human check); `SENTRY_DSN`; `CLEANUP_SECRET` (the
-  daily cleanup job); `API_DOCS` (the API reference in production).
+  daily cleanup job); `API_DOCS` (the API reference in production);
+  `TOTP_ENCRYPTION_KEY` (two-factor keys encrypted in the database --
+  never change or lose it once set, see `LATER.md` #9).
 
 Without the optional ones the app still works: uploads, emails, push and the
 human check are simply off (the app hides what depends on them).
+
+### Maintenance scripts (backend)
+
+Run from `backend/` against the `DATABASE_URL` in your environment (take a
+backup before changing production data).
+
+- `npm run seed:demo` -- demo content (refuses a production database).
+- `npm run cleanup` -- the daily cleanup job by hand (deletes;
+  `-- --dry-run` only counts).
+- `npm run cloudinary:orphans` -- photos and voice notes nothing uses
+  (reports; `-- --delete` removes them).
+- `npm run convert:zawgyi` -- old Zawgyi Myanmar text to Unicode (dry run;
+  `-- --apply` converts).
+- `npm run seal:totp` -- encrypt two-factor keys stored before
+  `TOTP_ENCRYPTION_KEY` was set (dry run; `-- --apply` seals).
+- `node scripts/make-admin.js <username>` -- admin rights (there is no API
+  for it on purpose).
+
+## Code layout (backend)
+
+`routes/` (URLs and middleware) -> `controllers/` (read the request, send
+the answer) -> `services/` (the rules and the SQL, shared by HTTP and
+Socket.IO). Chat: `controllers/conversationController.js` (the chat list),
+`messageController.js` (a chat's messages), `groupController.js` (group
+chats); `services/messageService.js` is the one entry point to
+`services/messages/` (core checks, sending, changes, what is added to
+messages before they go out). Live events: `sockets/`.
 
 ## The API
 

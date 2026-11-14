@@ -33,7 +33,7 @@ No investor deadline pressure — building thoroughly, roughly a month timeline
 rather than rushing.
 
 ## Completed Features
-(Updated Day 88. Details: PROJECT_DETAILED_GUIDE.md and MONTH_PLAN.md's
+(Updated Day 116. Details: PROJECT_DETAILED_GUIDE.md and MONTH_PLAN.md's
 Progress Log; how to run and test everything: README.md; for the owner in
 simple English: OWNER_GUIDE.md.)
 
@@ -42,25 +42,38 @@ simple English: OWNER_GUIDE.md.)
   provider), change password, deactivate, delete, download your data, bot
   protection (honeypot, form timing, optional Turnstile), rate limits,
   "new login" alerts for a new kind of device, two-factor authentication
-  with an authenticator app (QR setup, recovery codes, a login code step).
-- **Social:** posts with photos, polls, audiences (public / followers /
-  close friends / only me), drafts and scheduled posts, hashtags and
-  mentions, reactions, threaded comments (paged), saved collections,
-  stories, follows and follow requests (private accounts), friends, people
-  you may know, Explore, ranked search, profiles (links, cover, pinned post),
-  first-run steps for new accounts (language, photo, people to follow, tour).
-  Memories ("On this day" on Home, a morning reminder in your own time zone).
+  with an authenticator app (QR setup, recovery codes, a one-time login
+  code step; keys encrypted at rest when TOTP_ENCRYPTION_KEY is set).
+  Tighter limits for an account's first 24 hours.
+- **Social:** posts with photos (your own alt text; edit, add, remove and
+  reorder photos later), polls, audiences (public / followers / close
+  friends / only me), drafts and scheduled posts, sharing a post with your
+  own words, hashtags (follow a tag: its posts on Home) and mentions,
+  reactions, threaded comments (paged; sort Most relevant / Newest; the
+  author pins one), saved collections, stories (reply and react by
+  message), follows and follow requests (private accounts), friends,
+  people you may know, Explore, ranked search, profiles (links, cover,
+  pinned post, birthday with its audience; a "finish your profile" card),
+  first-run steps for new accounts (language, photo, people to follow,
+  tour). Memories ("On this day") and friends' birthdays, in your own time
+  zone.
 - **Chat:** direct and group chats over Socket.IO (live, typing, presence,
   read receipts), voice notes, photos, replies, edits, unsend, reactions,
-  forwarding; paged inbox and history.
-- **Groups, pages, events;** notifications (grouped like Facebook's, tabs,
-  live badge, per-type settings, web push, "we removed your post").
+  forwarding; pin and archive chats; search inside a chat; paged inbox and
+  history.
+- **Groups, pages (verification requests and a tick), events;**
+  notifications (grouped like Facebook's, tabs, live badge, per-type
+  settings, per-group / per-page new-post settings, web push, "we removed
+  your post"; no repeats, nothing from blocked people).
 - **Safety:** block, mute, restrict, hidden words, reports, spam checks;
-  admin screen (reports, bans and suspensions, error log, storage, overview,
-  audit log).
+  admin screen (reports with bulk actions, content search, bans and
+  suspensions, page verification, error log, storage, overview, audit
+  log).
 - **Quality:** EN/AR with full RTL, light/dark, PWA, accessibility (axe),
-  performance (indexes, bundle budget), API reference (GET /docs) checked
-  against every API test, 15 user journeys in the browser suites, CI.
+  performance (indexes, stored counts, a kept Explore ranking, queued
+  big-audience notifications, bundle budget), API reference (GET /docs)
+  checked against every API test, 15 user journeys in the browser suites,
+  CI; security re-checks (latest: Days 114-115).
 
 ## Working Style — IMPORTANT
 - Build ONE feature at a time: a full vertical slice (backend route +
