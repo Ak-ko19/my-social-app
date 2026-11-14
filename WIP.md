@@ -1,8 +1,35 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 116 -- Code health round 2. **Step:** not started (PLAN next).
-Days 114-115 closed (Progress Log; commits ea6b64b, 0342968, 8da5dc7 and
-the close).
+**Day:** 116 -- Code health round 2. **Step:** 1 done (messageService split); 2 next.
+Days 114-115 closed (Progress Log; commits ea6b64b, 0342968, 8da5dc7,
+9de152b).
+
+### Plan (Day 116)
+Largest sources: messageService.js 775, openapi content.js 662 (data),
+conversationController.js 623, useConversationMessages.js 592,
+CreatePost.jsx 587. Behaviour must not change: the full suites are the
+safety net; each split is a move, not a rewrite.
+- **Step 1 -- split messageService.js** into services/messages/:
+  core.js (limits, error classes, messageText, participant / type /
+  block checks, client temp ids, createMessage, validateReplyTo),
+  decorate.js (reply previews, quotes, stories, reactions, scrub of
+  deleted content -- the read side), send.js (text, voice, image, story
+  replies, open direct chat, forward), changes.js (delivered, read,
+  delete, moderator removal, edit, reactions). messageService.js stays
+  the one public entry (re-exports the same names), so callers, the
+  socket spies (socketSafety.test) and the carry-over notes keep working.
+  Each new file gets a header saying what lives there. A test asserts the
+  facade's export list is unchanged.
+- **Step 2 -- next-largest:** conversationController.js and
+  useConversationMessages.js: split where a seam is clear (e.g. group
+  admin actions vs messages; the hook's socket handlers vs paging),
+  otherwise leave and say why.
+- **Step 3 -- dead code:** a script lists exports no other file imports
+  and files nothing imports (backend + frontend); remove what is truly
+  unused (check tests, scripts, dynamic imports, openapi refs first).
+- **Step 4 -- docs:** README (how to run / test, new scripts: seal:totp,
+  e2e notes) and CLAUDE.md "Completed Features" (Days 89-115) up to date;
+  PROJECT_DETAILED_GUIDE if it names moved files.
 
 ## Carry-over notes
 - Days 114-115 close: a browser check must wait for a screen to RENDER
@@ -178,7 +205,7 @@ the close).
   and postAudienceSql (listings) -- never copy the audience rule. Muted
   (muteService.notMutedSql) applies to Home/stories/Explore only;
   restricted people never notify (notify(), mentions, pushes).
-- Direct-message rules live in messageService.assertNotBlocked (every
+- Direct-message rules live in services/messages/core.js assertNotBlocked (every
   send) + interactionService; a new send path must call it.
 - Never put a commit in the same batch as the checks it depends on.
 - Browser runs: ONE run-all/A3 at a time -- two in parallel fail with

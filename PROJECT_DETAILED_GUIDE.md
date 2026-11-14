@@ -391,7 +391,7 @@ different environment:
 ### 1. Block user
 `blocks` table + `blockService.isBlocked` (bidirectional) used everywhere a
 block needs to gate something: `followController` (can't follow), 
-`messageService.assertNotBlocked` (can't message, re-checked on every send
+`assertNotBlocked` (services/messages/core.js) (can't message, re-checked on every send
 so a block placed mid-conversation takes effect immediately), and a
 `NOT EXISTS` clause repeated in every feed/search/hashtag/bookmark query
 (mutual invisibility — same pattern as the codebase's existing per-query
@@ -784,7 +784,7 @@ built and how to re-verify it.
 - **Data:** migration 021 adds `message_type 'image'` (its own run: an
   enum value can't be used in the transaction that adds it). Migration
   022 adds `messages.reply_to_message_id` and the image CHECK.
-- **Service** (`services/messageService.js`):
+- **Service** (`services/messageService.js`; since Day 116 the code is in `services/messages/` -- core, send, changes, decorate):
   - `editMessage` (own text, not deleted, 15-minute
     `MESSAGE_EDIT_WINDOW_MS`).
   - `sendImageMessage`.
@@ -812,7 +812,7 @@ built and how to re-verify it.
   no blocked or deactivated members, admin handover, and deletion when
   empty.
 - **Group-aware code paths:**
-  - `messageService.assertNotBlocked` skips groups.
+  - `assertNotBlocked` (services/messages/core.js) skips groups.
   - `markDelivered`/`markRead` skip per-message status for groups.
   - `getConversations` returns both kinds.
   - `getConversationType()` is the helper to use for any new check.

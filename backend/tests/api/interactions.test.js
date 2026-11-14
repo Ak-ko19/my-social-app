@@ -57,7 +57,7 @@ describe('who can message and comment (Day 47)', () => {
     const refused = await send(pest, pestChat, 'again');
     expect([refused.status, refused.text]).toEqual([403, NO_MSG]);
     // (Voice, image, forward and reactions share the same check:
-    // messageService.assertNotBlocked runs on every send.)
+    // messages/core.js assertNotBlocked runs on every send.)
     // I can always write to them; once I have, they may answer.
     expect((await send(me, pestChat, 'what do you want?')).status).toBe(201);
     expect((await send(pest, pestChat, 'sorry')).status).toBe(201);

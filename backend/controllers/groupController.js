@@ -13,7 +13,7 @@ const { toUnicode } = require('../utils/myanmarText'); // Day 43: Zawgyi -> Unic
 //   too), but a group always keeps at least one admin.
 // - You can't add someone you've blocked or who has blocked you, or a
 //   deactivated account. (Blocks don't silence an existing group -- see
-//   messageService.assertNotBlocked.)
+//   messages/core.js assertNotBlocked.)
 // - If the last admin leaves, the longest-standing remaining member is
 //   promoted; when the last member leaves, the group is deleted.
 const MAX_GROUP_SIZE = 50;
