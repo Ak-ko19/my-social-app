@@ -1,98 +1,15 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 113 -- Performance round 3.
-**Step:** 5 of 5 -- DONE (backend 1207, perf 76/76, rehearsal, day101 +
-b10 + b14). Next: Day close -- full browser run in batches of 3, then the
-Progress Log entry, tick the Day.
-
-### Step 5 plan (new-post notifications off the request)
-- Day 101 fans out INSIDE POST /posts: one INSERT of a notification per
-  eligible member/follower + a push and a badge update each (20k for the
-  busy group). Small audiences stay inline (<= POST_FANOUT_INLINE_MAX,
-  default 200, by the stored member/follower counts of step 1); bigger
-  ones go to post_fanout_queue (migration 095: post_id PK -> posts
-  cascade, after_user_id cursor, queued_at).
-- services/postFanoutService.drain(): FOR UPDATE SKIP LOCKED one job at a
-  time; each chunk = the same INSERT ... SELECT with user_id > cursor
-  ORDER BY user_id LIMIT 1000, the cursor moved in the SAME transaction
-  (exactly once per recipient); pushes + badges after commit; a time
-  budget per pass. Kicked right after the post commits (not under
-  NODE_ENV=test), the ticker every 30 s, cleanupService as the backstop.
-- notificationService.notifyNewPost keeps the rules (one SQL per kind,
-  now with an optional cursor + limit). Tests: small inline, large queued
-  (threshold lowered), chunks resume, exactly once, a deleted post drops
-  its job, rules still apply. Perf: posting in the busy group is fast; the
-  drain tells every member.
-
-### Step 3 plan (Most relevant comments)
-- Migration 094: comments.like_count (comment_likes rows) and
-  comments.reply_count (replies NOT awaiting approval), statement-level
-  triggers like 092 (comment_likes ins/del; comments ins/del/upd -- an
-  update of the counters themselves nets 0 and stops there). Backfill.
-- Ranking uses the stored counts (one row per thread, no subqueries): the
-  signal is global, as on Facebook; the reply count SHOWN stays the one the
-  viewer may see. The ranked ids are picked first, then the page's rows get
-  their authors and columns (no join over users for every thread).
-  commentColumnsSql's like_count is the stored one (same number).
-- Tests: counts through like/unlike, reply, reply awaiting approval then
-  approved, delete reply, delete thread, deleted account; Most relevant
-  order unchanged (existing tests); mutations.
-
-### Step 2 plan (Explore's popular posts)
-- Migration 093: UNLOGGED explore_ranking (post_id PK -> posts ON DELETE
-  CASCADE, rank, score; index on rank) + explore_ranking_state (one row,
-  refreshed_at). Unlogged: a recomputable cache -- no WAL every refresh
-  (Neon's 0.5 GB counts history); emptied on a crash/restart, and then the
-  first read rebuilds it.
-- services/exploreRankingService: refresh() in one transaction with
-  pg_try_advisory_xact_lock (one instance at a time; a busy one keeps the
-  old list); the top 1,000 public posts of 7 days with engagement (same
-  score, services/popularity). ensureFresh(): one SELECT of refreshed_at;
-  rebuild only if older than 2.5 x EXPLORE_RANKING_MS (default 120 s; 0
-  under NODE_ENV=test unless set -- like TRENDING_CACHE_MS). Ticker job.
-- GET /explore/posts: page of the ranking in rank order, every rule checked
-  again live (still public, author not private/deactivated, not in a
-  group, inside 7 days, blocks, mutes); counts live for the page's rows.
-- Behaviour change (rule 9): followers-only posts no longer appear in a
-  follower's Explore -- Explore is public content (IG/FB); they're on Home.
-- Tests: ranking + stale/fresh rules with the env set; a post deleted /
-  made followers-only / author blocked / muted / deactivated vanishes at
-  once; busy lock keeps the old list. Perf: a `perf` stack with a long max
-  age, the suite refreshes in-process before measuring, and times the job.
-
-### Plan (Day 113)
-Goal: the perf suite says the truth at a bigger seed, and the per-request
-work that grows with the site stops growing with it. Measured first (the
-suite now prints which tables a failing endpoint read): with 150k users,
-10 endpoints read over 20k rows -- groups (every membership counted),
-suggestions (every account), and a merge join walking users_pkey for
-"author not deactivated" in Explore, comments, search, trending. Steps
-ordered so every commit keeps the suite green:
-- **Step 1 -- groups, pages, events at size; stored counts.** Seed: 3k
-  groups (one of 20k members), 2k pages (one of 20k followers), 5k events,
-  22k reports, verification requests, archived chats; the suite calls their
-  lists + followed tags. Migration 092: communities.member_count,
-  pages.follower_count, users.follower_count (accepted), kept by
-  statement-level triggers (transition tables); Discover / popular indexes;
-  the group member list index. Suggestions start from their candidates.
-  Rehearsal now compares triggers + functions. DONE: perf 73/73, backend
-  1187, rehearsal, 9 related browser suites.
-- **Step 2 -- Explore's popular posts.** Per request it scores every post of
-  7 days. A ranked candidate table (public posts, refreshed by the ticker,
-  advisory lock), filtered per viewer at read time (blocks, mutes,
-  deactivated, still public). Better than now: only public posts (as IG/FB
-  Explore), which is also the privacy-safe choice.
-- **Step 3 -- Most relevant comments.** Scores every thread per request with
-  per-thread subqueries: stored like/reply counts on comments (triggers),
-  so ranking reads one row per thread.
-- **Step 4 -- users big for real.** 120k quiet accounts in the seed (saved:
-  scratchpad day27-perf.step4.sql), drop SMALL_ON_PURPOSE; search and
-  trending look authors up by id (LATERAL) instead of a merge join over
-  users_pkey.
-- **Step 5 -- new-post notifications off the request** (Day 101 fan-out):
-  a queue the ticker drains (SKIP LOCKED); same notifications/settings.
+**Day:** 114 -- Security round 3 (next).
+**Step:** not started (PLAN next).
 
 ## Carry-over notes
+- Day 113 close: new-post notifications to a group / page over
+  POST_FANOUT_INLINE_MAX (200) go through post_fanout_queue
+  (postFanoutService.drain: ticker, cleanup, a kick after the post). A new
+  rule for who hears about a group / page post goes in
+  notificationService.insertNewPostNotifications (one place for both).
+  A new ticker job adds a connection to scheduledPosts.test's count.
 - Day 113: a statement-level trigger fires even for an UPDATE of no rows: a
   trigger that updates its OWN table must return early when nothing it
   counts changed (094 recursed to "stack depth limit exceeded"), and in
@@ -147,11 +64,8 @@ ordered so every commit keeps the suite green:
 - Day 105: the first download is 222.0 kB of the 225 kB budget (Home's
   cards ship with it). Day 113 (performance round 3): look for what can
   load later (e.g. the Memories and profile cards, the story viewer).
-- Day 101: new-post notifications fan out inside the post request (one
-  INSERT ... SELECT, then a push + badge update per recipient). Fine at
-  prototype scale; for groups / pages with many thousands of members, move
-  the pushes (and the insert for huge ones) to a background job (Day 113
-  performance round, or after funding with a real queue).
+- Day 101: new-post notifications fan out inside the post request for
+  small audiences; big ones are queued since Day 113 (see above).
 - GO LIVE is an owner action (no production access): GO_LIVE_CHECKLIST.md,
   LATER.md #2. Before each future GO LIVE day, run
   `cd e2e && bash golive-rehearsal.sh --old` (it picks up new migrations

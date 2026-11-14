@@ -320,7 +320,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 112 — Accessibility + translations check
 - [x] Every screen from Days 91–111 translated (EN/AR), RTL-correct, axe 0 serious/critical. *(Routes and overlays in all four language x theme combinations; two real bugs fixed -- see Progress Log.)*
 ### Day 113 — Performance round 3
-- [ ] Explore's popular posts at scale (AUDIT_REPORT_4 §6), the new lists' indexes, the perf suite at the larger seed.
+- [x] Explore's popular posts at scale (AUDIT_REPORT_4 §6), the new lists' indexes, the perf suite at the larger seed. *(Five steps; also stored counts, Most relevant comments and big-group notifications -- see Progress Log.)*
 ### Day 114–115 — Security round 3
 - [ ] Re-check every route and socket event added since Day 76; dependency updates; two-factor keys encrypted when the owner sets a key (works unencrypted without it).
 ### Day 116 — Code health round 2
@@ -3495,3 +3495,49 @@ Read-only; no application code changed. Same method as audit 3, on
   - Full browser run in batches of 3 (41 batches): all green; day80-states
     en and ar re-run alone after the database crash (158/158 each, with the
     new signed-in guard); a3 all four parts 168/168.
+
+### 2026-11-14 — Day 113: Performance round 3
+Goal: the perf suite tells the truth at a bigger seed, and work per
+request stops growing with the size of the site. The suite now prints
+which tables a failing endpoint read; at 150k users, 10 endpoints read
+over 20k rows. Five steps, each keeping the suite green:
+- **Groups, pages, events at size; stored counts (`5e5abf0`, migration
+  092):** the seed gets 3k groups (one of 20k members), 2k pages (one of
+  20k followers), 5k events, 22k reports. communities.member_count,
+  pages.follower_count and users.follower_count are stored, kept by
+  statement-level triggers. /communities 152,507 -> 60 rows; a group's
+  member list 40,042 -> 22; People you may know 153,815 -> 3,773. The
+  rehearsal now compares triggers and functions too.
+- **Explore's popular posts (`e25ebd8`, migration 093 -- AUDIT_REPORT_4
+  §6):** a kept ranking of the week's top 1,000 public posts (UNLOGGED,
+  rebuilt every 2 min under an advisory lock); each read re-checks every
+  rule for its viewer. 87 rows per request (was ~12,800). Better than the
+  plan (rule 9): Explore is public posts only, as on Instagram/Facebook --
+  a followers-only post is on Home, no longer in a follower's Explore.
+- **Most relevant comments (`6303c9a`, migration 094):** stored
+  comments.like_count / reply_count (triggers); the ranking reads one row
+  per thread. The busy post: 2,524 rows (was 3,503 + ~20k user rows).
+- **users big for real (`13285a4`):** 120k quiet accounts in the seed;
+  lists that read many posts look their authors up by id
+  (authorLookupSql) instead of a merge join over users_pkey: trending
+  34,457 -> 7,344 rows, the ranking job 40,498 -> 12,970, search steady.
+- **New-post notifications off the request (`f2de879`, migration 095):**
+  Day 101 told every member inside POST /posts. A group / page over 200
+  members / followers (POST_FANOUT_INLINE_MAX) now goes to
+  post_fanout_queue; postFanoutService sends 1,000 at a time in user
+  order, the cursor committed with each chunk (exactly once; SKIP LOCKED
+  across instances), pushes after commit; kicked after the post, then the
+  ticker and the daily cleanup. Posting in the 20k group: 97 ms, 4 rows;
+  the queue tells all 20,011 members once in 1.6 s. Small audiences are
+  told inline as before (same rules: Off, blocks, mutes, restricted).
+  - Known limit: a job that fails every time stays at the head of the
+    queue (logged, retried every 30 s). It is plain SQL, so a failure
+    would be systemic. A real job queue is for after funding.
+- **Tests at close:**
+  - Backend 1207/1207 (postFanout.test 8, the cursor mutation caught),
+    Vitest 464/464, frontend lint (exit 0), check:i18n (1805 keys),
+    bundle 222.0 kB, npm audit 0/0/0 (all three folders). Rehearsal
+    015 -> 095 passed.
+  - day27-perf 76/76 at 150k users. Full browser run in batches of 3 (40
+    batches, 101 suites/parts): all green; a3 168/168 in all four parts,
+    day26-a11y 0 serious/critical, day80-states 158/158 each.
