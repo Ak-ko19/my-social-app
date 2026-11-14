@@ -1,7 +1,41 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 114 -- Security round 3 (next).
-**Step:** not started (PLAN next).
+**Day:** 114-115 -- Security round 3.
+**Step:** 1+2 of 4 -- VERIFY (no gaps found; securityRound3.test.js 10/10
+keeps them closed). Read: replies, chat search/context, hashtag, memories,
+page verification, admin. Write: story reply/react (VISIBLE_TO_VIEWER_SQL
++ send checks), share (non-text content 400; flood check), edit photos,
+pinned comment, notification levels. Sockets: only 2 new server->own-room
+events since Day 76. Rate limits: present or bounded on every new write.
+
+### Plan (Days 114-115)
+Since Day 76 (1a86312): 38 new routes, socketAuth reworked, new socket
+events (REALTIME.md). Steps:
+- **Step 1 -- read routes (the 15 GET / optionalAuth ones):** for each,
+  who may read what -- blocked (both ways), private accounts, audiences
+  (followers / close friends / only me), group privacy and bans, deleted
+  and deactivated content, chat members who left / were removed (search +
+  message context must not reach messages they can't see). Every gap gets
+  a failing test first, then the fix. securityRound3.test.js holds the
+  sweep (one describe per route family).
+- **Step 2 -- write routes + rate limits:** ownership / role on every
+  PUT/POST/DELETE (pinned comment: the post's author only; page
+  verification: page admins; notification levels: members / followers
+  only; story reply/react: may see the story, not blocked, message
+  permission; share: may see the original, audience of a share). New write
+  routes without a rate limit get one where a person could flood others
+  (story replies/reactions, shares, hashtag follows, verification
+  requests). Socket events since Day 76: auth + membership on each.
+- **Step 3 -- dependency updates:** npm outdated in backend, frontend,
+  e2e; patch/minor updates in one go, majors one at a time only when
+  safe; full backend + Vitest + build + browser smoke.
+- **Step 4 -- two-factor secrets encrypted at rest:** TOTP_ENCRYPTION_KEY
+  (optional, 32 bytes base64/hex). Set: secrets are AES-256-GCM sealed
+  ("v1:" iv:tag:data) when written, and old plain ones are read and
+  re-sealed on the next use; unset: plain, as now. A wrong / missing key
+  for a sealed secret = a clear server error (never "2FA off", never a
+  bypass). A script seals every existing secret once a key is set
+  (GO_LIVE_CHECKLIST / LATER.md: the owner makes the key). Tests both ways.
 
 ## Carry-over notes
 - Day 113 close: new-post notifications to a group / page over
