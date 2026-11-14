@@ -1,6 +1,6 @@
 // Single source of truth for message validation + persistence. Both the
 // socket 'send_message'/'mark_delivered'/'mark_read' handlers (sockets/index.js)
-// and the REST endpoints (controllers/conversationController.js) call into
+// and the REST endpoints (controllers/messageController.js) call into
 // this module instead of touching the DB directly, so the two transports can
 // never drift -- fixing a bug or tightening a validation rule here fixes it
 // for both at once.

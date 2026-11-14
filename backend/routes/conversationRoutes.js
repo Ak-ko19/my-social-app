@@ -4,6 +4,8 @@ const authMiddleware = require('../middleware/authMiddleware');
 const requireConversationParticipant = require('../middleware/requireConversationParticipant');
 const { upload, uploadAudio, uploadToCloudinary } = require('../middleware/cloudinaryUpload');
 const conversationController = require('../controllers/conversationController');
+// Day 116: a chat's messages have their own controller.
+const messageController = require('../controllers/messageController');
 const chatSearchController = require('../controllers/chatSearchController');
 const groupController = require('../controllers/groupController');
 const { messageReactionLimiter } = require('../middleware/rateLimiter');
@@ -24,11 +26,11 @@ router.patch('/conversations/:id/members/:userId', authMiddleware, groupControll
 // Day 34: group photo -- the admin check runs before anything is uploaded.
 router.put('/conversations/:id/photo', authMiddleware, groupController.requireGroupAdmin, upload.single('photo'), uploadToCloudinary('group-photos'), groupController.setGroupPhoto);
 router.delete('/conversations/:id/photo', authMiddleware, groupController.requireGroupAdmin, groupController.removeGroupPhoto);
-router.get('/conversations/:id/messages', authMiddleware, conversationController.getMessages);
+router.get('/conversations/:id/messages', authMiddleware, messageController.getMessages);
 // Day 99: search inside a chat, and the messages around a result.
 router.get('/conversations/:id/search', authMiddleware, chatSearchController.searchMessages);
 router.get('/conversations/:id/messages/:messageId/context', authMiddleware, chatSearchController.messageContext);
-router.post('/conversations/:id/messages', authMiddleware, conversationController.sendMessage);
+router.post('/conversations/:id/messages', authMiddleware, messageController.sendMessage);
 router.post(
   '/conversations/:id/messages/voice',
   authMiddleware,
@@ -39,7 +41,7 @@ router.post(
   // browser/OS recorded it (Chrome/Firefox send audio/webm, Safari sends
   // audio/mp4 -- neither is safely playable on every OTHER browser as-is).
   uploadToCloudinary('voice-messages', 'video', 'mp3'),
-  conversationController.sendVoiceMessage
+  messageController.sendVoiceMessage
 );
 // B9: image messages (participation checked before the upload happens).
 router.post(
@@ -48,19 +50,19 @@ router.post(
   requireConversationParticipant,
   upload.single('image'),
   uploadToCloudinary('message-images'),
-  conversationController.sendImageMessage
+  messageController.sendImageMessage
 );
-router.put('/conversations/:id/messages/:messageId', authMiddleware, conversationController.editMessage);
-router.delete('/conversations/:id/messages/:messageId', authMiddleware, conversationController.deleteMessage);
-router.put('/conversations/:id/read', authMiddleware, conversationController.markConversationRead);
+router.put('/conversations/:id/messages/:messageId', authMiddleware, messageController.editMessage);
+router.delete('/conversations/:id/messages/:messageId', authMiddleware, messageController.deleteMessage);
+router.put('/conversations/:id/read', authMiddleware, messageController.markConversationRead);
 router.put('/conversations/:id/mute', authMiddleware, conversationController.muteConversation);
 // Days 97-98: pin to the top, archive out of the inbox (yours only).
 router.put('/conversations/:id/pin', authMiddleware, conversationController.pinConversation);
 router.put('/conversations/:id/archive', authMiddleware, conversationController.archiveConversation);
 // Day 31: react to a message (one reaction per person; DELETE removes it).
-router.put('/conversations/:id/messages/:messageId/reaction', authMiddleware, messageReactionLimiter, conversationController.setMessageReaction);
-router.delete('/conversations/:id/messages/:messageId/reaction', authMiddleware, messageReactionLimiter, conversationController.setMessageReaction);
+router.put('/conversations/:id/messages/:messageId/reaction', authMiddleware, messageReactionLimiter, messageController.setMessageReaction);
+router.delete('/conversations/:id/messages/:messageId/reaction', authMiddleware, messageReactionLimiter, messageController.setMessageReaction);
 // Day 32: forward a message to up to 5 chats (each send is rate-limited per chat).
-router.post('/conversations/:id/messages/:messageId/forward', authMiddleware, conversationController.forwardMessage);
+router.post('/conversations/:id/messages/:messageId/forward', authMiddleware, messageController.forwardMessage);
 
 module.exports = router;

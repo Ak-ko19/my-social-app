@@ -46,7 +46,7 @@ async function sendMessage({ conversationId, senderId, content, clientTempId, re
 
 // mediaUrl/durationSeconds come from the Cloudinary upload result the
 // caller already has in hand by this point (see controllers/
-// conversationController.js's sendVoiceMessage) -- this function only
+// messageController.js's sendVoiceMessage) -- this function only
 // validates and persists, it never talks to Cloudinary itself, so a
 // validation failure here can never leave an upload half-done.
 //
