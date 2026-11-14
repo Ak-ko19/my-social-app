@@ -1,8 +1,30 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 114-115 -- Security round 3.
-**Step:** 1+2 of 4 -- VERIFY (no gaps found; securityRound3.test.js 10/10
-keeps them closed). Read: replies, chat search/context, hashtag, memories,
+**Step:** 4 of 4 -- two-factor secrets encrypted at rest. PLAN next.
+**Step 3 (done):** in-range updates x3; swagger-ui-dist 5.35.0; majors
+dotenv 18, i18next 27 + react-i18next 18, motion 14, jsdom 31. Kept:
+web-push 3 (4 is ESM-only: Jest's CommonJS runtime can't require it, and
+3.6.7 has no advisory), myanmar-tools 1.1.3 (1.2.0 still ships no build).
+The updates (and HEAD already, 225.7) were over the bundle budget: the
+comments, share sheet, report dialog (post menu) and story viewer now load
+on first tap via utils/lazyPart (compact ScreenLoadBoundary: offline ->
+Try again + auto-retry, online -> Reload, Close if onClose): 221.2 kB.
+Verified: backend 1217/1217, Vitest 470/470, lint, i18n, audit x3, 16
+browser suites (day72-offline gained the offline-comments check).
+Step 3 plan (as written): the lockfiles already hold the in-range updates (npm update in
+all three folders, left uncommitted by the last session; package.json
+untouched). Outside the ranges: swagger-ui-dist 5.33.1 -> 5.35.0 (exact
+pin, no recorded reason beyond "no CDN"); myanmar-tools 1.2.0 only if its
+npm package now ships its build (Day 43: it did not). Majors one at a
+time, changelog read, tests run: dotenv 18, web-push 4 (backend); i18next
+27 + react-i18next 18 (together), motion 14, jsdom 31 (dev) (frontend).
+A major needing real rework or looking risky stays, reason logged.
+Verify: backend Jest, Vitest, lint, build + check:bundle, check:i18n,
+npm audit --omit=dev x3, browser smoke (incl. /docs, push, i18n).
+
+**Steps 1+2 (done, ea6b64b):** no gaps found; securityRound3.test.js 10/10
+keeps them closed. Read: replies, chat search/context, hashtag, memories,
 page verification, admin. Write: story reply/react (VISIBLE_TO_VIEWER_SQL
 + send checks), share (non-text content 400; flood check), edit photos,
 pinned comment, notification levels. Sockets: only 2 new server->own-room
@@ -38,6 +60,14 @@ events (REALTIME.md). Steps:
   (GO_LIVE_CHECKLIST / LATER.md: the owner makes the key). Tests both ways.
 
 ## Carry-over notes
+- Days 114-115 step 3: a part of a screen that shows only after a tap
+  goes through utils/lazyPart (never plain React.lazy: a failed download
+  would hit the crash screen). Browser checks must WAIT for it after the
+  tap (locator.waitFor / findBy; allInnerTexts() does not wait). Bundle
+  221.2 / 225 kB. web-push 4+ is ESM-only (stays on 3 until Jest can load
+  it); myanmar-tools stays pinned at 1.1.3.
+- Jest writes nothing to a redirected log until it ends: wait for the
+  "exit" line, don't read an empty file as "not running".
 - Day 113 close: new-post notifications to a group / page over
   POST_FANOUT_INLINE_MAX (200) go through post_fanout_queue
   (postFanoutService.drain: ticker, cleanup, a kick after the post). A new

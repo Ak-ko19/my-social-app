@@ -15,13 +15,16 @@ import { useStories } from '../hooks/useStories';
 import StoriesRow from '../components/feed/StoriesRow';
 import MemoriesCard from '../components/feed/MemoriesCard';
 import ProfileCompletionCard from '../components/feed/ProfileCompletionCard';
-import StoryViewer from '../components/feed/StoryViewer';
 // Self-imported here (not just relying on Feed.jsx having already loaded
 // it elsewhere in the bundle) since this is the first place FeedList/
 // FeedSkeleton/etc. render outside of Feed.jsx itself -- same "own your
 // styles" reasoning as TopAppBar/Logo importing layout.css directly.
 import '../components/feed/Feed.css';
 import { useTranslation } from 'react-i18next';
+import { lazyPart } from '../utils/lazyPart';
+
+// Days 114-115: opens on a tap on a story, so not in the first download.
+const StoryViewer = lazyPart(() => import('../components/feed/StoryViewer'));
 
 // Real feed: the shared useFeed hook, FeedList (real pagination/
 // virtualization) rendering real <PostCard post={p} />, plus the real

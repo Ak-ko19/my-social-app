@@ -1,16 +1,19 @@
 import { lazy, Suspense, useState } from 'react';
 import { BookmarkPlus, Flag, Globe, Hash, Lock, MoreHorizontal, Pencil, Pin, PinOff, Star, Trash2, UserX, Users, VolumeX } from 'lucide-react';
 import { IconButton, ActionSheet, ConfirmDialog } from '../ui';
-import ReportDialog from './ReportDialog';
-// Day 46: loaded when first opened -- every feed card has this menu.
-const SaveToCollectionSheet = lazy(() => import('./SaveToCollectionSheet'));
 import { useTranslation } from 'react-i18next';
 import { serverErrorText } from '../../utils/serverError';
 import { useAuth } from '../../hooks/useAuth';
+import { lazyPart } from '../../utils/lazyPart';
 import { blockUser } from '../../services/blockService';
 import { muteUser } from '../../services/muteService';
 import { unfollowHashtag } from '../../services/hashtagService';
 import { deletePost } from '../../services/postService';
+
+// Day 46: loaded when first opened -- every feed card has this menu.
+const SaveToCollectionSheet = lazy(() => import('./SaveToCollectionSheet'));
+// Days 114-115: opened from the menu only, so not in the first download.
+const ReportDialog = lazyPart(() => import('./ReportDialog'));
 
 // The post card's "..." menu. Report (Feature 2) and the post owner's
 // edit/delete (Feature 4) extend this same sheet rather than building a

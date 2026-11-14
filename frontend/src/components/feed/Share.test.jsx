@@ -29,7 +29,7 @@ describe('sharing a post', () => {
     const { container } = renderCard(post({ share_count: 1 }));
     expect(container.querySelector('.post-card-stats').textContent).toContain('1 share');
     await userEvent.click(screen.getByRole('button', { name: 'Share' }));
-    const menu = screen.getByRole('menu');
+    const menu = await screen.findByRole('menu');
     expect(within(menu).getAllByRole('menuitem').map((b) => b.textContent)).toEqual(['Share now (Public)', 'Write post', 'Copy link']);
     await userEvent.click(within(menu).getByRole('menuitem', { name: 'Share now (Public)' }));
     await screen.findByText('Shared!');

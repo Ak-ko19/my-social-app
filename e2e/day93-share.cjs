@@ -97,6 +97,8 @@ async function axeSerious(page, selector) {
     // A post not open to everyone: only the link.
     await b.page.goto(`${WEB}/posts/${secret.id}`, { waitUntil: 'networkidle' });
     await b.page.getByRole('button', { name: F.share, exact: true }).click();
+    // The sheet's code loads on the first tap (lazyPart): wait for it.
+    await b.page.getByRole('menu').getByRole('menuitem').first().waitFor();
     const only = await b.page.getByRole('menu').getByRole('menuitem').allInnerTexts();
     check(`${tag}: a followers-only post offers only Copy link`, !only.includes(F.shareNow) && !only.includes(F.shareWrite) && only.includes(F.shareCopyLink), only.join(' | '));
     await b.ctx.close();

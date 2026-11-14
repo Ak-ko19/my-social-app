@@ -11,6 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useLikeToggle } from '../../hooks/useLikeToggle';
 import { useBookmarkToggle } from '../../hooks/useBookmarkToggle';
 import { useComments } from '../../hooks/useComments';
+import { lazyPart } from '../../utils/lazyPart';
 import { useHiddenWords } from '../../hooks/useHiddenWords';
 import { resolveImageUrl } from '../../api';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
@@ -18,16 +19,18 @@ import { firstLink } from '../../utils/links';
 import { updatePost, updatePostVisibility } from '../../services/postService';
 import { Avatar, VerifiedTick } from '../ui';
 import MediaCarousel from './MediaCarousel';
-import CommentSection from './CommentSection';
 import { MAX_POST_LENGTH } from '../../utils/textLimits';
 import PostMenu from './PostMenu';
 import PostText from './PostText';
 import PollView from './PollView';
 import LinkPreviewCard from '../common/LinkPreviewCard';
 import HiddenContentCover from './HiddenContentCover';
-import ShareSheet from './ShareSheet';
 import SharedPostCard from './SharedPostCard';
 import './PostCard.css';
+
+// Days 114-115: shown only after a tap, so not in the first download.
+const CommentSection = lazyPart(() => import('./CommentSection'));
+const ShareSheet = lazyPart(() => import('./ShareSheet'));
 
 // Replaces the old Feed.css-based PostCard IN PLACE -- same external
 // contract as before (`post` prop, self-contained like/comment hooks), so
@@ -78,6 +81,9 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onUnf
   const [editError, setEditError] = useState('');
   const [shareFeedback, setShareFeedback] = useState('');
   const [shareOpen, setShareOpen] = useState(false);
+  // The sheet's code loads on the first tap; it then stays mounted so it
+  // can animate out (and in again) like before.
+  const [shareUsed, setShareUsed] = useState(false);
   // A share's count belongs to its original, so only an original's goes up.
   const [shareCount, setShareCount] = useState(post.share_count || 0);
   // B5 audience -- local so an owner's change shows immediately.
@@ -327,7 +333,7 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onUnf
           <MessageCircle size={18} aria-hidden="true" />
           <span>{t('feed.comment')}</span>
         </button>
-        <button type="button" className="post-card-action" onClick={() => setShareOpen(true)} aria-haspopup="menu">
+        <button type="button" className="post-card-action" onClick={() => { setShareUsed(true); setShareOpen(true); }} aria-haspopup="menu">
           <Share2 size={18} aria-hidden="true" />
           <span>{shareFeedback || t('feed.share')}</span>
         </button>
@@ -343,13 +349,15 @@ function PostCard({ post, onRemovePost, onRemovePostsByUser, onUpdatePost, onUnf
         </button>
       </div>
 
-      <ShareSheet
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        post={post}
-        onFeedback={showShareFeedback}
-        onShared={() => !post.is_share && setShareCount((n) => n + 1)}
-      />
+      {shareUsed && (
+        <ShareSheet
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          post={post}
+          onFeedback={showShareFeedback}
+          onShared={() => !post.is_share && setShareCount((n) => n + 1)}
+        />
+      )}
 
       <AnimatePresence initial={false}>
         {comments.visible && <CommentSection key="comments" postId={post.id} postOwnerId={post.user_id} comments={comments} groupLocked={groupLocked} canPin={canPinComment} />}

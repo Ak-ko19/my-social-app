@@ -53,6 +53,18 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
     const sideways = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
     check(`${lang}: ${lang === 'ar' ? 'right to left' : 'left to right'}, no sideways scroll`, dir === (lang === 'ar' ? 'rtl' : 'ltr') && !sideways);
     await page.screenshot({ path: path.join(SP, `day72-offline-${lang}-${theme}-375.png`) });
+    // Days 114-115: the comments' code loads on the first tap (lazyPart).
+    // Offline, that tap gets one line in place -- not the crash screen, not
+    // a whole-screen message -- and the comments open by themselves once
+    // the connection is back (checked below).
+    await page.locator('article.post-card', { hasText: 'Hello from bob' }).first()
+      .getByRole('button', { name: L.feed.comment, exact: true }).click();
+    const partNote = page.locator('.part-load-error');
+    const noteShown = await partNote.waitFor({ timeout: 5000 }).then(() => true, () => false);
+    check(`${lang}: offline, comments whose code never loaded say so in place`,
+      noteShown && (await partNote.innerText()).includes(L.screenLoad.offlineTitle)
+        && (await page.locator('.screen-load-error').count()) === 0 && (await page.getByText('Hello from bob').count()) > 0);
+    await page.screenshot({ path: path.join(SP, `day115-part-offline-${lang}-${theme}-375.png`) });
 
     // The first requests after the connection returns may still fail (expected).
     await ctx.setOffline(false);
@@ -60,6 +72,9 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
     const state = { note: await page.getByText(L.feed.offlineSaved).count(), banner: await page.locator('.offline-banner').count(), post: await page.getByText('Hello from bob').count() };
     offline = false;
     check(`${lang}: back online, Home loads by itself and the banner goes`, state.note === 0 && state.banner === 0 && state.post > 0, JSON.stringify(state));
+    check(`${lang}: ...and the comments open by themselves`,
+      await page.locator('.feed-comment-section').waitFor({ timeout: 10000 }).then(() => true, () => false)
+        && (await partNote.count()) === 0);
 
     if (lang === 'en') {
       // A message written offline waits, then goes by itself.
