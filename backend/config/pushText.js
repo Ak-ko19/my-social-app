@@ -100,4 +100,4 @@ function pushText(language, key, values) {
   return template.replace(/\{(\w+)\}/g, (whole, name) => (values[name] !== undefined ? String(values[name]) : whole));
 }
 
-module.exports = { pushText, deviceText, PUSH_TEXT: TEXT };
+module.exports = { pushText, deviceText };

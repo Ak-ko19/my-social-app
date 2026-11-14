@@ -18,17 +18,6 @@ async function isBlocked(userAId, userBId) {
   return result.rows.length > 0;
 }
 
-// Only checks the one direction (did blockerId block blockedId) -- used by
-// getBlockedUsers/unblock, where the direction genuinely matters (you can
-// only unblock someone YOU blocked, not have yourself un-blocked by them).
-async function hasBlocked(blockerId, blockedId) {
-  const result = await db.query(
-    'SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = $2',
-    [blockerId, blockedId]
-  );
-  return result.rows.length > 0;
-}
-
 // The same rule inside a query (Day 69: it used to be copied into 24
 // listings): "no block between a and b, in either direction". a and b are
 // SQL expressions -- a parameter ('$1') or a column ('posts.user_id'). With
@@ -38,4 +27,4 @@ function noBlockBetweenSql(a, b) {
     WHERE (blk.blocker_id = ${a} AND blk.blocked_id = ${b}) OR (blk.blocker_id = ${b} AND blk.blocked_id = ${a}))`;
 }
 
-module.exports = { isBlocked, hasBlocked, noBlockBetweenSql };
+module.exports = { isBlocked, noBlockBetweenSql };

@@ -60,4 +60,4 @@ function emailText(language, key, values) {
   };
 }
 
-module.exports = { emailText, EMAIL_TEXT: TEXT };
+module.exports = { emailText };

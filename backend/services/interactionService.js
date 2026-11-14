@@ -35,10 +35,6 @@ async function canMessage(senderId, recipientId) {
   return Boolean(result.rows[0]?.allowed);
 }
 
-async function assertCanMessage(senderId, recipientId) {
-  if (!(await canMessage(senderId, recipientId))) throw new InteractionError("This person isn't accepting messages from you");
-}
-
 // May `commenterId` comment on a post by `ownerId`? (Group and page posts
 // are the group's / page's: callers skip this for them.)
 async function assertCanComment(commenterId, ownerId) {
@@ -53,4 +49,4 @@ async function assertCanComment(commenterId, ownerId) {
   if (!result.rows[0]?.allowed) throw new InteractionError('This person limits who can comment on their posts');
 }
 
-module.exports = { MESSAGE_PERMISSIONS, COMMENT_PERMISSIONS, InteractionError, canMessage, canMessageSql, assertCanMessage, assertCanComment };
+module.exports = { MESSAGE_PERMISSIONS, COMMENT_PERMISSIONS, InteractionError, canMessage, canMessageSql, assertCanComment };

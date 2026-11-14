@@ -1,6 +1,6 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 116 -- Code health round 2. **Step:** 1-2 done (messageService split; conversationController split, useConversationMessages kept whole: one state machine); 3 next.
+**Day:** 116 -- Code health round 2. **Step:** 1-2 done (messageService split; conversationController split, useConversationMessages kept whole: one state machine; dead code removed); 4 next (README, CLAUDE.md).
 Days 114-115 closed (Progress Log; commits ea6b64b, 0342968, 8da5dc7,
 9de152b).
 
