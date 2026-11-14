@@ -87,6 +87,7 @@ failed and keeps the old version running. It's still better to check now.
 | `API_DOCS` | optional | `1` turns on the API reference (GET /docs, GET /openapi.json) in production. Leave it unset unless developers need it there |
 | `SENTRY_DSN` | optional | also sends server errors to Sentry (see LATER.md #5). Errors are always kept in Admin → Errors anyway |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | optional | push notifications (see LATER.md #7). Push is on only with both keys |
+| `TOTP_ENCRYPTION_KEY` | optional (recommended) | two-factor keys encrypted in the database: 32 random bytes, `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Then, after the migrations, run `DATABASE_URL="$PROD_DB" TOTP_ENCRYPTION_KEY=... npm run seal:totp -- --apply` once (LATER.md #9). Keep a copy somewhere safe and never change it: without it sealed keys can't be read (people would need their recovery codes) |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | optional | Cloudflare "are you human?" check on signup and forgot password. It's on only with both keys (see LATER.md #6) |
 | `TRUST_PROXY` | leave unset | defaults to 1 on Render |
 | `PORT`, `RENDER` | don't touch | Render sets these itself |
@@ -159,7 +160,7 @@ account as past the first-run steps, so only new sign-ups see them.)
            087_add_hashtag_follows 088_add_comment_thread_indexes 089_add_pinned_comment \
            090_add_birthdays 091_add_birthday_notifications \
            092_add_member_and_follower_counts 093_add_explore_ranking 094_add_comment_counts \
-           095_add_post_fanout_queue; do
+           095_add_post_fanout_queue 096_widen_totp_secret; do
     DATABASE_URL="$PROD_DB" node scripts/run-migration.js "migrations/$m.up.sql" || break
   done
   ```

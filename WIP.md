@@ -1,7 +1,43 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 114-115 -- Security round 3.
-**Step:** 4 of 4 -- two-factor secrets encrypted at rest. PLAN next.
+**Step:** 4 of 4 -- two-factor secrets encrypted at rest. DONE (built:
+secretBox, service, migration 096, env check, seal:totp script, docs,
+tests; mutation check 5/5 caught; rehearsal passed; day77-two-factor
+green with and without a key). Then: Day close (full browser run in
+batches, Progress Log, tick the Day).
+Step 4 plan:
+- utils/secretBox.js: TOTP_ENCRYPTION_KEY = 32 bytes as 64 hex chars or
+  base64. seal(plain, aad) -> "v1:" iv:tag:data (base64url, AES-256-GCM,
+  12-byte random iv); open(stored, aad): plain text passes through as is,
+  "v1:" needs the key (missing / wrong / tampered -> SecretBoxError, a
+  plain 500 via sendError, logged; never "2FA off", never a bypass).
+  AAD = "totp:<userId>" (same for pending and active, so enable() can
+  move it): a sealed secret copied to another account won't open.
+- Migration 096: totp_secret / totp_pending_secret varchar(64) -> (128)
+  (a sealed 32-char base32 secret is 86 chars). Down: back to 64 (fails,
+  rather than cutting, while sealed ones exist). Fixture, checklist loop,
+  rehearsal.
+- twoFactorService: startSetup seals the pending secret; enable opens it
+  and stores totp_secret sealed (also re-seals a plain pending one);
+  checkSecondFactor opens totp_secret and, after a RIGHT code with a key
+  set, re-seals a plain one (conditional UPDATE ... WHERE totp_secret =
+  the plain value). setup's response still returns the plain key once.
+- config/env.js: TOTP_ENCRYPTION_KEY set but not 32 bytes -> refuse to
+  start (error). Production without it -> a warning.
+- scripts/seal-totp-secrets.js: needs the key; seals every plain secret
+  (both columns) with a conditional update; prints counts; safe to re-run;
+  --check counts plain ones without changing anything.
+- Docs: backend/.env.example (name only + how to make one: node -e
+  crypto.randomBytes(32)), GO_LIVE_CHECKLIST (set key, run script; never
+  lose / change it: sealed secrets can't be read -> people use recovery
+  codes), LATER.md (key rotation not built; "v1:" leaves room). Privacy
+  policy: unchanged (no new data collected), checked.
+- Tests: secretBox unit (round trip, AAD, tamper, wrong key, no key,
+  bad key formats); twoFactor API with a key (stored value is sealed,
+  setup + enable + login + disable work; plain old one re-sealed after use;
+  sealed + no key -> 500 and no session; wrong key -> 500); env.test;
+  script test. Mutation check on the service.
 **Step 3 (done):** in-range updates x3; swagger-ui-dist 5.35.0; majors
 dotenv 18, i18next 27 + react-i18next 18, motion 14, jsdom 31. Kept:
 web-push 3 (4 is ESM-only: Jest's CommonJS runtime can't require it, and

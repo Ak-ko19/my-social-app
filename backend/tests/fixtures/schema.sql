@@ -1060,3 +1060,7 @@ CREATE TABLE post_fanout_queue (
   queued_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_post_fanout_queue_queued ON post_fanout_queue (queued_at);
+
+-- Days 114-115 (migration 096): two-factor keys may be stored sealed (86 chars).
+ALTER TABLE users ALTER COLUMN totp_secret TYPE varchar(128);
+ALTER TABLE users ALTER COLUMN totp_pending_secret TYPE varchar(128);

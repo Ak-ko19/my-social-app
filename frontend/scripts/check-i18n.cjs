@@ -85,8 +85,10 @@ const SAME_OK = new Set(['follow.buttonFor', 'poll.percent', 'editProfile.linkPl
 // 4. Server messages (i18n/serverMessages.ar.js) against what the backend sends.
 // DEV_ONLY: messages the UI never lets a person trigger -- API field names
 // (lowercase start or a camelCase field), lists built at run time, internal
-// routes and the link-preview fetcher's own reasons.
-const DEV_ONLY_FILES = new Set(['internalRoutes.js', 'clientErrorRoutes.js', 'linkPreviewService.js', 'pushText.js', 'emailText.js']);
+// routes and the link-preview fetcher's own reasons. secretBox.js (Days
+// 114-115): its errors are server faults -- logged, while the person gets the
+// route's generic 500 text.
+const DEV_ONLY_FILES = new Set(['internalRoutes.js', 'clientErrorRoutes.js', 'linkPreviewService.js', 'pushText.js', 'emailText.js', 'secretBox.js']);
 const DEV_ONLY = new Set([
   'Send true/false for any of: ${notificationService.CATEGORIES.join(\', \')}',
   'Sort must be recent or top',

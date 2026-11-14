@@ -11,8 +11,12 @@
 // can't slip past it); more than MAX_ATTEMPTS wrong ones in 15 minutes and
 // codes are refused until the window ends. A right code clears the count.
 //
-// The secret is stored as is: encrypting it needs a key the owner sets
-// (LATER.md). It is only ever sent back during setup.
+// The secret is only ever sent back during setup. Days 114-115: with
+// TOTP_ENCRYPTION_KEY set it is stored sealed (utils/secretBox, tied to
+// the account); a key that was stored before the key was set is sealed the
+// next time a right code is checked against it (or by
+// scripts/seal-totp-secrets.js). A sealed key the server can't open is a
+// server error -- never "2FA off" and never a way in.
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -23,6 +27,7 @@ const email = require('../utils/email'); // called through the module, so tests 
 const { emailText } = require('../config/emailText');
 const { HttpError } = require('../utils/httpError');
 const totp = require('../utils/totp');
+const secretBox = require('../utils/secretBox');
 const { isUuid } = require('./sessionService');
 
 class TwoFactorError extends HttpError {}
@@ -44,6 +49,12 @@ const USED_CODE = 'That code was already used. Wait for the next one in your app
 const WRONG_RECOVERY = 'That recovery code is not right, or it was already used.';
 const TOO_MANY = 'Too many wrong codes. Please wait 15 minutes and try again.';
 const PASSWORD_REQUIRED = 'Password is required.';
+
+// Sealed values are tied to their account: one copied into another user's
+// row won't open. Pending and active keys share it (enable() moves one).
+const secretAad = (userId) => `totp:${userId}`;
+const sealSecret = (userId, secret) => secretBox.seal(secret, secretAad(userId));
+const openSecret = (userId, stored) => secretBox.open(stored, secretAad(userId));
 
 const hashCode = (code) => crypto.createHash('sha256').update(code).digest('hex');
 // "ABCDE-fghij", "abcde fghij" -> "abcdefghij"
@@ -89,7 +100,7 @@ async function startSetup(userId) {
   if (!row) throw new TwoFactorError(404, 'User not found');
   if (row.totp_enabled_at) throw new TwoFactorError(409, ALREADY_ON);
   const secret = totp.generateSecret();
-  await db.query('UPDATE users SET totp_pending_secret = $1 WHERE id = $2', [secret, userId]);
+  await db.query('UPDATE users SET totp_pending_secret = $1 WHERE id = $2', [sealSecret(userId, secret), userId]);
   const otpauthUrl = totp.otpauthUrl({ secret, account: row.username, issuer: ISSUER });
   // An SVG built here, so the web app needs no QR library of its own.
   const svg = await QRCode.toString(otpauthUrl, { type: 'svg', margin: 2, errorCorrectionLevel: 'M' });
@@ -137,6 +148,15 @@ async function useRecoveryCode(client, userId, code) {
   if (!used) throw new TwoFactorError(400, WRONG_RECOVERY);
 }
 
+// A key stored before TOTP_ENCRYPTION_KEY was set, now that one is: seal
+// it -- only if the row still holds that same plain key (it may have been
+// turned off or set up again meanwhile). Only after a right code, so a
+// failed guess never writes.
+async function resealIfPlain(userId, stored) {
+  if (!stored || secretBox.isSealed(stored) || !secretBox.hasKey()) return;
+  await db.query('UPDATE users SET totp_secret = $3 WHERE id = $1 AND totp_secret = $2', [userId, stored, sealSecret(userId, stored)]);
+}
+
 // The second factor for an account with 2FA on: a code from the app, or
 // one of the recovery codes. Returns which one was used ('app' |
 // 'recovery'). Used by turning 2FA off and by the login step.
@@ -145,9 +165,16 @@ async function checkSecondFactor(userId, { code, recoveryCode }) {
   if (!row) throw new TwoFactorError(404, 'User not found');
   if (!row.totp_enabled_at) throw new TwoFactorError(400, NOT_ON);
   if (!code && !recoveryCode) throw new TwoFactorError(400, CODE_REQUIRED);
+  // Opened before the attempt is counted: a key the server can't open is
+  // its fault, and must not lock the person out once it is fixed.
+  const secret = code ? openSecret(userId, row.totp_secret) : null;
   await takeAttempt(db, userId);
-  if (code) await useTotpCode(db, userId, row.totp_secret, code);
-  else await useRecoveryCode(db, userId, recoveryCode);
+  if (code) {
+    await useTotpCode(db, userId, secret, code);
+    await resealIfPlain(userId, row.totp_secret);
+  } else {
+    await useRecoveryCode(db, userId, recoveryCode);
+  }
   await clearAttempts(db, userId);
   return code ? 'app' : 'recovery';
 }
@@ -180,8 +207,9 @@ async function enable(userId, code) {
   if (!row) throw new TwoFactorError(404, 'User not found');
   if (row.totp_enabled_at) throw new TwoFactorError(409, ALREADY_ON);
   if (!row.totp_pending_secret) throw new TwoFactorError(400, NO_SETUP);
+  const pendingSecret = openSecret(userId, row.totp_pending_secret); // before counting, as in checkSecondFactor
   await takeAttempt(db, userId);
-  const step = totp.verify(row.totp_pending_secret, code);
+  const step = totp.verify(pendingSecret, code);
   if (step === null) throw new TwoFactorError(400, WRONG_CODE);
 
   const client = await db.connect();
@@ -189,11 +217,13 @@ async function enable(userId, code) {
   try {
     await client.query('BEGIN');
     // Only if nothing changed meanwhile (a second setup, or a parallel enable).
+    // Stored sealed when a key is set (a pending key from before the key
+    // was set gets sealed here too).
     const turnedOn = await client.query(
-      `UPDATE users SET totp_secret = totp_pending_secret, totp_pending_secret = NULL, totp_enabled_at = now(),
+      `UPDATE users SET totp_secret = $4, totp_pending_secret = NULL, totp_enabled_at = now(),
               totp_last_step = $3, totp_failures = 0, totp_failures_since = NULL
        WHERE id = $1 AND totp_pending_secret = $2 AND totp_enabled_at IS NULL RETURNING id`,
-      [userId, row.totp_pending_secret, step]
+      [userId, row.totp_pending_secret, step, sealSecret(userId, pendingSecret)]
     );
     if (turnedOn.rows.length === 0) throw new TwoFactorError(409, ALREADY_ON);
     codes = await replaceRecoveryCodes(client, userId);

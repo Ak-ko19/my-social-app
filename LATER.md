@@ -201,3 +201,28 @@ without them. Newest items at the bottom.
   `-- --apply`.
 - **Check it worked:** run the dry run again: it says "Nothing to
   convert."
+
+## 9. (Recommended) Encrypt two-factor keys in the database (Days 114-115)
+- **What it does:** the keys behind people's authenticator apps are stored
+  encrypted. Someone who gets a copy of the database (a leaked backup)
+  can't use them to make login codes.
+- **Not needed:** without it, two-factor works as now (keys stored as they
+  are), and the server prints a warning at start.
+- **Needs:** this version deployed first (GO LIVE, item 2; migration 096).
+- **Owner steps (5 minutes, no account needed):**
+  1. On your computer, run
+     `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
+     It prints the key.
+  2. Save the key in your password manager FIRST. If it is lost or
+     changed, nobody can use their authenticator app to log in (only their
+     recovery codes).
+  3. Render → backend service → **Environment** → add
+     `TOTP_ENCRYPTION_KEY` = the key. Save; Render redeploys. (A key that
+     isn't 32 bytes stops the start, and Render keeps the old version.)
+  4. From `backend/`, with the production database and the same key:
+     `npm run seal:totp` (dry run: counts the keys stored before), then
+     `npm run seal:totp -- --apply`.
+- **Check it worked:** run the dry run again: it says "0 two-factor
+  key(s) are stored unsealed". Log in with your authenticator app.
+- **Not built yet:** changing the key later (re-sealing every key with a
+  new one). The stored "v1:" format leaves room for it.

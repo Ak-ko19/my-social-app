@@ -90,6 +90,14 @@ async function signup(name) {
     await page.screenshot({ path: path.join(SP, `day77-two-factor-codes-${c.lang}-${c.theme}-${c.width}.png`), fullPage: true });
     const status = await (await fetch(`${API}/2fa`, { headers: { Authorization: `Bearer ${dana.token}` } })).json();
     check(`${tag}: the server says it is on`, status.enabled === true && status.recoveryCodesLeft === 10, JSON.stringify(status));
+    // Days 114-115: run with TOTP_ENCRYPTION_KEY set (e2e-up.sh passes it
+    // on), the key is stored sealed, never as the app shows it.
+    if (process.env.TOTP_ENCRYPTION_KEY) {
+      const kept = require('child_process').execSync(
+        `${require('./pg.cjs').PSQL} -h localhost -p 55433 -U testuser -d mysocialapp_e2e -tA -c "SELECT totp_secret FROM users WHERE id = ${Number(dana.id)}"`
+      ).toString().trim();
+      check(`${tag}: with TOTP_ENCRYPTION_KEY the key is stored sealed`, kept.startsWith('v1:') && !kept.includes(key), kept.slice(0, 3));
+    }
 
     await page.getByRole('button', { name: T.savedThem, exact: true }).click();
     check(`${tag}: then the screen says On`, await shows(page.getByText(T.on, { exact: true })));

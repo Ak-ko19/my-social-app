@@ -8,7 +8,8 @@
     "seed:demo": "node scripts/seed-demo.js",
     "cloudinary:orphans": "node scripts/cloudinary-orphans.js",
     "convert:zawgyi": "node scripts/convert-zawgyi.js",
-    "cleanup": "node scripts/cleanup.js"
+    "cleanup": "node scripts/cleanup.js",
+    "seal:totp": "node scripts/seal-totp-secrets.js"
   },
   "keywords": [],
   "author": "",

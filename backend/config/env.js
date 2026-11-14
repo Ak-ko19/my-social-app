@@ -10,6 +10,7 @@
 const { resolveTrustProxy } = require('./trustProxy');
 const { isProduction } = require('./runtime');
 const { parseSender } = require('../utils/email');
+const { parseKey } = require('../utils/secretBox');
 const logger = require('../utils/logger');
 
 const isSet = (value) => typeof value === 'string' && value.trim() !== '';
@@ -115,6 +116,18 @@ function checkEnv(env) {
     }
   } else if (production) {
     warnings.push('CLEANUP_SECRET is not set, so the daily cleanup job is off (expired stories and old notifications pile up).');
+  }
+
+  // Days 114-115: optional key that seals two-factor keys in the database
+  // (utils/secretBox). A malformed one must stop the start: sealing with it
+  // would fail on every 2FA setup, and a typo'd key can't open what the
+  // right one sealed.
+  try {
+    if (!parseKey(env.TOTP_ENCRYPTION_KEY) && production) {
+      warnings.push('TOTP_ENCRYPTION_KEY is not set, so two-factor keys are stored unencrypted in the database (see GO_LIVE_CHECKLIST.md).');
+    }
+  } catch (err) {
+    errors.push(err.message);
   }
 
   if (isSet(env.BREVO_API_KEY) && !parseSender(env.EMAIL_FROM)) {

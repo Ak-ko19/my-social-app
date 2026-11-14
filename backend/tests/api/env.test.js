@@ -16,7 +16,8 @@ const PROD = {
   CLOUDINARY_CLOUD_NAME: 'c',
   CLOUDINARY_API_KEY: 'k',
   CLOUDINARY_API_SECRET: 's',
-  CLEANUP_SECRET: 'c'.repeat(64)
+  CLEANUP_SECRET: 'c'.repeat(64),
+  TOTP_ENCRYPTION_KEY: 'k'.repeat(43) + '='
 };
 
 const errorsOf = (env) => checkEnv(env).errors.join('\n');
@@ -92,6 +93,21 @@ describe('checkEnv', () => {
     expect(checkEnv({ ...PROD, VAPID_PUBLIC_KEY: 'p', VAPID_PRIVATE_KEY: 'q', VAPID_SUBJECT: 'mailto:me@example.com' })).toEqual({ errors: [], warnings: [] });
   });
 
+  // Days 114-115: the key that seals two-factor keys (utils/secretBox).
+  it('TOTP_ENCRYPTION_KEY: 32 bytes as hex or base64; anything else stops the start; production warns without one', () => {
+    const KEY = require('crypto').randomBytes(32);
+    for (const value of [KEY.toString('hex'), KEY.toString('base64'), KEY.toString('base64url'), ` ${KEY.toString('hex')} `]) {
+      expect(checkEnv({ ...PROD, TOTP_ENCRYPTION_KEY: value })).toEqual({ errors: [], warnings: [] });
+    }
+    for (const value of ['too-short', KEY.toString('hex').slice(2), require('crypto').randomBytes(16).toString('base64'), require('crypto').randomBytes(48).toString('base64'), `${KEY.toString('hex')}zz`]) {
+      const errors = errorsOf({ ...BASE, TOTP_ENCRYPTION_KEY: value });
+      expect(errors).toMatch(/TOTP_ENCRYPTION_KEY must be 32 random bytes/);
+      expect(errors).not.toContain(value.trim());
+    }
+    expect(checkEnv({ ...BASE, TOTP_ENCRYPTION_KEY: '' })).toEqual({ errors: [], warnings: [] }); // local dev: optional
+    expect(warningsOf({ ...PROD, TOTP_ENCRYPTION_KEY: undefined })).toMatch(/TOTP_ENCRYPTION_KEY is not set, so two-factor keys are stored unencrypted/);
+  });
+
   it('warns when only one Turnstile key is set (the check stays off)', () => {
     expect(warningsOf({ ...BASE, TURNSTILE_SITE_KEY: '0x4AAA' })).toMatch(/Turnstile is only partly configured \(missing TURNSTILE_SECRET_KEY\)/);
     expect(warningsOf({ ...BASE, TURNSTILE_SECRET_KEY: '0x4AAA-secret' })).toMatch(/missing TURNSTILE_SITE_KEY/);
@@ -111,7 +127,8 @@ describe('node server.js', () => {
     CLOUDINARY_CLOUD_NAME: '', CLOUDINARY_API_KEY: '', CLOUDINARY_API_SECRET: '',
     BREVO_API_KEY: '', SENTRY_DSN: '', CLEANUP_SECRET: '', EMAIL_HOST: '', EMAIL_USER: '', EMAIL_PASS: '', EMAIL_FROM: '', EMAIL_PORT: '',
     TURNSTILE_SITE_KEY: '', TURNSTILE_SECRET_KEY: '', TURNSTILE_VERIFY_URL: '', LINK_PREVIEW_TEST_ORIGIN: '',
-    VAPID_PUBLIC_KEY: '', VAPID_PRIVATE_KEY: '', VAPID_SUBJECT: '', PUSH_TEST_ENDPOINT_ORIGIN: ''
+    VAPID_PUBLIC_KEY: '', VAPID_PRIVATE_KEY: '', VAPID_SUBJECT: '', PUSH_TEST_ENDPOINT_ORIGIN: '',
+    TOTP_ENCRYPTION_KEY: ''
   };
 
   // Resolves once the process exits or prints its "running" line.
@@ -142,6 +159,14 @@ describe('node server.js', () => {
     expect(result.code).toBe(1);
     expect(result.out).toMatch(/The server can't start/);
     expect(result.out).toMatch(/JWT_SECRET is not set/);
+  }, 20000);
+
+  it('refuses to start with a TOTP_ENCRYPTION_KEY that is not 32 bytes, without printing it', async () => {
+    const result = await startServer({ TOTP_ENCRYPTION_KEY: 'my-typo-key-1234' });
+    expect(result.running).toBe(false);
+    expect(result.code).toBe(1);
+    expect(result.out).toMatch(/TOTP_ENCRYPTION_KEY must be 32 random bytes/);
+    expect(result.out).not.toContain('my-typo-key-1234');
   }, 20000);
 
   it('lists every problem at once on a half-configured Render service', async () => {
