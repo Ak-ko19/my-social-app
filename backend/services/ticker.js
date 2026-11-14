@@ -15,6 +15,7 @@ const statsService = require('./statsService');
 const memoryNotificationService = require('./memoryNotificationService');
 const birthdayNotificationService = require('./birthdayNotificationService');
 const exploreRankingService = require('./exploreRankingService');
+const postFanoutService = require('./postFanoutService');
 
 const TICK_MS = 30 * 1000;
 
@@ -32,7 +33,9 @@ const JOBS = [
   ['birthdays', () => birthdayNotificationService.notifyDue(), (r) => r.people],
   // Day 113: Explore's ranked list, every couple of minutes (not logged:
   // it's routine; a failure is).
-  ['explore ranking', () => exploreRankingService.refreshIfDue(), () => false]
+  ['explore ranking', () => exploreRankingService.refreshIfDue(), () => false],
+  // Day 113: "X posted in GROUP" to big groups / pages, in chunks.
+  ['new-post notifications', () => postFanoutService.drain(), (r) => r.notified]
 ];
 
 let timer = null;

@@ -1,7 +1,28 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
 **Day:** 113 -- Performance round 3.
-**Step:** 4 of 5 -- done (committed). Next: step 5 PLAN.
+**Step:** 5 of 5 -- DONE (backend 1207, perf 76/76, rehearsal, day101 +
+b10 + b14). Next: Day close -- full browser run in batches of 3, then the
+Progress Log entry, tick the Day.
+
+### Step 5 plan (new-post notifications off the request)
+- Day 101 fans out INSIDE POST /posts: one INSERT of a notification per
+  eligible member/follower + a push and a badge update each (20k for the
+  busy group). Small audiences stay inline (<= POST_FANOUT_INLINE_MAX,
+  default 200, by the stored member/follower counts of step 1); bigger
+  ones go to post_fanout_queue (migration 095: post_id PK -> posts
+  cascade, after_user_id cursor, queued_at).
+- services/postFanoutService.drain(): FOR UPDATE SKIP LOCKED one job at a
+  time; each chunk = the same INSERT ... SELECT with user_id > cursor
+  ORDER BY user_id LIMIT 1000, the cursor moved in the SAME transaction
+  (exactly once per recipient); pushes + badges after commit; a time
+  budget per pass. Kicked right after the post commits (not under
+  NODE_ENV=test), the ticker every 30 s, cleanupService as the backstop.
+- notificationService.notifyNewPost keeps the rules (one SQL per kind,
+  now with an optional cursor + limit). Tests: small inline, large queued
+  (threshold lowered), chunks resume, exactly once, a deleted post drops
+  its job, rules still apply. Perf: posting in the busy group is fast; the
+  drain tells every member.
 
 ### Step 3 plan (Most relevant comments)
 - Migration 094: comments.like_count (comment_likes rows) and

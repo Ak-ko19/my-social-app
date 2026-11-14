@@ -131,8 +131,9 @@ async function publishServerCounters() {
     const start = Date.now();
     const { refreshed, posts } = await exploreRanking.refresh();
     const ms = Date.now() - start;
-    await require('../backend/db').end(); // its connection's counters are published as it ends
-    await sleep(200);
+    // Ends this process's idle connection too, publishing its counters
+    // (db.js then logs "database connection lost (idle client)": expected).
+    await publishServerCounters();
     const after = seqScans();
     const scanned = Object.keys(after).filter((t) => after[t].pages >= BIG_PAGES && after[t].seq > (before[t]?.seq ?? 0));
     const rows = Object.keys(after).filter((t) => after[t].pages >= BIG_PAGES)
@@ -169,6 +170,49 @@ async function publishServerCounters() {
   // total (0.28-0.43 in runs so far; how many rows a page walks depends on
   // the seed's random follows). A cursor that became a filter again reads
   // as much as OFFSET (0.99).
+  // Day 113: posting in the busy group (20k members). alice is made one of
+  // its admins, so with everyone's default (Highlights) the post is for
+  // all of them. The request only queues it; the queue's drain tells each
+  // member once, in chunks, with no full scan of a big table.
+  {
+    sql(`UPDATE community_members SET role = 'admin' WHERE community_id = ${busyGroup} AND user_id = 1`);
+    const audience = Number(sql(`SELECT count(*) FROM community_members WHERE community_id = ${busyGroup} AND status = 'member' AND user_id <> 1`));
+    const form = new FormData();
+    form.append('content', 'Perf: a post for 20k members');
+    form.append('communityId', String(busyGroup));
+    await publishServerCounters();
+    let before = seqScans();
+    let start = Date.now();
+    const res = await fetch(`${API}/posts`, { method: 'POST', headers: auth, body: form, signal: AbortSignal.timeout(20000) }).catch(() => ({ status: 'timeout' }));
+    const postMs = Date.now() - start;
+    await publishServerCounters();
+    let after = seqScans();
+    const bigNow = Object.keys(after).filter((t) => after[t].pages >= BIG_PAGES);
+    const rowsDuring = (a, b) => bigNow.reduce((sum, t) => sum + a[t].rows - (b[t]?.rows ?? 0), 0);
+    const told = () => Number(sql("SELECT count(*) FROM notifications WHERE type = 'group_post' AND post_id = (SELECT max(id) FROM posts WHERE content = 'Perf: a post for 20k members')"));
+    const postRows = rowsDuring(after, before);
+    // The stack's ticker may start on the queue at any moment, so "queued"
+    // = not everyone was told inside the request (0 unless a tick fell in
+    // between).
+    const toldAtReply = told();
+    results.push(`${res.status === 201 && postRows <= MAX_ROWS && toldAtReply < audience ? 'PASS' : 'FAIL'}  POST /posts in the busy group: queued, not sent ${String(res.status)} ${String(postMs).padStart(5)} ms ${String(postRows).padStart(7)} rows`);
+
+    // Drained here (the ticker may share the work: SKIP LOCKED), so the
+    // check is on the result: every member told exactly once.
+    const fanout = require('../backend/services/postFanoutService');
+    before = seqScans();
+    start = Date.now();
+    const { notified, chunks } = await fanout.drain({ budgetMs: 120000 });
+    for (const until = Date.now() + 60000; Date.now() < until && Number(sql('SELECT count(*) FROM post_fanout_queue')) > 0;) await sleep(250);
+    const drainMs = Date.now() - start;
+    await publishServerCounters();
+    after = seqScans();
+    const scanned = bigNow.filter((t) => after[t].seq > (before[t]?.seq ?? 0));
+    const total = told();
+    const distinct = Number(sql("SELECT count(DISTINCT user_id) FROM notifications WHERE type = 'group_post' AND post_id = (SELECT max(id) FROM posts WHERE content = 'Perf: a post for 20k members')"));
+    results.push(`${total === audience && distinct === audience && !scanned.length ? 'PASS' : 'FAIL'}  ...the queue tells all ${audience} members once (${chunks} chunks here) ${String(drainMs).padStart(5)} ms ${String(rowsDuring(after, before)).padStart(7)} rows`
+      + (scanned.length ? `  -- full scan of: ${scanned.join(', ')}` : '') + (total !== audience || distinct !== audience ? `  -- ${total} rows, ${distinct} people (${notified} here)` : ''));
+  }
   const ratio = rowsOf[feedByCursor] / rowsOf['/feed?page=5'];
   results.push(`${ratio < 0.7 ? 'PASS' : 'FAIL'}  /feed page 5 by cursor reads well under ?page=5  -- ${rowsOf[feedByCursor]} vs ${rowsOf['/feed?page=5']} rows`);
 

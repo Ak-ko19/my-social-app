@@ -195,44 +195,67 @@ const PAGE_HIGHLIGHT_SQL = (pf) => `(${pf}.post_notifications = 'all' OR (${pf}.
 // not from someone you muted (their posts left your Home). `post` is the
 // saved posts row: user_id (a page post: the page's owner), community_id,
 // page_id.
-async function notifyNewPost(post) {
+// Day 113: the notifications for one slice of the audience -- members /
+// followers with user_id > afterUserId, in user order, at most `limit`
+// (null: everyone) -- on `client` (a transaction's, for the queue in
+// postFanoutService). Returns the user ids told, without pushing anything.
+async function insertNewPostNotifications(post, { client = db, afterUserId = 0, limit = null } = {}) {
   const common = (who) => `${allowedSql(post.community_id ? 'groups' : 'pages', who)}
     AND ${notRestrictedSql(who, '$1::int')}
     AND ${noBlockBetweenSql(who, '$1::int')}`;
   let result;
   if (post.community_id) {
-    result = await db.query(
+    result = await client.query(
       `INSERT INTO notifications (user_id, actor_id, type, post_id, community_id)
        SELECT cm.user_id, $1, 'group_post', $2, $3
        FROM community_members cm
        WHERE cm.community_id = $3 AND cm.status = 'member' AND cm.user_id <> $1
+         AND cm.user_id > $4
          AND ${GROUP_HIGHLIGHT_SQL('cm')}
          AND ${notMutedSql('cm.user_id', '$1::int')}
          AND ${common('cm.user_id')}
+       ORDER BY cm.user_id
+       LIMIT $5
        RETURNING user_id`,
-      [post.user_id, post.id, post.community_id]
+      [post.user_id, post.id, post.community_id, afterUserId, limit]
     );
   } else if (post.page_id) {
-    result = await db.query(
+    result = await client.query(
       `INSERT INTO notifications (user_id, actor_id, type, post_id, page_id)
        SELECT pf.user_id, $1, 'page_post', $2, $3
        FROM page_follows pf
        WHERE pf.page_id = $3 AND pf.user_id <> $1
+         AND pf.user_id > $4
          AND NOT EXISTS (SELECT 1 FROM page_admins pa WHERE pa.page_id = $3 AND pa.user_id = pf.user_id)
          AND ${PAGE_HIGHLIGHT_SQL('pf')}
          AND ${common('pf.user_id')}
+       ORDER BY pf.user_id
+       LIMIT $5
        RETURNING user_id`,
-      [post.user_id, post.id, post.page_id]
+      [post.user_id, post.id, post.page_id, afterUserId, limit]
     );
   } else {
-    return 0;
+    return [];
   }
+  return result.rows.map((r) => r.user_id);
+}
+
+// The push and the live badge for each of them (after their notifications
+// are committed).
+function deliverNewPost(post, userIds) {
   const type = post.community_id ? 'group_post' : 'page_post';
-  for (const { user_id: userId } of result.rows) {
+  for (const userId of userIds) {
     pushNotification({ userId, actorId: post.user_id, type, postId: post.id, communityId: post.community_id, pageId: post.page_id });
     announce(userId);
   }
-  return result.rowCount;
+}
+
+// Everyone at once, inside the caller's request. Day 113: only for a small
+// audience -- postFanoutService decides, and queues a big one.
+async function notifyNewPost(post) {
+  const userIds = await insertNewPostNotifications(post);
+  deliverNewPost(post, userIds);
+  return userIds.length;
 }
 
 // { likes, comments, mentions, follows, follow_accepted, messages, groups, pages, events, memories, shares } -- all true when
@@ -260,4 +283,4 @@ async function updatePreferences(userId, changes) {
   return next;
 }
 
-module.exports = { notify, notifySystem, notifyNewPost, POST_LEVELS, announce, SYSTEM_TYPES, getPreferences, updatePreferences, allowedSql, visibleSql, CATEGORIES, CATEGORY_BY_TYPE };
+module.exports = { notify, notifySystem, notifyNewPost, insertNewPostNotifications, deliverNewPost, POST_LEVELS, announce, SYSTEM_TYPES, getPreferences, updatePreferences, allowedSql, visibleSql, CATEGORIES, CATEGORY_BY_TYPE };

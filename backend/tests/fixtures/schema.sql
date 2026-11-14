@@ -1051,3 +1051,12 @@ CREATE TRIGGER trg_comments_reply_count_del AFTER DELETE ON comments
 CREATE TRIGGER trg_comments_reply_count_upd AFTER UPDATE ON comments
   REFERENCING OLD TABLE AS old_rows NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION comment_reply_count_sync();
 
+
+-- Day 113 (migration 095): big groups' / pages' new-post notifications, queued.
+CREATE TABLE post_fanout_queue (
+  post_id integer PRIMARY KEY REFERENCES posts(id) ON DELETE CASCADE,
+  -- Everyone up to this user id has been handled.
+  after_user_id integer NOT NULL DEFAULT 0,
+  queued_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_post_fanout_queue_queued ON post_fanout_queue (queued_at);

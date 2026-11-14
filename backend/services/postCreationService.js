@@ -9,7 +9,7 @@ const { toUnicode } = require('../utils/myanmarText');
 const pollService = require('./pollService');
 const hashtagService = require('./hashtagService');
 const mentionService = require('./mentionService');
-const { notifyNewPost } = require('./notificationService');
+const postFanoutService = require('./postFanoutService');
 const { managesPage } = require('./pageAdminService');
 
 // B5: keep in sync with migration 020's CHECK constraint.
@@ -203,7 +203,8 @@ async function finishPost(row, userId, fields, imageUrls) {
   await hashtagService.syncPostHashtags(row.id, row.content);
   // The post's author (a page post: the page's owner), not whoever typed it.
   await mentionService.notifyMentions({ content: row.content, authorId: row.user_id, postId: row.id });
-  await notifyNewPost(row);
+  // Day 113: a big group / page is told after this request (queued).
+  await postFanoutService.announceNewPost(row);
   return {
     ...row,
     media: imageUrls.map((url, i) => ({ url, alt: altTexts[i] ?? null })),
