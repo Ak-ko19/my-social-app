@@ -322,7 +322,7 @@ Build every feature the way a senior engineer at a top social media company woul
 ### Day 113 — Performance round 3
 - [x] Explore's popular posts at scale (AUDIT_REPORT_4 §6), the new lists' indexes, the perf suite at the larger seed. *(Five steps; also stored counts, Most relevant comments and big-group notifications -- see Progress Log.)*
 ### Day 114–115 — Security round 3
-- [ ] Re-check every route and socket event added since Day 76; dependency updates; two-factor keys encrypted when the owner sets a key (works unencrypted without it).
+- [x] Re-check every route and socket event added since Day 76; dependency updates; two-factor keys encrypted when the owner sets a key (works unencrypted without it). *(No gaps found; majors updated except web-push 4; tap-only parts load later; TOTP_ENCRYPTION_KEY -- see Progress Log.)*
 ### Day 116 — Code health round 2
 - [ ] Split the largest files (messageService.js), remove dead code, the README and CLAUDE.md up to date.
 ### Day 117 — Owner guide refresh
@@ -3541,3 +3541,47 @@ over 20k rows. Five steps, each keeping the suite green:
   - day27-perf 76/76 at 150k users. Full browser run in batches of 3 (40
     batches, 101 suites/parts): all green; a3 168/168 in all four parts,
     day26-a11y 0 serious/critical, day80-states 158/158 each.
+
+### 2026-11-14 — Days 114–115: Security round 3
+Goal: everything built since the last security round (Day 76) re-checked,
+dependencies current, and two-factor keys safe in a leaked database.
+- **Routes and sockets since Day 76 (`ea6b64b`, steps 1-2):** 38 routes
+  and the socket changes read for who may read or change what. No gaps
+  found; the cases their own tests didn't try are now a guard
+  (securityRound3.test.js, 10). Two new server socket events, both to the
+  person's own room. Rate limits present or bounded on every new write.
+- **Dependencies (`0342968`, step 3):** in-range updates in all three
+  folders; swagger-ui-dist 5.35.0, dotenv 18, i18next 27 + react-i18next
+  18 (checked: Trans still shows values exactly as typed), motion 14,
+  jsdom 31.
+  - Kept on purpose: web-push 3 (4 is ESM-only and Jest's CommonJS
+    runtime can't load it; 3.6.7 has no advisory) and the myanmar-tools
+    1.1.3 pin (1.2.0 still ships without its build).
+  - The first download was over budget: 225.7 kB already at the start of
+    the day (Day 113 measured 222.0 with its install), 230.8 after the
+    updates. Comments, the share sheet, the post menu's report dialog and
+    the story viewer now load on first tap (utils/lazyPart): 221.2 kB. A
+    failed download shows one line in place (offline: Try again, and it
+    opens by itself when back online; online: Reload; Close), never the
+    crash screen -- checked in a real browser (day72-offline, EN/AR).
+- **Two-factor keys encrypted at rest (`8da5dc7`, step 4, migration
+  096):** with TOTP_ENCRYPTION_KEY set (optional, 32 bytes), keys are
+  stored AES-256-GCM sealed and tied to their account; older plain ones
+  are sealed at their next right code or by `npm run seal:totp -- --apply`.
+  Without the key nothing changes. A sealed key the server can't open is
+  a logged 500: never "2FA off", never a way in, never counted against the
+  person (recovery codes still work). A malformed key stops the start.
+  Owner steps: LATER.md #9 (key rotation is not built; "v1:" leaves room).
+- **Tests at close:**
+  - Backend 1234/1234 (secretBox 5, twoFactorSealed 6, sealTotpSecrets 4,
+    env +2; mutation check 5/5 caught), Vitest 470/470 (lazyPart 6),
+    frontend lint (exit 0), check:i18n, bundle 221.2 kB, npm audit
+    --omit=dev 0/0/0. Rehearsal 015 -> 096 passed.
+  - Full browser run in batches of 3 (41 batches): all green after three
+    re-runs. c3-landing left Signup/Login before their code finished
+    downloading (aborted requests, timing shifted by the updates): it now
+    waits for the form (a stricter check). day55-events and
+    day80-states-en (/notifications failed-load) failed once each and
+    passed alone, unchanged. a3 168/168 x4, day26-a11y 0 serious/critical,
+    day27-perf 76/76, day80-states 158/158 each. day77-two-factor also
+    39/39 with a key set (the stored key is sealed).

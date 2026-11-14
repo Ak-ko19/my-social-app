@@ -23,11 +23,17 @@ const check = (name, ok, extra = '') => results.push(`${ok ? 'PASS' : 'FAIL'}  $
   check('no bottom tab bar (outside the app shell)', (await p.locator('.bottom-tab-bar').count()) === 0);
   await p.getByRole('link', { name: 'Create your free account' }).first().click();
   await p.waitForURL(`${WEB}/signup`);
-  check('primary CTA opens Signup', true);
+  // Wait for the screen itself: leaving while its code still downloads
+  // aborts those requests (seen after the Days 114-115 updates).
+  const signupShown = await p.locator('input[type=password]').first().waitFor({ timeout: 8000 }).then(() => true, () => false);
+  await p.waitForLoadState('networkidle');
+  check('primary CTA opens Signup', signupShown);
   await p.goto(`${WEB}/welcome`, { waitUntil: 'networkidle' });
   await p.getByRole('link', { name: 'I already have an account' }).click();
   await p.waitForURL(`${WEB}/login`);
-  check('secondary CTA opens Login', true);
+  const loginShown = await p.locator('input[type=password]').first().waitFor({ timeout: 8000 }).then(() => true, () => false);
+  await p.waitForLoadState('networkidle');
+  check('secondary CTA opens Login', loginShown);
 
   await p.goto(`${WEB}/welcome`, { waitUntil: 'networkidle' });
   const langOptions = await p.locator('.landing-lang-select option').evaluateAll((os) => os.map((o) => o.value));

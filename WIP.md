@@ -1,101 +1,16 @@
 # WIP — current work (see MONTH_PLAN.md for the full plan)
 
-**Day:** 114-115 -- Security round 3.
-**Step:** 4 of 4 -- two-factor secrets encrypted at rest. DONE (built:
-secretBox, service, migration 096, env check, seal:totp script, docs,
-tests; mutation check 5/5 caught; rehearsal passed; day77-two-factor
-green with and without a key). Then: Day close (full browser run in
-batches, Progress Log, tick the Day).
-Step 4 plan:
-- utils/secretBox.js: TOTP_ENCRYPTION_KEY = 32 bytes as 64 hex chars or
-  base64. seal(plain, aad) -> "v1:" iv:tag:data (base64url, AES-256-GCM,
-  12-byte random iv); open(stored, aad): plain text passes through as is,
-  "v1:" needs the key (missing / wrong / tampered -> SecretBoxError, a
-  plain 500 via sendError, logged; never "2FA off", never a bypass).
-  AAD = "totp:<userId>" (same for pending and active, so enable() can
-  move it): a sealed secret copied to another account won't open.
-- Migration 096: totp_secret / totp_pending_secret varchar(64) -> (128)
-  (a sealed 32-char base32 secret is 86 chars). Down: back to 64 (fails,
-  rather than cutting, while sealed ones exist). Fixture, checklist loop,
-  rehearsal.
-- twoFactorService: startSetup seals the pending secret; enable opens it
-  and stores totp_secret sealed (also re-seals a plain pending one);
-  checkSecondFactor opens totp_secret and, after a RIGHT code with a key
-  set, re-seals a plain one (conditional UPDATE ... WHERE totp_secret =
-  the plain value). setup's response still returns the plain key once.
-- config/env.js: TOTP_ENCRYPTION_KEY set but not 32 bytes -> refuse to
-  start (error). Production without it -> a warning.
-- scripts/seal-totp-secrets.js: needs the key; seals every plain secret
-  (both columns) with a conditional update; prints counts; safe to re-run;
-  --check counts plain ones without changing anything.
-- Docs: backend/.env.example (name only + how to make one: node -e
-  crypto.randomBytes(32)), GO_LIVE_CHECKLIST (set key, run script; never
-  lose / change it: sealed secrets can't be read -> people use recovery
-  codes), LATER.md (key rotation not built; "v1:" leaves room). Privacy
-  policy: unchanged (no new data collected), checked.
-- Tests: secretBox unit (round trip, AAD, tamper, wrong key, no key,
-  bad key formats); twoFactor API with a key (stored value is sealed,
-  setup + enable + login + disable work; plain old one re-sealed after use;
-  sealed + no key -> 500 and no session; wrong key -> 500); env.test;
-  script test. Mutation check on the service.
-**Step 3 (done):** in-range updates x3; swagger-ui-dist 5.35.0; majors
-dotenv 18, i18next 27 + react-i18next 18, motion 14, jsdom 31. Kept:
-web-push 3 (4 is ESM-only: Jest's CommonJS runtime can't require it, and
-3.6.7 has no advisory), myanmar-tools 1.1.3 (1.2.0 still ships no build).
-The updates (and HEAD already, 225.7) were over the bundle budget: the
-comments, share sheet, report dialog (post menu) and story viewer now load
-on first tap via utils/lazyPart (compact ScreenLoadBoundary: offline ->
-Try again + auto-retry, online -> Reload, Close if onClose): 221.2 kB.
-Verified: backend 1217/1217, Vitest 470/470, lint, i18n, audit x3, 16
-browser suites (day72-offline gained the offline-comments check).
-Step 3 plan (as written): the lockfiles already hold the in-range updates (npm update in
-all three folders, left uncommitted by the last session; package.json
-untouched). Outside the ranges: swagger-ui-dist 5.33.1 -> 5.35.0 (exact
-pin, no recorded reason beyond "no CDN"); myanmar-tools 1.2.0 only if its
-npm package now ships its build (Day 43: it did not). Majors one at a
-time, changelog read, tests run: dotenv 18, web-push 4 (backend); i18next
-27 + react-i18next 18 (together), motion 14, jsdom 31 (dev) (frontend).
-A major needing real rework or looking risky stays, reason logged.
-Verify: backend Jest, Vitest, lint, build + check:bundle, check:i18n,
-npm audit --omit=dev x3, browser smoke (incl. /docs, push, i18n).
-
-**Steps 1+2 (done, ea6b64b):** no gaps found; securityRound3.test.js 10/10
-keeps them closed. Read: replies, chat search/context, hashtag, memories,
-page verification, admin. Write: story reply/react (VISIBLE_TO_VIEWER_SQL
-+ send checks), share (non-text content 400; flood check), edit photos,
-pinned comment, notification levels. Sockets: only 2 new server->own-room
-events since Day 76. Rate limits: present or bounded on every new write.
-
-### Plan (Days 114-115)
-Since Day 76 (1a86312): 38 new routes, socketAuth reworked, new socket
-events (REALTIME.md). Steps:
-- **Step 1 -- read routes (the 15 GET / optionalAuth ones):** for each,
-  who may read what -- blocked (both ways), private accounts, audiences
-  (followers / close friends / only me), group privacy and bans, deleted
-  and deactivated content, chat members who left / were removed (search +
-  message context must not reach messages they can't see). Every gap gets
-  a failing test first, then the fix. securityRound3.test.js holds the
-  sweep (one describe per route family).
-- **Step 2 -- write routes + rate limits:** ownership / role on every
-  PUT/POST/DELETE (pinned comment: the post's author only; page
-  verification: page admins; notification levels: members / followers
-  only; story reply/react: may see the story, not blocked, message
-  permission; share: may see the original, audience of a share). New write
-  routes without a rate limit get one where a person could flood others
-  (story replies/reactions, shares, hashtag follows, verification
-  requests). Socket events since Day 76: auth + membership on each.
-- **Step 3 -- dependency updates:** npm outdated in backend, frontend,
-  e2e; patch/minor updates in one go, majors one at a time only when
-  safe; full backend + Vitest + build + browser smoke.
-- **Step 4 -- two-factor secrets encrypted at rest:** TOTP_ENCRYPTION_KEY
-  (optional, 32 bytes base64/hex). Set: secrets are AES-256-GCM sealed
-  ("v1:" iv:tag:data) when written, and old plain ones are read and
-  re-sealed on the next use; unset: plain, as now. A wrong / missing key
-  for a sealed secret = a clear server error (never "2FA off", never a
-  bypass). A script seals every existing secret once a key is set
-  (GO_LIVE_CHECKLIST / LATER.md: the owner makes the key). Tests both ways.
+**Day:** 116 -- Code health round 2. **Step:** not started (PLAN next).
+Days 114-115 closed (Progress Log; commits ea6b64b, 0342968, 8da5dc7 and
+the close).
 
 ## Carry-over notes
+- Days 114-115 close: a browser check must wait for a screen to RENDER
+  (not just its URL) before navigating away, or its still-downloading
+  modules show up as "request failed ... ERR_ABORTED" (c3-landing).
+  TOTP_ENCRYPTION_KEY: any new place that reads or writes totp_secret /
+  totp_pending_secret goes through twoFactorService's seal/openSecret.
+  `e2e-up.sh` passes TOTP_ENCRYPTION_KEY through (unset by default).
 - Days 114-115 step 3: a part of a screen that shows only after a tap
   goes through utils/lazyPart (never plain React.lazy: a failed download
   would hit the crash screen). Browser checks must WAIT for it after the
